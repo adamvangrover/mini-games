@@ -18,7 +18,7 @@ A **self-contained** HTML file featuring four fun mini-games! No extra files or 
 ## 📂 How to Run
 ```
 1. Clone the repository:
-   
+   ```bash
    git clone https://github.com/adamvangrover/mini-games.git
    ```
 2. Open the `index.html` file in your web browser.  
