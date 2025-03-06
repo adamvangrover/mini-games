@@ -16,7 +16,7 @@ A **self-contained** HTML file featuring four fun mini-games! No extra files or 
 4. **Typing Speed Test** – Type the displayed word as fast as possible.  
 
 ## 📂 How to Run
-```
+
 1. Clone the repository:
    ```
 bash
