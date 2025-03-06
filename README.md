@@ -19,9 +19,10 @@ A **self-contained** HTML file featuring four fun mini-games! No extra files or 
 
 1. Clone the repository:
    
-   git clone https://github.com/adamvangrover/mini-games.git
+```
+    git clone https://github.com/adamvangrover/mini-games.git
    ```
-2. Open the `index.html` file in your web browser.  
+3. Open the `index.html` file in your web browser.  
 
 ## 🎮 How to Play
 ### Clicker Game  
