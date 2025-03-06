@@ -3,206 +3,841 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Game Hub</title>
+    <title>Ultimate Mini Game Hub</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background: #222; color: white; }
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            background: #222; 
+            color: white; 
+            margin: 0; 
+            padding: 0; 
+        }
         .hidden { display: none; }
-        .menu button, .back-btn { margin: 10px; padding: 10px 20px; font-size: 18px; cursor: pointer; }
-        canvas { border: 2px solid white; background: black; margin-top: 10px; }
-        #clicker-game button { font-size: 20px; padding: 10px; }
-        .store { margin-top: 10px; }
+        .menu button, .back-btn { 
+            margin: 10px; 
+            padding: 10px 20px; 
+            font-size: 18px; 
+            cursor: pointer; 
+            background: #444; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+        }
+        .menu button:hover, .back-btn:hover { background: #666; }
+        canvas { 
+            border: 2px solid white; 
+            background: black; 
+            margin-top: 10px; 
+        }
+        .game-container { margin-top: 20px; }
     </style>
 </head>
 <body>
 
     <div id="menu">
-        <h1>🎮 Mini Game Hub</h1>
+        <h1>🎮 Ultimate Mini Game Hub</h1>
         <button onclick="startGame('clicker-game')">💰 Clicker Game</button>
         <button onclick="startGame('maze-game')">🌀 Maze Game</button>
         <button onclick="startGame('runner-game')">🏃 Endless Runner</button>
         <button onclick="startGame('typing-game')">⌨ Typing Speed Test</button>
+        <button onclick="startGame('snake-game')">🐍 Snake</button>
+        <button onclick="startGame('pong-game')">🏓 Pong</button>
+        <button onclick="startGame('space-game')">🚀 Space Shooter</button>
     </div>
 
-    <!-- Clicker Game -->
-    <div id="clicker-game" class="hidden">
-        <h2>💰 Clicker Game</h2>
-        <p>Clicks: <span id="click-count">0</span></p>
-        <button onclick="incrementClick()">💸 Click Me!</button>
-        <div class="store">
-            <button onclick="buyUpgrade()">⚡ Buy Upgrade (Cost: <span id="upgrade-cost">10</span>)</button>
-        </div>
-        <button class="back-btn" onclick="goBack()">Back</button>
-    </div>
+<div id="clicker-game" class="hidden game-container">
 
-    <!-- Maze Game -->
-    <div id="maze-game" class="hidden">
-        <h2>🌀 Maze Game</h2>
-        <canvas id="mazeCanvas" width="300" height="300"></canvas>
-        <p>Use arrow keys to reach the goal! 🏆</p>
-        <button class="back-btn" onclick="goBack()">Back</button>
-    </div>
+    <div id="clicker-game" class="hidden game-container">
+    <h2>💰 Clicker Game</h2>
+    <p>Money: <span id="money">0</span> 💸</p>
+    <button onclick="clickMoney()">💵 Click for Cash!</button>
 
-    <!-- Endless Runner -->
-    <div id="runner-game" class="hidden">
-        <h2>🏃 Endless Runner</h2>
-        <canvas id="runnerCanvas" width="400" height="200"></canvas>
-        <p>Press SPACE to jump! 🔥</p>
-        <button class="back-btn" onclick="goBack()">Back</button>
-    </div>
+    <h3>🛒 Store</h3>
+    <button onclick="buyUpgrade()">⚡ Upgrade Click (Cost: <span id="upgrade-cost">10</span>)</button>
+    <button onclick="buyAutoClicker()">🤖 Auto-Clicker (Cost: <span id="autoclicker-cost">50</span>)</button>
+    <button onclick="prestige()" id="prestige-btn" class="hidden">🔁 Prestige (Reset for Bonus!)</button>
 
-    <!-- Typing Speed Test -->
-    <div id="typing-game" class="hidden">
-        <h2>⌨ Typing Speed Test</h2>
-        <p id="word-display"></p>
-        <input type="text" id="word-input" placeholder="Type here..." oninput="checkTyping()">
-        <p>Time Left: <span id="time-left">30</span> sec</p>
-        <p>Score: <span id="typing-score">0</span></p>
-        <button class="back-btn" onclick="goBack()">Back</button>
-    </div>
+    <p>Click Power: <span id="click-power">1</span> 🖱️</p>
+    <p>Auto-Clicks Per Second: <span id="auto-rate">0</span> ⏳</p>
+    <p>Prestige Multiplier: <span id="prestige-multiplier">1x</span> 🚀</p>
+
+    <button class="back-btn" onclick="goBack()">Back</button>
+</div>
+</div>
+
+
+    <div id="maze-game" class="hidden game-container"><div id="maze-game" class="hidden game-container">
+    <h2>🌀 Maze Game</h2>
+    <canvas id="mazeCanvas" width="400" height="400"></canvas>
+    <p>Use <b>Arrow Keys</b> to navigate the maze!</p>
+    <p>🏆 Reach the gold square to win!</p>
+    <p>👾 Avoid the enemies!</p>
+    <button class="back-btn" onclick="goBack()">Back</button>
+</div></div>
+
+
+    <div id="runner-game" class="hidden game-container"><div id="runner-game" class="hidden game-container">
+    <h2>🏃 Endless Runner</h2>
+    <canvas id="runnerCanvas" width="600" height="200"></canvas>
+    <p>Press <b>Spacebar</b> to jump over obstacles!</p>
+    <p>Score: <span id="runner-score">0</span></p>
+    <button class="back-btn" onclick="goBack()">Back</button>
+</div></div>
+
+
+    <div id="typing-game" class="hidden game-container"><div id="typing-game" class="hidden game-container">
+    <h2>⌨ Typing Speed Test</h2>
+    <p>Type the sentence below as fast as you can:</p>
+    <p id="typing-sentence" style="font-weight: bold;"></p>
+    <input type="text" id="typing-input" placeholder="Start typing..." oninput="checkTyping()">
+    <p>⏳ Time: <span id="typing-timer">0</span> seconds</p>
+    <p>⚡ WPM: <span id="typing-wpm">0</span></p>
+    <p>🎯 Accuracy: <span id="typing-accuracy">100%</span></p>
+    <button onclick="restartTypingGame()">🔄 Try Again</button>
+    <button class="back-btn" onclick="goBack()">Back</button>
+</div></div>
+
+
+    <div id="snake-game" class="hidden game-container"><div id="snake-game" class="hidden game-container">
+    <h2>🐍 Snake Game</h2>
+    <canvas id="snakeCanvas" width="400" height="400"></canvas>
+    <p>Use <b>Arrow Keys</b> to move!</p>
+    <p>🍎 Score: <span id="snake-score">0</span></p>
+    <button class="back-btn" onclick="goBack()">Back</button>
+</div></div>
+
+
+    <div id="pong-game" class="hidden game-container"><div id="pong-game" class="hidden game-container">
+    <h2>🏓 Pong</h2>
+    <canvas id="pongCanvas" width="600" height="400"></canvas>
+    <p>Player 1: <b>W / S</b> | Player 2: <b>Up / Down</b></p>
+    <p>🎯 Score: <span id="pong-score">0 - 0</span></p>
+    <button class="back-btn" onclick="goBack()">Back</button>
+</div></div>
+
+    <div id="space-game" class="hidden game-container"><div id="space-game" class="hidden game-container">
+    <h2>🚀 Space Shooter</h2>
+    <canvas id="spaceCanvas" width="500" height="400"></canvas>
+    <p>Use <b>Arrow Keys</b> to move & <b>Spacebar</b> to shoot!</p>
+    <p>🎯 Score: <span id="space-score">0</span></p>
+    <button class="back-btn" onclick="goBack()">Back</button>
+</div></div>
 
     <script>
         function startGame(game) {
             document.getElementById("menu").classList.add("hidden");
             document.getElementById(game).classList.remove("hidden");
-
-            if (game === 'maze-game') initMazeGame();
-            if (game === 'runner-game') initRunnerGame();
-            if (game === 'typing-game') initTypingGame();
         }
 
         function goBack() {
-            document.querySelectorAll(".hidden").forEach(el => el.classList.add("hidden"));
+            document.querySelectorAll(".game-container").forEach(el => el.classList.add("hidden"));
             document.getElementById("menu").classList.remove("hidden");
         }
 
-        // Clicker Game
-        let clickCount = 0;
-        let upgradeCost = 10;
-        let clickValue = 1;
+// Clicker Game Variables
+let money = 0;
+let clickPower = 1;
+let autoClickers = 0;
+let autoClickRate = 0;
+let prestigeMultiplier = 1;
+let upgradeCost = 10;
+let autoClickerCost = 50;
 
-        function incrementClick() {
-            clickCount += clickValue;
-            document.getElementById("click-count").textContent = clickCount;
-        }
+// Function: Clicking for money
+function clickMoney() {
+    money += clickPower * prestigeMultiplier;
+    updateClickerUI();
+}
 
-        function buyUpgrade() {
-            if (clickCount >= upgradeCost) {
-                clickCount -= upgradeCost;
-                clickValue += 1;
-                upgradeCost *= 2;
-                document.getElementById("click-count").textContent = clickCount;
-                document.getElementById("upgrade-cost").textContent = upgradeCost;
+// Function: Buy Upgrade (Increase Click Power)
+function buyUpgrade() {
+    if (money >= upgradeCost) {
+        money -= upgradeCost;
+        clickPower += 1;
+        upgradeCost = Math.floor(upgradeCost * 1.5);
+        updateClickerUI();
+    }
+}
+
+// Function: Buy Auto-Clicker (Passive Income)
+function buyAutoClicker() {
+    if (money >= autoClickerCost) {
+        money -= autoClickerCost;
+        autoClickers++;
+        autoClickRate = autoClickers * prestigeMultiplier;
+        autoClickerCost = Math.floor(autoClickerCost * 1.7);
+        updateClickerUI();
+    }
+}
+
+// Function: Prestige System (Reset for Boost)
+function prestige() {
+    if (money >= 1000) {
+        money = 0;
+        clickPower = 1;
+        autoClickers = 0;
+        autoClickRate = 0;
+        upgradeCost = 10;
+        autoClickerCost = 50;
+        prestigeMultiplier *= 2; // Double the multiplier each prestige
+        updateClickerUI();
+    }
+}
+
+// Update UI
+function updateClickerUI() {
+    document.getElementById("money").textContent = money;
+    document.getElementById("click-power").textContent = clickPower;
+    document.getElementById("auto-rate").textContent = autoClickRate;
+    document.getElementById("upgrade-cost").textContent = upgradeCost;
+    document.getElementById("autoclicker-cost").textContent = autoClickerCost;
+    document.getElementById("prestige-multiplier").textContent = prestigeMultiplier + "x";
+
+    // Show Prestige Button if money >= 1000
+    document.getElementById("prestige-btn").classList.toggle("hidden", money < 1000);
+}
+
+// Auto-Clicker Interval
+setInterval(() => {
+    if (autoClickRate > 0) {
+        money += autoClickRate;
+        updateClickerUI();
+    }
+}, 1000);
+
+// Maze Game Variables
+const canvas = document.getElementById("mazeCanvas");
+const ctx = canvas.getContext("2d");
+const tileSize = 40;
+const rows = 10;
+const cols = 10;
+let maze = [];
+let player = { x: 0, y: 0 };
+let goal = { x: 9, y: 9 };
+let enemies = [{ x: 4, y: 4, dx: 1, dy: 0 }];
+let speedBoostActive = false;
+
+// Function: Generate a Random Maze
+function generateMaze() {
+    maze = Array.from({ length: rows }, () => Array(cols).fill(1));
+
+    function carvePath(x, y) {
+        let directions = [
+            [0, -1], [0, 1], [-1, 0], [1, 0]
+        ].sort(() => Math.random() - 0.5);
+
+        for (let [dx, dy] of directions) {
+            let nx = x + dx * 2, ny = y + dy * 2;
+            if (nx >= 0 && ny >= 0 && nx < cols && ny < rows && maze[ny][nx] === 1) {
+                maze[y + dy][x + dx] = 0;
+                maze[ny][nx] = 0;
+                carvePath(nx, ny);
             }
         }
+    }
 
-        // Maze Game
-        function initMazeGame() {
-            let canvas = document.getElementById("mazeCanvas");
-            let ctx = canvas.getContext("2d");
-            let player = { x: 10, y: 10, size: 20 };
-            let goal = { x: 260, y: 260, size: 20 };
+    maze[0][0] = 0;
+    maze[9][9] = 0;
+    carvePath(0, 0);
+}
 
-            function draw() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "blue";
-                ctx.fillRect(player.x, player.y, player.size, player.size);
-                ctx.fillStyle = "gold";
-                ctx.fillRect(goal.x, goal.y, goal.size, goal.size);
-            }
+// Function: Draw Maze & Game Elements
+function drawMaze() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            document.addEventListener("keydown", (e) => {
-                if (e.key === "ArrowUp") player.y -= 20;
-                if (e.key === "ArrowDown") player.y += 20;
-                if (e.key === "ArrowLeft") player.x -= 20;
-                if (e.key === "ArrowRight") player.x += 20;
-                if (player.x === goal.x && player.y === goal.y) alert("🏆 You Win!");
-                draw();
-            });
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            ctx.fillStyle = maze[y][x] === 1 ? "white" : "black";
+            ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+        }
+    }
 
-            draw();
+    ctx.fillStyle = "gold";
+    ctx.fillRect(goal.x * tileSize, goal.y * tileSize, tileSize, tileSize);
+
+    ctx.fillStyle = "blue";
+    ctx.fillRect(player.x * tileSize, player.y * tileSize, tileSize, tileSize);
+
+    enemies.forEach(enemy => {
+        ctx.fillStyle = "red";
+        ctx.fillRect(enemy.x * tileSize, enemy.y * tileSize, tileSize, tileSize);
+    });
+}
+
+// Function: Move Player
+function movePlayer(dx, dy) {
+    let nx = player.x + dx, ny = player.y + dy;
+
+    if (nx >= 0 && ny >= 0 && nx < cols && ny < rows && maze[ny][nx] === 0) {
+        player.x = nx;
+        player.y = ny;
+
+        if (player.x === goal.x && player.y === goal.y) {
+            alert("🏆 You Won!");
+            initMazeGame();
+        }
+    }
+}
+
+// Function: Move Enemies
+function moveEnemies() {
+    enemies.forEach(enemy => {
+        let direction = Math.random() > 0.5 ? [1, 0] : [0, 1];
+        let nx = enemy.x + direction[0], ny = enemy.y + direction[1];
+
+        if (nx >= 0 && ny >= 0 && nx < cols && ny < rows && maze[ny][nx] === 0) {
+            enemy.x = nx;
+            enemy.y = ny;
         }
 
-        // Endless Runner
-        function initRunnerGame() {
-            let canvas = document.getElementById("runnerCanvas");
-            let ctx = canvas.getContext("2d");
-            let player = { x: 50, y: 150, width: 20, height: 20, dy: 0 };
-            let obstacles = [{ x: 400, y: 150, width: 20, height: 20 }];
-            let gravity = 0.5;
-            let isJumping = false;
-            let score = 0;
-
-            function draw() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "red";
-                ctx.fillRect(player.x, player.y, player.width, player.height);
-
-                ctx.fillStyle = "white";
-                obstacles.forEach(obs => {
-                    obs.x -= 5;
-                    if (obs.x < 0) {
-                        obs.x = 400 + Math.random() * 100;
-                        score++;
-                    }
-                    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-                });
-
-                requestAnimationFrame(draw);
-            }
-
-            document.addEventListener("keydown", (e) => {
-                if (e.code === "Space" && !isJumping) {
-                    isJumping = true;
-                    player.dy = -10;
-                }
-            });
-
-            function update() {
-                if (isJumping) {
-                    player.dy += gravity;
-                    player.y += player.dy;
-                    if (player.y >= 150) {
-                        player.y = 150;
-                        isJumping = false;
-                    }
-                }
-                requestAnimationFrame(update);
-            }
-
-            draw();
-            update();
+        if (enemy.x === player.x && enemy.y === player.y) {
+            alert("💀 You Got Caught! Try Again.");
+            initMazeGame();
         }
+    });
+}
 
-        // Typing Game
-        function initTypingGame() {
-            const words = ["hello", "world", "javascript", "game", "fast", "speed", "typing"];
-            let score = 0;
-            let timeLeft = 30;
-            let currentWord = words[Math.floor(Math.random() * words.length)];
-            document.getElementById("word-display").textContent = currentWord;
-            document.getElementById("word-input").value = "";
+// Function: Speed Boost Power-Up
+function activateSpeedBoost() {
+    if (!speedBoostActive) {
+        speedBoostActive = true;
+        setTimeout(() => speedBoostActive = false, 5000);
+    }
+}
 
-            function countdown() {
-                if (timeLeft > 0) {
-                    timeLeft--;
-                    document.getElementById("time-left").textContent = timeLeft;
-                    setTimeout(countdown, 1000);
-                }
-            }
+// Function: Handle Key Presses
+document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp") movePlayer(0, -1);
+    if (e.key === "ArrowDown") movePlayer(0, 1);
+    if (e.key === "ArrowLeft") movePlayer(-1, 0);
+    if (e.key === "ArrowRight") movePlayer(1, 0);
+});
 
-            window.checkTyping = function () {
-                let input = document.getElementById("word-input").value;
-                if (input === currentWord) {
-                    score++;
-                    currentWord = words[Math.floor(Math.random() * words.length)];
-                    document.getElementById("word-display").textContent = currentWord;
-                    document.getElementById("word-input").value = "";
-                    document.getElementById("typing-score").textContent = score;
-                }
-            };
+// Function: Initialize the Maze Game
+function initMazeGame() {
+    player = { x: 0, y: 0 };
+    goal = { x: 9, y: 9 };
+    enemies = [{ x: 4, y: 4, dx: 1, dy: 0 }];
+    generateMaze();
+    drawMaze();
 
-            countdown();
+    setInterval(() => {
+        moveEnemies();
+        drawMaze();
+    }, 1000);
+}
+
+// Endless Runner Variables
+const runnerCanvas = document.getElementById("runnerCanvas");
+const runnerCtx = runnerCanvas.getContext("2d");
+
+let player = { x: 50, y: 150, width: 20, height: 20, velocityY: 0, isJumping: false };
+let gravity = 0.6;
+let obstacles = [];
+let gameSpeed = 3;
+let score = 0;
+let isGameOver = false;
+
+// Function: Draw Player
+function drawPlayer() {
+    runnerCtx.fillStyle = "blue";
+    runnerCtx.fillRect(player.x, player.y, player.width, player.height);
+}
+
+// Function: Create Obstacles
+function createObstacle() {
+    let height = Math.random() * 30 + 20;
+    obstacles.push({ x: 600, y: 180 - height, width: 20, height: height });
+}
+
+// Function: Move Obstacles
+function moveObstacles() {
+    obstacles.forEach(obstacle => obstacle.x -= gameSpeed);
+    obstacles = obstacles.filter(obstacle => obstacle.x > -20);
+}
+
+// Function: Draw Obstacles
+function drawObstacles() {
+    runnerCtx.fillStyle = "red";
+    obstacles.forEach(obstacle => {
+        runnerCtx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+    });
+}
+
+// Function: Jump
+function jump() {
+    if (!player.isJumping) {
+        player.velocityY = -10;
+        player.isJumping = true;
+    }
+}
+
+// Function: Apply Gravity & Collision
+function applyPhysics() {
+    player.velocityY += gravity;
+    player.y += player.velocityY;
+
+    if (player.y >= 150) {
+        player.y = 150;
+        player.isJumping = false;
+    }
+
+    obstacles.forEach(obstacle => {
+        if (player.x < obstacle.x + obstacle.width &&
+            player.x + player.width > obstacle.x &&
+            player.y < obstacle.y + obstacle.height &&
+            player.y + player.height > obstacle.y) {
+            isGameOver = true;
         }
+    });
+
+    if (!isGameOver) {
+        score++;
+        document.getElementById("runner-score").textContent = score;
+    } else {
+        alert("💀 Game Over! Your Score: " + score);
+        resetRunnerGame();
+    }
+}
+
+// Function: Reset Game
+function resetRunnerGame() {
+    player.y = 150;
+    player.velocityY = 0;
+    obstacles = [];
+    score = 0;
+    gameSpeed = 3;
+    isGameOver = false;
+}
+
+// Function: Game Loop
+function updateRunnerGame() {
+    runnerCtx.clearRect(0, 0, runnerCanvas.width, runnerCanvas.height);
+    drawPlayer();
+    moveObstacles();
+    drawObstacles();
+    applyPhysics();
+
+    if (Math.random() < 0.02) createObstacle();
+    if (score % 500 === 0) gameSpeed += 0.2;
+
+    if (!isGameOver) requestAnimationFrame(updateRunnerGame);
+}
+
+// Event Listener for Jumping
+document.addEventListener("keydown", (e) => {
+    if (e.code === "Space") jump();
+});
+
+// Function: Initialize Runner Game
+function initRunnerGame() {
+    resetRunnerGame();
+    updateRunnerGame();
+}
+
+
+// Typing Game Variables
+const sentences = [
+    "The quick brown fox jumps over the lazy dog.",
+    "Programming is fun when you challenge yourself.",
+    "Speed and accuracy are the keys to success.",
+    "Typing fast is a skill that improves with practice.",
+    "Never stop learning new things every day."
+];
+let currentSentence = "";
+let startTime = null;
+let timerInterval;
+
+// Function: Start Typing Game
+function startTypingGame() {
+    currentSentence = sentences[Math.floor(Math.random() * sentences.length)];
+    document.getElementById("typing-sentence").textContent = currentSentence;
+    document.getElementById("typing-input").value = "";
+    document.getElementById("typing-input").focus();
+    document.getElementById("typing-timer").textContent = "0";
+    document.getElementById("typing-wpm").textContent = "0";
+    document.getElementById("typing-accuracy").textContent = "100%";
+    startTime = null;
+    clearInterval(timerInterval);
+}
+
+// Function: Check Typing Progress
+function checkTyping() {
+    const inputField = document.getElementById("typing-input");
+    const typedText = inputField.value;
+
+    if (!startTime) {
+        startTime = Date.now();
+        timerInterval = setInterval(updateTimer, 100);
+    }
+
+    if (typedText === currentSentence) {
+        clearInterval(timerInterval);
+        calculateResults();
+    }
+}
+
+// Function: Update Timer
+function updateTimer() {
+    let elapsedTime = (Date.now() - startTime) / 1000;
+    document.getElementById("typing-timer").textContent = elapsedTime.toFixed(1);
+}
+
+// Function: Calculate WPM and Accuracy
+function calculateResults() {
+    let elapsedTime = (Date.now() - startTime) / 1000 / 60; // Convert ms to minutes
+    let wordCount = currentSentence.split(" ").length;
+    let wpm = Math.round(wordCount / elapsedTime);
+    let typedText = document.getElementById("typing-input").value;
+    let accuracy = calculateAccuracy(typedText, currentSentence);
+
+    document.getElementById("typing-wpm").textContent = wpm;
+    document.getElementById("typing-accuracy").textContent = accuracy + "%";
+}
+
+// Function: Calculate Typing Accuracy
+function calculateAccuracy(typed, original) {
+    let correct = 0;
+    for (let i = 0; i < original.length; i++) {
+        if (typed[i] === original[i]) correct++;
+    }
+    return Math.round((correct / original.length) * 100);
+}
+
+// Function: Restart Game
+function restartTypingGame() {
+    startTypingGame();
+}
+
+// Initialize Typing Game on Load
+document.addEventListener("DOMContentLoaded", startTypingGame);
+
+
+// Snake Game Variables
+const snakeCanvas = document.getElementById("snakeCanvas");
+const snakeCtx = snakeCanvas.getContext("2d");
+
+let snake = [{ x: 200, y: 200 }];
+let direction = { x: 0, y: 0 };
+let food = { x: 100, y: 100 };
+let gridSize = 20;
+let gameSpeed = 200;
+let score = 0;
+let gameInterval;
+
+// Function: Draw Snake
+function drawSnake() {
+    snakeCtx.fillStyle = "green";
+    snake.forEach(segment => {
+        snakeCtx.fillRect(segment.x, segment.y, gridSize, gridSize);
+    });
+}
+
+// Function: Draw Food
+function drawFood() {
+    snakeCtx.fillStyle = "red";
+    snakeCtx.fillRect(food.x, food.y, gridSize, gridSize);
+}
+
+// Function: Move Snake
+function moveSnake() {
+    let head = { x: snake[0].x + direction.x * gridSize, y: snake[0].y + direction.y * gridSize };
+
+    // Check for collisions (walls or self)
+    if (head.x < 0 || head.y < 0 || head.x >= snakeCanvas.width || head.y >= snakeCanvas.height || 
+        snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        alert("💀 Game Over! Your Score: " + score);
+        resetSnakeGame();
+        return;
+    }
+
+    snake.unshift(head); // Add new head
+
+    if (head.x === food.x && head.y === food.y) {
+        score++;
+        document.getElementById("snake-score").textContent = score;
+        food = generateFood();
+        if (gameSpeed > 50) gameSpeed -= 5; // Increase speed as score increases
+        restartGameLoop();
+    } else {
+        snake.pop(); // Remove last segment
+    }
+}
+
+// Function: Generate Random Food Position
+function generateFood() {
+    return {
+        x: Math.floor(Math.random() * (snakeCanvas.width / gridSize)) * gridSize,
+        y: Math.floor(Math.random() * (snakeCanvas.height / gridSize)) * gridSize
+    };
+}
+
+// Function: Handle Key Presses
+document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp" && direction.y === 0) direction = { x: 0, y: -1 };
+    if (e.key === "ArrowDown" && direction.y === 0) direction = { x: 0, y: 1 };
+    if (e.key === "ArrowLeft" && direction.x === 0) direction = { x: -1, y: 0 };
+    if (e.key === "ArrowRight" && direction.x === 0) direction = { x: 1, y: 0 };
+});
+
+// Function: Reset Game
+function resetSnakeGame() {
+    snake = [{ x: 200, y: 200 }];
+    direction = { x: 0, y: 0 };
+    food = generateFood();
+    score = 0;
+    document.getElementById("snake-score").textContent = score;
+    gameSpeed = 200;
+    restartGameLoop();
+}
+
+// Function: Game Loop
+function updateSnakeGame() {
+    snakeCtx.clearRect(0, 0, snakeCanvas.width, snakeCanvas.height);
+    moveSnake();
+    drawFood();
+    drawSnake();
+}
+
+// Function: Restart Game Loop
+function restartGameLoop() {
+    clearInterval(gameInterval);
+    gameI
+
+// Space Shooter Variables
+const spaceCanvas = document.getElementById("spaceCanvas");
+const spaceCtx = spaceCanvas.getContext("2d");
+
+let player = { x: 225, y: 350, width: 40, height: 20 };
+let bullets = [];
+let enemies = [];
+let enemySpeed = 2;
+let score = 0;
+let spaceGameInterval;
+
+// Function: Draw Player
+function drawPlayer() {
+    spaceCtx.fillStyle = "blue";
+    spaceCtx.fillRect(player.x, player.y, player.width, player.height);
+}
+
+// Function: Move Bullets
+function moveBullets() {
+    bullets.forEach(bullet => bullet.y -= 5);
+    bullets = bullets.filter(bullet => bullet.y > 0);
+}
+
+// Function: Draw Bullets
+function drawBullets() {
+    spaceCtx.fillStyle = "yellow";
+    bullets.forEach(bullet => {
+        spaceCtx.fillRect(bullet.x, bullet.y, 5, 10);
+    });
+}
+
+// Function: Spawn Enemies
+function spawnEnemy() {
+    let x = Math.random() * (spaceCanvas.width - 40);
+    enemies.push({ x, y: 0, width: 40, height: 20 });
+}
+
+// Function: Move Enemies
+function moveEnemies() {
+    enemies.forEach(enemy => enemy.y += enemySpeed);
+    enemies = enemies.filter(enemy => enemy.y < spaceCanvas.height);
+}
+
+// Function: Draw Enemies
+function drawEnemies() {
+    spaceCtx.fillStyle = "red";
+    enemies.forEach(enemy => {
+        spaceCtx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+    });
+}
+
+// Function: Check Collisions
+function checkCollisions() {
+    bullets.forEach((bullet, bIndex) => {
+        enemies.forEach((enemy, eIndex) => {
+            if (
+                bullet.x < enemy.x + enemy.width &&
+                bullet.x + 5 > enemy.x &&
+                bullet.y < enemy.y + enemy.height &&
+                bullet.y + 10 > enemy.y
+            ) {
+                bullets.splice(bIndex, 1);
+                enemies.splice(eIndex, 1);
+                score += 10;
+                document.getElementById("space-score").textContent = score;
+            }
+        });
+    });
+
+    enemies.forEach(enemy => {
+        if (
+            player.x < enemy.x + enemy.width &&
+            player.x + player.width > enemy.x &&
+            player.y < enemy.y + enemy.height &&
+            player.y + player.height > enemy.y
+        ) {
+            alert("💥 Game Over! Your Score: " + score);
+            resetSpaceGame();
+        }
+    });
+}
+
+// Function: Handle Player Movement
+document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft" && player.x > 0) player.x -= 20;
+    if (e.key === "ArrowRight" && player.x < spaceCanvas.width - player.width) player.x += 20;
+    if (e.key === "Space") bullets.push({ x: player.x + 17, y: player.y });
+});
+
+// Function: Reset Game
+function resetSpaceGame() {
+    player.x = 225;
+    bullets = [];
+    enemies = [];
+    score = 0;
+    enemySpeed = 2;
+    document.getElementById("space-score").textContent = score;
+    clearInterval(spaceGameInterval);
+    spaceGameInterval = setInterval(updateSpaceGame, 50);
+}
+
+// Function: Game Loop
+function updateSpaceGame() {
+    spaceCtx.clearRect(0, 0, spaceCanvas.width, spaceCanvas.height);
+    moveBullets();
+    moveEnemies();
+    drawPlayer();
+    drawBullets();
+    drawEnemies();
+    checkCollisions();
+
+    if (Math.random() < 0.02) spawnEnemy();
+    if (score % 100 === 0 && enemySpeed < 6) enemySpeed += 0.1;
+}
+
+// Function: Initialize Space Shooter
+function initSpaceGame() {
+    resetSpaceGame();
+}
+
+
+// Pong Game Variables
+const pongCanvas = document.getElementById("pongCanvas");
+const pongCtx = pongCanvas.getContext("2d");
+
+let paddle1 = { x: 20, y: 150, width: 10, height: 80, dy: 0 };
+let paddle2 = { x: 570, y: 150, width: 10, height: 80, dy: 0 };
+let ball = { x: 300, y: 200, width: 10, height: 10, dx: 3, dy: 3 };
+let score = { player1: 0, player2: 0 };
+let pongGameInterval;
+
+// Function: Draw Paddles
+function drawPaddle(paddle) {
+    pongCtx.fillStyle = "white";
+    pongCtx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+}
+
+// Function: Draw Ball
+function drawBall() {
+    pongCtx.fillStyle = "yellow";
+    pongCtx.fillRect(ball.x, ball.y, ball.width, ball.height);
+}
+
+// Function: Move Paddles
+function movePaddles() {
+    paddle1.y += paddle1.dy;
+    paddle2.y += paddle2.dy;
+
+    if (paddle1.y < 0) paddle1.y = 0;
+    if (paddle1.y > 320) paddle1.y = 320;
+    if (paddle2.y < 0) paddle2.y = 0;
+    if (paddle2.y > 320) paddle2.y = 320;
+}
+
+// Function: Move Ball
+function moveBall() {
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+
+    // Ball collision with top/bottom walls
+    if (ball.y <= 0 || ball.y >= 390) ball.dy *= -1;
+
+    // Ball collision with paddles
+    if (
+        (ball.x <= paddle1.x + paddle1.width && ball.y > paddle1.y && ball.y < paddle1.y + paddle1.height) ||
+        (ball.x + ball.width >= paddle2.x && ball.y > paddle2.y && ball.y < paddle2.y + paddle2.height)
+    ) {
+        ball.dx *= -1; // Reverse direction
+    }
+
+    // Scoring logic
+    if (ball.x <= 0) {
+        score.player2++;
+        resetBall();
+    } else if (ball.x >= 590) {
+        score.player1++;
+        resetBall();
+    }
+
+    document.getElementById("pong-score").textContent = `${score.player1} - ${score.player2}`;
+
+    // End Game if Score Reaches 5
+    if (score.player1 === 5 || score.player2 === 5) {
+        alert(`🏆 Player ${score.player1 === 5 ? "1" : "2"} Wins!`);
+        resetPongGame();
+    }
+}
+
+// Function: Reset Ball
+function resetBall() {
+    ball.x = 300;
+    ball.y = 200;
+    ball.dx = Math.random() < 0.5 ? 3 : -3; // Randomize direction
+    ball.dy = Math.random() * 4 - 2;
+}
+
+// Function: Handle Key Presses
+document.addEventListener("keydown", (e) => {
+    if (e.key === "w") paddle1.dy = -5;
+    if (e.key === "s") paddle1.dy = 5;
+    if (e.key === "ArrowUp") paddle2.dy = -5;
+    if (e.key === "ArrowDown") paddle2.dy = 5;
+});
+
+document.addEventListener("keyup", (e) => {
+    if (e.key === "w" || e.key === "s") paddle1.dy = 0;
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") paddle2.dy = 0;
+});
+
+// Function: Reset Pong Game
+function resetPongGame() {
+    score.player1 = 0;
+    score.player2 = 0;
+    document.getElementById("pong-score").textContent = "0 - 0";
+    resetBall();
+}
+
+// Function: Game Loop
+function updatePongGame() {
+    pongCtx.clearRect(0, 0, pongCanvas.width, pongCanvas.height);
+    movePaddles();
+    moveBall();
+    drawPaddle(paddle1);
+    drawPaddle(paddle2);
+    drawBall();
+}
+
+// Function: Initialize Pong Game
+function initPongGame() {
+    resetPongGame();
+    clearInterval(pongGameInterval);
+    pongGameInterval = setInterval(updatePongGame, 30);
+}
     </script>
 
 </body>
