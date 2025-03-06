@@ -1,6 +1,5 @@
 # mini-games
-mini-games
-Great! Here's a `README.md` file for your GitHub repository. It includes a description, how to play the games, and instructions for running the project.  
+```
 
 ---
 
