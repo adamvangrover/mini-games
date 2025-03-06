@@ -22,7 +22,7 @@ A **self-contained** HTML file featuring four fun mini-games! No extra files or 
 ```
     git clone https://github.com/adamvangrover/mini-games.git
    ```
-3. Open the `index.html` file in your web browser.  
+2. Open the `index.html` file in your web browser.  
 
 ## 🎮 How to Play
 ### Clicker Game  
