@@ -5,61 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mini Game Hub</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
+        body { font-family: Arial, sans-serif; text-align: center; background: #222; color: white; }
         .hidden { display: none; }
         .menu button, .back-btn { margin: 10px; padding: 10px 20px; font-size: 18px; cursor: pointer; }
-        canvas { border: 2px solid black; background: lightgray; margin-top: 10px; }
+        canvas { border: 2px solid white; background: black; margin-top: 10px; }
+        #clicker-game button { font-size: 20px; padding: 10px; }
+        .store { margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div id="menu">
-        <h1>Mini Game Hub</h1>
-        <button onclick="startGame('clicker')">Clicker Game</button>
-        <button onclick="startGame('maze')">Maze Game</button>
-        <button onclick="startGame('runner')">Endless Runner</button>
-        <button onclick="startGame('typing')">Typing Speed Test</button>
+        <h1>🎮 Mini Game Hub</h1>
+        <button onclick="startGame('clicker-game')">💰 Clicker Game</button>
+        <button onclick="startGame('maze-game')">🌀 Maze Game</button>
+        <button onclick="startGame('runner-game')">🏃 Endless Runner</button>
+        <button onclick="startGame('typing-game')">⌨ Typing Speed Test</button>
     </div>
 
-    <div id="clicker" class="hidden">
-        <h2>Clicker Game</h2>
+    <!-- Clicker Game -->
+    <div id="clicker-game" class="hidden">
+        <h2>💰 Clicker Game</h2>
         <p>Clicks: <span id="click-count">0</span></p>
-        <button onclick="incrementClick()">Click Me!</button>
+        <button onclick="incrementClick()">💸 Click Me!</button>
+        <div class="store">
+            <button onclick="buyUpgrade()">⚡ Buy Upgrade (Cost: <span id="upgrade-cost">10</span>)</button>
+        </div>
         <button class="back-btn" onclick="goBack()">Back</button>
     </div>
 
-    <div id="maze" class="hidden">
-        <h2>Maze Game</h2>
-        <canvas id="mazeCanvas" width="200" height="200"></canvas>
-        <p>Use arrow keys to move.</p>
+    <!-- Maze Game -->
+    <div id="maze-game" class="hidden">
+        <h2>🌀 Maze Game</h2>
+        <canvas id="mazeCanvas" width="300" height="300"></canvas>
+        <p>Use arrow keys to reach the goal! 🏆</p>
         <button class="back-btn" onclick="goBack()">Back</button>
     </div>
 
-    <div id="runner" class="hidden">
-        <h2>Endless Runner</h2>
+    <!-- Endless Runner -->
+    <div id="runner-game" class="hidden">
+        <h2>🏃 Endless Runner</h2>
         <canvas id="runnerCanvas" width="400" height="200"></canvas>
-        <p>Press space to jump.</p>
+        <p>Press SPACE to jump! 🔥</p>
         <button class="back-btn" onclick="goBack()">Back</button>
     </div>
 
-    <div id="typing" class="hidden">
-        <h2>Typing Speed Test</h2>
+    <!-- Typing Speed Test -->
+    <div id="typing-game" class="hidden">
+        <h2>⌨ Typing Speed Test</h2>
         <p id="word-display"></p>
         <input type="text" id="word-input" placeholder="Type here..." oninput="checkTyping()">
-        <p id="result"></p>
+        <p>Time Left: <span id="time-left">30</span> sec</p>
+        <p>Score: <span id="typing-score">0</span></p>
         <button class="back-btn" onclick="goBack()">Back</button>
     </div>
 
     <script>
-        let clickCount = 0;
-
         function startGame(game) {
             document.getElementById("menu").classList.add("hidden");
             document.getElementById(game).classList.remove("hidden");
 
-            if (game === 'maze') initMazeGame();
-            if (game === 'runner') initRunnerGame();
-            if (game === 'typing') initTypingGame();
+            if (game === 'maze-game') initMazeGame();
+            if (game === 'runner-game') initRunnerGame();
+            if (game === 'typing-game') initTypingGame();
         }
 
         function goBack() {
@@ -67,57 +75,79 @@
             document.getElementById("menu").classList.remove("hidden");
         }
 
+        // Clicker Game
+        let clickCount = 0;
+        let upgradeCost = 10;
+        let clickValue = 1;
+
         function incrementClick() {
-            clickCount++;
+            clickCount += clickValue;
             document.getElementById("click-count").textContent = clickCount;
         }
 
+        function buyUpgrade() {
+            if (clickCount >= upgradeCost) {
+                clickCount -= upgradeCost;
+                clickValue += 1;
+                upgradeCost *= 2;
+                document.getElementById("click-count").textContent = clickCount;
+                document.getElementById("upgrade-cost").textContent = upgradeCost;
+            }
+        }
+
+        // Maze Game
         function initMazeGame() {
             let canvas = document.getElementById("mazeCanvas");
             let ctx = canvas.getContext("2d");
-            let player = { x: 10, y: 10, size: 10 };
+            let player = { x: 10, y: 10, size: 20 };
+            let goal = { x: 260, y: 260, size: 20 };
 
-            function drawMaze() {
+            function draw() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "blue";
                 ctx.fillRect(player.x, player.y, player.size, player.size);
+                ctx.fillStyle = "gold";
+                ctx.fillRect(goal.x, goal.y, goal.size, goal.size);
             }
 
             document.addEventListener("keydown", (e) => {
-                if (e.key === "ArrowUp") player.y -= 10;
-                if (e.key === "ArrowDown") player.y += 10;
-                if (e.key === "ArrowLeft") player.x -= 10;
-                if (e.key === "ArrowRight") player.x += 10;
-                drawMaze();
+                if (e.key === "ArrowUp") player.y -= 20;
+                if (e.key === "ArrowDown") player.y += 20;
+                if (e.key === "ArrowLeft") player.x -= 20;
+                if (e.key === "ArrowRight") player.x += 20;
+                if (player.x === goal.x && player.y === goal.y) alert("🏆 You Win!");
+                draw();
             });
 
-            drawMaze();
+            draw();
         }
 
+        // Endless Runner
         function initRunnerGame() {
             let canvas = document.getElementById("runnerCanvas");
             let ctx = canvas.getContext("2d");
             let player = { x: 50, y: 150, width: 20, height: 20, dy: 0 };
+            let obstacles = [{ x: 400, y: 150, width: 20, height: 20 }];
             let gravity = 0.5;
             let isJumping = false;
+            let score = 0;
 
-            function drawRunner() {
+            function draw() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "red";
                 ctx.fillRect(player.x, player.y, player.width, player.height);
-            }
 
-            function updateRunner() {
-                if (isJumping) {
-                    player.dy += gravity;
-                    player.y += player.dy;
-                    if (player.y >= 150) {
-                        player.y = 150;
-                        isJumping = false;
+                ctx.fillStyle = "white";
+                obstacles.forEach(obs => {
+                    obs.x -= 5;
+                    if (obs.x < 0) {
+                        obs.x = 400 + Math.random() * 100;
+                        score++;
                     }
-                }
-                drawRunner();
-                requestAnimationFrame(updateRunner);
+                    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                });
+
+                requestAnimationFrame(draw);
             }
 
             document.addEventListener("keydown", (e) => {
@@ -127,21 +157,51 @@
                 }
             });
 
-            updateRunner();
+            function update() {
+                if (isJumping) {
+                    player.dy += gravity;
+                    player.y += player.dy;
+                    if (player.y >= 150) {
+                        player.y = 150;
+                        isJumping = false;
+                    }
+                }
+                requestAnimationFrame(update);
+            }
+
+            draw();
+            update();
         }
 
+        // Typing Game
         function initTypingGame() {
-            const words = ["hello", "world", "javascript", "game", "challenge"];
+            const words = ["hello", "world", "javascript", "game", "fast", "speed", "typing"];
+            let score = 0;
+            let timeLeft = 30;
             let currentWord = words[Math.floor(Math.random() * words.length)];
             document.getElementById("word-display").textContent = currentWord;
             document.getElementById("word-input").value = "";
 
+            function countdown() {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    document.getElementById("time-left").textContent = timeLeft;
+                    setTimeout(countdown, 1000);
+                }
+            }
+
             window.checkTyping = function () {
                 let input = document.getElementById("word-input").value;
                 if (input === currentWord) {
-                    document.getElementById("result").textContent = "Correct!";
+                    score++;
+                    currentWord = words[Math.floor(Math.random() * words.length)];
+                    document.getElementById("word-display").textContent = currentWord;
+                    document.getElementById("word-input").value = "";
+                    document.getElementById("typing-score").textContent = score;
                 }
             };
+
+            countdown();
         }
     </script>
 
