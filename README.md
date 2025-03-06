@@ -48,4 +48,4 @@ This project is open-source. Feel free to modify and improve it!
 ---
 🔗 **Live Demo** (if hosted on GitHub Pages):  
 [https://adamvangrover.github.io/mini-games/](https://adamvangrover.github.io/mini-games/)  
-```
+
