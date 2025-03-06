@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Game Hub</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .hidden { display: none; }
+        .menu button, .back-btn { margin: 10px; padding: 10px 20px; font-size: 18px; cursor: pointer; }
+        canvas { border: 2px solid black; background: lightgray; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="menu">
+        <h1>Mini Game Hub</h1>
+        <button onclick="startGame('clicker')">Clicker Game</button>
+        <button onclick="startGame('maze')">Maze Game</button>
+        <button onclick="startGame('runner')">Endless Runner</button>
+        <button onclick="startGame('typing')">Typing Speed Test</button>
+    </div>
+
+    <div id="clicker" class="hidden">
+        <h2>Clicker Game</h2>
+        <p>Clicks: <span id="click-count">0</span></p>
+        <button onclick="incrementClick()">Click Me!</button>
+        <button class="back-btn" onclick="goBack()">Back</button>
+    </div>
+
+    <div id="maze" class="hidden">
+        <h2>Maze Game</h2>
+        <canvas id="mazeCanvas" width="200" height="200"></canvas>
+        <p>Use arrow keys to move.</p>
+        <button class="back-btn" onclick="goBack()">Back</button>
+    </div>
+
+    <div id="runner" class="hidden">
+        <h2>Endless Runner</h2>
+        <canvas id="runnerCanvas" width="400" height="200"></canvas>
+        <p>Press space to jump.</p>
+        <button class="back-btn" onclick="goBack()">Back</button>
+    </div>
+
+    <div id="typing" class="hidden">
+        <h2>Typing Speed Test</h2>
+        <p id="word-display"></p>
+        <input type="text" id="word-input" placeholder="Type here..." oninput="checkTyping()">
+        <p id="result"></p>
+        <button class="back-btn" onclick="goBack()">Back</button>
+    </div>
+
+    <script>
+        let clickCount = 0;
+
+        function startGame(game) {
+            document.getElementById("menu").classList.add("hidden");
+            document.getElementById(game).classList.remove("hidden");
+
+            if (game === 'maze') initMazeGame();
+            if (game === 'runner') initRunnerGame();
+            if (game === 'typing') initTypingGame();
+        }
+
+        function goBack() {
+            document.querySelectorAll(".hidden").forEach(el => el.classList.add("hidden"));
+            document.getElementById("menu").classList.remove("hidden");
+        }
+
+        function incrementClick() {
+            clickCount++;
+            document.getElementById("click-count").textContent = clickCount;
+        }
+
+        function initMazeGame() {
+            let canvas = document.getElementById("mazeCanvas");
+            let ctx = canvas.getContext("2d");
+            let player = { x: 10, y: 10, size: 10 };
+
+            function drawMaze() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "blue";
+                ctx.fillRect(player.x, player.y, player.size, player.size);
+            }
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "ArrowUp") player.y -= 10;
+                if (e.key === "ArrowDown") player.y += 10;
+                if (e.key === "ArrowLeft") player.x -= 10;
+                if (e.key === "ArrowRight") player.x += 10;
+                drawMaze();
+            });
+
+            drawMaze();
+        }
+
+        function initRunnerGame() {
+            let canvas = document.getElementById("runnerCanvas");
+            let ctx = canvas.getContext("2d");
+            let player = { x: 50, y: 150, width: 20, height: 20, dy: 0 };
+            let gravity = 0.5;
+            let isJumping = false;
+
+            function drawRunner() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "red";
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+            }
+
+            function updateRunner() {
+                if (isJumping) {
+                    player.dy += gravity;
+                    player.y += player.dy;
+                    if (player.y >= 150) {
+                        player.y = 150;
+                        isJumping = false;
+                    }
+                }
+                drawRunner();
+                requestAnimationFrame(updateRunner);
+            }
+
+            document.addEventListener("keydown", (e) => {
+                if (e.code === "Space" && !isJumping) {
+                    isJumping = true;
+                    player.dy = -10;
+                }
+            });
+
+            updateRunner();
+        }
+
+        function initTypingGame() {
+            const words = ["hello", "world", "javascript", "game", "challenge"];
+            let currentWord = words[Math.floor(Math.random() * words.length)];
+            document.getElementById("word-display").textContent = currentWord;
+            document.getElementById("word-input").value = "";
+
+            window.checkTyping = function () {
+                let input = document.getElementById("word-input").value;
+                if (input === currentWord) {
+                    document.getElementById("result").textContent = "Correct!";
+                }
+            };
+        }
+    </script>
+
+</body>
+</html>
