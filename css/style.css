@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+body {
+    font-family: 'Press Start 2P', cursive;
+    text-align: center;
+    background-color: #0d0221;
+    color: #00ffff;
+    margin: 0;
+    padding: 20px;
+    text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
+}
+
+h1, h2 {
+    color: #ff00ff;
+    text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff;
+}
+
+.hidden {
+    display: none;
+}
+
+.menu button, .back-btn {
+    font-family: 'Press Start 2P', cursive;
+    background-color: transparent;
+    color: #ff00ff;
+    border: 2px solid #ff00ff;
+    border-radius: 5px;
+    padding: 10px 20px;
+    margin: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff inset;
+}
+
+.menu button:hover, .back-btn:hover {
+    background-color: #ff00ff;
+    color: #0d0221;
+    box-shadow: 0 0 15px #ff00ff, 0 0 20px #ff00ff inset;
+}
+
+canvas {
+    border: 2px solid #ff00ff;
+    background: black;
+    margin-top: 10px;
+    box-shadow: 0 0 10px #ff00ff;
+}
+
+.game-container {
+    margin-top: 20px;
+}
+
+input {
+    background-color: transparent;
+    border: 1px solid #00ffff;
+    color: #00ffff;
+    padding: 5px;
+    font-family: 'Press Start 2P', cursive;
+}
