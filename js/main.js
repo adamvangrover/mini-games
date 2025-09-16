@@ -9,7 +9,8 @@ const games = {
     'pong-game': pongGame,
     'space-game': spaceGame,
     'tetris-game': tetrisGame,
-    'breakout-game': breakoutGame
+    'breakout-game': breakoutGame,
+    'rpg-game': rpgGame
 };
 
 function startGame(gameName) {
