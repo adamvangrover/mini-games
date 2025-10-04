@@ -57,3 +57,101 @@ input {
     padding: 5px;
     font-family: 'Press Start 2P', cursive;
 }
+
+/* --- Eclipse Puzzle Styles --- */
+.eclipse-game-area {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 2rem;
+    margin-top: 2rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Use a more readable font for the game itself */
+    text-shadow: none;
+}
+
+.eclipse-grid-container {
+    position: relative;
+    width: 360px;
+    height: 360px;
+}
+
+.eclipse-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    border: 2px solid #ff00ff;
+    box-shadow: 0 0 10px #ff00ff;
+}
+
+.eclipse-cell {
+    width: 100%;
+    height: 100%;
+    border: 1px solid #ff00ff;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s;
+    font-size: 2rem;
+}
+
+.eclipse-cell.initial {
+    cursor: not-allowed;
+    background-color: #3d053d;
+}
+
+.eclipse-cell:not(.initial):hover {
+    background-color: #2a032a;
+}
+
+.eclipse-clue-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.eclipse-clue {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #00ffff;
+    width: 20px;
+    height: 20px;
+    text-align: center;
+    text-shadow: 0 0 5px #00ffff;
+}
+
+.eclipse-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    color: #00ffff;
+    min-width: 150px;
+}
+
+.eclipse-timer {
+    font-size: 1.5rem;
+}
+
+.eclipse-game-controls button {
+    font-family: 'Press Start 2P', cursive;
+    background-color: transparent;
+    color: #ff00ff;
+    border: 2px solid #ff00ff;
+    padding: 10px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 10px;
+    box-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff inset;
+}
+
+.eclipse-game-controls button:hover {
+    background-color: #ff00ff;
+    color: #0d0221;
+}

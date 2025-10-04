@@ -20,6 +20,26 @@
         <button data-game="tetris-game">🧱 Tetris</button>
         <button data-game="breakout-game">🧱 Breakout</button>
         <button data-game="rpg-game">⚔️ RPG</button>
+        <button data-game="eclipse-game">☀️ Eclipse Puzzle</button>
+    </div>
+
+    <div id="eclipse-game" class="hidden game-container">
+        <h2>☀️ Eclipse 🌑</h2>
+        <p>Fill the grid with suns and moons. Each row and column must have three of each. No more than two of the same symbol can be adjacent.</p>
+        <div class="eclipse-game-area">
+            <div class="eclipse-grid-container">
+                <div id="eclipse-grid" class="eclipse-grid"></div>
+                <div id="eclipse-clue-layer" class="eclipse-clue-layer"></div>
+            </div>
+            <div class="eclipse-sidebar">
+                <div id="eclipse-timer" class="eclipse-timer">Time: 0s</div>
+                <div class="eclipse-game-controls">
+                    <button id="eclipse-validate-btn">Validate</button>
+                    <button id="eclipse-reset-btn">Reset</button>
+                </div>
+            </div>
+        </div>
+        <button class="back-btn">Back</button>
     </div>
 
     <div id="rpg-game" class="hidden game-container">
@@ -135,6 +155,7 @@
     <script src="js/games/tetris.js"></script>
     <script src="js/games/breakout.js"></script>
     <script src="js/games/rpg.js"></script>
+    <script src="js/games/eclipse.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
