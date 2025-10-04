@@ -28,6 +28,8 @@ A **self-contained** HTML file featuring a collection of fun mini-games! No extr
 2. Open the `index.html` file in your web browser.  
 
 ## 🎮 How to Play
+For detailed instructions and walkthroughs for each game, please see [GAMES.md](GAMES.md).
+
 | Game | Controls |
 |------|---------|
 | **Clicker Game** | Click to earn points |
