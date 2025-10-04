@@ -10,7 +10,8 @@ const games = {
     'space-game': spaceGame,
     'tetris-game': tetrisGame,
     'breakout-game': breakoutGame,
-    'rpg-game': rpgGame
+    'rpg-game': rpgGame,
+    'eclipse-game': eclipseGame
 };
 
 function startGame(gameName) {
