@@ -11,7 +11,9 @@ const games = {
     'tetris-game': tetrisGame,
     'breakout-game': breakoutGame,
     'rpg-game': rpgGame,
-    'eclipse-game': eclipseGame
+    'eclipse-game': eclipseGame,
+    'eclipse-puzzle-game': eclipsePuzzleGame,
+    'eclipse-logic-puzzle-game': eclipseLogicPuzzleGame
 };
 
 function startGame(gameName) {
