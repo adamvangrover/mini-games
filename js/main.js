@@ -24,6 +24,13 @@ function startGame(gameName) {
     document.getElementById("menu").classList.add("hidden");
     document.getElementById(gameName).classList.remove("hidden");
 
+    // Resume audio context on user interaction
+    if (window.soundManager && window.soundManager.audioCtx.state === 'suspended') {
+        window.soundManager.audioCtx.resume();
+    }
+
+    window.soundManager.playSound('click');
+
     currentGame = games[gameName];
     if (currentGame) {
         currentGame.init();
