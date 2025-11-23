@@ -45,6 +45,7 @@
         .mob-btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; font-size: 24px; pointer-events: auto; transition: transform 0.1s; }
         .mob-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.4); }
         #run-btn { width: 50px; height: 50px; font-size: 18px; margin-bottom: 10px; }
+        #jump-btn { width: 80px; height: 80px; background: rgba(56, 189, 248, 0.4); border-color: rgba(56, 189, 248, 0.6); }
 
         @media (max-width: 1024px) { 
             #mobile-controls { display: flex; } 
@@ -75,7 +76,7 @@
 
         <div id="notifications"></div>
         <div id="prompt" class="hidden">PRESS [E]</div>
-        <div class="controls-text">WASD: Move | SHIFT: Run | E: Interact | P: Photo Mode</div>
+        <div class="controls-text">WASD: Move | SPACE: Jump | SHIFT: Run | E: Interact</div>
         
         <!-- Mobile Controls -->
         <div id="mobile-controls">
@@ -83,8 +84,11 @@
                 <div id="joystick-knob"></div>
             </div>
             <div id="action-btns" class="touch-zone">
-                <div id="run-btn" class="mob-btn">⚡</div>
-                <div id="interact-btn" class="mob-btn">✋</div>
+                <div style="display:flex; flex-direction:column; gap:15px; align-items:center;">
+                    <div id="run-btn" class="mob-btn">⚡</div>
+                    <div id="interact-btn" class="mob-btn">✋</div>
+                </div>
+                <div id="jump-btn" class="mob-btn">⬆️</div>
             </div>
         </div>
     </div>
@@ -193,8 +197,10 @@ class Input {
         this.forward = false; this.backward = false;
         this.left = false; this.right = false;
         this.shift = false; this.interact = false;
+        this.jump = false;
         this.cameraYaw = 0; this.cameraPitch = 0;
         this.mouseLocked = false; this.recentInteractPress = false;
+        this.recentJumpPress = false;
         this.touchJoy = { active: false, dx: 0, dy: 0 };
         this.bindEvents();
         this.bindTouch();
@@ -208,6 +214,7 @@ class Input {
             if(c==="KeyD"||c==="ArrowRight") this.right=true;
             if(c==="ShiftLeft"||c==="ShiftRight") this.shift=true;
             if(c==="KeyE") this.recentInteractPress=true;
+            if(c==="Space") this.recentJumpPress=true;
         });
         window.addEventListener("keyup", e => {
             const c = e.code;
@@ -216,6 +223,7 @@ class Input {
             if(c==="KeyA"||c==="ArrowLeft") this.left=false;
             if(c==="KeyD"||c==="ArrowRight") this.right=false;
             if(c==="ShiftLeft"||c==="ShiftRight") this.shift=false;
+            if(c==="Space") this.recentJumpPress=false;
         });
         window.addEventListener("mousemove", e => {
             if(!this.mouseLocked) return;
@@ -252,10 +260,16 @@ class Input {
         document.getElementById("run-btn").addEventListener("touchstart", e => { e.preventDefault(); this.shift = true; });
         document.getElementById("run-btn").addEventListener("touchend", e => { e.preventDefault(); this.shift = false; });
         
+        document.getElementById("jump-btn").addEventListener("touchstart", e => { 
+            e.preventDefault(); this.recentJumpPress = true; e.target.style.transform = "scale(0.9)"; 
+        });
+        document.getElementById("jump-btn").addEventListener("touchend", e => { 
+            e.preventDefault(); this.recentJumpPress = false; e.target.style.transform = "scale(1)"; 
+        });
+
         document.getElementById("interact-btn").addEventListener("touchstart", e => { 
             e.preventDefault(); 
             this.recentInteractPress = true;
-            // Small visual feedback
             e.target.style.transform = "scale(0.9)";
         });
         document.getElementById("interact-btn").addEventListener("touchend", e => {
@@ -303,6 +317,7 @@ class Input {
     update() {
         this.interact = this.recentInteractPress;
         this.recentInteractPress = false;
+        this.jump = this.recentJumpPress;
     }
 }
 
@@ -363,15 +378,15 @@ class UI {
 class CameraController {
     constructor(camera, player) {
         this.camera = camera; this.player = player;
-        this.distance = 6; this.height = 2.5;
+        this.distance = 7; this.height = 3.5;
     }
     update(dt) {
         const input = window.game ? window.game.input : { cameraYaw:0, cameraPitch:0 };
         const target = this.player.position.clone();
-        target.y += 2.0; 
+        target.y += 1.5; 
         const offX = Math.sin(input.cameraYaw)*this.distance;
         const offZ = Math.cos(input.cameraYaw)*this.distance;
-        const des = target.clone().add(new THREE.Vector3(offX, -input.cameraPitch*4 + this.height, offZ));
+        const des = target.clone().add(new THREE.Vector3(offX, -input.cameraPitch*5 + this.height, offZ));
         // Smarter dampening
         this.camera.position.lerp(des, 1.0 - Math.pow(0.001, dt));
         this.camera.lookAt(target);
@@ -583,17 +598,70 @@ class World {
 class Player {
     constructor(scene, world) {
         this.scene = scene;
-        this.world = world; // Reference for collision
+        this.world = world; 
         this.position = new THREE.Vector3(0,5,0);
         this.velocity = new THREE.Vector3();
         this.speed = 8; this.gravity = -40; this.onGround = false;
         this.radius = 0.5;
         
-        const geo = new THREE.CylinderGeometry(0.35,0.35,1.8,8);
-        const mat = new THREE.MeshStandardMaterial({color:0xff0000});
-        this.mesh = new THREE.Mesh(geo,mat); this.mesh.castShadow=true; this.mesh.position.copy(this.position);
+        this.mesh = this.createAvatar();
+        this.mesh.position.copy(this.position);
         scene.add(this.mesh);
     }
+
+    createAvatar() {
+        const group = new THREE.Group();
+        const matBody = new THREE.MeshStandardMaterial({ color: 0xd946ef }); // Parka
+        const matSkin = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+        const matPants = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+
+        // Torso
+        this.torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.7, 0.35), matBody);
+        this.torso.position.y = 0.85;
+        this.torso.castShadow = true;
+        group.add(this.torso);
+
+        // Head
+        this.head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), matSkin);
+        this.head.position.y = 1.4;
+        this.head.castShadow = true;
+        group.add(this.head);
+
+        // Limbs
+        const legGeo = new THREE.BoxGeometry(0.22, 0.75, 0.22);
+        const armGeo = new THREE.BoxGeometry(0.18, 0.65, 0.18);
+
+        this.legL = new THREE.Group();
+        const legLMesh = new THREE.Mesh(legGeo, matPants);
+        legLMesh.position.y = -0.375; legLMesh.castShadow = true;
+        this.legL.add(legLMesh);
+        this.legL.position.set(-0.2, 0.5, 0);
+        group.add(this.legL);
+
+        this.legR = new THREE.Group();
+        const legRMesh = new THREE.Mesh(legGeo, matPants);
+        legRMesh.position.y = -0.375; legRMesh.castShadow = true;
+        this.legR.add(legRMesh);
+        this.legR.position.set(0.2, 0.5, 0);
+        group.add(this.legR);
+
+        this.armL = new THREE.Group();
+        const armLMesh = new THREE.Mesh(armGeo, matBody);
+        armLMesh.position.y = -0.25; armLMesh.castShadow = true;
+        this.armL.add(armLMesh);
+        this.armL.position.set(-0.45, 1.1, 0);
+        group.add(this.armL);
+
+        this.armR = new THREE.Group();
+        const armRMesh = new THREE.Mesh(armGeo, matBody);
+        armRMesh.position.y = -0.25; armRMesh.castShadow = true;
+        this.armR.add(armRMesh);
+        this.armR.position.set(0.45, 1.1, 0);
+        group.add(this.armR);
+
+        return group;
+    }
+
     update(dt, input) {
         const dir = new THREE.Vector3();
         
@@ -611,41 +679,70 @@ class Player {
         const spd = run ? this.speed*1.8 : this.speed;
         
         if(dir.length()>0.1) {
-            // Rotate inputs relative to camera
             dir.applyAxisAngle(new THREE.Vector3(0,1,0), input.cameraYaw);
-            // Don't normalize if using analog stick for subtle movement
             if(dir.length() > 1) dir.normalize();
+            
+            // Character rotation
+            const angle = Math.atan2(dir.x, dir.z);
+            // Smooth rotation towards movement direction
+            const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), angle);
+            this.mesh.quaternion.slerp(q, 0.15);
         } else {
             dir.set(0,0,0);
         }
         
-        // Physics: Frame-rate independent dampening
-        const lambda = 10.0; // Friction strength
+        // Animation
+        const walkSpeed = new THREE.Vector2(this.velocity.x, this.velocity.z).length();
+        if(walkSpeed > 0.5) {
+            const time = performance.now() * 0.01 * (run ? 1.5 : 1.0);
+            this.legL.rotation.x = Math.sin(time) * 0.6;
+            this.legR.rotation.x = Math.sin(time + Math.PI) * 0.6;
+            this.armL.rotation.x = Math.sin(time + Math.PI) * 0.5;
+            this.armR.rotation.x = Math.sin(time) * 0.5;
+        } else {
+            this.legL.rotation.x = Utils.lerp(this.legL.rotation.x, 0, dt * 5);
+            this.legR.rotation.x = Utils.lerp(this.legR.rotation.x, 0, dt * 5);
+            this.armL.rotation.x = Utils.lerp(this.armL.rotation.x, 0, dt * 5);
+            this.armR.rotation.x = Utils.lerp(this.armR.rotation.x, 0, dt * 5);
+        }
+
+        // Physics
+        const lambda = 10.0; 
         this.velocity.x = Utils.damp(this.velocity.x, dir.x * spd, lambda, dt);
         this.velocity.z = Utils.damp(this.velocity.z, dir.z * spd, lambda, dt);
         
         if(!this.onGround) this.velocity.y += this.gravity*dt;
         
-        // Apply Horizontal Movement with Collision
+        // Jump
+        if(this.onGround && input.jump) {
+            this.velocity.y = 15;
+            this.onGround = false;
+        }
+
+        // Apply Movement
         const proposedPos = this.position.clone().addScaledVector(this.velocity, dt);
         this.checkCollision(proposedPos);
         
-        // Apply Vertical
         this.position.x = proposedPos.x;
         this.position.z = proposedPos.z;
         this.position.y += this.velocity.y * dt;
         
-        // Ground collision
         const gy = this.world.getHeightAt(this.position.x, this.position.z);
-        if(this.position.y <= gy+0.9) {
-            this.position.y = gy+0.9; this.velocity.y=0; this.onGround=true;
-        } else this.onGround=false;
+        if(this.position.y <= gy) {
+            this.position.y = gy; this.velocity.y=0; this.onGround=true;
+        } else {
+            // If we are just barely above ground, snap (step up)
+            if(this.position.y < gy + 0.5 && this.velocity.y <= 0) {
+                 this.position.y = gy; this.velocity.y=0; this.onGround=true;
+            } else {
+                 this.onGround = false;
+            }
+        }
         
         // Stamina Logic
         if(run && dir.length()>0.1) State.set("stamina", Utils.clamp(State.get("stamina")-dt*15, 0, 100));
         else State.set("stamina", Utils.clamp(State.get("stamina")+dt*10, 0, 100));
         
-        // Temp Logic
         const temp = Utils.clamp(100-(this.position.y*0.2), 0, 100);
         State.set("temperature", Utils.damp(State.get("temperature"), temp, 1.0, dt));
         
@@ -660,7 +757,6 @@ class Player {
             const minDist = obs.radius + this.radius;
             
             if (dist < minDist) {
-                // Collision detected, push out
                 const angle = Math.atan2(dz, dx);
                 pos.x = obs.pos.x + Math.cos(angle) * minDist;
                 pos.z = obs.pos.z + Math.sin(angle) * minDist;
