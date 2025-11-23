@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -28,6 +29,53 @@
         <button data-game="eclipse-game">☀️ Eclipse</button>
         <button data-game="eclipse-puzzle-game">🧩 Eclipse Puzzle</button>
         <button data-game="eclipse-logic-puzzle-game">💡 Eclipse Logic Puzzle</button>
+        <button data-game="matterhorn-game">🏔️ Matterhorn Ascent</button>
+    </div>
+
+    <div id="matterhorn-game" class="hidden game-container">
+        <canvas id="matterhornCanvas"></canvas>
+
+        <!-- UI Layers -->
+        <div id="mh-ui-root" class="layer interactive">
+
+            <!-- HUD -->
+            <div id="mh-hud-container" class="hidden">
+                <div class="mh-hud-box">
+                    ALT: <span id="mh-hud-alt">0m</span><br>
+                    TEMP
+                    <div class="mh-bar"><div id="mh-hud-temp" class="mh-bar-fill" style="background:#ef4444"></div></div>
+                    STAMINA
+                    <div class="mh-bar"><div id="mh-hud-stamina" class="mh-bar-fill" style="background:#fbbf24"></div></div>
+                </div>
+
+                <div class="mh-hud-box">
+                    ₣ <span id="mh-hud-money">0</span><br>
+                    <span style="font-size:0.75rem;color:#aaa;">
+                        Objective: <span id="mh-hud-objective">Explore Zermatt</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Prompt -->
+            <div id="mh-prompt">PRESS [E]</div>
+
+            <!-- Notifications -->
+            <div id="mh-notifications"></div>
+
+            <!-- Start Screen -->
+            <div id="mh-start-screen" class="layer interactive">
+                <div id="mh-start-content">
+                    <h1>MATTERHORN</h1>
+                    <h2>Legends of the Alps</h2>
+                    <p style="max-width:400px;margin:auto;color:#ddd;margin-bottom: 20px;">
+                        Build your alpine reputation, master the lake, and gather gear to survive the ascent.
+                    </p>
+                    <button id="mh-start-btn" class="mh-btn">Begin Ascent</button>
+                </div>
+            </div>
+        </div>
+
+        <button class="back-btn" style="position: absolute; top: 20px; right: 20px; z-index: 200;">Back to Hub</button>
     </div>
 
     <div id="eclipse-game" class="hidden game-container">
@@ -229,8 +277,9 @@
     <script src="js/games/eclipse.js"></script>
     <script src="js/games/eclipsePuzzle.js"></script>
     <script src="js/games/eclipseLogicPuzzle.js"></script>
+    <script type="module" src="js/games/matterhorn.js"></script>
     <script src="js/soundManager.js"></script>
     <script src="js/saveSystem.js"></script>
-    <script src="js/main.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>

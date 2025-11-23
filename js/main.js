@@ -13,7 +13,8 @@ const games = {
     'rpg-game': rpgGame,
     'eclipse-game': eclipseGame,
     'eclipse-puzzle-game': eclipsePuzzleGame,
-    'eclipse-logic-puzzle-game': eclipseLogicPuzzleGame
+    'eclipse-logic-puzzle-game': eclipseLogicPuzzleGame,
+    'matterhorn-game': matterhornGame
 };
 
 function startGame(gameName) {
