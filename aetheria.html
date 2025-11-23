@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aetheria: The Floating Isles</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        
+        /* UI Overlay */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1s;
+        }
+
+        #selection-screen {
+            background: rgba(10, 10, 20, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+            pointer-events: auto;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            color: white;
+            font-size: 3rem;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            background: linear-gradient(45deg, #00f260, #0575e6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p { color: #aaa; margin-bottom: 30px; font-size: 1.1rem; }
+
+        .avatars {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .avatar-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            width: 150px;
+            transition: all 0.3s ease;
+        }
+
+        .avatar-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255,255,255,0.1);
+            border-color: #00f260;
+            box-shadow: 0 10px 30px rgba(0, 242, 96, 0.2);
+        }
+
+        .avatar-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 15px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .avatar-name { color: white; font-weight: bold; margin-bottom: 5px; }
+        .avatar-desc { color: #888; font-size: 0.8rem; }
+
+        #hud {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-family: monospace;
+            display: none;
+        }
+        
+        #controls-hint {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.9rem;
+            text-align: right;
+            display: none;
+        }
+
+        /* Loading */
+        #loader {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.5rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">Generating World...</div>
+
+    <div id="ui-layer">
+        <div id="selection-screen">
+            <h1>Aetheria</h1>
+            <p>Choose your vessel to explore the infinite floating isles.</p>
+            
+            <div class="avatars">
+                <div class="avatar-card" onclick="startGame('construct')">
+                    <div class="avatar-icon" style="background: #e74c3c;">🤖</div>
+                    <div class="avatar-name">The Construct</div>
+                    <div class="avatar-desc">Heavy, stable, industrial aesthetics.</div>
+                </div>
+                <div class="avatar-card" onclick="startGame('spirit')">
+                    <div class="avatar-icon" style="background: #2ecc71;">🌿</div>
+                    <div class="avatar-name">The Spirit</div>
+                    <div class="avatar-desc">Light, floating, nature-infused.</div>
+                </div>
+                <div class="avatar-card" onclick="startGame('voyager')">
+                    <div class="avatar-icon" style="background: #9b59b6;">🔮</div>
+                    <div class="avatar-name">The Voyager</div>
+                    <div class="avatar-desc">Mysterious, glowing, cosmic energy.</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="hud">
+            COORD: <span id="coord-display">0, 0</span><br>
+            ALT: <span id="alt-display">0</span>
+        </div>
+        
+        <div id="controls-hint">
+            WASD to Move | SPACE to Jump<br>
+            Mouse to Rotate Camera
+        </div>
+    </div>
+
+    <!-- Three.js from CDN -->
+    <script type="module">
+        import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
+
+        // --- 1. PERLIN NOISE IMPLEMENTATION (Self-contained) ---
+        // Using a simple permutation table based Perlin Noise for procedural terrain
+        const perm = [];
+        let grad3 = [[1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],
+                     [1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],
+                     [0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]];
+        
+        for(let i=0; i<256; i++) perm[i] = Math.floor(Math.random()*256);
+        for(let i=0; i<256; i++) perm[i+256] = perm[i];
+
+        function dot(g, x, y) { return g[0]*x + g[1]*y; }
+        function mix(a, b, t) { return (1-t)*a + t*b; }
+        function fade(t) { return t*t*t*(t*(t*6-15)+10); }
+
+        function noise2D(x, y) {
+            let X = Math.floor(x) & 255;
+            let Y = Math.floor(y) & 255;
+            x -= Math.floor(x);
+            y -= Math.floor(y);
+            let u = fade(x);
+            let v = fade(y);
+            let A = perm[X]+Y, AA = perm[A], AB = perm[A+1],
+                B = perm[X+1]+Y, BA = perm[B], BB = perm[B+1];
+            return mix(mix(dot(grad3[AA % 12], x, y), dot(grad3[BA % 12], x-1, y), u),
+                       mix(dot(grad3[AB % 12], x, y-1), dot(grad3[BB % 12], x-1, y-1), u), v);
+        }
+
+        // --- 2. GAME CONFIGURATION ---
+        const config = {
+            worldSize: 400,
+            chunkSize: 64, // Vertex density
+            waterLevel: -5,
+            mountainHeight: 35,
+            gravity: 0.8,
+            speed: 0.5,
+            jumpForce: 1.2
+        };
+
+        let state = {
+            isPlaying: false,
+            avatarType: 'construct',
+            time: 0
+        };
+
+        // --- 3. SCENE SETUP ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.FogExp2(0x87CEEB, 0.008); // Volumetric fog
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+        scene.add(hemiLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffdfba, 1.2);
+        dirLight.position.set(100, 100, 50);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 500;
+        dirLight.shadow.camera.left = -100;
+        dirLight.shadow.camera.right = 100;
+        dirLight.shadow.camera.top = 100;
+        dirLight.shadow.camera.bottom = -100;
+        scene.add(dirLight);
+
+        // --- 4. WORLD GENERATION ---
+        const geometry = new THREE.PlaneGeometry(config.worldSize, config.worldSize, 128, 128);
+        geometry.rotateX(-Math.PI / 2);
+        
+        const vertices = geometry.attributes.position.array;
+        const colors = [];
+        const colorAttribute = new THREE.BufferAttribute(new Float32Array(vertices.length), 3);
+
+        // Helper to get height at x,z
+        function getHeight(x, z) {
+            let y = 0;
+            // FBM Noise (Fractal Brownian Motion)
+            y += noise2D(x * 0.01, z * 0.01) * 20;
+            y += noise2D(x * 0.04, z * 0.04) * 10;
+            y += noise2D(x * 0.1, z * 0.1) * 2;
+            
+            // Create "Bowl" effect so player doesn't fall off world easily
+            const dist = Math.sqrt(x*x + z*z);
+            if(dist > config.worldSize * 0.4) {
+                y -= (dist - config.worldSize * 0.4) * 0.5;
+            }
+            
+            return y;
+        }
+
+        // Generate Terrain Mesh
+        for (let i = 0; i < vertices.length; i += 3) {
+            const x = vertices[i];
+            const z = vertices[i + 2];
+            const y = getHeight(x, z);
+            vertices[i + 1] = y;
+
+            // Color based on height
+            let color = new THREE.Color();
+            if (y < config.waterLevel + 2) {
+                color.setHex(0xe0d6a6); // Sand
+            } else if (y < 10) {
+                color.setHex(0x599646); // Grass
+            } else if (y < 25) {
+                color.setHex(0x5e5e5e); // Rock
+            } else {
+                color.setHex(0xffffff); // Snow
+            }
+            colors.push(color.r, color.g, color.b);
+        }
+
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        geometry.computeVertexNormals();
+
+        const terrainMaterial = new THREE.MeshStandardMaterial({ 
+            vertexColors: true, 
+            flatShading: true,
+            roughness: 0.8,
+            metalness: 0.1
+        });
+        const terrain = new THREE.Mesh(geometry, terrainMaterial);
+        terrain.receiveShadow = true;
+        scene.add(terrain);
+
+        // Water Plane
+        const waterGeo = new THREE.PlaneGeometry(config.worldSize, config.worldSize);
+        waterGeo.rotateX(-Math.PI / 2);
+        const waterMat = new THREE.MeshStandardMaterial({
+            color: 0x00aaff,
+            transparent: true,
+            opacity: 0.6,
+            roughness: 0.1,
+            metalness: 0.8
+        });
+        const water = new THREE.Mesh(waterGeo, waterMat);
+        water.position.y = config.waterLevel;
+        scene.add(water);
+
+        // Decorative Objects (Trees, Rocks)
+        const treeGeo = new THREE.ConeGeometry(1.5, 6, 6);
+        const treeMat = new THREE.MeshStandardMaterial({ color: 0x2d5a27, flatShading: true });
+        const trunkGeo = new THREE.CylinderGeometry(0.5, 0.5, 2, 6);
+        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c4033 });
+
+        const instancedTrees = new THREE.Group();
+        scene.add(instancedTrees);
+
+        for(let i=0; i<300; i++) {
+            const x = (Math.random() - 0.5) * config.worldSize * 0.8;
+            const z = (Math.random() - 0.5) * config.worldSize * 0.8;
+            const y = getHeight(x, z);
+
+            if(y > config.waterLevel + 2 && y < 18) {
+                const group = new THREE.Group();
+                const tree = new THREE.Mesh(treeGeo, treeMat);
+                const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+                tree.position.y = 4;
+                tree.castShadow = true;
+                trunk.position.y = 1;
+                trunk.castShadow = true;
+                
+                group.add(trunk);
+                group.add(tree);
+                group.position.set(x, y, z);
+                
+                // Random scale
+                const s = 0.8 + Math.random() * 0.5;
+                group.scale.set(s,s,s);
+                instancedTrees.add(group);
+            }
+        }
+
+        // Particles (Fireflies / Dust)
+        const particleCount = 1000;
+        const particlesGeo = new THREE.BufferGeometry();
+        const pPos = [];
+        for(let i=0; i<particleCount; i++) {
+            pPos.push(
+                (Math.random() - 0.5) * 200,
+                Math.random() * 50,
+                (Math.random() - 0.5) * 200
+            );
+        }
+        particlesGeo.setAttribute('position', new THREE.Float32BufferAttribute(pPos, 3));
+        const particlesMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.3, transparent: true, opacity: 0.8 });
+        const particles = new THREE.Points(particlesGeo, particlesMat);
+        scene.add(particles);
+
+
+        // --- 5. PLAYER CONTROLLER ---
+        let player, playerMesh;
+        let velocity = new THREE.Vector3();
+        let onGround = false;
+        const keys = { w:false, a:false, s:false, d:false, space:false };
+
+        function createAvatar(type) {
+            const group = new THREE.Group();
+
+            if (type === 'construct') {
+                // Robot
+                const body = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.8), new THREE.MeshStandardMaterial({ color: 0x7f8c8d }));
+                const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), new THREE.MeshStandardMaterial({ color: 0x95a5a6 }));
+                head.position.y = 1.1;
+                const eye = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.1, 0.1), new THREE.MeshStandardMaterial({ color: 0xe74c3c, emissive: 0xe74c3c }));
+                eye.position.set(0, 1.1, 0.3);
+                group.add(body, head, eye);
+            } else if (type === 'spirit') {
+                // Nature Spirit
+                const body = new THREE.Mesh(new THREE.ConeGeometry(0.6, 2, 8), new THREE.MeshStandardMaterial({ color: 0x2ecc71 }));
+                body.position.y = 0.5;
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), new THREE.MeshStandardMaterial({ color: 0xf1c40f }));
+                head.position.y = 1.6;
+                group.add(body, head);
+                
+                // Orbiting leaves
+                for(let i=0; i<3; i++) {
+                    const leaf = new THREE.Mesh(new THREE.TetrahedronGeometry(0.2), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
+                    leaf.userData = { offset: i * 2, speed: 2 };
+                    leaf.update = (t) => {
+                        leaf.position.x = Math.sin(t * 2 + i*2) * 1;
+                        leaf.position.z = Math.cos(t * 2 + i*2) * 1;
+                        leaf.position.y = 1 + Math.sin(t * 4) * 0.2;
+                    };
+                    group.add(leaf);
+                }
+            } else {
+                // Voyager
+                const body = new THREE.Mesh(new THREE.OctahedronGeometry(0.7), new THREE.MeshStandardMaterial({ color: 0x8e44ad, wireframe: true }));
+                body.position.y = 1;
+                const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.3), new THREE.MeshStandardMaterial({ color: 0x9b59b6, emissive: 0x8e44ad }));
+                core.position.y = 1;
+                group.add(body, core);
+            }
+
+            group.traverse(c => { if(c.isMesh) c.castShadow = true; });
+            return group;
+        }
+
+        // --- 6. GAME LOGIC ---
+
+        // Input Handling
+        window.addEventListener('keydown', (e) => {
+            switch(e.key.toLowerCase()) {
+                case 'w': keys.w = true; break;
+                case 'a': keys.a = true; break;
+                case 's': keys.s = true; break;
+                case 'd': keys.d = true; break;
+                case ' ': keys.space = true; break;
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            switch(e.key.toLowerCase()) {
+                case 'w': keys.w = false; break;
+                case 'a': keys.a = false; break;
+                case 's': keys.s = false; break;
+                case 'd': keys.d = false; break;
+                case ' ': keys.space = false; break;
+            }
+        });
+        
+        // Mouse controls for camera
+        let mouseX = 0, mouseY = 0;
+        let targetRotation = 0;
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        document.addEventListener('mousedown', () => isDragging = true);
+        document.addEventListener('mouseup', () => isDragging = false);
+        document.addEventListener('mousemove', (e) => {
+            if(isDragging && state.isPlaying) {
+                const deltaMove = {
+                    x: e.offsetX - previousMousePosition.x
+                };
+                targetRotation -= deltaMove.x * 0.005;
+            }
+            previousMousePosition = { x: e.offsetX, y: e.offsetY };
+        });
+
+        window.startGame = (type) => {
+            document.getElementById('selection-screen').style.opacity = 0;
+            setTimeout(() => {
+                document.getElementById('selection-screen').style.display = 'none';
+                document.getElementById('hud').style.display = 'block';
+                document.getElementById('controls-hint').style.display = 'block';
+            }, 1000);
+
+            state.avatarType = type;
+            playerMesh = createAvatar(type);
+            player = new THREE.Group();
+            player.add(playerMesh);
+            
+            // Start position
+            player.position.set(0, 30, 0);
+            scene.add(player);
+
+            state.isPlaying = true;
+        };
+
+        // --- 7. ANIMATION LOOP ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = Math.min(clock.getDelta(), 0.1);
+            const time = clock.getElapsedTime();
+
+            // Water animation
+            water.material.opacity = 0.6 + Math.sin(time) * 0.1;
+            water.position.y = config.waterLevel + Math.sin(time * 0.5) * 0.2;
+
+            // Particle animation
+            const positions = particles.geometry.attributes.position.array;
+            for(let i=1; i<positions.length; i+=3) {
+                positions[i] += Math.sin(time + positions[i-1]) * 0.02;
+                if(positions[i] > 40) positions[i] = 0;
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+
+            // Day/Night Cycle
+            const dayTime = time * 0.05;
+            const sunX = Math.cos(dayTime) * 100;
+            const sunY = Math.sin(dayTime) * 100;
+            dirLight.position.set(sunX, sunY, 50);
+            
+            // Sky Color Lerp
+            const dayColor = new THREE.Color(0x87CEEB);
+            const duskColor = new THREE.Color(0xFF7F50);
+            const nightColor = new THREE.Color(0x0a0a20);
+            
+            let skyColor;
+            if (sunY > 20) skyColor = dayColor;
+            else if (sunY > -20) skyColor = dayColor.lerp(duskColor, 1 - (sunY + 20)/40);
+            else skyColor = nightColor;
+            
+            scene.background = skyColor;
+            scene.fog.color = skyColor;
+
+            if (state.isPlaying && player) {
+                // Physics Logic
+                if (keys.w) {
+                    velocity.z -= Math.cos(targetRotation) * config.speed * delta * 50;
+                    velocity.x -= Math.sin(targetRotation) * config.speed * delta * 50;
+                }
+                if (keys.s) {
+                    velocity.z += Math.cos(targetRotation) * config.speed * delta * 50;
+                    velocity.x += Math.sin(targetRotation) * config.speed * delta * 50;
+                }
+                // Strafe logic could go here but keeping it simple tank-like/3rd person
+                
+                // Friction
+                velocity.x *= 0.9;
+                velocity.z *= 0.9;
+
+                // Gravity
+                velocity.y -= config.gravity * delta * 50;
+
+                // Apply Velocity
+                player.position.x += velocity.x * delta;
+                player.position.z += velocity.z * delta;
+                
+                // Terrain Collision
+                const terrainHeight = getHeight(player.position.x, player.position.z);
+                
+                if (player.position.y <= terrainHeight) {
+                    player.position.y = terrainHeight;
+                    velocity.y = 0;
+                    onGround = true;
+                } else {
+                    onGround = false;
+                }
+                
+                // Apply Y Velocity
+                if (!onGround) {
+                    player.position.y += velocity.y * delta;
+                }
+
+                // Jump
+                if (keys.space && onGround) {
+                    velocity.y = 15; // Jump impulse
+                    onGround = false;
+                }
+
+                // Rotate Mesh to face movement roughly, or just player input
+                playerMesh.rotation.y = targetRotation + Math.PI; // Face camera direction roughly
+                
+                // Camera Follow logic (Third Person)
+                const cameraOffset = new THREE.Vector3(0, 8, 15);
+                // Rotate offset based on mouse drag
+                cameraOffset.applyAxisAngle(new THREE.Vector3(0,1,0), -targetRotation);
+                
+                const targetPos = player.position.clone().add(cameraOffset);
+                camera.position.lerp(targetPos, 0.1);
+                camera.lookAt(player.position.clone().add(new THREE.Vector3(0, 2, 0)));
+
+                // Avatar specific animations
+                if(state.avatarType === 'spirit') {
+                    playerMesh.children.forEach(child => {
+                        if(child.update) child.update(time);
+                    });
+                } else if (state.avatarType === 'voyager') {
+                     playerMesh.children[0].rotation.x = time;
+                     playerMesh.children[0].rotation.y = time;
+                }
+
+                // HUD Update
+                document.getElementById('coord-display').innerText = `${player.position.x.toFixed(0)}, ${player.position.z.toFixed(0)}`;
+                document.getElementById('alt-display').innerText = player.position.y.toFixed(1);
+                
+                // Respawn if fallen
+                if (player.position.y < config.waterLevel - 10) {
+                    player.position.set(0, 40, 0);
+                    velocity.set(0,0,0);
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
