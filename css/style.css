@@ -307,3 +307,165 @@ input {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
+
+/* --- Matterhorn Ascent Styles --- */
+#matterhorn-game {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #050505;
+    z-index: 1000; /* Ensure it covers everything */
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    user-select: none;
+    text-shadow: none;
+    color: white;
+}
+
+#matterhornCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    margin: 0;
+    box-shadow: none;
+}
+
+#matterhorn-game .layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+#matterhorn-game .interactive {
+    pointer-events: auto;
+}
+
+#matterhorn-game .hidden {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    display: none !important;
+}
+
+/* HUD */
+#mh-hud-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    gap: 20px;
+    transition: opacity 0.3s;
+}
+.mh-hud-box {
+    background: rgba(15, 23, 42, 0.75);
+    padding: 12px 18px;
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    font-size: 0.9rem;
+    text-align: left;
+}
+.mh-bar {
+    width: 120px;
+    height: 6px;
+    margin-top: 4px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.mh-bar-fill {
+    height: 100%;
+    width: 100%;
+    transition: width 0.2s;
+}
+
+/* Interaction Prompt */
+#mh-prompt {
+    position: absolute;
+    bottom: 22%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    background: rgba(0,0,0,0.75);
+    border-radius: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+}
+
+/* Notifications */
+#mh-notifications {
+    position: absolute;
+    top: 100px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    pointer-events: none;
+}
+.mh-notif {
+    background: rgba(0,0,0,0.8);
+    padding: 10px 20px;
+    border-radius: 8px;
+    border-left: 4px solid #38bdf8;
+    animation: slideIn 0.3s ease-out;
+}
+@keyframes slideIn {
+    from { transform: translateX(60px); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+}
+
+/* Main Menu */
+#mh-start-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat;
+    z-index: 20;
+}
+#mh-start-content {
+    background: rgba(0,0,0,0.7);
+    padding: 40px;
+    text-align: center;
+    border-radius: 20px;
+    backdrop-filter: blur(6px);
+}
+#mh-start-content h1 {
+    font-size: 4rem;
+    margin: 0;
+    font-weight: 200;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    text-shadow: none;
+    color: white;
+}
+#mh-start-content h2 {
+    font-size: 1rem;
+    margin-bottom: 25px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #94a3b8;
+    text-shadow: none;
+}
+
+.mh-btn {
+    padding: 14px 35px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    color: white;
+    margin-top: 20px;
+    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    transition: transform 0.1s;
+}
+.mh-btn:hover { transform: scale(1.05); }
+.mh-btn:active { transform: scale(0.97); }
