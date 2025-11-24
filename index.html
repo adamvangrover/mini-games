@@ -30,6 +30,46 @@
         <button data-game="eclipse-puzzle-game">🧩 Eclipse Puzzle</button>
         <button data-game="eclipse-logic-puzzle-game">💡 Eclipse Logic Puzzle</button>
         <button data-game="matterhorn-game">🏔️ Matterhorn Ascent</button>
+        <button data-game="aetheria-game">☁️ Aetheria</button>
+    </div>
+
+    <div id="aetheria-game" class="hidden game-container">
+        <div id="aetheria-game-container"></div>
+        <div id="aetheria-ui-layer">
+            <div id="aetheria-selection-screen">
+                <h1>Aetheria</h1>
+                <p>Choose your vessel to explore the infinite floating isles.</p>
+                
+                <div class="aetheria-avatars">
+                    <div class="aetheria-avatar-card" onclick="startAetheriaGame('construct')">
+                        <div class="aetheria-avatar-icon" style="background: #e74c3c;">🤖</div>
+                        <div class="aetheria-avatar-name">The Construct</div>
+                        <div class="aetheria-avatar-desc">Heavy, stable, industrial aesthetics.</div>
+                    </div>
+                    <div class="aetheria-avatar-card" onclick="startAetheriaGame('spirit')">
+                        <div class="aetheria-avatar-icon" style="background: #2ecc71;">🌿</div>
+                        <div class="aetheria-avatar-name">The Spirit</div>
+                        <div class="aetheria-avatar-desc">Light, floating, nature-infused.</div>
+                    </div>
+                    <div class="aetheria-avatar-card" onclick="startAetheriaGame('voyager')">
+                        <div class="aetheria-avatar-icon" style="background: #9b59b6;">🔮</div>
+                        <div class="aetheria-avatar-name">The Voyager</div>
+                        <div class="aetheria-avatar-desc">Mysterious, glowing, cosmic energy.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="aetheria-hud">
+                COORD: <span id="aetheria-coord-display">0, 0</span><br>
+                ALT: <span id="aetheria-alt-display">0</span>
+            </div>
+            
+            <div id="aetheria-controls-hint">
+                WASD to Move | SPACE to Jump<br>
+                Mouse to Rotate Camera
+            </div>
+        </div>
+        <button class="back-btn" style="position: absolute; top: 20px; right: 20px; z-index: 200;">Back to Hub</button>
     </div>
 
     <div id="matterhorn-game" class="hidden game-container">
@@ -278,6 +318,7 @@
     <script src="js/games/eclipsePuzzle.js"></script>
     <script src="js/games/eclipseLogicPuzzle.js"></script>
     <script type="module" src="js/games/matterhorn.js"></script>
+    <script type="module" src="js/games/aetheria/aetheria.js"></script>
     <script src="js/soundManager.js"></script>
     <script src="js/saveSystem.js"></script>
     <script type="module" src="js/main.js"></script>
