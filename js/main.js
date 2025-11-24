@@ -14,7 +14,8 @@ const games = {
     'eclipse-game': eclipseGame,
     'eclipse-puzzle-game': eclipsePuzzleGame,
     'eclipse-logic-puzzle-game': eclipseLogicPuzzleGame,
-    'matterhorn-game': matterhornGame
+    'matterhorn-game': matterhornGame,
+    'aetheria-game': aetheriaGame
 };
 
 function startGame(gameName) {
