@@ -660,3 +660,20 @@ input {
     text-align: right;
     text-shadow: 1px 1px 2px black;
 }
+
+.overlay-panel {
+    background: rgba(14, 14, 22, 0.95);
+    border: 2px solid #f0f;
+    border-radius: 12px;
+    padding: 2rem;
+    position: relative;
+    box-shadow: 0 0 15px #f0f, 0 0 30px #f0f;
+    transform: scale(0.9);
+    opacity: 0;
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+#global-overlay:not(.hidden) .overlay-panel {
+    transform: scale(1);
+    opacity: 1;
+}

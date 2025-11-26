@@ -10,122 +10,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
+    <div id="global-overlay" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
+        <div class="overlay-panel w-full max-w-md">
+            <h2 id="overlay-title" class="text-3xl font-bold text-center mb-4 text-white title-glow">PAUSED</h2>
+            <div id="overlay-content" class="text-center text-slate-300">
+                <p>Game is paused. Press ESC to resume.</p>
+            </div>
+            <div class="flex justify-center mt-6">
+                <button id="overlay-main-menu-btn" class="mh-btn">Main Menu</button>
+            </div>
+            <button id="overlay-close-btn" class="absolute top-4 right-4 text-white text-2xl hover:text-fuchsia-500">&times;</button>
+        </div>
+    </div>
     <div id="menu" class="relative z-10 max-w-6xl mx-auto pt-10 px-4">
         <h1 class="text-5xl md:text-6xl font-black text-center mb-12 title-glow tracking-tighter text-white">
             <span class="text-fuchsia-500">NEON</span> ARCADE HUB
         </h1>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
-            <!-- Arcade Classics -->
-            <button class="game-card group" data-game="pong-game">
-                <div class="text-4xl mb-2">🏓</div>
-                <h3 class="text-xl font-bold text-cyan-400 group-hover:text-white">Pong</h3>
-                <p class="text-xs text-slate-400 mt-1">Classic Paddle Battle</p>
-            </button>
+        <div id="hub-stats" class="text-center mb-8">
+            <span class="text-2xl text-yellow-400 font-bold">💰 <span id="total-currency">0</span></span>
+        </div>
 
-            <button class="game-card group" data-game="breakout-game">
-                <div class="text-4xl mb-2">🧱</div>
-                <h3 class="text-xl font-bold text-cyan-400 group-hover:text-white">Breakout</h3>
-                <p class="text-xs text-slate-400 mt-1">Smash the Bricks</p>
-            </button>
-
-            <button class="game-card group" data-game="snake-game">
-                <div class="text-4xl mb-2">🐍</div>
-                <h3 class="text-xl font-bold text-green-400 group-hover:text-white">Snake</h3>
-                <p class="text-xs text-slate-400 mt-1">Eat & Grow</p>
-            </button>
-
-            <button class="game-card group" data-game="tetris-game">
-                <div class="text-4xl mb-2">🧩</div>
-                <h3 class="text-xl font-bold text-yellow-400 group-hover:text-white">Tetris</h3>
-                <p class="text-xs text-slate-400 mt-1">Stack the Blocks</p>
-            </button>
-
-            <button class="game-card group" data-game="space-game">
-                <div class="text-4xl mb-2">🚀</div>
-                <h3 class="text-xl font-bold text-red-400 group-hover:text-white">Space Shooter</h3>
-                <p class="text-xs text-slate-400 mt-1">Defend the Galaxy</p>
-            </button>
-
-            <!-- Quick Minigames -->
-            <button class="game-card group" data-game="clicker-game">
-                <div class="text-4xl mb-2">💰</div>
-                <h3 class="text-xl font-bold text-yellow-300 group-hover:text-white">Clicker</h3>
-                <p class="text-xs text-slate-400 mt-1">Exponential Growth</p>
-            </button>
-
-            <button class="game-card group" data-game="typing-game">
-                <div class="text-4xl mb-2">⌨️</div>
-                <h3 class="text-xl font-bold text-pink-400 group-hover:text-white">Speed Type</h3>
-                <p class="text-xs text-slate-400 mt-1">Test Your WPM</p>
-            </button>
-
-            <button class="game-card group" data-game="runner-game">
-                <div class="text-4xl mb-2">🏃</div>
-                <h3 class="text-xl font-bold text-orange-400 group-hover:text-white">Endless Runner</h3>
-                <p class="text-xs text-slate-400 mt-1">Jump the Obstacles</p>
-            </button>
-
-             <button class="game-card group" data-game="maze-game">
-                <div class="text-4xl mb-2">🌀</div>
-                <h3 class="text-xl font-bold text-purple-400 group-hover:text-white">Maze</h3>
-                <p class="text-xs text-slate-400 mt-1">Find the Path</p>
-            </button>
-
-            <!-- RPG & Logic -->
-            <button class="game-card group" data-game="rpg-game">
-                <div class="text-4xl mb-2">⚔️</div>
-                <h3 class="text-xl font-bold text-red-500 group-hover:text-white">RPG Battle</h3>
-                <p class="text-xs text-slate-400 mt-1">Turn-Based Combat</p>
-            </button>
-
-             <button class="game-card group" data-game="eclipse-game">
-                <div class="text-4xl mb-2">☀️</div>
-                <h3 class="text-xl font-bold text-orange-300 group-hover:text-white">Eclipse</h3>
-                <p class="text-xs text-slate-400 mt-1">Strategy Board</p>
-            </button>
-
-             <button class="game-card group" data-game="eclipse-puzzle-game">
-                <div class="text-4xl mb-2">🧠</div>
-                <h3 class="text-xl font-bold text-blue-300 group-hover:text-white">Eclipse Puzzle</h3>
-                <p class="text-xs text-slate-400 mt-1">Pattern Matching</p>
-            </button>
-
-            <button class="game-card group" data-game="eclipse-logic-puzzle-game">
-                <div class="text-4xl mb-2">💡</div>
-                <h3 class="text-xl font-bold text-indigo-400 group-hover:text-white">Logic Puzzle</h3>
-                <p class="text-xs text-slate-400 mt-1">Deduction Grid</p>
-            </button>
-
-            <!-- New Games -->
-             <button class="game-card group" data-game="tower-defense-game">
-                <div class="text-4xl mb-2">🏰</div>
-                <h3 class="text-xl font-bold text-slate-300 group-hover:text-white">Tower Defense</h3>
-                <p class="text-xs text-slate-400 mt-1">Defend the Base</p>
-            </button>
-
-             <button class="game-card group" data-game="physics-stacker-game">
-                <div class="text-4xl mb-2">🏗️</div>
-                <h3 class="text-xl font-bold text-slate-300 group-hover:text-white">Physics Stacker</h3>
-                <p class="text-xs text-slate-400 mt-1">Balance Blocks</p>
-            </button>
-
-            <!-- 3D Immersive -->
-            <button class="game-card group col-span-1 md:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800" data-game="matterhorn-game">
-                <div class="text-4xl mb-2">🏔️</div>
-                <h3 class="text-xl font-bold text-white group-hover:text-sky-300">Matterhorn Ascent</h3>
-                <p class="text-xs text-slate-400 mt-1">3D Alpine Adventure</p>
-            </button>
-
-            <button class="game-card group col-span-1 md:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800" data-game="aetheria-game">
-                <div class="text-4xl mb-2">☁️</div>
-                <h3 class="text-xl font-bold text-white group-hover:text-purple-300">Aetheria</h3>
-                <p class="text-xs text-slate-400 mt-1">Floating Isles Exploration</p>
-            </button>
+        <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
+            <!-- Game cards will be dynamically inserted here -->
         </div>
     </div>
 
