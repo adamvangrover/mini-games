@@ -56,34 +56,35 @@ class LegacyGameAdapter {
 }
 
 const gameRegistry = {
-    // Canvas Games
-    'pong-game': PongGame,
-    'breakout-game': BreakoutGame,
-    'snake-game': SnakeGame,
-    'maze-game': MazeGame,
-    'runner-game': RunnerGame,
-    'tetris-game': TetrisGame,
-    'tower-defense-game': TowerDefenseGame,
-    'physics-stacker-game': PhysicsStackerGame,
-
-    // Logic/DOM Games
-    'clicker-game': ClickerGame,
-    'typing-game': TypingGame,
-    'rpg-game': RPGGame,
-
-    // 3D/Complex Games
-    'space-game': SpaceShooterGame,
-    'matterhorn-game': MatterhornGame,
-    'aetheria-game': AetheriaGame,
-
-    // Legacy (Eclipse games still need refactoring or adapter if not done yet)
-    'eclipse-game': 'eclipseGame',
-    'eclipse-puzzle-game': 'eclipsePuzzleGame',
-    'eclipse-logic-puzzle-game': 'eclipseLogicPuzzleGame',
+    'pong-game': { name: 'Pong', description: 'Classic Paddle Battle', icon: 'fa-solid fa-table-tennis-paddle-ball', category: 'Arcade Classics', module: PongGame },
+    'breakout-game': { name: 'Breakout', description: 'Smash the Bricks', icon: 'fa-solid fa-kaaba', category: 'Arcade Classics', module: BreakoutGame },
+    'snake-game': { name: 'Snake', description: 'Eat & Grow', icon: 'fa-solid fa-snake', category: 'Arcade Classics', module: SnakeGame },
+    'tetris-game': { name: 'Tetris', description: 'Stack the Blocks', icon: 'fa-solid fa-shapes', category: 'Arcade Classics', module: TetrisGame },
+    'space-game': { name: 'Space Shooter', description: 'Defend the Galaxy', icon: 'fa-solid fa-rocket', category: 'Arcade Classics', module: SpaceShooterGame },
+    'clicker-game': { name: 'Clicker', description: 'Exponential Growth', icon: 'fa-solid fa-hand-pointer', category: 'Quick Minigames', module: ClickerGame },
+    'typing-game': { name: 'Speed Type', description: 'Test Your WPM', icon: 'fa-solid fa-keyboard', category: 'Quick Minigames', module: TypingGame },
+    'runner-game': { name: 'Endless Runner', description: 'Jump the Obstacles', icon: 'fa-solid fa-person-running', category: 'Quick Minigames', module: RunnerGame },
+    'maze-game': { name: 'Maze', description: 'Find the Path', icon: 'fa-solid fa-dungeon', category: 'Quick Minigames', module: MazeGame },
+    'rpg-game': { name: 'RPG Battle', description: 'Turn-Based Combat', icon: 'fa-solid fa-khanda', category: 'RPG & Logic', module: RPGGame },
+    'eclipse-game': { name: 'Eclipse', description: 'Strategy Board', icon: 'fa-solid fa-sun', category: 'RPG & Logic', module: 'eclipseGame' },
+    'eclipse-puzzle-game': { name: 'Eclipse Puzzle', description: 'Pattern Matching', icon: 'fa-solid fa-puzzle-piece', category: 'RPG & Logic', module: 'eclipsePuzzleGame' },
+    'eclipse-logic-puzzle-game': { name: 'Logic Puzzle', description: 'Deduction Grid', icon: 'fa-solid fa-lightbulb', category: 'RPG & Logic', module: 'eclipseLogicPuzzleGame' },
+    'tower-defense-game': { name: 'Tower Defense', description: 'Defend the Base', icon: 'fa-solid fa-chess-rook', category: 'New Games', module: TowerDefenseGame },
+    'physics-stacker-game': { name: 'Physics Stacker', description: 'Balance Blocks', icon: 'fa-solid fa-cubes-stacked', category: 'New Games', module: PhysicsStackerGame },
+    'matterhorn-game': { name: 'Matterhorn Ascent', description: '3D Alpine Adventure', icon: 'fa-solid fa-mountain', category: '3D Immersive', module: MatterhornGame, wide: true },
+    'aetheria-game': { name: 'Aetheria', description: 'Floating Isles Exploration', icon: 'fa-solid fa-cloud', category: '3D Immersive', module: AetheriaGame, wide: true },
 };
 
+// State Machine
+const AppState = {
+    MENU: 'MENU',
+    IN_GAME: 'IN_GAME',
+    PAUSED: 'PAUSED',
+    TRANSITIONING: 'TRANSITIONING',
+};
+
+let currentState = AppState.MENU;
 let currentGameInstance = null;
-let animationFrameId = null;
 let lastTime = 0;
 
 const soundManager = SoundManager.getInstance();
@@ -93,134 +94,205 @@ const inputManager = InputManager.getInstance(); // Ensure it attaches listeners
 // Init Background
 new BackgroundShader();
 
-function gameLoop(timestamp) {
-    if (!currentGameInstance) return;
-
+// Centralized Game Loop
+function mainLoop(timestamp) {
     const deltaTime = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
 
-    if (currentGameInstance.update) {
-        currentGameInstance.update(deltaTime);
-    }
-    if (currentGameInstance.draw) {
-        currentGameInstance.draw();
-    }
-
-    animationFrameId = requestAnimationFrame(gameLoop);
-}
-
-async function startGame(gameId) {
-    // 1. Shutdown current
-    if (currentGameInstance) {
-        cancelAnimationFrame(animationFrameId);
-        try {
-            if (currentGameInstance.shutdown) currentGameInstance.shutdown();
-        } catch (e) {
-            console.error("Error shutting down previous game:", e);
-        }
-        currentGameInstance = null;
-    }
-
-    // 2. UI Transitions
-    document.getElementById("menu").classList.add("hidden");
-    document.querySelectorAll(".game-container").forEach(el => el.classList.add("hidden"));
-
-    const gameContainerId = gameId; // The ID of the container in HTML
-    const container = document.getElementById(gameContainerId);
-    if (container) {
-        container.classList.remove("hidden");
-    }
-
-    // Resume Audio
-    if (soundManager.audioCtx.state === 'suspended') {
-        soundManager.audioCtx.resume();
-    }
-    soundManager.playSound('click');
-
-    // 3. Init New Game
-    const gameEntry = gameRegistry[gameId];
-    if (!gameEntry) {
-        console.error("Game not found:", gameId);
-        return;
-    }
-
-    // Muffle BGM
-    soundManager.setBGMVolume(0.02);
-
-    try {
-        if (typeof gameEntry === 'string') {
-            // Legacy Global Object
-            const globalGame = window[gameEntry];
-            if (globalGame) {
-                currentGameInstance = new LegacyGameAdapter(globalGame);
-            } else {
-                console.error(`Legacy game object '${gameEntry}' not found on window.`);
-                return;
+    switch (currentState) {
+        case AppState.IN_GAME:
+            if (currentGameInstance) {
+                if (currentGameInstance.update) {
+                    currentGameInstance.update(deltaTime);
+                }
+                if (currentGameInstance.draw) {
+                    currentGameInstance.draw();
+                }
             }
-        } else {
-            // New Class/Module
-            currentGameInstance = new gameEntry();
-        }
-
-        if (currentGameInstance) {
-            await currentGameInstance.init(container);
-
-            // Start Loop
-            lastTime = performance.now();
-            gameLoop(lastTime);
-        }
-    } catch (err) {
-        console.error("Failed to start game:", err);
-        goBack();
+            break;
+        case AppState.MENU:
+            // Future menu animations can go here
+            break;
     }
+
+    requestAnimationFrame(mainLoop);
 }
 
-function goBack() {
-    // Restore BGM Volume
-    soundManager.setBGMVolume(0.1);
+async function transitionToState(newState, context = {}) {
+    if (currentState === AppState.TRANSITIONING) return;
+    currentState = AppState.TRANSITIONING;
 
-    if (currentGameInstance) {
-        cancelAnimationFrame(animationFrameId);
-        try {
-            if (currentGameInstance.shutdown) currentGameInstance.shutdown();
-        } catch (e) {
-            console.error("Error shutting down game:", e);
+    // --- Exit current state ---
+    if (newState === AppState.MENU) {
+        hideOverlay(); // Ensure overlay is hidden when returning to menu
+        soundManager.setBGMVolume(0.1);
+        if (currentGameInstance && currentGameInstance.shutdown) {
+            try {
+                await currentGameInstance.shutdown();
+            } catch (e) {
+                console.error("Error shutting down game:", e);
+            }
         }
         currentGameInstance = null;
+        document.querySelectorAll(".game-container").forEach(el => el.classList.add("hidden"));
+        document.getElementById("menu").classList.remove("hidden");
     }
 
-    document.querySelectorAll(".game-container").forEach(el => el.classList.add("hidden"));
-    document.getElementById("menu").classList.remove("hidden");
+    // --- Enter new state ---
+    if (newState === AppState.IN_GAME) {
+        const { gameId } = context;
+        if (!gameId) {
+            console.error("No gameId provided for IN_GAME state.");
+            currentState = AppState.MENU;
+            return;
+        }
 
-    // Resume audio context if suspended, and start BGM if not playing
-    if (soundManager.audioCtx.state === 'suspended') soundManager.audioCtx.resume();
-    soundManager.startBGM();
+        document.getElementById("menu").classList.add("hidden");
+        const container = document.getElementById(gameId);
+        if (container) {
+            container.classList.remove("hidden");
+        } else {
+            console.error(`Container for game ${gameId} not found!`);
+            document.getElementById("menu").classList.remove("hidden");
+            currentState = AppState.MENU;
+            return;
+        }
+
+        soundManager.playSound('click');
+        soundManager.setBGMVolume(0.02);
+
+        const gameInfo = gameRegistry[gameId];
+        if (!gameInfo) {
+            console.error("Game not found in registry:", gameId);
+            currentState = AppState.MENU;
+            return;
+        }
+
+        const gameModule = gameInfo.module;
+
+        try {
+            if (typeof gameModule === 'string') {
+                const globalGame = window[gameModule];
+                if (globalGame) {
+                    currentGameInstance = new LegacyGameAdapter(globalGame);
+                } else {
+                    throw new Error(`Legacy game object '${gameModule}' not found.`);
+                }
+            } else {
+                currentGameInstance = new gameModule();
+            }
+
+            if (currentGameInstance.init) {
+                await currentGameInstance.init(container);
+            }
+        } catch (err) {
+            console.error("Failed to initialize game:", err);
+            document.getElementById("menu").classList.remove("hidden");
+            if(container) container.classList.add("hidden");
+            currentState = AppState.MENU;
+            return;
+        }
+    }
+
+    currentState = newState;
 }
+
+function showOverlay(title, content) {
+    document.getElementById('overlay-title').textContent = title;
+    document.getElementById('overlay-content').innerHTML = content;
+    document.getElementById('global-overlay').classList.remove('hidden');
+}
+
+function hideOverlay() {
+    document.getElementById('global-overlay').classList.add('hidden');
+}
+
+function togglePause() {
+    if (currentState === AppState.IN_GAME) {
+        currentState = AppState.PAUSED;
+        showOverlay('PAUSED', 'Press ESC to resume.');
+        soundManager.setBGMVolume(0.01); // Muffle BGM further
+    } else if (currentState === AppState.PAUSED) {
+        currentState = AppState.IN_GAME;
+        hideOverlay();
+        soundManager.setBGMVolume(0.02); // Restore game BGM volume
+    }
+}
+
+function populateGameMenu() {
+    const menuGrid = document.getElementById('menu-grid');
+    if (!menuGrid) return;
+    menuGrid.innerHTML = ''; // Clear existing cards
+
+    for (const [gameId, gameInfo] of Object.entries(gameRegistry)) {
+        const button = document.createElement('button');
+        let classList = 'game-card group';
+        if (gameInfo.wide) {
+            classList += ' col-span-1 md:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800';
+        }
+        button.className = classList;
+        button.dataset.game = gameId;
+
+        const highScore = saveSystem.getHighScore(gameId);
+        button.innerHTML = `
+            <div class="text-4xl mb-2"><i class="${gameInfo.icon} text-cyan-400 group-hover:text-white transition-colors"></i></div>
+            <h3 class="text-xl font-bold text-cyan-400 group-hover:text-white transition-colors">${gameInfo.name}</h3>
+            <p class="text-xs text-slate-400 mt-1">${gameInfo.description}</p>
+            ${highScore > 0 ? `<div class="absolute top-2 right-2 text-yellow-400 text-xs font-bold">🏆 ${highScore}</div>` : ''}
+        `;
+
+        button.addEventListener('click', () => {
+            transitionToState(AppState.IN_GAME, { gameId });
+        });
+
+        menuGrid.appendChild(button);
+    }
+}
+
+function updateHubStats() {
+    const currencyEl = document.getElementById('total-currency');
+    if (currencyEl) {
+        currencyEl.textContent = saveSystem.getCurrency();
+    }
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Bind Menu Buttons
-    document.querySelectorAll('#menu button[data-game]').forEach(button => {
-        button.addEventListener('click', () => {
-            startGame(button.dataset.game);
-        });
+    populateGameMenu();
+    updateHubStats();
+
+    // Bind Overlay Close Button
+    document.getElementById('overlay-close-btn').addEventListener('click', () => {
+        if (currentState === AppState.PAUSED) {
+            togglePause();
+        } else {
+            hideOverlay();
+        }
     });
 
-    // Bind Back Buttons
-    document.querySelectorAll('.back-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent game inputs
-            goBack();
-        });
+    // Bind Overlay Main Menu Button
+    document.getElementById('overlay-main-menu-btn').addEventListener('click', () => {
+        transitionToState(AppState.MENU);
     });
 
-    // Init global systems if needed
-    // (Singletons are lazy init, but good to have them ready)
+    // Global Key Listeners
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            togglePause();
+        }
+    });
+
+    // Start the main loop
+    lastTime = performance.now();
+    requestAnimationFrame(mainLoop);
+
+    // Initial sound setup
+    soundManager.startBGM();
 });
 
 // Expose for debugging and legacy compatibility
 window.miniGameHub = {
-    startGame,
-    goBack,
+    transitionToState,
     soundManager,
     saveSystem
 };
