@@ -1,104 +1,148 @@
-const pongGame = {
-    canvas: null,
-    ctx: null,
-    paddleHeight: 80,
-    paddleWidth: 10,
-    player1: { x: 10, y: 0, score: 0 },
-    player2: { x: 0, y: 0, score: 0 },
-    ball: { x: 0, y: 0, radius: 10, dx: 5, dy: 5 },
-    interval: null,
-    keydownHandler: null,
+import SoundManager from '../core/SoundManager.js';
+import InputManager from '../core/InputManager.js';
+import ParticleSystem from '../core/ParticleSystem.js';
 
-    init: function() {
+export default class PongGame {
+    constructor() {
+        this.canvas = null;
+        this.ctx = null;
+        this.paddleHeight = 80;
+        this.paddleWidth = 10;
+        this.player1 = { x: 10, y: 0, score: 0 };
+        this.player2 = { x: 0, y: 0, score: 0 };
+        this.ball = { x: 0, y: 0, radius: 10, dx: 300, dy: 300 };
+        this.trail = [];
+        this.shakeTimer = 0;
+
+        this.soundManager = SoundManager.getInstance();
+        this.inputManager = InputManager.getInstance();
+        this.particleSystem = ParticleSystem.getInstance();
+    }
+
+    init(container) {
         this.canvas = document.getElementById("pongCanvas");
         this.ctx = this.canvas.getContext("2d");
+
         this.player1 = { x: 10, y: this.canvas.height / 2 - this.paddleHeight / 2, score: 0 };
         this.player2 = { x: this.canvas.width - 20, y: this.canvas.height / 2 - this.paddleHeight / 2, score: 0 };
-        this.ball = { x: this.canvas.width / 2, y: this.canvas.height / 2, radius: 10, dx: 5, dy: 5 };
+        this.ball = { x: this.canvas.width / 2, y: this.canvas.height / 2, radius: 10, dx: 300, dy: 300 };
+        this.trail = [];
         this.updateScore();
+    }
 
-        if (this.interval) clearInterval(this.interval);
-        this.interval = setInterval(() => this.draw(), 16);
+    shutdown() { }
 
-        this.keydownHandler = (e) => this.handleKeydown(e);
-        document.addEventListener("keydown", this.keydownHandler);
-    },
+    update(dt) {
+        const speed = 400 * dt;
 
-    shutdown: function() {
-        if (this.interval) clearInterval(this.interval);
-        if (this.keydownHandler) {
-            document.removeEventListener("keydown", this.keydownHandler);
+        // Input
+        if (this.inputManager.isKeyDown("KeyW") || this.inputManager.isKeyDown("w")) this.player1.y -= speed;
+        if (this.inputManager.isKeyDown("KeyS") || this.inputManager.isKeyDown("s")) this.player1.y += speed;
+        if (this.inputManager.isKeyDown("ArrowUp")) this.player2.y -= speed;
+        if (this.inputManager.isKeyDown("ArrowDown")) this.player2.y += speed;
+
+        this.player1.y = Math.max(0, Math.min(this.player1.y, this.canvas.height - this.paddleHeight));
+        this.player2.y = Math.max(0, Math.min(this.player2.y, this.canvas.height - this.paddleHeight));
+
+        // Trail Logic
+        this.trail.push({x: this.ball.x, y: this.ball.y, alpha: 1.0});
+        if (this.trail.length > 20) this.trail.shift();
+        this.trail.forEach(t => t.alpha -= dt * 2);
+
+        // Movement
+        this.ball.x += this.ball.dx * dt;
+        this.ball.y += this.ball.dy * dt;
+
+        // Wall collisions
+        if (this.ball.y + this.ball.radius > this.canvas.height || this.ball.y - this.ball.radius < 0) {
+            this.ball.dy = -this.ball.dy;
+            this.soundManager.playSound('click');
+            this.particleSystem.emit(this.ctx, this.ball.x, this.ball.y, '#00ffff', 5);
         }
-    },
 
-    drawPaddles: function() {
+        // Paddle Collisions
+        if (
+            (this.ball.x - this.ball.radius < this.player1.x + this.paddleWidth && this.ball.y > this.player1.y && this.ball.y < this.player1.y + this.paddleHeight) ||
+            (this.ball.x + this.ball.radius > this.player2.x && this.ball.y > this.player2.y && this.ball.y < this.player2.y + this.paddleHeight)
+        ) {
+            this.ball.dx = -this.ball.dx * 1.05;
+            this.soundManager.playSound('click');
+            this.particleSystem.emit(this.ctx, this.ball.x, this.ball.y, '#ff00ff', 10);
+            this.shakeTimer = 0.2;
+        }
+
+        // Score
+        if (this.ball.x - this.ball.radius < 0) {
+            this.player2.score++;
+            this.soundManager.playSound('score');
+            this.resetBall();
+            this.shakeTimer = 0.5;
+        }
+
+        if (this.ball.x + this.ball.radius > this.canvas.width) {
+            this.player1.score++;
+            this.soundManager.playSound('score');
+            this.resetBall();
+            this.shakeTimer = 0.5;
+        }
+
+        if (this.shakeTimer > 0) this.shakeTimer -= dt;
+
+        this.updateScore();
+        this.particleSystem.update(dt);
+    }
+
+    resetBall() {
+        this.ball.x = this.canvas.width / 2;
+        this.ball.y = this.canvas.height / 2;
+        this.ball.dx = -this.ball.dx;
+        this.ball.dy = (Math.random() > 0.5 ? 300 : -300);
+        this.trail = [];
+    }
+
+    updateScore() {
+        const scoreEl = document.getElementById("pong-score");
+        if (scoreEl) scoreEl.innerText = `${this.player1.score} - ${this.player2.score}`;
+    }
+
+    draw() {
+        if (!this.ctx) return;
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Screen Shake
+        this.ctx.save();
+        if (this.shakeTimer > 0) {
+            const dx = (Math.random() - 0.5) * 10;
+            const dy = (Math.random() - 0.5) * 10;
+            this.ctx.translate(dx, dy);
+        }
+
+        // Draw Trail
+        this.trail.forEach(t => {
+            if (t.alpha <= 0) return;
+            this.ctx.globalAlpha = t.alpha * 0.5;
+            this.ctx.fillStyle = "#00ffff";
+            this.ctx.beginPath();
+            this.ctx.arc(t.x, t.y, this.ball.radius * 0.8, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+        this.ctx.globalAlpha = 1.0;
+
+        // Draw Paddles
         this.ctx.fillStyle = "#ff00ff";
         this.ctx.fillRect(this.player1.x, this.player1.y, this.paddleWidth, this.paddleHeight);
         this.ctx.fillRect(this.player2.x, this.player2.y, this.paddleWidth, this.paddleHeight);
-    },
 
-    drawBall: function() {
+        // Draw Ball
         this.ctx.beginPath();
         this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
         this.ctx.fillStyle = "#00ffff";
         this.ctx.fill();
         this.ctx.closePath();
-    },
 
-    moveBall: function() {
-        this.ball.x += this.ball.dx;
-        this.ball.y += this.ball.dy;
+        // Particles
+        this.particleSystem.draw(this.ctx);
 
-        if (this.ball.y + this.ball.radius > this.canvas.height || this.ball.y - this.ball.radius < 0) {
-            this.ball.dy = -this.ball.dy;
-        }
-
-        if (
-            (this.ball.x - this.ball.radius < this.player1.x + this.paddleWidth && this.ball.y > this.player1.y && this.ball.y < this.player1.y + this.paddleHeight) ||
-            (this.ball.x + this.ball.radius > this.player2.x && this.ball.y > this.player2.y && this.ball.y < this.player2.y + this.paddleHeight)
-        ) {
-            this.ball.dx = -this.ball.dx;
-        }
-
-        if (this.ball.x - this.ball.radius < 0) {
-            this.player2.score++;
-            this.resetBall();
-        }
-
-        if (this.ball.x + this.ball.radius > this.canvas.width) {
-            this.player1.score++;
-            this.resetBall();
-        }
-
-        this.updateScore();
-    },
-
-    resetBall: function() {
-        this.ball.x = this.canvas.width / 2;
-        this.ball.y = this.canvas.height / 2;
-        this.ball.dx = -this.ball.dx;
-        this.ball.dy = 5;
-    },
-
-    updateScore: function() {
-        document.getElementById("pong-score").innerText = `${this.player1.score} - ${this.player2.score}`;
-    },
-
-    draw: function() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.drawPaddles();
-        this.drawBall();
-        this.moveBall();
-    },
-
-    handleKeydown: function(e) {
-        if (e.key === "w" || e.key === "W") this.player1.y -= 20;
-        if (e.key === "s" || e.key === "S") this.player1.y += 20;
-
-        if (e.key === "ArrowUp") this.player2.y -= 20;
-        if (e.key === "ArrowDown") this.player2.y += 20;
-
-        this.player1.y = Math.max(0, Math.min(this.player1.y, this.canvas.height - this.paddleHeight));
-        this.player2.y = Math.max(0, Math.min(this.player2.y, this.canvas.height - this.paddleHeight));
+        this.ctx.restore();
     }
-};
+}

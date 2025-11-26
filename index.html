@@ -14,24 +14,123 @@
 </head>
 <body>
 
-    <div id="menu">
-        <h1>🎮 Ultimate Mini Game Hub</h1>
-        <button data-game="clicker-game">💰 Clicker Game</button>
-        <button data-game="maze-game">🌀 Maze Game</button>
-        <button data-game="runner-game">🏃 Endless Runner</button>
-        <button data-game="typing-game">⌨ Typing Speed Test</button>
-        <button data-game="snake-game">🐍 Snake</button>
-        <button data-game="pong-game">🏓 Pong</button>
-        <button data-game="space-game">🚀 Space Shooter</button>
-        <button data-game="tetris-game">🧱 Tetris</button>
-        <button data-game="breakout-game">🧱 Breakout</button>
-        <button data-game="rpg-game">⚔️ RPG</button>
-        <button data-game="eclipse-game">☀️ Eclipse</button>
-        <button data-game="eclipse-puzzle-game">🧩 Eclipse Puzzle</button>
-        <button data-game="eclipse-logic-puzzle-game">💡 Eclipse Logic Puzzle</button>
-        <button data-game="matterhorn-game">🏔️ Matterhorn Ascent</button>
-        <button data-game="aetheria-game">☁️ Aetheria</button>
+    <div id="menu" class="relative z-10 max-w-6xl mx-auto pt-10 px-4">
+        <h1 class="text-5xl md:text-6xl font-black text-center mb-12 title-glow tracking-tighter text-white">
+            <span class="text-fuchsia-500">NEON</span> ARCADE HUB
+        </h1>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
+            <!-- Arcade Classics -->
+            <button class="game-card group" data-game="pong-game">
+                <div class="text-4xl mb-2">🏓</div>
+                <h3 class="text-xl font-bold text-cyan-400 group-hover:text-white">Pong</h3>
+                <p class="text-xs text-slate-400 mt-1">Classic Paddle Battle</p>
+            </button>
+
+            <button class="game-card group" data-game="breakout-game">
+                <div class="text-4xl mb-2">🧱</div>
+                <h3 class="text-xl font-bold text-cyan-400 group-hover:text-white">Breakout</h3>
+                <p class="text-xs text-slate-400 mt-1">Smash the Bricks</p>
+            </button>
+
+            <button class="game-card group" data-game="snake-game">
+                <div class="text-4xl mb-2">🐍</div>
+                <h3 class="text-xl font-bold text-green-400 group-hover:text-white">Snake</h3>
+                <p class="text-xs text-slate-400 mt-1">Eat & Grow</p>
+            </button>
+
+            <button class="game-card group" data-game="tetris-game">
+                <div class="text-4xl mb-2">🧩</div>
+                <h3 class="text-xl font-bold text-yellow-400 group-hover:text-white">Tetris</h3>
+                <p class="text-xs text-slate-400 mt-1">Stack the Blocks</p>
+            </button>
+
+            <button class="game-card group" data-game="space-game">
+                <div class="text-4xl mb-2">🚀</div>
+                <h3 class="text-xl font-bold text-red-400 group-hover:text-white">Space Shooter</h3>
+                <p class="text-xs text-slate-400 mt-1">Defend the Galaxy</p>
+            </button>
+
+            <!-- Quick Minigames -->
+            <button class="game-card group" data-game="clicker-game">
+                <div class="text-4xl mb-2">💰</div>
+                <h3 class="text-xl font-bold text-yellow-300 group-hover:text-white">Clicker</h3>
+                <p class="text-xs text-slate-400 mt-1">Exponential Growth</p>
+            </button>
+
+            <button class="game-card group" data-game="typing-game">
+                <div class="text-4xl mb-2">⌨️</div>
+                <h3 class="text-xl font-bold text-pink-400 group-hover:text-white">Speed Type</h3>
+                <p class="text-xs text-slate-400 mt-1">Test Your WPM</p>
+            </button>
+
+            <button class="game-card group" data-game="runner-game">
+                <div class="text-4xl mb-2">🏃</div>
+                <h3 class="text-xl font-bold text-orange-400 group-hover:text-white">Endless Runner</h3>
+                <p class="text-xs text-slate-400 mt-1">Jump the Obstacles</p>
+            </button>
+
+             <button class="game-card group" data-game="maze-game">
+                <div class="text-4xl mb-2">🌀</div>
+                <h3 class="text-xl font-bold text-purple-400 group-hover:text-white">Maze</h3>
+                <p class="text-xs text-slate-400 mt-1">Find the Path</p>
+            </button>
+
+            <!-- RPG & Logic -->
+            <button class="game-card group" data-game="rpg-game">
+                <div class="text-4xl mb-2">⚔️</div>
+                <h3 class="text-xl font-bold text-red-500 group-hover:text-white">RPG Battle</h3>
+                <p class="text-xs text-slate-400 mt-1">Turn-Based Combat</p>
+            </button>
+
+             <button class="game-card group" data-game="eclipse-game">
+                <div class="text-4xl mb-2">☀️</div>
+                <h3 class="text-xl font-bold text-orange-300 group-hover:text-white">Eclipse</h3>
+                <p class="text-xs text-slate-400 mt-1">Strategy Board</p>
+            </button>
+
+             <button class="game-card group" data-game="eclipse-puzzle-game">
+                <div class="text-4xl mb-2">🧠</div>
+                <h3 class="text-xl font-bold text-blue-300 group-hover:text-white">Eclipse Puzzle</h3>
+                <p class="text-xs text-slate-400 mt-1">Pattern Matching</p>
+            </button>
+
+            <button class="game-card group" data-game="eclipse-logic-puzzle-game">
+                <div class="text-4xl mb-2">💡</div>
+                <h3 class="text-xl font-bold text-indigo-400 group-hover:text-white">Logic Puzzle</h3>
+                <p class="text-xs text-slate-400 mt-1">Deduction Grid</p>
+            </button>
+
+            <!-- New Games -->
+             <button class="game-card group" data-game="tower-defense-game">
+                <div class="text-4xl mb-2">🏰</div>
+                <h3 class="text-xl font-bold text-slate-300 group-hover:text-white">Tower Defense</h3>
+                <p class="text-xs text-slate-400 mt-1">Defend the Base</p>
+            </button>
+
+             <button class="game-card group" data-game="physics-stacker-game">
+                <div class="text-4xl mb-2">🏗️</div>
+                <h3 class="text-xl font-bold text-slate-300 group-hover:text-white">Physics Stacker</h3>
+                <p class="text-xs text-slate-400 mt-1">Balance Blocks</p>
+            </button>
+
+            <!-- 3D Immersive -->
+            <button class="game-card group col-span-1 md:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800" data-game="matterhorn-game">
+                <div class="text-4xl mb-2">🏔️</div>
+                <h3 class="text-xl font-bold text-white group-hover:text-sky-300">Matterhorn Ascent</h3>
+                <p class="text-xs text-slate-400 mt-1">3D Alpine Adventure</p>
+            </button>
+
+            <button class="game-card group col-span-1 md:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800" data-game="aetheria-game">
+                <div class="text-4xl mb-2">☁️</div>
+                <h3 class="text-xl font-bold text-white group-hover:text-purple-300">Aetheria</h3>
+                <p class="text-xs text-slate-400 mt-1">Floating Isles Exploration</p>
+            </button>
+        </div>
     </div>
+
+    <!-- Container for dynamically loaded game content?
+         Currently keeping legacy containers for compatibility. -->
 
     <div id="aetheria-game" class="hidden game-container">
         <div id="aetheria-game-container"></div>
@@ -39,7 +138,6 @@
             <div id="aetheria-selection-screen">
                 <h1>Aetheria</h1>
                 <p>Choose your vessel to explore the infinite floating isles.</p>
-                
                 <div class="aetheria-avatars">
                     <div class="aetheria-avatar-card" onclick="startAetheriaGame('construct')">
                         <div class="aetheria-avatar-icon" style="background: #e74c3c;">🤖</div>
@@ -58,12 +156,10 @@
                     </div>
                 </div>
             </div>
-
             <div id="aetheria-hud">
                 COORD: <span id="aetheria-coord-display">0, 0</span><br>
                 ALT: <span id="aetheria-alt-display">0</span>
             </div>
-            
             <div id="aetheria-controls-hint">
                 WASD to Move | SPACE to Jump<br>
                 Mouse to Rotate Camera
@@ -74,11 +170,7 @@
 
     <div id="matterhorn-game" class="hidden game-container">
         <canvas id="matterhornCanvas"></canvas>
-
-        <!-- UI Layers -->
         <div id="mh-ui-root" class="layer interactive">
-
-            <!-- HUD -->
             <div id="mh-hud-container" class="hidden">
                 <div class="mh-hud-box">
                     ALT: <span id="mh-hud-alt">0m</span><br>
@@ -87,7 +179,6 @@
                     STAMINA
                     <div class="mh-bar"><div id="mh-hud-stamina" class="mh-bar-fill" style="background:#fbbf24"></div></div>
                 </div>
-
                 <div class="mh-hud-box">
                     ₣ <span id="mh-hud-money">0</span><br>
                     <span style="font-size:0.75rem;color:#aaa;">
@@ -95,14 +186,8 @@
                     </span>
                 </div>
             </div>
-
-            <!-- Prompt -->
             <div id="mh-prompt">PRESS [E]</div>
-
-            <!-- Notifications -->
             <div id="mh-notifications"></div>
-
-            <!-- Start Screen -->
             <div id="mh-start-screen" class="layer interactive">
                 <div id="mh-start-content">
                     <h1>MATTERHORN</h1>
@@ -114,7 +199,6 @@
                 </div>
             </div>
         </div>
-
         <button class="back-btn" style="position: absolute; top: 20px; right: 20px; z-index: 200;">Back to Hub</button>
     </div>
 
@@ -166,7 +250,6 @@
         </div>
         <div id="rpg-log"></div>
         <button class="back-btn">Back</button>
-
     </div>
 
     <div id="breakout-game" class="hidden game-container">
@@ -186,16 +269,13 @@
         <h2>💰 Clicker Game</h2>
         <p>Money: <span id="money">0</span> 💸</p>
         <button>💵 Click for Cash!</button>
-
         <h3>🛒 Store</h3>
         <button>⚡ Upgrade Click (Cost: <span id="upgrade-cost">10</span>)</button>
         <button>🤖 Auto-Clicker (Cost: <span id="autoclicker-cost">50</span>)</button>
         <button id="prestige-btn" class="hidden">🔁 Prestige (Reset for Bonus!)</button>
-
         <p>Click Power: <span id="click-power">1</span> 🖱️</p>
         <p>Auto-Clicks Per Second: <span id="auto-rate">0</span> ⏳</p>
         <p>Prestige Multiplier: <span id="prestige-multiplier">1x</span> 🚀</p>
-
         <button class="back-btn">Back</button>
     </div>
 
@@ -252,18 +332,13 @@
         <button class="back-btn">Back</button>
     </div>
 
-    <script src="js/games/clicker.js"></script>
-    <script src="js/games/maze.js"></script>
-    <script src="js/games/runner.js"></script>
-    <script src="js/games/typing.js"></script>
-    <script src="js/games/snake.js"></script>
-    <script src="js/games/pong.js"></script>
-    <script src="js/games/space.js"></script>
-    <script src="js/games/tetris.js"></script>
-    <script src="js/games/breakout.js"></script>
+    <!-- New Games Containers -->
+    <div id="tower-defense-game" class="hidden game-container"></div>
+    <div id="physics-stacker-game" class="hidden game-container"></div>
+
     <div id="eclipse-logic-puzzle-game" class="hidden game-container">
-        <!-- Game Title -->
-        <div class="flex items-center gap-2 mb-6">
+         <!-- Game Title -->
+         <div class="flex items-center gap-2 mb-6">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
             <h1 class="text-4xl font-bold text-slate-700">Eclipse Logic Puzzle</h1>
         </div>
@@ -313,14 +388,24 @@
         <button class="back-btn">Back</button>
     </div>
 
+    <!-- Legacy Game Scripts -->
+    <script src="js/games/clicker.js"></script>
+    <script src="js/games/maze.js"></script>
+    <script src="js/games/runner.js"></script>
+    <script src="js/games/typing.js"></script>
+    <script src="js/games/snake.js"></script>
+    <script src="js/games/space.js"></script>
+    <script src="js/games/tetris.js"></script>
+    <script src="js/games/breakout.js"></script>
     <script src="js/games/rpg.js"></script>
     <script src="js/games/eclipse.js"></script>
     <script src="js/games/eclipsePuzzle.js"></script>
     <script src="js/games/eclipseLogicPuzzle.js"></script>
-    <script type="module" src="js/games/matterhorn.js"></script>
     <script type="module" src="js/games/aetheria/aetheria.js"></script>
-    <script src="js/soundManager.js"></script>
-    <script src="js/saveSystem.js"></script>
+
+    <!-- Main Module (No longer loads games via script tags, except the ones above which are not yet modules) -->
+    <!-- Pong and Matterhorn are imported in main.js, so we don't include them as script tags if we convert them to modules -->
+
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

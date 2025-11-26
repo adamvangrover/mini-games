@@ -1,28 +1,49 @@
+// Matterhorn Game Adapter
 import Game from "./matterhorn/Game.js";
 
-const matterhornGame = {
-    init: () => {
+export default class MatterhornGame {
+    async init(container) {
         const canvas = document.getElementById('matterhornCanvas');
         const uiRoot = document.getElementById('mh-ui-root');
 
         // Reset UI visibility
-        document.getElementById('mh-start-screen').classList.remove('hidden');
-        document.getElementById('mh-hud-container').classList.add('hidden');
+        const startScreen = document.getElementById('mh-start-screen');
+        const hud = document.getElementById('mh-hud-container');
+
+        if(startScreen) startScreen.classList.remove('hidden');
+        if(hud) hud.classList.add('hidden');
 
         // Start button handler
         const startBtn = document.getElementById('mh-start-btn');
-        startBtn.onclick = () => {
-            document.getElementById('mh-start-screen').classList.add('hidden');
-            Game.start();
-        };
+        if (startBtn) {
+             startBtn.onclick = () => {
+                if(startScreen) startScreen.classList.add('hidden');
+                Game.start();
+            };
+        }
 
         Game.init({
             canvas: canvas,
             uiRoot: uiRoot
         });
-    },
+    }
 
-    shutdown: () => {
+    update(dt) {
+        // Matterhorn Game currently has its own internal loop or doesn't expose update(dt).
+        // If Game.update exists, call it.
+        // Looking at previous matterhorn.js, it seems it didn't expose update/draw.
+        // It likely uses requestAnimationFrame internally or Three.js loop.
+
+        // If we want to centralize the loop, we would need to refactor matterhorn/Game.js heavily.
+        // For Phase 1, we can just ensure shutdown works.
+        // Ideally, we would hook into Game.update if it exists.
+    }
+
+    draw() {
+        // Same as update
+    }
+
+    shutdown() {
         Game.shutdown();
 
         // Reset UI elements visibility for next time
@@ -37,8 +58,9 @@ const matterhornGame = {
             const el = document.getElementById(id);
             if(el) el.remove();
         });
-    }
-};
 
-window.matterhornGame = matterhornGame;
-// No export needed if attached to window, but we keep module structure clean.
+        // Remove listeners
+        const startBtn = document.getElementById('mh-start-btn');
+        if(startBtn) startBtn.onclick = null;
+    }
+}
