@@ -1,13 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
 body {
     font-family: 'Press Start 2P', cursive;
     text-align: center;
-    background-color: #0d0221;
-    color: #00ffff;
+    background-color: #050505;
+    color: #fff;
     margin: 0;
-    padding: 20px;
-    text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
+    padding: 0;
+    min-height: 100vh;
 }
 
 h1, h2 {
@@ -15,40 +16,102 @@ h1, h2 {
     text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff;
 }
 
-.hidden {
-    display: none;
+.title-glow {
+    text-shadow: 0 0 10px #d946ef, 0 0 20px #a855f7;
 }
 
-.menu button, .back-btn {
+.hidden {
+    display: none !important;
+}
+
+/* New Menu Card Styles */
+.game-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backdrop-filter: blur(5px);
+    cursor: pointer;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif; /* Cleaner font for cards */
+}
+
+.game-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.game-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5),
+                0 0 15px rgba(255, 0, 255, 0.2); /* Neon glow hint */
+}
+
+.game-card:hover::before {
+    opacity: 1;
+}
+
+.game-card h3 {
+    text-shadow: none; /* Reset pixel shadow for Inter font */
+}
+
+.back-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
     font-family: 'Press Start 2P', cursive;
-    background-color: transparent;
+    background-color: rgba(0,0,0,0.8);
     color: #ff00ff;
     border: 2px solid #ff00ff;
     border-radius: 5px;
     padding: 10px 20px;
-    margin: 10px;
-    font-size: 16px;
+    z-index: 2000;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff inset;
+    box-shadow: 0 0 5px #ff00ff;
 }
 
-.menu button:hover, .back-btn:hover {
+.back-btn:hover {
     background-color: #ff00ff;
     color: #0d0221;
-    box-shadow: 0 0 15px #ff00ff, 0 0 20px #ff00ff inset;
+    box-shadow: 0 0 15px #ff00ff;
 }
 
+
+/* --- Game Containers --- */
+.game-container {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.8); /* Dim background */
+}
+
+/* Specific Canvas Styles */
 canvas {
     border: 2px solid #ff00ff;
     background: black;
-    margin-top: 10px;
-    box-shadow: 0 0 10px #ff00ff;
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
 }
 
-.game-container {
-    margin-top: 20px;
-}
+/* --- Legacy Styles Preserved Below --- */
 
 input {
     background-color: transparent;

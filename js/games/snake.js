@@ -1,62 +1,84 @@
-const snakeGame = {
-    canvas: null,
-    ctx: null,
-    tileSize: 20,
-    snake: [{ x: 10, y: 10 }],
-    food: { x: 5, y: 5 },
-    dx: 1,
-    dy: 0,
-    score: 0,
-    interval: null,
-    keydownHandler: null,
+import SoundManager from '../core/SoundManager.js';
+import InputManager from '../core/InputManager.js';
 
-    init: function() {
-        this.canvas = document.getElementById("snakeCanvas");
-        this.ctx = this.canvas.getContext("2d");
+export default class SnakeGame {
+    constructor() {
+        this.canvas = null;
+        this.ctx = null;
+        this.tileSize = 20;
         this.snake = [{ x: 10, y: 10 }];
         this.food = { x: 5, y: 5 };
         this.dx = 1;
         this.dy = 0;
         this.score = 0;
-        document.getElementById("snake-score").textContent = this.score;
 
-        if (this.interval) clearInterval(this.interval);
-        this.interval = setInterval(() => {
+        // Timing
+        this.timeSinceLastMove = 0;
+        this.moveInterval = 0.15; // 150ms
+        this.baseInterval = 0.15;
+        this.dashInterval = 0.05; // 50ms
+
+        // Effects
+        this.foodPulse = 0;
+        this.isDashing = false;
+
+        this.soundManager = SoundManager.getInstance();
+        this.inputManager = InputManager.getInstance();
+    }
+
+    init(container) {
+        this.canvas = document.getElementById("snakeCanvas");
+        this.ctx = this.canvas.getContext("2d");
+        this.resetGame();
+    }
+
+    resetGame() {
+        this.snake = [{ x: 10, y: 10 }];
+        this.createFood();
+        this.dx = 1;
+        this.dy = 0;
+        this.score = 0;
+        this.timeSinceLastMove = 0;
+        this.updateScoreUI();
+    }
+
+    shutdown() { }
+
+    update(dt) {
+        // Input Handling
+        if (this.inputManager.isKeyDown("ArrowUp") && this.dy !== 1) { this.dx = 0; this.dy = -1; }
+        else if (this.inputManager.isKeyDown("ArrowDown") && this.dy !== -1) { this.dx = 0; this.dy = 1; }
+        else if (this.inputManager.isKeyDown("ArrowLeft") && this.dx !== 1) { this.dx = -1; this.dy = 0; }
+        else if (this.inputManager.isKeyDown("ArrowRight") && this.dx !== -1) { this.dx = 1; this.dy = 0; }
+
+        // Dash Check (Shift Key)
+        this.isDashing = this.inputManager.isKeyDown("ShiftLeft") || this.inputManager.isKeyDown("ShiftRight");
+        this.moveInterval = this.isDashing ? this.dashInterval : this.baseInterval;
+
+        // Move Logic
+        this.timeSinceLastMove += dt;
+        if (this.timeSinceLastMove >= this.moveInterval) {
             this.move();
-            this.draw();
-        }, 150);
-
-        this.keydownHandler = (e) => this.handleKeydown(e);
-        document.addEventListener("keydown", this.keydownHandler);
-    },
-
-    shutdown: function() {
-        if (this.interval) clearInterval(this.interval);
-        if (this.keydownHandler) {
-            document.removeEventListener("keydown", this.keydownHandler);
+            this.timeSinceLastMove = 0;
         }
-    },
 
-    draw: function() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = "#00ff00";
-        this.snake.forEach(segment => {
-            this.ctx.fillRect(segment.x * this.tileSize, segment.y * this.tileSize, this.tileSize, this.tileSize);
-        });
+        // Pulse Effect
+        this.foodPulse += dt * 5;
+    }
 
-        this.ctx.fillStyle = "#ff4500";
-        this.ctx.fillRect(this.food.x * this.tileSize, this.food.y * this.tileSize, this.tileSize, this.tileSize);
-    },
-
-    move: function() {
+    move() {
         const head = { x: this.snake[0].x + this.dx, y: this.snake[0].y + this.dy };
+        const gridW = this.canvas.width / this.tileSize;
+        const gridH = this.canvas.height / this.tileSize;
 
-        if (head.x < 0 || head.y < 0 || head.x >= this.canvas.width / this.tileSize || head.y >= this.canvas.height / this.tileSize) {
+        // Wall Collision
+        if (head.x < 0 || head.y < 0 || head.x >= gridW || head.y >= gridH) {
             this.gameOver();
             return;
         }
 
-        for (let i = 1; i < this.snake.length; i++) {
+        // Self Collision
+        for (let i = 0; i < this.snake.length; i++) {
             if (head.x === this.snake[i].x && head.y === this.snake[i].y) {
                 this.gameOver();
                 return;
@@ -65,34 +87,60 @@ const snakeGame = {
 
         this.snake.unshift(head);
 
+        // Eat Food
         if (head.x === this.food.x && head.y === this.food.y) {
             this.score += 10;
-            document.getElementById("snake-score").textContent = this.score;
+            this.soundManager.playSound('score');
+            this.updateScoreUI();
             this.createFood();
+            // Don't pop tail, so we grow
         } else {
             this.snake.pop();
         }
-    },
-
-    createFood: function() {
-        this.food = {
-            x: Math.floor(Math.random() * (this.canvas.width / this.tileSize)),
-            y: Math.floor(Math.random() * (this.canvas.height / this.tileSize))
-        };
-    },
-
-    gameOver: function() {
-        clearInterval(this.interval);
-        alert("Game Over! Your score: " + this.score);
-        this.init();
-    },
-
-    handleKeydown: function(e) {
-        if (e.key === "ArrowUp" && this.dy !== 1) { this.dx = 0; this.dy = -1; }
-        if (e.key === "ArrowDown" && this.dy !== -1) { this.dx = 0; this.dy = 1; }
-        if (e.key === "ArrowLeft" && this.dx !== 1) { this.dx = -1; this.dy = 0; }
-        if (e.key === "ArrowRight" && this.dx !== -1) { this.dx = 1; this.dy = 0; }
-        this.move();
-        this.draw();
     }
-};
+
+    createFood() {
+        const gridW = this.canvas.width / this.tileSize;
+        const gridH = this.canvas.height / this.tileSize;
+        this.food = {
+            x: Math.floor(Math.random() * gridW),
+            y: Math.floor(Math.random() * gridH)
+        };
+    }
+
+    gameOver() {
+        this.soundManager.playSound('explosion');
+        alert("Game Over! Your score: " + this.score);
+        this.resetGame();
+    }
+
+    updateScoreUI() {
+        const el = document.getElementById("snake-score");
+        if(el) el.textContent = this.score;
+    }
+
+    draw() {
+        if (!this.ctx) return;
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Snake Glow
+        this.ctx.shadowBlur = 10;
+        this.ctx.shadowColor = "#00ff00";
+
+        this.ctx.fillStyle = "#00ff00";
+        this.snake.forEach((segment, index) => {
+            // Head is slightly brighter
+            this.ctx.fillStyle = index === 0 ? "#ccffcc" : "#00ff00";
+            this.ctx.fillRect(segment.x * this.tileSize, segment.y * this.tileSize, this.tileSize, this.tileSize);
+        });
+
+        // Food Pulse
+        this.ctx.shadowColor = "#ff4500";
+        this.ctx.shadowBlur = 15 + Math.sin(this.foodPulse) * 5;
+        this.ctx.fillStyle = "#ff4500";
+        this.ctx.fillRect(this.food.x * this.tileSize, this.food.y * this.tileSize, this.tileSize, this.tileSize);
+
+        // Reset Shadow
+        this.ctx.shadowBlur = 0;
+    }
+}
