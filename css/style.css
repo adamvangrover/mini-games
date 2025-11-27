@@ -1,364 +1,192 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
-body {
-    font-family: 'Press Start 2P', cursive;
-    text-align: center;
-    background-color: #0d0221;
-    color: #00ffff;
-    margin: 0;
-    padding: 20px;
-    text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
+/* --- Global Variables --- */
+:root {
+    --primary-neon: #00ffff;
+    --secondary-neon: #ff00ff;
+    --background-dark: #0d0221;
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --card-hover: rgba(255, 255, 255, 0.15);
 }
 
-h1, h2 {
-    color: #ff00ff;
-    text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff;
+body {
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+    background-color: var(--background-dark);
+    color: white;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    /* Retro Grid Background will be handled by canvas or complex CSS */
+    background-image:
+        radial-gradient(circle at 50% 50%, #2a0e4b 0%, #0d0221 100%);
+    min-height: 100vh;
+}
+
+h1, h2, h3 {
+    font-family: 'Press Start 2P', cursive;
+    color: var(--secondary-neon);
+    text-shadow: 0 0 10px var(--secondary-neon);
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
-.menu button, .back-btn {
-    font-family: 'Press Start 2P', cursive;
-    background-color: transparent;
-    color: #ff00ff;
-    border: 2px solid #ff00ff;
-    border-radius: 5px;
-    padding: 10px 20px;
-    margin: 10px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff inset;
+/* --- Main Menu (Grid of Cards) --- */
+#menu {
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-.menu button:hover, .back-btn:hover {
-    background-color: #ff00ff;
-    color: #0d0221;
-    box-shadow: 0 0 15px #ff00ff, 0 0 20px #ff00ff inset;
+#menu h1 {
+    font-size: 2.5rem;
+    margin-bottom: 50px;
+    animation: glow 2s ease-in-out infinite alternate;
 }
 
-canvas {
-    border: 2px solid #ff00ff;
-    background: black;
-    margin-top: 10px;
-    box-shadow: 0 0 10px #ff00ff;
+@keyframes glow {
+    from { text-shadow: 0 0 10px var(--secondary-neon), 0 0 20px var(--secondary-neon); }
+    to { text-shadow: 0 0 20px var(--secondary-neon), 0 0 30px var(--secondary-neon), 0 0 40px var(--primary-neon); }
 }
 
-.game-container {
-    margin-top: 20px;
-}
-
-input {
-    background-color: transparent;
-    border: 1px solid #00ffff;
-    color: #00ffff;
-    padding: 5px;
-    font-family: 'Press Start 2P', cursive;
-}
-
-/* Eclipse Game Styles */
-#eclipse-grid {
+.game-grid {
     display: grid;
-    gap: 5px;
-    margin: 20px auto;
-    max-width: 400px;
-    border: 2px solid #ff00ff;
-    padding: 10px;
-    background-color: #2a004f;
-    aspect-ratio: 1 / 1;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
 }
 
-#eclipse-grid .cell {
-    background-color: #0d0221;
-    border: 1px solid #00ffff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5rem;
+.game-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     cursor: pointer;
-    user-select: none;
-    transition: background-color 0.3s;
-}
-
-#eclipse-grid .cell:hover {
-    background-color: #4a008f;
-}
-
-#eclipse-grid .cell.clue {
-    cursor: default;
-    background-color: #1a0131;
-    color: #aaa;
-}
-
-#eclipse-grid .cell.error {
-    border-color: #ff0000;
-    box-shadow: 0 0 5px #ff0000;
-}
-
-#eclipse-info {
-    margin-top: 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-}
-
-#eclipse-info button {
-    font-family: 'Press Start 2P', cursive;
-    background-color: transparent;
-    color: #00ffff;
-    border: 2px solid #00ffff;
-    border-radius: 5px;
-    padding: 10px 15px;
-    margin: 5px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff inset;
-}
-
-#eclipse-info button:hover {
-    background-color: #00ffff;
-    color: #0d0221;
-    box-shadow: 0 0 15px #00ffff, 0 0 20px #00ffff inset;
-}
-
-.game-message {
-    margin-top: 15px;
-    font-size: 16px;
-    color: #39ff14; /* Neon green for visibility */
-    text-shadow: 0 0 5px #39ff14;
-    height: 20px; /* Reserve space to prevent layout shifts */
-    line-height: 20px;
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
-}
-
-.game-message.visible {
-    opacity: 1;
-}
-/* --- Eclipse Puzzle Styles --- */
-.eclipse-game-area {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 2rem;
-    margin-top: 2rem;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Use a more readable font for the game itself */
-    text-shadow: none;
-}
-
-.eclipse-grid-container {
     position: relative;
-    width: 360px;
-    height: 360px;
-}
-
-.eclipse-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    grid-template-rows: repeat(6, 1fr);
-    width: 100%;
-    height: 100%;
-    background-color: #000;
-    border: 2px solid #ff00ff;
-    box-shadow: 0 0 10px #ff00ff;
-}
-
-.eclipse-cell {
-    width: 100%;
-    height: 100%;
-    border: 1px solid #ff00ff;
-    cursor: pointer;
+    overflow: hidden;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    transition: background-color 0.2s;
-    font-size: 2rem;
+    justify-content: center;
+    height: 200px;
 }
 
-.eclipse-cell.initial {
-    cursor: not-allowed;
-    background-color: #3d053d;
+.game-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    background: var(--card-hover);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--primary-neon);
+    border-color: var(--primary-neon);
 }
 
-.eclipse-cell:not(.initial):hover {
-    background-color: #2a032a;
-}
-
-.eclipse-clue-layer {
+.game-card::before {
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: translateX(-100%);
+    transition: 0.5s;
 }
 
-.eclipse-clue {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #00ffff;
-    width: 20px;
-    height: 20px;
-    text-align: center;
-    text-shadow: 0 0 5px #00ffff;
+.game-card:hover::before {
+    transform: translateX(100%);
 }
 
-.eclipse-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    color: #00ffff;
-    min-width: 150px;
-}
-
-.eclipse-timer {
-    font-size: 1.5rem;
-}
-
-.eclipse-game-controls button {
-    font-family: 'Press Start 2P', cursive;
-    background-color: transparent;
-    color: #ff00ff;
-    border: 2px solid #ff00ff;
-    padding: 10px 20px;
-    font-size: 1rem;
-    cursor: pointer;
-    width: 100%;
-    margin-bottom: 10px;
-    box-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff inset;
-}
-
-.eclipse-game-controls button:hover {
-    background-color: #ff00ff;
-    color: #0d0221;
-}
-
-/* --- Eclipse Logic Puzzle Styles --- */
-#eclipse-logic-puzzle-game {
+.game-card h3 {
+    font-size: 1.2rem;
+    margin: 10px 0;
+    color: white;
+    text-shadow: 0 0 5px rgba(0,0,0,0.5);
     font-family: 'Poppins', sans-serif;
-    text-shadow: none;
-    color: #333;
+    font-weight: 700;
 }
 
-#eclipse-logic-puzzle-game .grid-container {
-    display: grid;
-    grid-template-columns: 2rem repeat(5, 1fr);
-    grid-template-rows: 2rem repeat(5, 1fr);
-    gap: 2px;
+.game-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
 }
 
-#eclipse-logic-puzzle-game .game-grid {
-    grid-column: 2 / 7;
-    grid-row: 2 / 7;
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 2px;
-    border: 2px solid #94a3b8; /* slate-400 */
-}
-
-#eclipse-logic-puzzle-game .grid-cell {
-    background-color: #f1f5f9; /* slate-100 */
+/* --- Common UI Elements --- */
+.back-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    font-family: 'Press Start 2P', cursive;
+    background: rgba(0, 0, 0, 0.6);
+    color: var(--primary-neon);
+    border: 2px solid var(--primary-neon);
+    padding: 10px 20px;
+    border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
 }
 
-#eclipse-logic-puzzle-game .grid-cell:hover {
-    background-color: #e2e8f0; /* slate-200 */
+.back-btn:hover {
+    background: var(--primary-neon);
+    color: black;
+    box-shadow: 0 0 20px var(--primary-neon);
 }
 
-#eclipse-logic-puzzle-game .indicator {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    color: #475569; /* slate-600 */
-    transition: background-color 0.3s;
+/* --- Canvas Styles --- */
+canvas {
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    display: block;
+    margin: 0 auto;
 }
 
-#eclipse-logic-puzzle-game .indicator.error {
-    background-color: #fecaca; /* red-200 */
-    color: #b91c1c; /* red-700 */
+/* --- Specific Game Overrides --- */
+
+/* Pong specific */
+#pong-game canvas {
+    border: 2px solid var(--secondary-neon);
+    box-shadow: 0 0 15px var(--secondary-neon);
 }
 
-#eclipse-logic-puzzle-game .col-indicator { grid-row: 1; }
-#eclipse-logic-puzzle-game .row-indicator { grid-column: 1; }
-
-#eclipse-logic-puzzle-game .fade-in {
-    animation: fadeIn 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-#eclipse-logic-puzzle-game .spinner {
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-/* --- Matterhorn Ascent Styles --- */
-#matterhorn-game {
+/* Matterhorn & Aetheria Fullscreen */
+#matterhorn-game, #aetheria-game {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: #050505;
-    z-index: 1000; /* Ensure it covers everything */
-    margin: 0;
+    background: black;
+    z-index: 50;
     padding: 0;
-    font-family: 'Inter', sans-serif;
-    user-select: none;
-    text-shadow: none;
-    color: white;
+    margin: 0;
 }
 
-#matterhornCanvas {
+#matterhorn-game canvas, #aetheria-game canvas {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-    border: none;
     margin: 0;
+    border: none;
     box-shadow: none;
+    border-radius: 0;
 }
 
-#matterhorn-game .layer {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
+/* --- Matterhorn UI (Ported) --- */
+#mh-ui-root {
+    font-family: 'Inter', sans-serif; /* Override global font for HUD */
 }
-
-#matterhorn-game .interactive {
-    pointer-events: auto;
-}
-
-#matterhorn-game .hidden {
-    opacity: 0 !important;
-    pointer-events: none !important;
-    display: none !important;
-}
-
-/* HUD */
 #mh-hud-container {
     position: absolute;
     top: 20px;
     left: 20px;
     display: flex;
     gap: 20px;
-    transition: opacity 0.3s;
 }
 .mh-hud-box {
     background: rgba(15, 23, 42, 0.75);
@@ -368,6 +196,7 @@ input {
     border: 1px solid rgba(255,255,255,0.1);
     font-size: 0.9rem;
     text-align: left;
+    color: white;
 }
 .mh-bar {
     width: 120px;
@@ -382,8 +211,6 @@ input {
     width: 100%;
     transition: width 0.2s;
 }
-
-/* Interaction Prompt */
 #mh-prompt {
     position: absolute;
     bottom: 22%;
@@ -397,38 +224,16 @@ input {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s;
+    color: white;
 }
-
-/* Notifications */
-#mh-notifications {
-    position: absolute;
-    top: 100px;
-    right: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 10px;
-    pointer-events: none;
-}
-.mh-notif {
-    background: rgba(0,0,0,0.8);
-    padding: 10px 20px;
-    border-radius: 8px;
-    border-left: 4px solid #38bdf8;
-    animation: slideIn 0.3s ease-out;
-}
-@keyframes slideIn {
-    from { transform: translateX(60px); opacity: 0; }
-    to   { transform: translateX(0); opacity: 1; }
-}
-
-/* Main Menu */
 #mh-start-screen {
+    position: absolute;
+    inset: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     background: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat;
-    z-index: 20;
+    z-index: 60;
 }
 #mh-start-content {
     background: rgba(0,0,0,0.7);
@@ -437,24 +242,6 @@ input {
     border-radius: 20px;
     backdrop-filter: blur(6px);
 }
-#mh-start-content h1 {
-    font-size: 4rem;
-    margin: 0;
-    font-weight: 200;
-    letter-spacing: 5px;
-    text-transform: uppercase;
-    text-shadow: none;
-    color: white;
-}
-#mh-start-content h2 {
-    font-size: 1rem;
-    margin-bottom: 25px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: #94a3b8;
-    text-shadow: none;
-}
-
 .mh-btn {
     padding: 14px 35px;
     border-radius: 10px;
@@ -468,36 +255,9 @@ input {
     transition: transform 0.1s;
 }
 .mh-btn:hover { transform: scale(1.05); }
-.mh-btn:active { transform: scale(0.97); }
 
 
-/* --- Aetheria Game Styles --- */
-#aetheria-game {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: #000;
-    z-index: 1000;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    text-shadow: none;
-    color: white;
-    overflow: hidden;
-}
-
-#aetheria-game-container {
-    width: 100%;
-    height: 100%;
-}
-
-#aetheria-game canvas {
-    border: none;
-    box-shadow: none;
-    margin: 0;
-}
-
-/* UI Overlay */
+/* --- Aetheria UI (Ported) --- */
 #aetheria-ui-layer {
     position: absolute;
     top: 0;
@@ -510,7 +270,6 @@ input {
     justify-content: center;
     align-items: center;
 }
-
 #aetheria-selection-screen {
     background: rgba(10, 10, 20, 0.85);
     backdrop-filter: blur(10px);
@@ -519,33 +278,15 @@ input {
     border: 1px solid rgba(255,255,255,0.1);
     text-align: center;
     pointer-events: auto;
-    box-shadow: 0 0 50px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;
     align-items: center;
-    transition: opacity 1s;
 }
-
-#aetheria-selection-screen h1 {
-    color: white;
-    font-size: 3rem;
-    margin: 0 0 10px 0;
-    text-transform: uppercase;
-    letter-spacing: 4px;
-    background: linear-gradient(45deg, #00f260, #0575e6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: none;
-}
-
-#aetheria-selection-screen p { color: #aaa; margin-bottom: 30px; font-size: 1.1rem; }
-
 .aetheria-avatars {
     display: flex;
     gap: 20px;
     justify-content: center;
 }
-
 .aetheria-avatar-card {
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.1);
@@ -555,14 +296,10 @@ input {
     width: 150px;
     transition: all 0.3s ease;
 }
-
 .aetheria-avatar-card:hover {
     transform: translateY(-10px);
     background: rgba(255,255,255,0.1);
-    border-color: #00f260;
-    box-shadow: 0 10px 30px rgba(0, 242, 96, 0.2);
 }
-
 .aetheria-avatar-icon {
     width: 80px;
     height: 80px;
@@ -573,10 +310,6 @@ input {
     justify-content: center;
     font-size: 2rem;
 }
-
-.aetheria-avatar-name { color: white; font-weight: bold; margin-bottom: 5px; }
-.aetheria-avatar-desc { color: #888; font-size: 0.8rem; }
-
 #aetheria-hud {
     position: absolute;
     bottom: 20px;
@@ -584,10 +317,7 @@ input {
     color: white;
     font-family: monospace;
     display: none;
-    text-align: left;
-    text-shadow: 1px 1px 2px black;
 }
-
 #aetheria-controls-hint {
     position: absolute;
     bottom: 20px;
@@ -595,5 +325,12 @@ input {
     color: rgba(255,255,255,0.5);
     font-size: 0.9rem;
     text-align: right;
-    text-shadow: 1px 1px 2px black;
+}
+
+/* --- Eclipse Logic Puzzle --- */
+#eclipselogic-grid-container {
+    background-color: #f1f5f9;
+}
+.grid-cell {
+    background-color: #f1f5f9;
 }

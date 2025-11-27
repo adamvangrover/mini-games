@@ -1,4 +1,5 @@
-export default class Input {
+// Matterhorn specific Input adapter that wraps the global InputManager
+export default class InputAdapter {
     constructor() {
         this.forward = false;
         this.backward = false;
@@ -11,52 +12,36 @@ export default class Input {
         this.cameraPitch = 0;
 
         this.mouseLocked = false;
-
         this.recentInteractPress = false;
+        this.lastInteractState = false;
 
-        this._onKeyDown = this._onKeyDown.bind(this);
-        this._onKeyUp = this._onKeyUp.bind(this);
-        this._onMouseMove = this._onMouseMove.bind(this);
-        this._onClick = this._onClick.bind(this);
         this._onPointerLockChange = this._onPointerLockChange.bind(this);
+        this._onClick = this._onClick.bind(this);
+        this._onMouseMove = this._onMouseMove.bind(this);
 
         this.bindEvents();
     }
 
     bindEvents() {
-        window.addEventListener("keydown", this._onKeyDown);
-        window.addEventListener("keyup", this._onKeyUp);
+        // We still need local listeners for pointer lock and specific mouse movement
+        // because global input manager might store absolute position, but here we need movement delta
+        // efficiently for camera look.
+        // Actually, InputManager stores mouse x/y, but not movement delta per frame easily without diffing.
+        // Let's keep local mouse movement for 3D camera control to ensure smooth FPS look.
+
         window.addEventListener("mousemove", this._onMouseMove);
         window.addEventListener("click", this._onClick);
         document.addEventListener("pointerlockchange", this._onPointerLockChange);
     }
 
     unbindEvents() {
-        window.removeEventListener("keydown", this._onKeyDown);
-        window.removeEventListener("keyup", this._onKeyUp);
         window.removeEventListener("mousemove", this._onMouseMove);
         window.removeEventListener("click", this._onClick);
         document.removeEventListener("pointerlockchange", this._onPointerLockChange);
+
         if (document.pointerLockElement === document.body) {
             document.exitPointerLock();
         }
-    }
-
-    _onKeyDown(e) {
-        if (e.code === "KeyW") this.forward = true;
-        if (e.code === "KeyS") this.backward = true;
-        if (e.code === "KeyA") this.left = true;
-        if (e.code === "KeyD") this.right = true;
-        if (e.code === "ShiftLeft") this.shift = true;
-        if (e.code === "KeyE") this.recentInteractPress = true;
-    }
-
-    _onKeyUp(e) {
-        if (e.code === "KeyW") this.forward = false;
-        if (e.code === "KeyS") this.backward = false;
-        if (e.code === "KeyA") this.left = false;
-        if (e.code === "KeyD") this.right = false;
-        if (e.code === "ShiftLeft") this.shift = false;
     }
 
     _onMouseMove(e) {
@@ -68,11 +53,7 @@ export default class Input {
     }
 
     _onClick() {
-        // Only request pointer lock if the game is active (not paused/menu) and canvas is clicked
-        // We'll handle this check in Game.js or ensure this is only called when appropriate
-        if (!this.mouseLocked && document.getElementById('matterhorn-game') && !document.getElementById('matterhorn-game').classList.contains('hidden')) {
-             // Don't lock if clicking on UI buttons?
-             // For now, simple logic
+         if (!this.mouseLocked && document.getElementById('matterhorn-game') && !document.getElementById('matterhorn-game').classList.contains('hidden')) {
              document.body.requestPointerLock();
         }
     }
@@ -82,8 +63,18 @@ export default class Input {
     }
 
     update() {
-        // Interact flag only true for one frame
-        this.interact = this.recentInteractPress;
-        this.recentInteractPress = false;
+        if (!window.inputManager) return;
+
+        // Map Global InputManager keys to Matterhorn state
+        this.forward = window.inputManager.isKeyDown('KeyW');
+        this.backward = window.inputManager.isKeyDown('KeyS');
+        this.left = window.inputManager.isKeyDown('KeyA');
+        this.right = window.inputManager.isKeyDown('KeyD');
+        this.shift = window.inputManager.isKeyDown('ShiftLeft');
+
+        // Handle single-frame interact press
+        const interactNow = window.inputManager.isKeyDown('KeyE');
+        this.interact = (interactNow && !this.lastInteractState);
+        this.lastInteractState = interactNow;
     }
 }

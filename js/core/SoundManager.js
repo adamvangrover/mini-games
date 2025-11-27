@@ -1,9 +1,22 @@
-class SoundManager {
+export default class SoundManager {
     constructor() {
+        if (SoundManager.instance) {
+            return SoundManager.instance;
+        }
+
         this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         this.muted = false;
         this.bgmOscillators = [];
         this.bgmGainNode = null;
+
+        SoundManager.instance = this;
+    }
+
+    static getInstance() {
+        if (!SoundManager.instance) {
+            SoundManager.instance = new SoundManager();
+        }
+        return SoundManager.instance;
     }
 
     toggleMute() {
@@ -103,5 +116,3 @@ class SoundManager {
         this.bgmOscillators = [];
     }
 }
-
-window.soundManager = new SoundManager();
