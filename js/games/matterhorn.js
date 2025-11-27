@@ -29,18 +29,11 @@ export default class MatterhornGame {
     }
 
     update(dt) {
-        // Matterhorn Game currently has its own internal loop or doesn't expose update(dt).
-        // If Game.update exists, call it.
-        // Looking at previous matterhorn.js, it seems it didn't expose update/draw.
-        // It likely uses requestAnimationFrame internally or Three.js loop.
-
-        // If we want to centralize the loop, we would need to refactor matterhorn/Game.js heavily.
-        // For Phase 1, we can just ensure shutdown works.
-        // Ideally, we would hook into Game.update if it exists.
+        Game.update(dt);
     }
 
     draw() {
-        // Same as update
+        Game.draw();
     }
 
     shutdown() {

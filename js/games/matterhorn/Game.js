@@ -20,13 +20,9 @@ class GameController {
         this.scene = null;
         this.renderer = null;
         this.camera = null;
-        this.clock = new THREE.Clock();
 
         this.canvas = null;
         this.uiRoot = null;
-
-        this._boundLoop = this.loop.bind(this);
-        this.animationId = null;
     }
 
     init({ canvas, uiRoot }) {
@@ -116,7 +112,6 @@ class GameController {
         if (this.started) return;
         this.started = true;
         this.ui.show();
-        this.loop();
     }
 
     pause() {
@@ -133,9 +128,6 @@ class GameController {
     }
 
     shutdown() {
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-        }
         this.started = false;
         this.initialized = false;
 
@@ -198,11 +190,7 @@ class GameController {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    loop() {
-        this.animationId = requestAnimationFrame(this._boundLoop);
-
-        const dt = Math.min(this.clock.getDelta(), 0.1);
-
+    update(dt) {
         if (!this.paused) {
             // Update systems
             if (this.input) this.input.update();
@@ -223,7 +211,9 @@ class GameController {
             // Update HUD altitude
             if (this.player) State.set("altitude", Math.round(this.player.position.y));
         }
+    }
 
+    draw() {
         // Render
         if (this.renderer && this.scene && this.camera) {
             this.renderer.render(this.scene, this.camera);
