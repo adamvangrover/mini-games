@@ -1,4 +1,4 @@
-const clickerGame = {
+export default {
     money: 0,
     clickPower: 1,
     autoClickers: 0,
@@ -28,6 +28,10 @@ const clickerGame = {
         }, 1000);
 
         const buttons = document.querySelectorAll('#clicker-game button:not(.back-btn)');
+        // Ensure buttons exist before attaching. The querySelectorAll relies on order which is fragile.
+        // Let's assume order: Click, Upgrade, Auto, Prestige.
+        // Better: select by text content if possible or structure, but for now order is 0,1,2,3
+
         const handlers = [
             () => this.clickMoney(),
             () => this.buyUpgrade(),
@@ -36,9 +40,11 @@ const clickerGame = {
         ];
 
         buttons.forEach((button, index) => {
-            const handler = handlers[index];
-            this.buttonHandlers.push({ button, handler });
-            button.addEventListener('click', handler);
+            if (handlers[index]) {
+                const handler = handlers[index];
+                this.buttonHandlers.push({ button, handler });
+                button.addEventListener('click', handler);
+            }
         });
     },
 
@@ -53,6 +59,10 @@ const clickerGame = {
     clickMoney: function() {
         this.money += this.clickPower * this.prestigeMultiplier;
         this.updateUI();
+        if(window.soundManager) window.soundManager.playSound('click');
+
+        // Visual effect
+        this.spawnFloatingText(event.clientX, event.clientY, `+$${this.clickPower * this.prestigeMultiplier}`);
     },
 
     buyUpgrade: function() {
@@ -61,6 +71,9 @@ const clickerGame = {
             this.clickPower += 1;
             this.upgradeCost = Math.floor(this.upgradeCost * 1.5);
             this.updateUI();
+            if(window.soundManager) window.soundManager.playTone(600, 'sine', 0.1, true);
+        } else {
+             if(window.soundManager) window.soundManager.playTone(150, 'sawtooth', 0.1);
         }
     },
 
@@ -71,6 +84,9 @@ const clickerGame = {
             this.autoClickRate = this.autoClickers * this.prestigeMultiplier;
             this.autoClickerCost = Math.floor(this.autoClickerCost * 1.7);
             this.updateUI();
+            if(window.soundManager) window.soundManager.playTone(600, 'sine', 0.1, true);
+        } else {
+             if(window.soundManager) window.soundManager.playTone(150, 'sawtooth', 0.1);
         }
     },
 
@@ -84,16 +100,43 @@ const clickerGame = {
             this.autoClickerCost = 50;
             this.prestigeMultiplier *= 2;
             this.updateUI();
+            if(window.soundManager) window.soundManager.playSound('score');
         }
     },
 
+    spawnFloatingText: function(x, y, text) {
+        const el = document.createElement('div');
+        el.innerText = text;
+        el.style.position = 'fixed';
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.color = '#10b981';
+        el.style.fontWeight = 'bold';
+        el.style.pointerEvents = 'none';
+        el.style.transition = 'all 1s ease-out';
+        document.body.appendChild(el);
+
+        requestAnimationFrame(() => {
+            el.style.top = (y - 50) + 'px';
+            el.style.opacity = 0;
+        });
+
+        setTimeout(() => el.remove(), 1000);
+    },
+
     updateUI: function() {
-        document.getElementById("money").textContent = this.money;
+        document.getElementById("money").textContent = Math.floor(this.money);
         document.getElementById("click-power").textContent = this.clickPower;
         document.getElementById("auto-rate").textContent = this.autoClickRate;
         document.getElementById("upgrade-cost").textContent = this.upgradeCost;
         document.getElementById("autoclicker-cost").textContent = this.autoClickerCost;
         document.getElementById("prestige-multiplier").textContent = this.prestigeMultiplier + "x";
-        document.getElementById("prestige-btn").classList.toggle("hidden", this.money < 1000);
+
+        const prestigeBtn = document.getElementById("prestige-btn");
+        if (this.money >= 1000) {
+             prestigeBtn.classList.remove("hidden");
+        } else {
+             prestigeBtn.classList.add("hidden");
+        }
     }
 };

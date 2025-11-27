@@ -40,5 +40,4 @@ const matterhornGame = {
     }
 };
 
-window.matterhornGame = matterhornGame;
-// No export needed if attached to window, but we keep module structure clean.
+export default matterhornGame;

@@ -1,4 +1,4 @@
-class SaveSystem {
+export default class SaveSystem {
     constructor() {
         this.storageKey = 'miniGameHub_v1';
         this.data = this.load();
@@ -51,5 +51,3 @@ class SaveSystem {
         return false;
     }
 }
-
-window.saveSystem = new SaveSystem();

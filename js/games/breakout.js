@@ -1,4 +1,4 @@
-const breakoutGame = {
+export default {
     canvas: null,
     ctx: null,
     ballRadius: 10,
@@ -20,17 +20,26 @@ const breakoutGame = {
     brickOffsetLeft: 30,
     bricks: [],
     score: 0,
-    interval: null,
+    animationId: null, // Changed from interval to RAF
     keydownHandler: null,
     keyupHandler: null,
+    active: false,
 
     init: function() {
         this.canvas = document.getElementById("breakoutCanvas");
         this.ctx = this.canvas.getContext("2d");
+
+        // Reset state
         this.x = this.canvas.width / 2;
         this.y = this.canvas.height - 30;
+        this.dx = 2;
+        this.dy = -2;
         this.paddleX = (this.canvas.width - this.paddleWidth) / 2;
         this.score = 0;
+        this.active = true;
+        this.rightPressed = false;
+        this.leftPressed = false;
+
         this.createBricks();
 
         this.keydownHandler = (e) => this.keyDownHandler(e);
@@ -38,12 +47,12 @@ const breakoutGame = {
         document.addEventListener("keydown", this.keydownHandler);
         document.addEventListener("keyup", this.keyupHandler);
 
-        if(this.interval) clearInterval(this.interval);
-        this.interval = setInterval(() => this.draw(), 10);
+        this.loop();
     },
 
     shutdown: function() {
-        if (this.interval) clearInterval(this.interval);
+        this.active = false;
+        if (this.animationId) cancelAnimationFrame(this.animationId);
         if (this.keydownHandler) {
             document.removeEventListener("keydown", this.keydownHandler);
         }
@@ -86,15 +95,26 @@ const breakoutGame = {
                         this.dy = -this.dy;
                         b.status = 0;
                         this.score++;
+                        if(window.soundManager) window.soundManager.playSound('score');
                         if (this.score == this.brickRowCount * this.brickColumnCount) {
+                            if(window.soundManager) window.soundManager.playTone(800, 'sine', 0.5, true);
                             alert("YOU WIN, CONGRATULATIONS!");
-                            this.shutdown();
-                            this.init();
+                            this.resetGame();
                         }
                     }
                 }
             }
         }
+    },
+
+    resetGame: function() {
+        this.x = this.canvas.width / 2;
+        this.y = this.canvas.height - 30;
+        this.dx = 2;
+        this.dy = -2;
+        this.paddleX = (this.canvas.width - this.paddleWidth) / 2;
+        this.score = 0;
+        this.createBricks();
     },
 
     drawBall: function() {
@@ -140,16 +160,19 @@ const breakoutGame = {
 
         if (this.x + this.dx > this.canvas.width - this.ballRadius || this.x + this.dx < this.ballRadius) {
             this.dx = -this.dx;
+            if(window.soundManager) window.soundManager.playTone(400, 'sine', 0.05);
         }
         if (this.y + this.dy < this.ballRadius) {
             this.dy = -this.dy;
+            if(window.soundManager) window.soundManager.playTone(400, 'sine', 0.05);
         } else if (this.y + this.dy > this.canvas.height - this.ballRadius) {
             if (this.x > this.paddleX && this.x < this.paddleX + this.paddleWidth) {
                 this.dy = -this.dy;
+                if(window.soundManager) window.soundManager.playTone(300, 'square', 0.1);
             } else {
-                alert("GAME OVER");
-                this.shutdown();
-                this.init();
+                if(window.soundManager) window.soundManager.playSound('gameover');
+                // Just reset instead of alert to avoid blocking UI
+                this.resetGame();
             }
         }
 
@@ -161,5 +184,11 @@ const breakoutGame = {
 
         this.x += this.dx;
         this.y += this.dy;
+    },
+
+    loop: function() {
+        if (!this.active) return;
+        this.draw();
+        this.animationId = requestAnimationFrame(() => this.loop());
     }
 };

@@ -1,4 +1,4 @@
-const eclipsePuzzleGame = {
+export default {
     grid: [],
     initialGrid: [],
     solution: [],
@@ -6,6 +6,10 @@ const eclipsePuzzleGame = {
     isGameWon: false,
     time: 0,
     timerInterval: null,
+
+    // Handlers
+    validateHandler: null,
+    resetHandler: null,
 
     // --- Puzzle Generation Logic ---
     mulberry32: (seed) => () => {
@@ -138,6 +142,10 @@ const eclipsePuzzleGame = {
         this.validateBtn = document.getElementById('eclipse-puzzle-validate-btn');
         this.resetBtn = document.getElementById('eclipse-puzzle-reset-btn');
 
+        // Remove old listeners
+        if (this.validateHandler) this.validateBtn.removeEventListener('click', this.validateHandler);
+        if (this.resetHandler) this.resetBtn.removeEventListener('click', this.resetHandler);
+
         this.validateHandler = () => this.handleValidate();
         this.resetHandler = () => this.handleReset();
 
@@ -148,8 +156,8 @@ const eclipsePuzzleGame = {
     shutdown: function() {
         if (this.timerInterval) clearInterval(this.timerInterval);
         this.timerInterval = null;
-        this.validateBtn.removeEventListener('click', this.validateHandler);
-        this.resetBtn.removeEventListener('click', this.resetHandler);
+        if (this.validateBtn && this.validateHandler) this.validateBtn.removeEventListener('click', this.validateHandler);
+        if (this.resetBtn && this.resetHandler) this.resetBtn.removeEventListener('click', this.resetHandler);
 
         const grid = document.getElementById('eclipse-puzzle-grid');
         const clues = document.getElementById('eclipse-puzzle-clue-layer');
@@ -198,10 +206,10 @@ const eclipsePuzzleGame = {
     updateCellContent: function(cellElement, value) {
         if (value === 1) {
             cellElement.innerHTML = '☀️';
-            cellElement.style.color = 'var(--sun-color)';
+            cellElement.style.color = '#f59e0b';
         } else if (value === 2) {
             cellElement.innerHTML = '🌑';
-            cellElement.style.color = 'var(--moon-color)';
+            cellElement.style.color = '#3b82f6';
         } else {
             cellElement.innerHTML = '';
         }
@@ -216,14 +224,17 @@ const eclipsePuzzleGame = {
 
         const cellEl = document.querySelector(`.eclipse-cell[data-r='${row}'][data-c='${col}']`);
         this.updateCellContent(cellEl, this.grid[row][col]);
+        if(window.soundManager) window.soundManager.playTone(400 + (this.grid[row][col] * 100), 'sine', 0.05);
     },
 
     handleValidate: function() {
         if (this.validateSolution(this.grid)) {
             this.isGameWon = true;
             if (this.timerInterval) clearInterval(this.timerInterval);
+            if(window.soundManager) window.soundManager.playTone(800, 'sine', 0.5, true);
             alert(`Congratulations! You solved it in ${this.time} seconds!`);
         } else {
+            if(window.soundManager) window.soundManager.playTone(200, 'sawtooth', 0.1);
             alert('Not quite right. Keep trying!');
         }
     },

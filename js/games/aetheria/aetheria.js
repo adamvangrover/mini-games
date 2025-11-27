@@ -7,6 +7,7 @@ let world, player;
 let clock;
 let isPlaying = false;
 
+// Helpers to handle context loss/restoration or just clean scope
 const aetheriaGame = {
     init: () => {
         const container = document.getElementById('aetheria-game-container');
@@ -84,7 +85,7 @@ const aetheriaGame = {
 
     shutdown: () => {
         isPlaying = false;
-        cancelAnimationFrame(animationId);
+        if (animationId) cancelAnimationFrame(animationId);
         
         window.removeEventListener('resize', onWindowResize);
         
@@ -101,7 +102,19 @@ const aetheriaGame = {
         }
         
         // Clean up UI
-        delete window.startAetheriaGame;
+        // We set startAetheriaGame on window, we should clean it,
+        // but if the user clicks the button in the UI (which is in index.html),
+        // it expects this global.
+        // Ideally we shouldn't use inline onclick in index.html.
+        // But for now we leave it, just be aware.
+        // delete window.startAetheriaGame;
+
+        // Reset scene refs
+        scene = null;
+        camera = null;
+        renderer = null;
+        world = null;
+        player = null;
     }
 };
 
@@ -114,12 +127,15 @@ function onWindowResize() {
 }
 
 function animate() {
+    // If shutdown called, stop
+    if (!scene || !renderer) return;
+
     animationId = requestAnimationFrame(animate);
 
     const delta = Math.min(clock.getDelta(), 0.1);
     const time = clock.getElapsedTime();
 
-    world.update(time);
+    if (world) world.update(time);
 
     if (isPlaying && player) {
         player.update(delta, time, world);
@@ -141,5 +157,6 @@ function animate() {
     }
 }
 
+// Global hook for index.html onclicks
 window.aetheriaGame = aetheriaGame;
 export default aetheriaGame;
