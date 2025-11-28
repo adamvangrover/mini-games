@@ -11,6 +11,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <canvas id="bg-canvas" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1;"></canvas>
+
+    <div id="menu">
+        <h1>🎮 Ultimate Mini Game Hub</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+            <button data-game="clicker-game">💰 Clicker Game</button>
+            <button data-game="maze-game">🌀 Maze Game</button>
+            <button data-game="runner-game">🏃 Endless Runner</button>
+            <button data-game="typing-game">⌨ Typing Speed Test</button>
+            <button data-game="snake-game">🐍 Snake</button>
+            <button data-game="pong-game">🏓 Pong</button>
+            <button data-game="space-game">🚀 Space Shooter</button>
+            <button data-game="tetris-game">🧱 Tetris</button>
+            <button data-game="breakout-game">🧱 Breakout</button>
+            <button data-game="rpg-game">⚔️ RPG</button>
+            <button data-game="eclipse-game">☀️ Eclipse</button>
+            <button data-game="eclipse-puzzle-game">🧩 Eclipse Puzzle</button>
+            <button data-game="eclipse-logic-puzzle-game">💡 Eclipse Logic Puzzle</button>
+            <button data-game="matterhorn-game">🏔️ Matterhorn Ascent</button>
+            <button data-game="aetheria-game">☁️ Aetheria</button>
+            <button data-game="tower-defense-game">🛡️ Tower Defense</button>
+            <button data-game="stacker-game">🏗️ Physics Stacker</button>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -164,17 +189,17 @@
                 <h1>Aetheria</h1>
                 <p>Choose your vessel to explore the infinite floating isles.</p>
                 <div class="aetheria-avatars">
-                    <div class="aetheria-avatar-card" onclick="startAetheriaGame('construct')">
+                    <div class="aetheria-avatar-card" onclick="window.startAetheriaGame('construct')">
                         <div class="aetheria-avatar-icon" style="background: #e74c3c;">🤖</div>
                         <div class="aetheria-avatar-name">The Construct</div>
                         <div class="aetheria-avatar-desc">Heavy, stable, industrial aesthetics.</div>
                     </div>
-                    <div class="aetheria-avatar-card" onclick="startAetheriaGame('spirit')">
+                    <div class="aetheria-avatar-card" onclick="window.startAetheriaGame('spirit')">
                         <div class="aetheria-avatar-icon" style="background: #2ecc71;">🌿</div>
                         <div class="aetheria-avatar-name">The Spirit</div>
                         <div class="aetheria-avatar-desc">Light, floating, nature-infused.</div>
                     </div>
-                    <div class="aetheria-avatar-card" onclick="startAetheriaGame('voyager')">
+                    <div class="aetheria-avatar-card" onclick="window.startAetheriaGame('voyager')">
                         <div class="aetheria-avatar-icon" style="background: #9b59b6;">🔮</div>
                         <div class="aetheria-avatar-name">The Voyager</div>
                         <div class="aetheria-avatar-desc">Mysterious, glowing, cosmic energy.</div>
@@ -357,6 +382,38 @@
         <button class="back-btn">Back</button>
     </div>
 
+    <div id="tower-defense-game" class="hidden game-container">
+        <h2>🛡️ Tower Defense</h2>
+        <div class="flex flex-col gap-4">
+            <div class="flex justify-between items-center bg-gray-800 p-2 rounded text-white">
+                <span>Wave: <span id="td-wave">1</span></span>
+                <span>Lives: <span id="td-lives">20</span></span>
+                <span>Gold: <span id="td-gold">100</span></span>
+            </div>
+            <canvas id="tdCanvas" width="600" height="400" style="background:#4a5568; cursor:crosshair;"></canvas>
+            <div class="flex gap-2 justify-center">
+                <button id="td-btn-basic" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Basic Tower ($50)</button>
+                <button id="td-btn-rapid" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Rapid Tower ($150)</button>
+                <button id="td-btn-sniper" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Sniper Tower ($300)</button>
+                <button id="td-btn-start" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Start Wave</button>
+            </div>
+        </div>
+        <button class="back-btn">Back</button>
+    </div>
+
+    <div id="stacker-game" class="hidden game-container">
+        <h2>🏗️ Physics Stacker</h2>
+        <p>Click to drop blocks. Stack as high as you can!</p>
+        <div class="relative">
+            <canvas id="stackerCanvas" width="600" height="600"></canvas>
+            <div id="stacker-overlay" class="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none">
+                <div id="stacker-msg" class="text-4xl font-bold text-white drop-shadow-lg hidden">GAME OVER</div>
+            </div>
+        </div>
+        <p>Score: <span id="stacker-score">0</span></p>
+        <button id="stacker-restart-btn" class="px-4 py-2 bg-blue-500 text-white rounded hidden">Restart</button>
+        <button class="back-btn">Back</button>
+    </div>
     <!-- New Games Containers -->
     <div id="tower-defense-game" class="hidden game-container"></div>
     <div id="physics-stacker-game" class="hidden game-container"></div>
@@ -413,6 +470,7 @@
         <button class="back-btn">Back</button>
     </div>
 
+    <script type="module" src="js/background.js"></script>
     <!-- Legacy Game Scripts -->
     <script src="js/games/clicker.js"></script>
     <script src="js/games/maze.js"></script>

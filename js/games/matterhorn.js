@@ -90,6 +90,7 @@ export default class MatterhornGame {
             if(el) el.remove();
         });
 
+export default matterhornGame;
         // Remove listeners
         const startBtn = document.getElementById('mh-start-btn');
         if(startBtn) startBtn.onclick = null;

@@ -1,4 +1,4 @@
-const eclipseGame = {
+export default {
     GRID_SIZE: 6,
     SYMBOLS: {
         BLANK: 0,
@@ -12,6 +12,11 @@ const eclipseGame = {
     startTime: 0,
     messageTimeout: null,
 
+    // Handlers
+    cellClickHandler: null,
+    hintHandler: null,
+    shareHandler: null,
+
     init: function() {
         this.gridElement = document.getElementById('eclipse-grid');
         this.timerElement = document.getElementById('eclipse-timer');
@@ -23,9 +28,18 @@ const eclipseGame = {
         this.createGrid();
         this.startTimer();
 
-        this.gridElement.addEventListener('click', this.handleCellClick.bind(this));
-        this.hintButton.addEventListener('click', this.giveHint.bind(this));
-        this.shareButton.addEventListener('click', this.shareResult.bind(this));
+        // Remove old listeners
+        if (this.cellClickHandler) this.gridElement.removeEventListener('click', this.cellClickHandler);
+        if (this.hintHandler) this.hintButton.removeEventListener('click', this.hintHandler);
+        if (this.shareHandler) this.shareButton.removeEventListener('click', this.shareHandler);
+
+        this.cellClickHandler = this.handleCellClick.bind(this);
+        this.hintHandler = this.giveHint.bind(this);
+        this.shareHandler = this.shareResult.bind(this);
+
+        this.gridElement.addEventListener('click', this.cellClickHandler);
+        this.hintButton.addEventListener('click', this.hintHandler);
+        this.shareButton.addEventListener('click', this.shareHandler);
         this.shareButton.disabled = true;
     },
 
@@ -33,10 +47,10 @@ const eclipseGame = {
         this.stopTimer();
         if (this.gridElement) {
             this.gridElement.innerHTML = '';
-            this.gridElement.removeEventListener('click', this.handleCellClick.bind(this));
+            if (this.cellClickHandler) this.gridElement.removeEventListener('click', this.cellClickHandler);
         }
-        if (this.hintButton) this.hintButton.removeEventListener('click', this.giveHint.bind(this));
-        if (this.shareButton) this.shareButton.removeEventListener('click', this.shareResult.bind(this));
+        if (this.hintButton && this.hintHandler) this.hintButton.removeEventListener('click', this.hintHandler);
+        if (this.shareButton && this.shareHandler) this.shareButton.removeEventListener('click', this.shareHandler);
         clearTimeout(this.messageTimeout);
     },
 
@@ -89,7 +103,12 @@ const eclipseGame = {
     },
     generatePuzzle: function() {
         this.solution = Array(this.GRID_SIZE).fill(0).map(() => Array(this.GRID_SIZE).fill(this.SYMBOLS.BLANK));
-        this.solution = this.solve(this.solution)[0];
+        const solved = this.solve(this.solution);
+        if (solved.length > 0) this.solution = solved[0];
+        else {
+             // Fallback if solve fails
+             this.solution = Array(this.GRID_SIZE).fill(0).map(() => Array(this.GRID_SIZE).fill(this.SYMBOLS.SUN));
+        }
         let puzzle = this.solution.map(r => [...r]);
         let cells = [];
         for(let r=0; r<this.GRID_SIZE; r++) for(let c=0; c<this.GRID_SIZE; c++) cells.push([r,c]);
@@ -134,6 +153,7 @@ const eclipseGame = {
         const col = parseInt(cell.dataset.col);
         this.grid[row][col] = (this.grid[row][col] + 1) % 3;
         this.updateCell(cell, this.grid[row][col]);
+        if(window.soundManager) window.soundManager.playTone(400 + (this.grid[row][col] * 100), 'sine', 0.05);
         this.validateAndFeedback();
         this.checkWinCondition();
     },
@@ -164,6 +184,7 @@ const eclipseGame = {
             this.stopTimer();
             this.shareButton.disabled = false;
             this.showMessage(`You solved it in ${this.timerElement.textContent}s!`);
+            if(window.soundManager) window.soundManager.playTone(800, 'sine', 0.5, true);
         }
     },
     giveHint: function() {
@@ -183,6 +204,7 @@ const eclipseGame = {
         this.updateCell(this.getCell(r, c), correctSymbol);
         this.validateAndFeedback();
         this.checkWinCondition();
+        if(window.soundManager) window.soundManager.playTone(600, 'sine', 0.1);
     },
     shareResult: function() {
         const time = this.timerElement.textContent;

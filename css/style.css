@@ -1,3 +1,66 @@
+:root {
+    --primary-glow: 0 0 10px #0ff, 0 0 20px #0ff;
+    --secondary-glow: 0 0 10px #f0f, 0 0 20px #f0f;
+    --bg-color: #0f172a;
+    --card-bg: rgba(30, 41, 59, 0.8);
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--bg-color);
+    color: white;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+#menu {
+    position: relative;
+    z-index: 10;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+    text-shadow: var(--primary-glow);
+    background: linear-gradient(to right, #0ff, #f0f);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+button[data-game] {
+    background: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    font-size: 1.2rem;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 150px;
+}
+
+button[data-game]:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--primary-glow);
+    border-color: #0ff;
+    background: rgba(30, 41, 59, 1);
+}
+
+.hidden {
+    display: none !important;
+}
+
+.game-container {
+    position: fixed;
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
@@ -199,6 +262,66 @@ canvas {
     left: 0;
     width: 100%;
     height: 100%;
+    background: var(--bg-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+
+.back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 10px 20px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 100;
+}
+
+.back-btn:hover {
+    background: #dc2626;
+}
+
+/* Canvas styling */
+canvas {
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    background: #000; /* Fallback */
+}
+
+/* Specific Game Styles */
+#pongCanvas {
+    border: 2px solid #0ff;
+    box-shadow: var(--primary-glow);
+}
+
+/* Tower Defense */
+#tdCanvas {
+    border: 2px solid #fbbf24;
+}
+
+/* Stacker */
+#stackerCanvas {
+    border: 2px solid #a3e635;
+}
+
+/* Aetheria & Matterhorn full screen overrides */
+#aetheria-game-container, #matterhornCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Matterhorn UI */
+#mh-ui-root {
     background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
     transform: translateX(-100%);
     transition: 0.5s;
@@ -374,11 +497,17 @@ canvas {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
 }
+.interactive {
+    pointer-events: auto !important;
+}
+
+/* Eclipse UI */
+.grid-container {
+    display: grid;
+    gap: 2px;
+    background: #333;
+    padding: 2px;
 #aetheria-selection-screen {
     background: rgba(10, 10, 20, 0.85);
     backdrop-filter: blur(10px);

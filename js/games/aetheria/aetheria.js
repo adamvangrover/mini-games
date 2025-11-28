@@ -23,6 +23,10 @@ export default class AetheriaGameAdapter {
         this.clock = new THREE.Clock();
     }
 
+// Helpers to handle context loss/restoration or just clean scope
+const aetheriaGame = {
+    init: () => {
+        const container = document.getElementById('aetheria-game-container');
     init(container) {
         // Find existing UI
         const selectionScreen = document.getElementById('aetheria-selection-screen');
@@ -93,6 +97,9 @@ export default class AetheriaGameAdapter {
         window.addEventListener('resize', this.onResize.bind(this));
     }
 
+    shutdown: () => {
+        isPlaying = false;
+        if (animationId) cancelAnimationFrame(animationId);
     shutdown() {
         this.isPlaying = false;
         window.removeEventListener('resize', this.onResize.bind(this));
@@ -104,6 +111,21 @@ export default class AetheriaGameAdapter {
             this.renderer.dispose();
             // Optional: remove dom element
         }
+        
+        // Clean up UI
+        // We set startAetheriaGame on window, we should clean it,
+        // but if the user clicks the button in the UI (which is in index.html),
+        // it expects this global.
+        // Ideally we shouldn't use inline onclick in index.html.
+        // But for now we leave it, just be aware.
+        // delete window.startAetheriaGame;
+
+        // Reset scene refs
+        scene = null;
+        camera = null;
+        renderer = null;
+        world = null;
+        player = null;
         // Dispose scene...
     }
 
@@ -111,6 +133,26 @@ export default class AetheriaGameAdapter {
         const time = this.clock.getElapsedTime(); // Use internal clock total time
         if (this.world) this.world.update(time);
 
+function animate() {
+    // If shutdown called, stop
+    if (!scene || !renderer) return;
+
+    animationId = requestAnimationFrame(animate);
+
+    const delta = Math.min(clock.getDelta(), 0.1);
+    const time = clock.getElapsedTime();
+
+    if (world) world.update(time);
+
+    if (isPlaying && player) {
+        player.update(delta, time, world);
+        
+        // Update HUD
+        const coordDisplay = document.getElementById('aetheria-coord-display');
+        const altDisplay = document.getElementById('aetheria-alt-display');
+        
+        if (coordDisplay && player.container) {
+            coordDisplay.innerText = `${player.container.position.x.toFixed(0)}, ${player.container.position.z.toFixed(0)}`;
         if (this.isPlaying && this.player) {
             this.player.update(dt, time, this.world);
 
@@ -140,3 +182,7 @@ export default class AetheriaGameAdapter {
         }
     }
 }
+
+// Global hook for index.html onclicks
+window.aetheriaGame = aetheriaGame;
+export default aetheriaGame;
