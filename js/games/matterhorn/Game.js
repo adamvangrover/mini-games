@@ -13,26 +13,18 @@ import MiniGameManager from "./MiniGameManager.js";
 
 class GameController {
     constructor() {
-        this.initialized = false;
-        this.started = false;
+        this.running = false;
         this.paused = false;
 
         this.scene = null;
         this.renderer = null;
         this.camera = null;
-        this.clock = new THREE.Clock();
 
         this.canvas = null;
         this.uiRoot = null;
-
-        this._boundLoop = this.loop.bind(this);
-        this.animationId = null;
     }
 
     init({ canvas, uiRoot }) {
-        if (this.initialized) return;
-        this.initialized = true;
-
         this.canvas = canvas;
         this.uiRoot = uiRoot;
 
@@ -72,8 +64,9 @@ class GameController {
         // Bind Interactions
         this.setupInteractions();
 
-        // Start Loop
-        window.addEventListener("resize", this.resize.bind(this));
+        // Resize Listener
+        this._resizeHandler = this.resize.bind(this);
+        window.addEventListener("resize", this._resizeHandler);
         this.resize();
     }
 
@@ -113,10 +106,8 @@ class GameController {
     }
 
     start() {
-        if (this.started) return;
-        this.started = true;
+        this.running = true;
         this.ui.show();
-        this.loop();
     }
 
     pause() {
@@ -133,9 +124,7 @@ class GameController {
     }
 
     shutdown() {
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-        }
+        this.running = false;
         this.started = false;
         this.initialized = false;
 
@@ -159,7 +148,9 @@ class GameController {
         // Unbind input events
         if (this.input) this.input.unbindEvents();
 
-        window.removeEventListener("resize", this.resize.bind(this));
+        if (this._resizeHandler) {
+            window.removeEventListener("resize", this._resizeHandler);
+        }
 
         // Hide UI
         if (this.ui) this.ui.hide();
@@ -198,12 +189,13 @@ class GameController {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    loop() {
-        this.animationId = requestAnimationFrame(this._boundLoop);
-
-        const dt = Math.min(this.clock.getDelta(), 0.1);
-
+    update(dt) {
         if (!this.paused) {
+            // Use deltaTime provided by main loop or internal clock?
+            // Since main.js provides dt, we can use it, but keeping internal clock is fine too.
+            // Let's use the passed dt if provided, otherwise fallback.
+            // Wait, main.js calls update(deltaTime).
+
             // Update systems
             if (this.input) this.input.update();
             if (this.lightingManager) this.lightingManager.update();
@@ -223,7 +215,11 @@ class GameController {
             // Update HUD altitude
             if (this.player) State.set("altitude", Math.round(this.player.position.y));
         }
+    }
 
+    render() {
+         if (this.renderer && this.scene && this.camera) {
+    draw() {
         // Render
         if (this.renderer && this.scene && this.camera) {
             this.renderer.render(this.scene, this.camera);
@@ -231,13 +227,7 @@ class GameController {
     }
 }
 
-// Export singleton instance or class?
-// The previous pattern used a singleton instance `const Game = new GameController()`.
-// But for modular loading in the Hub, we might want to instantiate it fresh each time or reset it.
-// Let's export the class, but also a default instance if that's what the entry point expects.
-// Actually, to support multiple inits/shutdowns properly, a class is better,
-// but the prompt code used `window.game`.
-// I'll stick to a singleton for simplicity with the `window.game` global used by minigames.
+// Singleton for consistency with current architecture
 const instance = new GameController();
 window.game = instance; // Expose for minigames to pause/resume
 export default instance;
