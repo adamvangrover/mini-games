@@ -6,6 +6,8 @@ export default class SoundManager {
 
         this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         this.muted = false;
+        this.bgmOscillators = [];
+        this.bgmGainNode = null;
 
         // BGM System
         this.bgmGainNode = this.audioCtx.createGain();
@@ -28,6 +30,13 @@ export default class SoundManager {
     toggleMute() {
         this.muted = !this.muted;
         if (this.muted) {
+            if (this.audioCtx.state === 'running') {
+                this.audioCtx.suspend();
+            }
+        } else {
+            if (this.audioCtx.state === 'suspended') {
+                this.audioCtx.resume();
+            }
             this.audioCtx.suspend();
         } else {
             this.audioCtx.resume();
@@ -37,6 +46,28 @@ export default class SoundManager {
 
     playSound(type) {
         if (this.muted) return;
+
+        // Resume context if it was suspended (browsers require user interaction)
+        if (this.audioCtx.state === 'suspended') {
+            this.audioCtx.resume();
+        }
+
+        switch (type) {
+            case 'click':
+                this.playTone(800, 'sine', 0.1);
+                break;
+            case 'jump':
+                this.playTone(400, 'square', 0.1, true); // Slide up
+                break;
+            case 'explosion':
+                this.playNoise(0.3);
+                break;
+            case 'score':
+                this.playTone(1200, 'sine', 0.05);
+                break;
+            case 'shoot':
+                this.playTone(600, 'sawtooth', 0.1, false, true); // Slide down
+                break;
         if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
 
         switch (type) {
@@ -55,6 +86,12 @@ export default class SoundManager {
         osc.type = type;
         osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
 
+        if (slideUp) {
+            osc.frequency.exponentialRampToValueAtTime(freq * 2, this.audioCtx.currentTime + duration);
+        }
+        if (slideDown) {
+            osc.frequency.exponentialRampToValueAtTime(freq / 2, this.audioCtx.currentTime + duration);
+        }
         if (slideUp) osc.frequency.exponentialRampToValueAtTime(freq * 2, this.audioCtx.currentTime + duration);
         if (slideDown) osc.frequency.exponentialRampToValueAtTime(freq / 2, this.audioCtx.currentTime + duration);
 
@@ -79,16 +116,25 @@ export default class SoundManager {
 
         const noise = this.audioCtx.createBufferSource();
         noise.buffer = buffer;
+
         const gain = this.audioCtx.createGain();
         gain.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + duration);
 
         noise.connect(gain);
         gain.connect(this.audioCtx.destination);
+
         noise.start();
     }
 
     startBGM() {
+        // Simple procedural BGM placeholder
+        // In a real app, this would play an audio file or a more complex sequence
+    }
+
+    stopBGM() {
+        this.bgmOscillators.forEach(osc => osc.stop());
+        this.bgmOscillators = [];
         if (this.isPlayingBGM || this.muted) return;
         this.isPlayingBGM = true;
         this.playBGMLoop();

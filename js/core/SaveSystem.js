@@ -17,6 +17,38 @@ export default class SaveSystem {
         return SaveSystem.instance;
     }
 
+    load() {
+        const raw = localStorage.getItem(this.storageKey);
+        if (!raw) {
+            return this.getDefaultData();
+        }
+
+        try {
+            // Attempt to decode (Base64)
+            const json = atob(raw);
+            return JSON.parse(json);
+        } catch (e) {
+            console.warn('Failed to load save data, resetting.', e);
+            return this.getDefaultData();
+        }
+    }
+
+    getDefaultData() {
+        return {
+            highScores: {},
+            totalCurrency: 0,
+            achievements: [],
+            settings: {
+                muted: false
+            },
+            gameConfigs: {}
+        };
+    }
+
+    save() {
+        const json = JSON.stringify(this.data);
+        const encoded = btoa(json); // Base64 encoding
+        localStorage.setItem(this.storageKey, encoded);
     // Helper to encode/decode data (base64) as requested
     encrypt(text) {
         return btoa(text);
@@ -91,11 +123,13 @@ export default class SaveSystem {
         return false;
     }
 
+    // New: Game specific configs
     // New: Game specific config
     getGameConfig(gameId) {
         return this.data.gameConfigs[gameId] || {};
     }
 
+    setGameConfig(gameId, config) {
     saveGameConfig(gameId, config) {
         this.data.gameConfigs[gameId] = config;
         this.save();
