@@ -19,7 +19,6 @@ class GameController {
         this.scene = null;
         this.renderer = null;
         this.camera = null;
-        this.clock = new THREE.Clock();
 
         this.canvas = null;
         this.uiRoot = null;
@@ -126,6 +125,8 @@ class GameController {
 
     shutdown() {
         this.running = false;
+        this.started = false;
+        this.initialized = false;
 
         // Clean up Three.js
         if (this.renderer) {
@@ -218,6 +219,9 @@ class GameController {
 
     render() {
          if (this.renderer && this.scene && this.camera) {
+    draw() {
+        // Render
+        if (this.renderer && this.scene && this.camera) {
             this.renderer.render(this.scene, this.camera);
         }
     }

@@ -1,3 +1,5 @@
+import State from "./State.js";
+
 export default class CameraController {
     constructor(camera, player) {
         this.camera = camera;
@@ -5,6 +7,7 @@ export default class CameraController {
 
         this.distance = 6;
         this.height = 2;
+        this.lerpFactor = 4; // Added for smoother movement
     }
 
     update(dt, input) {
@@ -23,7 +26,16 @@ export default class CameraController {
 
         const desired = target.clone().add(offset);
 
-        this.camera.position.lerp(desired, dt * 5);
+        // --- Camera Collision ---
+        const world = State.get("world");
+        if (world && world.getHeightAt) { // Check if world and method exist
+            const terrainHeight = world.getHeightAt(desired.x, desired.z);
+            if (desired.y < terrainHeight + 0.5) {
+                desired.y = terrainHeight + 0.5;
+            }
+        }
+
+        this.camera.position.lerp(desired, dt * this.lerpFactor);
         this.camera.lookAt(target);
     }
 }

@@ -1,3 +1,7 @@
+import SoundManager from '../core/SoundManager.js';
+import InputManager from '../core/InputManager.js';
+import ParticleSystem from '../core/ParticleSystem.js';
+
 export default class PongGame {
     constructor() {
         this.canvas = null;
@@ -22,7 +26,19 @@ export default class PongGame {
             console.error("Pong canvas not found in container");
             return;
         }
+        this.ball = { x: 0, y: 0, radius: 10, dx: 300, dy: 300 };
+        this.trail = [];
+        this.shakeTimer = 0;
+
+        this.soundManager = SoundManager.getInstance();
+        this.inputManager = InputManager.getInstance();
+        this.particleSystem = ParticleSystem.getInstance();
+    }
+
+    init(container) {
+        this.canvas = document.getElementById("pongCanvas");
         this.ctx = this.canvas.getContext("2d");
+
         this.player1 = { x: 10, y: this.canvas.height / 2 - this.paddleHeight / 2, score: 0 };
         this.player2 = { x: this.canvas.width - 20, y: this.canvas.height / 2 - this.paddleHeight / 2, score: 0 };
         this.ball = { x: this.canvas.width / 2, y: this.canvas.height / 2, radius: 10, dx: 200, dy: 200 }; // Speed in pixels/sec
@@ -72,6 +88,39 @@ export default class PongGame {
             this.ball.dy = -this.ball.dy;
             window.soundManager.playSound('click');
             this.spawnExplosion(this.ball.x, this.ball.y, 5, '#00ffff');
+        this.ball = { x: this.canvas.width / 2, y: this.canvas.height / 2, radius: 10, dx: 300, dy: 300 };
+        this.trail = [];
+        this.updateScore();
+    }
+
+    shutdown() { }
+
+    update(dt) {
+        const speed = 400 * dt;
+
+        // Input
+        if (this.inputManager.isKeyDown("KeyW") || this.inputManager.isKeyDown("w")) this.player1.y -= speed;
+        if (this.inputManager.isKeyDown("KeyS") || this.inputManager.isKeyDown("s")) this.player1.y += speed;
+        if (this.inputManager.isKeyDown("ArrowUp")) this.player2.y -= speed;
+        if (this.inputManager.isKeyDown("ArrowDown")) this.player2.y += speed;
+
+        this.player1.y = Math.max(0, Math.min(this.player1.y, this.canvas.height - this.paddleHeight));
+        this.player2.y = Math.max(0, Math.min(this.player2.y, this.canvas.height - this.paddleHeight));
+
+        // Trail Logic
+        this.trail.push({x: this.ball.x, y: this.ball.y, alpha: 1.0});
+        if (this.trail.length > 20) this.trail.shift();
+        this.trail.forEach(t => t.alpha -= dt * 2);
+
+        // Movement
+        this.ball.x += this.ball.dx * dt;
+        this.ball.y += this.ball.dy * dt;
+
+        // Wall collisions
+        if (this.ball.y + this.ball.radius > this.canvas.height || this.ball.y - this.ball.radius < 0) {
+            this.ball.dy = -this.ball.dy;
+            this.soundManager.playSound('click');
+            this.particleSystem.emit(this.ctx, this.ball.x, this.ball.y, '#00ffff', 5);
         }
 
         // Paddle Collisions
@@ -92,6 +141,18 @@ export default class PongGame {
             window.soundManager.playSound('score');
             this.resetBall();
             this.shake = 10;
+            this.ball.dx = -this.ball.dx * 1.05;
+            this.soundManager.playSound('click');
+            this.particleSystem.emit(this.ctx, this.ball.x, this.ball.y, '#ff00ff', 10);
+            this.shakeTimer = 0.2;
+        }
+
+        // Score
+        if (this.ball.x - this.ball.radius < 0) {
+            this.player2.score++;
+            this.soundManager.playSound('score');
+            this.resetBall();
+            this.shakeTimer = 0.5;
         }
 
         if (this.ball.x + this.ball.radius > this.canvas.width) {
@@ -140,6 +201,28 @@ export default class PongGame {
                 size: Math.random() * 4 + 2
             });
         }
+            this.soundManager.playSound('score');
+            this.resetBall();
+            this.shakeTimer = 0.5;
+        }
+
+        if (this.shakeTimer > 0) this.shakeTimer -= dt;
+
+        this.updateScore();
+        this.particleSystem.update(dt);
+    }
+
+    resetBall() {
+        this.ball.x = this.canvas.width / 2;
+        this.ball.y = this.canvas.height / 2;
+        this.ball.dx = -this.ball.dx;
+        this.ball.dy = (Math.random() > 0.5 ? 300 : -300);
+        this.trail = [];
+    }
+
+    updateScore() {
+        const scoreEl = document.getElementById("pong-score");
+        if (scoreEl) scoreEl.innerText = `${this.player1.score} - ${this.player2.score}`;
     }
 
     draw() {
@@ -173,6 +256,32 @@ export default class PongGame {
         this.ctx.fillRect(this.player1.x, this.player1.y, this.paddleWidth, this.paddleHeight);
         this.ctx.fillRect(this.player2.x, this.player2.y, this.paddleWidth, this.paddleHeight);
 
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Screen Shake
+        this.ctx.save();
+        if (this.shakeTimer > 0) {
+            const dx = (Math.random() - 0.5) * 10;
+            const dy = (Math.random() - 0.5) * 10;
+            this.ctx.translate(dx, dy);
+        }
+
+        // Draw Trail
+        this.trail.forEach(t => {
+            if (t.alpha <= 0) return;
+            this.ctx.globalAlpha = t.alpha * 0.5;
+            this.ctx.fillStyle = "#00ffff";
+            this.ctx.beginPath();
+            this.ctx.arc(t.x, t.y, this.ball.radius * 0.8, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+        this.ctx.globalAlpha = 1.0;
+
+        // Draw Paddles
+        this.ctx.fillStyle = "#ff00ff";
+        this.ctx.fillRect(this.player1.x, this.player1.y, this.paddleWidth, this.paddleHeight);
+        this.ctx.fillRect(this.player2.x, this.player2.y, this.paddleWidth, this.paddleHeight);
+
         // Draw Ball
         this.ctx.beginPath();
         this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
@@ -198,5 +307,12 @@ export default class PongGame {
         if (scoreEl) {
             scoreEl.innerText = `${this.player1.score} - ${this.player2.score}`;
         }
+        this.ctx.fill();
+        this.ctx.closePath();
+
+        // Particles
+        this.particleSystem.draw(this.ctx);
+
+        this.ctx.restore();
     }
 }

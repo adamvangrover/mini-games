@@ -1,3 +1,4 @@
+// Matterhorn Game Adapter
 import Game from "./matterhorn/Game.js";
 
 export default class MatterhornAdapter {
@@ -28,6 +29,23 @@ export default class MatterhornAdapter {
             // Remove old listeners to avoid duplicates (though init creates new instance)
             startBtn.onclick = () => {
                 if (startScreen) startScreen.classList.add('hidden');
+export default class MatterhornGame {
+    async init(container) {
+        const canvas = document.getElementById('matterhornCanvas');
+        const uiRoot = document.getElementById('mh-ui-root');
+
+        // Reset UI visibility
+        const startScreen = document.getElementById('mh-start-screen');
+        const hud = document.getElementById('mh-hud-container');
+
+        if(startScreen) startScreen.classList.remove('hidden');
+        if(hud) hud.classList.add('hidden');
+
+        // Start button handler
+        const startBtn = document.getElementById('mh-start-btn');
+        if (startBtn) {
+             startBtn.onclick = () => {
+                if(startScreen) startScreen.classList.add('hidden');
                 Game.start();
             };
         }
@@ -43,6 +61,17 @@ export default class MatterhornAdapter {
              Game.update(deltaTime);
         }
     }
+
+    update(dt) {
+        Game.update(dt);
+    }
+
+    draw() {
+        Game.draw();
+    }
+
+    shutdown() {
+        Game.shutdown();
 
     draw() {
         if (Game && Game.running) {
@@ -60,5 +89,9 @@ export default class MatterhornAdapter {
             const el = document.getElementById(id);
             if(el) el.remove();
         });
+
+        // Remove listeners
+        const startBtn = document.getElementById('mh-start-btn');
+        if(startBtn) startBtn.onclick = null;
     }
 }

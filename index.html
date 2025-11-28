@@ -11,9 +11,30 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <div id="global-overlay" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
+        <div class="overlay-panel w-full max-w-md">
+            <h2 id="overlay-title" class="text-3xl font-bold text-center mb-4 text-white title-glow">PAUSED</h2>
+            <div id="overlay-content" class="text-center text-slate-300">
+                <p>Game is paused. Press ESC to resume.</p>
+            </div>
+            <div class="flex justify-center mt-6">
+                <button id="overlay-main-menu-btn" class="mh-btn">Main Menu</button>
+            </div>
+            <button id="overlay-close-btn" class="absolute top-4 right-4 text-white text-2xl hover:text-fuchsia-500">&times;</button>
+        </div>
+    </div>
+    <div id="menu" class="relative z-10 max-w-6xl mx-auto pt-10 px-4">
+        <h1 class="text-5xl md:text-6xl font-black text-center mb-12 title-glow tracking-tighter text-white">
+            <span class="text-fuchsia-500">NEON</span> ARCADE HUB
+        </h1>
+
+        <div id="hub-stats" class="text-center mb-8">
+            <span class="text-2xl text-yellow-400 font-bold">💰 <span id="total-currency">0</span></span>
+        </div>
 
     <div id="menu">
         <h1>🎮 Ultimate Mini Game Hub</h1>
@@ -128,7 +149,13 @@
             <p style="font-size: 0.8em; color: #aaa;">Press SPACE or Click to Drop</p>
         </div>
         <button class="back-btn">Back</button>
+        <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
+            <!-- Game cards will be dynamically inserted here -->
+        </div>
     </div>
+
+    <!-- Container for dynamically loaded game content?
+         Currently keeping legacy containers for compatibility. -->
 
     <div id="aetheria-game" class="hidden game-container">
         <div id="aetheria-game-container"></div>
@@ -136,7 +163,6 @@
             <div id="aetheria-selection-screen">
                 <h1>Aetheria</h1>
                 <p>Choose your vessel to explore the infinite floating isles.</p>
-                
                 <div class="aetheria-avatars">
                     <div class="aetheria-avatar-card" onclick="startAetheriaGame('construct')">
                         <div class="aetheria-avatar-icon" style="background: #e74c3c;">🤖</div>
@@ -155,12 +181,10 @@
                     </div>
                 </div>
             </div>
-
             <div id="aetheria-hud">
                 COORD: <span id="aetheria-coord-display">0, 0</span><br>
                 ALT: <span id="aetheria-alt-display">0</span>
             </div>
-            
             <div id="aetheria-controls-hint">
                 WASD to Move | SPACE to Jump<br>
                 Mouse to Rotate Camera
@@ -171,11 +195,7 @@
 
     <div id="matterhorn-game" class="hidden game-container">
         <canvas id="matterhornCanvas"></canvas>
-
-        <!-- UI Layers -->
         <div id="mh-ui-root" class="layer interactive">
-
-            <!-- HUD -->
             <div id="mh-hud-container" class="hidden">
                 <div class="mh-hud-box">
                     ALT: <span id="mh-hud-alt">0m</span><br>
@@ -184,7 +204,6 @@
                     STAMINA
                     <div class="mh-bar"><div id="mh-hud-stamina" class="mh-bar-fill" style="background:#fbbf24"></div></div>
                 </div>
-
                 <div class="mh-hud-box">
                     ₣ <span id="mh-hud-money">0</span><br>
                     <span style="font-size:0.75rem;color:#aaa;">
@@ -192,14 +211,8 @@
                     </span>
                 </div>
             </div>
-
-            <!-- Prompt -->
             <div id="mh-prompt">PRESS [E]</div>
-
-            <!-- Notifications -->
             <div id="mh-notifications"></div>
-
-            <!-- Start Screen -->
             <div id="mh-start-screen" class="layer interactive">
                 <div id="mh-start-content">
                     <h1>MATTERHORN</h1>
@@ -211,7 +224,6 @@
                 </div>
             </div>
         </div>
-
         <button class="back-btn" style="position: absolute; top: 20px; right: 20px; z-index: 200;">Back to Hub</button>
     </div>
 
@@ -263,7 +275,6 @@
         </div>
         <div id="rpg-log"></div>
         <button class="back-btn">Back</button>
-
     </div>
 
     <div id="breakout-game" class="hidden game-container">
@@ -283,16 +294,13 @@
         <h2>💰 Clicker Game</h2>
         <p>Money: <span id="money">0</span> 💸</p>
         <button>💵 Click for Cash!</button>
-
         <h3>🛒 Store</h3>
         <button>⚡ Upgrade Click (Cost: <span id="upgrade-cost">10</span>)</button>
         <button>🤖 Auto-Clicker (Cost: <span id="autoclicker-cost">50</span>)</button>
         <button id="prestige-btn" class="hidden">🔁 Prestige (Reset for Bonus!)</button>
-
         <p>Click Power: <span id="click-power">1</span> 🖱️</p>
         <p>Auto-Clicks Per Second: <span id="auto-rate">0</span> ⏳</p>
         <p>Prestige Multiplier: <span id="prestige-multiplier">1x</span> 🚀</p>
-
         <button class="back-btn">Back</button>
     </div>
 
@@ -349,9 +357,13 @@
         <button class="back-btn">Back</button>
     </div>
 
+    <!-- New Games Containers -->
+    <div id="tower-defense-game" class="hidden game-container"></div>
+    <div id="physics-stacker-game" class="hidden game-container"></div>
+
     <div id="eclipse-logic-puzzle-game" class="hidden game-container">
-        <!-- Game Title -->
-        <div class="flex items-center gap-2 mb-6">
+         <!-- Game Title -->
+         <div class="flex items-center gap-2 mb-6">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
             <h1 class="text-4xl font-bold text-slate-700">Eclipse Logic Puzzle</h1>
         </div>
@@ -400,6 +412,24 @@
         </div>
         <button class="back-btn">Back</button>
     </div>
+
+    <!-- Legacy Game Scripts -->
+    <script src="js/games/clicker.js"></script>
+    <script src="js/games/maze.js"></script>
+    <script src="js/games/runner.js"></script>
+    <script src="js/games/typing.js"></script>
+    <script src="js/games/snake.js"></script>
+    <script src="js/games/space.js"></script>
+    <script src="js/games/tetris.js"></script>
+    <script src="js/games/breakout.js"></script>
+    <script src="js/games/rpg.js"></script>
+    <script src="js/games/eclipse.js"></script>
+    <script src="js/games/eclipsePuzzle.js"></script>
+    <script src="js/games/eclipseLogicPuzzle.js"></script>
+    <script type="module" src="js/games/aetheria/aetheria.js"></script>
+
+    <!-- Main Module (No longer loads games via script tags, except the ones above which are not yet modules) -->
+    <!-- Pong and Matterhorn are imported in main.js, so we don't include them as script tags if we convert them to modules -->
 
     <script type="module" src="js/main.js"></script>
 </body>
