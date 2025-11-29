@@ -17,6 +17,15 @@ export default class SaveSystem {
         return SaveSystem.instance;
     }
 
+    // Helper to encode/decode data (base64) as requested
+    encrypt(text) {
+        return btoa(text);
+    }
+
+    decrypt(text) {
+        return atob(text);
+    }
+
     load() {
         const raw = localStorage.getItem(this.storageKey);
         if (!raw) {
@@ -24,12 +33,16 @@ export default class SaveSystem {
         }
 
         try {
-            // Attempt to decode (Base64)
-            const json = atob(raw);
+            // Attempt to decrypt
+            const json = this.decrypt(raw);
             return JSON.parse(json);
         } catch (e) {
-            console.warn('Failed to load save data, resetting.', e);
-            return this.getDefaultData();
+            console.warn("Failed to decrypt save data, or data is legacy/unencrypted. Resetting or trying legacy parse.");
+            try {
+                return JSON.parse(raw); // Fallback for transition
+            } catch (e2) {
+                return this.getDefaultData();
+            }
         }
     }
 
@@ -43,47 +56,6 @@ export default class SaveSystem {
             },
             gameConfigs: {}
         };
-    }
-
-    save() {
-        const json = JSON.stringify(this.data);
-        const encoded = btoa(json); // Base64 encoding
-        localStorage.setItem(this.storageKey, encoded);
-    // Helper to encode/decode data (base64) as requested
-    encrypt(text) {
-        return btoa(text);
-    }
-
-    decrypt(text) {
-        return atob(text);
-    }
-
-    load() {
-        const raw = localStorage.getItem(this.storageKey);
-        if (!raw) {
-            return {
-                highScores: {},
-                totalCurrency: 0,
-                achievements: [],
-                settings: {
-                    muted: false
-                },
-                gameConfigs: {} // Handle game-specific config objects
-            };
-        }
-
-        try {
-            // Attempt to decrypt
-            const json = this.decrypt(raw);
-            return JSON.parse(json);
-        } catch (e) {
-            console.warn("Failed to decrypt save data, or data is legacy/unencrypted. Resetting or trying legacy parse.");
-            try {
-                return JSON.parse(raw); // Fallback for transition
-            } catch (e2) {
-                return { highScores: {}, totalCurrency: 0, achievements: [], settings: { muted: false }, gameConfigs: {} };
-            }
-        }
     }
 
     save() {
@@ -123,14 +95,11 @@ export default class SaveSystem {
         return false;
     }
 
-    // New: Game specific configs
-    // New: Game specific config
     getGameConfig(gameId) {
         return this.data.gameConfigs[gameId] || {};
     }
 
     setGameConfig(gameId, config) {
-    saveGameConfig(gameId, config) {
         this.data.gameConfigs[gameId] = config;
         this.save();
     }

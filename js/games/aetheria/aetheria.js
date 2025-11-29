@@ -1,13 +1,4 @@
 // Adapter for Aetheria to standard Game interface
-// Aetheria seems to rely on global THREE.js logic heavily, so we wrap it.
-// The original file sets up its own loop. We should try to use it or control it.
-
-// Note: The original file uses `import * as THREE` from CDN.
-// Since we are in a module environment now, we should probably stick to `window.THREE` if it's loaded in index.html,
-// OR update the imports to local if we had npm.
-// The existing `js/games/aetheria/aetheria.js` uses CDN imports.
-// However, our `index.html` loads Three.js globally via script tag.
-// We should change the import to use `window.THREE` or just not import it if it's global.
 
 import { World } from './world.js';
 import { Player } from './player.js';
@@ -21,12 +12,9 @@ export default class AetheriaGameAdapter {
         this.player = null;
         this.isPlaying = false;
         this.clock = new THREE.Clock();
+        this.resizeHandler = this.onResize.bind(this);
     }
 
-// Helpers to handle context loss/restoration or just clean scope
-const aetheriaGame = {
-    init: () => {
-        const container = document.getElementById('aetheria-game-container');
     init(container) {
         // Find existing UI
         const selectionScreen = document.getElementById('aetheria-selection-screen');
@@ -50,18 +38,17 @@ const aetheriaGame = {
 
         this.camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
         
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         this.renderer.setSize(width, height);
         this.renderer.shadowMap.enabled = true;
         
         // Find or create container div inside the game container
         let renderTarget = container.querySelector('#aetheria-game-container');
         if (!renderTarget) {
-            // Should exist in index.html, but just in case
             renderTarget = container;
         }
         
-        // Clear old
+        // Clear old content
         renderTarget.innerHTML = '';
         renderTarget.appendChild(this.renderer.domElement);
 
@@ -94,65 +81,37 @@ const aetheriaGame = {
             this.isPlaying = true;
         };
 
-        window.addEventListener('resize', this.onResize.bind(this));
+        window.addEventListener('resize', this.resizeHandler);
     }
 
-    shutdown: () => {
-        isPlaying = false;
-        if (animationId) cancelAnimationFrame(animationId);
     shutdown() {
         this.isPlaying = false;
-        window.removeEventListener('resize', this.onResize.bind(this));
+        window.removeEventListener('resize', this.resizeHandler);
         
         // Cleanup UI
         delete window.startAetheriaGame;
         
         if (this.renderer) {
             this.renderer.dispose();
-            // Optional: remove dom element
+            // Remove canvas from DOM
+            if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+                this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+            }
         }
         
-        // Clean up UI
-        // We set startAetheriaGame on window, we should clean it,
-        // but if the user clicks the button in the UI (which is in index.html),
-        // it expects this global.
-        // Ideally we shouldn't use inline onclick in index.html.
-        // But for now we leave it, just be aware.
-        // delete window.startAetheriaGame;
-
-        // Reset scene refs
-        scene = null;
-        camera = null;
-        renderer = null;
-        world = null;
-        player = null;
-        // Dispose scene...
+        // Reset scene refs to help GC
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.world = null;
+        this.player = null;
     }
 
     update(dt) {
+        if (!this.scene) return;
         const time = this.clock.getElapsedTime(); // Use internal clock total time
         if (this.world) this.world.update(time);
 
-function animate() {
-    // If shutdown called, stop
-    if (!scene || !renderer) return;
-
-    animationId = requestAnimationFrame(animate);
-
-    const delta = Math.min(clock.getDelta(), 0.1);
-    const time = clock.getElapsedTime();
-
-    if (world) world.update(time);
-
-    if (isPlaying && player) {
-        player.update(delta, time, world);
-        
-        // Update HUD
-        const coordDisplay = document.getElementById('aetheria-coord-display');
-        const altDisplay = document.getElementById('aetheria-alt-display');
-        
-        if (coordDisplay && player.container) {
-            coordDisplay.innerText = `${player.container.position.x.toFixed(0)}, ${player.container.position.z.toFixed(0)}`;
         if (this.isPlaying && this.player) {
             this.player.update(dt, time, this.world);
 
@@ -182,7 +141,3 @@ function animate() {
         }
     }
 }
-
-// Global hook for index.html onclicks
-window.aetheriaGame = aetheriaGame;
-export default aetheriaGame;

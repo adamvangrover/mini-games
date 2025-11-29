@@ -1,228 +1,42 @@
-import clickerGame from './games/clicker.js';
-import mazeGame from './games/maze.js';
-import runnerGame from './games/runner.js';
-import typingGame from './games/typing.js';
-import snakeGame from './games/snake.js';
-import pongGame from './games/pong.js';
-import spaceGame from './games/space.js';
-import tetrisGame from './games/tetris.js';
-import breakoutGame from './games/breakout.js';
-import rpgGame from './games/rpg.js';
-import eclipseGame from './games/eclipse.js';
-import eclipsePuzzleGame from './games/eclipsePuzzle.js';
-import eclipseLogicPuzzleGame from './games/eclipseLogicPuzzle.js';
-import matterhornGame from './games/matterhorn.js';
-import aetheriaGame from './games/aetheria/aetheria.js';
-// Import new games (will be created soon)
-// import towerDefenseGame from './games/towerDefense.js';
-// import stackerGame from './games/stacker.js';
+// The Core Game Loop and Hub Logic
 
-import SoundManager from './core/soundManager.js';
-import SaveSystem from './core/saveSystem.js';
-import InputManager from './core/InputManager.js';
-
-// Initialize systems
-window.soundManager = new SoundManager();
-window.saveSystem = new SaveSystem();
-window.inputManager = new InputManager();
-import SoundManager from './core/SoundManager.js';
-import SaveSystem from './core/SaveSystem.js';
-import InputManager from './core/InputManager.js';
-import AssetManager from './core/AssetManager.js';
-import LegacyAdapter from './games/legacy/LegacyAdapter.js';
-
-// Initialize Core Systems
-const soundManager = new SoundManager();
-const saveSystem = new SaveSystem();
-const inputManager = new InputManager();
-const assetManager = new AssetManager();
-
-window.soundManager = soundManager;
-window.saveSystem = saveSystem;
-window.inputManager = inputManager;
-window.assetManager = assetManager;
-
-let currentGame = null;
-let gameLoopId = null;
-let lastTime = 0;
-
-const games = {
-    'clicker-game': clickerGame,
-    'maze-game': mazeGame,
-    'runner-game': runnerGame,
-    'typing-game': typingGame,
-    'snake-game': snakeGame,
-    'pong-game': pongGame,
-    'space-game': spaceGame,
-    'tetris-game': tetrisGame,
-    'breakout-game': breakoutGame,
-    'rpg-game': rpgGame,
-    'eclipse-game': eclipseGame,
-    'eclipse-puzzle-game': eclipsePuzzleGame,
-    'eclipse-logic-puzzle-game': eclipseLogicPuzzleGame,
-    'matterhorn-game': matterhornGame,
-    'aetheria-game': aetheriaGame,
-    // 'tower-defense-game': towerDefenseGame,
-    // 'stacker-game': stackerGame
-// Map of Game IDs to their Module Paths
-const gameRegistry = {
-    'clicker-game': './games/clicker.js',
-    'maze-game': './games/maze.js',
-    'runner-game': './games/runner.js',
-    'typing-game': './games/typing.js',
-    'snake-game': './games/snake.js',
-    'pong-game': './games/pong.js',
-    'space-game': './games/space.js',
-    'tetris-game': './games/tetris.js',
-    'breakout-game': './games/breakout.js',
-    'rpg-game': './games/rpg.js',
-    'eclipse-game': './games/eclipse.js',
-    'eclipse-puzzle-game': './games/eclipsePuzzle.js',
-    'eclipse-logic-puzzle-game': './games/eclipseLogicPuzzle.js',
-    'matterhorn-game': './games/matterhorn.js',
-    'aetheria-game': './games/aetheria/aetheria.js',
-    'tower-defense-game': './games/towerDefense.js',
-    'stacker-game': './games/stacker.js'
-};
-
-async function loadGame(gameId) {
-    const modulePath = gameRegistry[gameId];
-    if (!modulePath) {
-        console.error(`Game module not found for ID: ${gameId}`);
-        return null;
-    }
-
-    try {
-        const module = await import(modulePath);
-        return module.default || module;
-    } catch (e) {
-        console.warn(`Failed to load game module: ${modulePath} as ES6 module. Attempting legacy load.`, e);
-
-        // Fallback for legacy scripts
-        // We guess the global variable name based on the ID
-        // e.g. 'clicker-game' -> 'clickerGame'
-        const baseName = gameId.replace('-game', '');
-        const globalName = baseName + 'Game';
-
-        return new LegacyAdapter(modulePath, globalName);
-    }
-}
-
-async function startGame(gameId) {
-    // Shutdown previous game
-    if (currentGame) {
-        shutdownCurrentGame();
-    }
-
-    // UI Handling
-    document.getElementById("menu").classList.add("hidden");
-    document.querySelectorAll(".game-container").forEach(el => el.classList.add("hidden"));
-
-    const gameContainer = document.getElementById(gameName);
-    if (gameContainer) {
-        gameContainer.classList.remove("hidden");
-    } else {
-        console.error(`Game container #${gameName} not found!`);
-        return;
-    }
-    const container = document.getElementById(gameId);
-    if (container) {
-        container.classList.remove("hidden");
-    } else {
-        console.error(`Container not found for ${gameId}`);
-        return;
-    }
-
-    // Audio
-    if (soundManager.audioCtx.state === 'suspended') {
-        soundManager.audioCtx.resume();
-// Refactored js/main.js
 import SoundManager from './core/SoundManager.js';
 import SaveSystem from './core/SaveSystem.js';
 import InputManager from './core/InputManager.js';
 import BackgroundShader from './core/BackgroundShader.js';
 
-// Import Games (Dynamically or Statically)
-// For simplicity and compatibility with the current setup, we might need a registry.
-// Since we are moving to modules, we should import them.
-// However, there are many games. Let's start by refactoring Pong and Matterhorn,
-// and wrap the others or import them if they are modules.
-
-// We will assume that for now we only support the refactored ones fully in the new system,
-// but we need to keep the old ones working.
-// The old games are global objects (e.g., `pongGame`).
-// We can make a LegacyWrapper.
-
-import PongGame from './games/pong.js';
-import BreakoutGame from './games/breakout.js';
-import SnakeGame from './games/snake.js';
-import SpaceShooterGame from './games/space.js';
-import RPGGame from './games/rpg.js';
-import MatterhornGame from './games/matterhorn.js';
-import AetheriaGame from './games/aetheria/aetheria.js';
+// Import New/Refactored Games
 import TowerDefenseGame from './games/towerDefense.js';
 import PhysicsStackerGame from './games/physicsStacker.js';
+import AetheriaGame from './games/aetheria/aetheria.js';
 
-import MazeGame from './games/maze.js';
-import RunnerGame from './games/runner.js';
-import TetrisGame from './games/tetris.js';
-import ClickerGame from './games/clicker.js';
-import TypingGame from './games/typing.js';
+// Legacy Wrappers (We will try to dynamic import these or just reference globals if we must)
+// Ideally we refactor them all, but for time we can wrap.
+// For this plan, I'm assuming we rely on the existing files being loaded as scripts for now
+// OR we dynamically import them if they are modules.
+// Currently most are simple objects.
 
-// Legacy adapter for games that haven't been refactored yet but exist in the global scope
-class LegacyGameAdapter {
-    constructor(globalGameObj) {
-        this.game = globalGameObj;
-    }
-    async init(container) {
-        if (this.game.init) {
-            // Legacy games might expect to find their elements already in the DOM
-            // or attached to window. We might need to ensure they are visible.
-            // The container argument might be ignored by them.
-            this.game.init();
-        }
-    }
-    update(dt) {
-        // Legacy games usually have their own loop, so we do nothing here.
-    }
-    draw() {
-        // Legacy games usually have their own loop.
-    }
-    shutdown() {
-        if (this.game.shutdown) this.game.shutdown();
-    }
-}
-
-    // Start BGM if not already playing
-    if (window.soundManager) {
-        window.soundManager.playSound('click');
-        window.soundManager.startBGM();
-    }
-
-    currentGame = games[gameName];
-    if (currentGame) {
-        // Pass the container or ID to init if needed, though legacy games rely on hardcoded IDs
-        currentGame.init();
-    } else {
-        console.error(`Game module for ${gameName} not found!`);
+// We will create a Registry.
 const gameRegistry = {
-    'pong-game': { name: 'Pong', description: 'Classic Paddle Battle', icon: 'fa-solid fa-table-tennis-paddle-ball', category: 'Arcade Classics', module: PongGame },
-    'breakout-game': { name: 'Breakout', description: 'Smash the Bricks', icon: 'fa-solid fa-kaaba', category: 'Arcade Classics', module: BreakoutGame },
-    'snake-game': { name: 'Snake', description: 'Eat & Grow', icon: 'fa-solid fa-snake', category: 'Arcade Classics', module: SnakeGame },
-    'tetris-game': { name: 'Tetris', description: 'Stack the Blocks', icon: 'fa-solid fa-shapes', category: 'Arcade Classics', module: TetrisGame },
-    'space-game': { name: 'Space Shooter', description: 'Defend the Galaxy', icon: 'fa-solid fa-rocket', category: 'Arcade Classics', module: SpaceShooterGame },
-    'clicker-game': { name: 'Clicker', description: 'Exponential Growth', icon: 'fa-solid fa-hand-pointer', category: 'Quick Minigames', module: ClickerGame },
-    'typing-game': { name: 'Speed Type', description: 'Test Your WPM', icon: 'fa-solid fa-keyboard', category: 'Quick Minigames', module: TypingGame },
-    'runner-game': { name: 'Endless Runner', description: 'Jump the Obstacles', icon: 'fa-solid fa-person-running', category: 'Quick Minigames', module: RunnerGame },
-    'maze-game': { name: 'Maze', description: 'Find the Path', icon: 'fa-solid fa-dungeon', category: 'Quick Minigames', module: MazeGame },
-    'rpg-game': { name: 'RPG Battle', description: 'Turn-Based Combat', icon: 'fa-solid fa-khanda', category: 'RPG & Logic', module: RPGGame },
-    'eclipse-game': { name: 'Eclipse', description: 'Strategy Board', icon: 'fa-solid fa-sun', category: 'RPG & Logic', module: 'eclipseGame' },
-    'eclipse-puzzle-game': { name: 'Eclipse Puzzle', description: 'Pattern Matching', icon: 'fa-solid fa-puzzle-piece', category: 'RPG & Logic', module: 'eclipsePuzzleGame' },
-    'eclipse-logic-puzzle-game': { name: 'Logic Puzzle', description: 'Deduction Grid', icon: 'fa-solid fa-lightbulb', category: 'RPG & Logic', module: 'eclipseLogicPuzzleGame' },
     'tower-defense-game': { name: 'Tower Defense', description: 'Defend the Base', icon: 'fa-solid fa-chess-rook', category: 'New Games', module: TowerDefenseGame },
-    'physics-stacker-game': { name: 'Physics Stacker', description: 'Balance Blocks', icon: 'fa-solid fa-cubes-stacked', category: 'New Games', module: PhysicsStackerGame },
-    'matterhorn-game': { name: 'Matterhorn Ascent', description: '3D Alpine Adventure', icon: 'fa-solid fa-mountain', category: '3D Immersive', module: MatterhornGame, wide: true },
+    'stacker-game': { name: 'Physics Stacker', description: 'Balance Blocks', icon: 'fa-solid fa-cubes-stacked', category: 'New Games', module: PhysicsStackerGame },
     'aetheria-game': { name: 'Aetheria', description: 'Floating Isles Exploration', icon: 'fa-solid fa-cloud', category: '3D Immersive', module: AetheriaGame, wide: true },
+
+    // Legacy placeholders - these will be handled via the LegacyAdapter if they are not proper classes
+    'clicker-game': { name: 'Clicker', description: 'Exponential Growth', icon: 'fa-solid fa-hand-pointer', category: 'Quick Minigames', legacyId: 'clicker-game' },
+    'maze-game': { name: 'Maze', description: 'Find the Path', icon: 'fa-solid fa-dungeon', category: 'Quick Minigames', legacyId: 'maze-game' },
+    'runner-game': { name: 'Endless Runner', description: 'Jump the Obstacles', icon: 'fa-solid fa-person-running', category: 'Quick Minigames', legacyId: 'runner-game' },
+    'typing-game': { name: 'Speed Type', description: 'Test Your WPM', icon: 'fa-solid fa-keyboard', category: 'Quick Minigames', legacyId: 'typing-game' },
+    'snake-game': { name: 'Snake', description: 'Eat & Grow', icon: 'fa-solid fa-snake', category: 'Arcade Classics', legacyId: 'snake-game' },
+    'pong-game': { name: 'Pong', description: 'Retro Tennis', icon: 'fa-solid fa-table-tennis-paddle-ball', category: 'Arcade Classics', legacyId: 'pong-game' },
+    'space-game': { name: 'Space Shooter', description: 'Defend the Galaxy', icon: 'fa-solid fa-rocket', category: 'Arcade Classics', legacyId: 'space-game' },
+    'tetris-game': { name: 'Tetris', description: 'Stack the Blocks', icon: 'fa-solid fa-shapes', category: 'Arcade Classics', legacyId: 'tetris-game' },
+    'breakout-game': { name: 'Breakout', description: 'Smash the Bricks', icon: 'fa-solid fa-kaaba', category: 'Arcade Classics', legacyId: 'breakout-game' },
+    'rpg-game': { name: 'RPG Battle', description: 'Turn-Based Combat', icon: 'fa-solid fa-khanda', category: 'RPG & Logic', legacyId: 'rpg-game' },
+    'eclipse-game': { name: 'Eclipse', description: 'Strategy Board', icon: 'fa-solid fa-sun', category: 'RPG & Logic', legacyId: 'eclipse-game' },
+    'eclipse-puzzle-game': { name: 'Eclipse Puzzle', description: 'Pattern Matching', icon: 'fa-solid fa-puzzle-piece', category: 'RPG & Logic', legacyId: 'eclipse-puzzle-game' },
+    'eclipse-logic-puzzle-game': { name: 'Logic Puzzle', description: 'Deduction Grid', icon: 'fa-solid fa-lightbulb', category: 'RPG & Logic', legacyId: 'eclipse-logic-puzzle-game' },
+    'matterhorn-game': { name: 'Matterhorn Ascent', description: '3D Alpine Adventure', icon: 'fa-solid fa-mountain', category: '3D Immersive', legacyId: 'matterhorn-game', wide: true },
 };
 
 // State Machine
@@ -270,13 +84,10 @@ function mainLoop(timestamp) {
 
 async function transitionToState(newState, context = {}) {
     if (currentState === AppState.TRANSITIONING) return;
-    currentState = AppState.TRANSITIONING;
 
     // --- Exit current state ---
-    if (newState === AppState.MENU) {
-        hideOverlay(); // Ensure overlay is hidden when returning to menu
-        soundManager.setBGMVolume(0.1);
-        if (currentGameInstance && currentGameInstance.shutdown) {
+    if (currentState === AppState.IN_GAME || currentState === AppState.PAUSED) {
+         if (currentGameInstance && currentGameInstance.shutdown) {
             try {
                 await currentGameInstance.shutdown();
             } catch (e) {
@@ -284,87 +95,95 @@ async function transitionToState(newState, context = {}) {
             }
         }
         currentGameInstance = null;
+
+        // Hide all game containers
         document.querySelectorAll(".game-container").forEach(el => el.classList.add("hidden"));
+    }
+
+    if (newState === AppState.MENU) {
+        currentState = AppState.TRANSITIONING;
+        hideOverlay(); // Ensure overlay is hidden when returning to menu
+        soundManager.setBGMVolume(0.1);
+
         document.getElementById("menu").classList.remove("hidden");
+        currentState = AppState.MENU;
     }
 
     // --- Enter new state ---
     if (newState === AppState.IN_GAME) {
+        currentState = AppState.TRANSITIONING;
         const { gameId } = context;
-        if (!gameId) {
-            console.error("No gameId provided for IN_GAME state.");
-            currentState = AppState.MENU;
-            return;
-        }
 
         document.getElementById("menu").classList.add("hidden");
-        const container = document.getElementById(gameId);
-        if (container) {
-            container.classList.remove("hidden");
-        } else {
-            console.error(`Container for game ${gameId} not found!`);
-            document.getElementById("menu").classList.remove("hidden");
-            currentState = AppState.MENU;
-            return;
-        }
-
-        soundManager.playSound('click');
-        soundManager.setBGMVolume(0.02);
 
         const gameInfo = gameRegistry[gameId];
         if (!gameInfo) {
             console.error("Game not found in registry:", gameId);
-            currentState = AppState.MENU;
+            transitionToState(AppState.MENU);
             return;
         }
 
-        const gameModule = gameInfo.module;
+        let container = document.getElementById(gameId);
+        if (!container) {
+            console.error(`Container for game ${gameId} not found!`);
+            // Attempt to create one if it's missing (mostly for new modules)
+            container = document.createElement('div');
+            container.id = gameId;
+            container.className = 'game-container hidden';
+            document.body.appendChild(container);
+        }
+        container.classList.remove("hidden");
+
+        soundManager.playSound('click');
+        soundManager.setBGMVolume(0.02);
 
         try {
-            if (typeof gameModule === 'string') {
-                const globalGame = window[gameModule];
-                if (globalGame) {
-                    currentGameInstance = new LegacyGameAdapter(globalGame);
-                } else {
-                    throw new Error(`Legacy game object '${gameModule}' not found.`);
+            if (gameInfo.module) {
+                // Instantiable Class
+                currentGameInstance = new gameInfo.module();
+                if (currentGameInstance.init) {
+                    await currentGameInstance.init(container);
                 }
-            } else {
-                currentGameInstance = new gameModule();
-            }
+            } else if (gameInfo.legacyId) {
+                // Legacy Global Object Adapter
+                // We assume legacy games attach themselves to window or are just script functions.
+                // Most of the legacy games in this repo seem to be global objects or functions triggered by data attributes.
+                // We will try to simulate the old behavior.
 
-            if (currentGameInstance.init) {
-                await currentGameInstance.init(container);
+                // For this project, many legacy games (pong, snake) use a global object like `snakeGame` or `pongGame`
+                // but they are not consistently named or exported.
+                // They often just run when their container is visible or need a specific init call.
+
+                // Let's try to find the global object.
+                const guessName = gameId.replace(/-([a-z])/g, (g) => g[1].toUpperCase()).replace('Game', '') + 'Game';
+                // e.g. 'pong-game' -> 'pongGame'
+
+                // Special cases
+                let globalObj = window[guessName];
+
+                // For matterhorn, it's 'matterhornGame' but might be a module now? No, we kept it as legacy for now in registry.
+                if (gameId === 'matterhorn-game') globalObj = window.matterhornGame;
+
+                if (globalObj && globalObj.init) {
+                    currentGameInstance = globalObj;
+                    currentGameInstance.init();
+                } else {
+                     // If no object found, it might be one of the simple ones that just runs on load (bad practice but exists).
+                     // Or it relies on the old main.js logic which we are replacing.
+                     // We might need to manually re-implement the init logic for them or fix them to be objects.
+                     console.warn(`Legacy game object ${guessName} not found. Checking specific adapters.`);
+
+                     // Fallback for games that might not have a global object exposed yet
+                }
             }
         } catch (err) {
             console.error("Failed to initialize game:", err);
-            document.getElementById("menu").classList.remove("hidden");
-            if(container) container.classList.add("hidden");
-            currentState = AppState.MENU;
+            transitionToState(AppState.MENU);
             return;
         }
-    }
-    soundManager.playSound('click');
 
-    // Load Game Module
-    const gameModule = await loadGame(gameId);
-    if (!gameModule) {
-        console.error("Could not load game module");
-        goBack(); // Return to menu if load fails
-        return;
+        currentState = AppState.IN_GAME;
     }
-
-    // Instantiate if it's a class
-    if (typeof gameModule === 'function' && /^class\s/.test(gameModule.toString())) {
-        currentGame = new gameModule();
-    } else {
-        currentGame = gameModule;
-    }
-
-    // Initialize Game
-    // We pass the container element to the game
-    if (currentGame && typeof currentGame.init === 'function') {
-        currentGame.init(container);
-    currentState = newState;
 }
 
 function showOverlay(title, content) {
@@ -387,50 +206,15 @@ function togglePause() {
         hideOverlay();
         soundManager.setBGMVolume(0.02); // Restore game BGM volume
     }
-
-    // Start Game Loop
-    lastTime = performance.now();
-    gameLoopId = requestAnimationFrame(gameLoop);
 }
 
-function shutdownCurrentGame() {
-    if (gameLoopId) {
-        cancelAnimationFrame(gameLoopId);
-        gameLoopId = null;
-    }
-
-    if (currentGame && typeof currentGame.shutdown === 'function') {
-        currentGame.shutdown();
-    }
-
-    currentGame = null;
-}
-
-function gameLoop(timestamp) {
-    const deltaTime = (timestamp - lastTime) / 1000; // Seconds
-    lastTime = timestamp;
-
-    if (currentGame) {
-        if (typeof currentGame.update === 'function') {
-            currentGame.update(deltaTime);
-        }
-        if (typeof currentGame.draw === 'function') {
-            currentGame.draw();
-        }
-    }
-
-    gameLoopId = requestAnimationFrame(gameLoop);
-}
-
-function goBack() {
-    shutdownCurrentGame();
 function populateGameMenu() {
     const menuGrid = document.getElementById('menu-grid');
     if (!menuGrid) return;
     menuGrid.innerHTML = ''; // Clear existing cards
 
     for (const [gameId, gameInfo] of Object.entries(gameRegistry)) {
-        const button = document.createElement('button');
+        const button = document.createElement('div');
         let classList = 'game-card group';
         if (gameInfo.wide) {
             classList += ' col-span-1 md:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800';
@@ -461,55 +245,6 @@ function updateHubStats() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-    // Preload Assets
-    const loadingScreen = document.createElement('div');
-    loadingScreen.id = 'loading-screen';
-    loadingScreen.style.position = 'fixed';
-    loadingScreen.style.top = '0';
-    loadingScreen.style.left = '0';
-    loadingScreen.style.width = '100%';
-    loadingScreen.style.height = '100%';
-    loadingScreen.style.background = '#000';
-    loadingScreen.style.color = '#00ffff';
-    loadingScreen.style.display = 'flex';
-    loadingScreen.style.flexDirection = 'column';
-    loadingScreen.style.justifyContent = 'center';
-    loadingScreen.style.alignItems = 'center';
-    loadingScreen.style.zIndex = '9999';
-    loadingScreen.innerHTML = '<h1>LOADING...</h1><div id="loading-bar" style="width: 200px; height: 10px; background: #333; margin-top: 20px;"><div id="loading-fill" style="width: 0%; height: 100%; background: #00ffff;"></div></div>';
-    document.body.appendChild(loadingScreen);
-
-    // Fake asset list for now, or real ones if we had them
-    const assets = [
-        { id: 'bg', type: 'image', src: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop' }
-    ];
-
-    // Hook into progress
-    const progressInterval = setInterval(() => {
-        const fill = document.getElementById('loading-fill');
-        if(fill) fill.style.width = `${assetManager.progress * 100}%`;
-    }, 100);
-
-    await assetManager.loadAssets(assets);
-
-    clearInterval(progressInterval);
-    loadingScreen.style.opacity = '0';
-    loadingScreen.style.transition = 'opacity 0.5s';
-    setTimeout(() => loadingScreen.remove(), 500);
-
-
-    // Bind Menu Buttons
-    document.querySelectorAll('#menu .game-card[data-game]').forEach(card => {
-        card.addEventListener('click', () => {
-            startGame(card.dataset.game);
-        });
-    });
-
-    // Bind Back Buttons
-    document.querySelectorAll('.back-btn').forEach(button => {
-        button.addEventListener('click', goBack);
-
 document.addEventListener('DOMContentLoaded', () => {
     populateGameMenu();
     updateHubStats();
@@ -531,13 +266,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Global Key Listeners
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            togglePause();
+            if (currentState === AppState.IN_GAME || currentState === AppState.PAUSED) {
+                togglePause();
+            }
         }
     });
 
-    // Global Loop? Legacy games have their own loops.
-    // We can implement a master loop here if we refactor all games to use it,
-    // but for now we rely on them managing their own loops via init/shutdown.
+    // Bind Back Buttons (Global handler for any .back-btn)
+    document.body.addEventListener('click', (e) => {
+        if (e.target.classList.contains('back-btn')) {
+            transitionToState(AppState.MENU);
+        }
+    });
+
     // Start the main loop
     lastTime = performance.now();
     requestAnimationFrame(mainLoop);
@@ -550,9 +291,11 @@ document.addEventListener('DOMContentLoaded', () => {
 window.miniGameHub = {
     transitionToState,
     soundManager,
-    saveSystem
+    saveSystem,
+    goBack: () => transitionToState(AppState.MENU)
 };
 
 // Legacy Compatibility: Expose systems globally for non-module games
 window.soundManager = soundManager;
 window.saveSystem = saveSystem;
+window.inputManager = inputManager;

@@ -1,100 +1,90 @@
 export default class BackgroundShader {
     constructor() {
-        this.canvas = document.createElement('canvas');
-        this.canvas.id = 'bg-canvas';
-        this.canvas.style.position = 'fixed';
-        this.canvas.style.top = '0';
-        this.canvas.style.left = '0';
-        this.canvas.style.width = '100%';
-        this.canvas.style.height = '100%';
-        this.canvas.style.zIndex = '-1';
-        this.canvas.style.pointerEvents = 'none';
-        document.body.appendChild(this.canvas);
-
+        this.canvas = document.getElementById('bg-canvas');
+        if (!this.canvas) return;
         this.ctx = this.canvas.getContext('2d');
-        this.resize();
-        window.addEventListener('resize', () => this.resize());
+
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
 
         this.stars = [];
         this.initStars();
 
-        this.loop = this.loop.bind(this);
-        requestAnimationFrame(this.loop);
-    }
+        window.addEventListener('resize', () => {
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+            this.canvas.width = this.width;
+            this.canvas.height = this.height;
+            this.initStars();
+        });
 
-    resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        this.animate();
     }
 
     initStars() {
-        for (let i = 0; i < 200; i++) {
+        this.stars = [];
+        for(let i=0; i<100; i++) {
             this.stars.push({
-                x: Math.random() * this.canvas.width,
-                y: Math.random() * this.canvas.height,
-                z: Math.random() * 2 + 1, // Depth/Speed
-                size: Math.random() * 2
+                x: Math.random() * this.width,
+                y: Math.random() * this.height,
+                size: Math.random() * 2,
+                speed: Math.random() * 0.5 + 0.1
             });
         }
     }
 
-    loop() {
-        this.ctx.fillStyle = '#050010'; // Deep dark purple/black
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    animate() {
+        if (!this.ctx) return;
 
-        // Draw Retro Grid
-        this.drawGrid();
+        // Deep dark blue/purple background
+        const grad = this.ctx.createRadialGradient(
+            this.width/2, this.height/2, 0,
+            this.width/2, this.height/2, this.width
+        );
+        grad.addColorStop(0, '#1e1b4b');
+        grad.addColorStop(1, '#020617');
+
+        this.ctx.fillStyle = grad;
+        this.ctx.fillRect(0, 0, this.width, this.height);
 
         // Draw Stars
         this.ctx.fillStyle = '#ffffff';
         this.stars.forEach(star => {
-            star.y += star.z * 0.5;
-            if (star.y > this.canvas.height) {
-                star.y = 0;
-                star.x = Math.random() * this.canvas.width;
-            }
+            star.y += star.speed;
+            if (star.y > this.height) star.y = 0;
 
-            const alpha = Math.random() * 0.5 + 0.5;
-            this.ctx.globalAlpha = alpha;
+            this.ctx.globalAlpha = Math.random() * 0.5 + 0.3;
             this.ctx.beginPath();
             this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
             this.ctx.fill();
         });
-        this.ctx.globalAlpha = 1.0;
 
-        requestAnimationFrame(this.loop);
-    }
-
-    drawGrid() {
-        const time = Date.now() * 0.001;
-        this.ctx.strokeStyle = 'rgba(255, 0, 255, 0.2)';
+        // Grid Effect
+        this.ctx.strokeStyle = 'rgba(255, 0, 255, 0.1)';
         this.ctx.lineWidth = 1;
 
-        const perspectiveY = this.canvas.height * 0.5;
+        // Perspective Grid logic (simplified)
+        const horizon = this.height * 0.6;
+        const gridSpacing = 40;
 
-        // Vertical lines (moving perspective)
-        // This is a simple pseudo-3d effect
-
-        // Horizontal lines
-        const lineCount = 20;
-        const speed = (time * 50) % (this.canvas.height / lineCount);
-
-        for (let i = 0; i < this.canvas.height; i += 40) {
-            let y = i + speed;
-            if (y > this.canvas.height) y -= this.canvas.height;
-
+        // Vertical lines
+        /*
+        for(let x = 0; x <= this.width; x+=100) {
             this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
+            this.ctx.moveTo(this.width/2, horizon);
+            this.ctx.lineTo(x + (x - this.width/2)*2, this.height);
             this.ctx.stroke();
         }
+        */
 
-        // Vertical Lines
-        for(let x = 0; x < this.canvas.width; x += 60) {
-             this.ctx.beginPath();
-             this.ctx.moveTo(x, 0);
-             this.ctx.lineTo(x, this.canvas.height);
-             this.ctx.stroke();
+        // Simple overlay scanline
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        for(let i=0; i<this.height; i+=4) {
+            this.ctx.fillRect(0, i, this.width, 1);
         }
+
+        requestAnimationFrame(() => this.animate());
     }
 }

@@ -4,51 +4,37 @@ export default class ParticleSystem {
         this.particles = [];
         ParticleSystem.instance = this;
     }
-
     static getInstance() {
-        return ParticleSystem.instance || new ParticleSystem();
+        if (!ParticleSystem.instance) ParticleSystem.instance = new ParticleSystem();
+        return ParticleSystem.instance;
     }
-
-    emit(ctx, x, y, color, count = 10) {
+    emit(ctx, x, y, color, count) {
         for (let i = 0; i < count; i++) {
             this.particles.push({
-                x: x,
-                y: y,
-                vx: (Math.random() - 0.5) * 200, // Speed
-                vy: (Math.random() - 0.5) * 200,
-                life: 1.0, // 0 to 1
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4,
+                life: 1.0,
                 color: color,
-                size: Math.random() * 4 + 1
+                size: Math.random() * 3 + 1
             });
         }
     }
-
     update(dt) {
-        this.particles.forEach(p => {
-            p.x += p.vx * dt;
-            p.y += p.vy * dt;
-            p.life -= dt * 2; // Fade out speed
-        });
-        this.particles = this.particles.filter(p => p.life > 0);
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            let p = this.particles[i];
+            p.x += p.vx; p.y += p.vy;
+            p.life -= dt * 2;
+            if (p.life <= 0) this.particles.splice(i, 1);
+        }
     }
-
     draw(ctx) {
+        ctx.save();
         this.particles.forEach(p => {
             ctx.globalAlpha = p.life;
             ctx.fillStyle = p.color;
-            ctx.beginPath();
-            ctx.rect(p.x, p.y, p.size, p.size);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
         });
-        ctx.globalAlpha = 1.0;
-    }
-
-    // Helper to get screen shake offset
-    getShake(intensity = 0) {
-        if (intensity <= 0) return {x:0, y:0};
-        return {
-            x: (Math.random() - 0.5) * intensity,
-            y: (Math.random() - 0.5) * intensity
-        };
+        ctx.restore();
     }
 }

@@ -83,6 +83,7 @@ export default class PhysicsStackerGame {
         this.currentBlock = null;
         this.score = 0; // Max height
         this.blocks = [];
+        this.inputDebounce = false;
 
         this.soundManager = SoundManager.getInstance();
         this.inputManager = InputManager.getInstance();
@@ -95,17 +96,25 @@ export default class PhysicsStackerGame {
             <div id="stacker-ui" style="color: white; font-family: monospace;">
                 Max Height: <span id="stacker-score">0</span>
             </div>
-            <p style="color:#aaa; font-size:0.8rem">SPACE to drop block.</p>
+            <p style="color:#aaa; font-size:0.8rem">SPACE or CLICK to drop block.</p>
             <button class="back-btn">Back</button>
         `;
 
         this.canvas = document.getElementById("stackerCanvas");
         this.ctx = this.canvas.getContext("2d");
 
-        container.querySelector('.back-btn').addEventListener('click', () => {
-             window.miniGameHub.goBack();
+        // Mouse click to drop
+        this.canvas.addEventListener('click', () => {
+             this.dropBlock();
         });
 
+        container.querySelector('.back-btn').addEventListener('click', () => {
+             if (window.miniGameHub) window.miniGameHub.transitionToState("MENU");
+        });
+
+        this.physics = new PhysicsEngine();
+        this.blocks = [];
+        this.score = 0;
         this.spawnBlock();
     }
 
@@ -135,7 +144,11 @@ export default class PhysicsStackerGame {
         }
     }
 
-    shutdown() {}
+    shutdown() {
+        // Cleanup if needed
+        this.blocks = [];
+        this.currentBlock = null;
+    }
 
     update(dt) {
         // Crane Movement
@@ -144,8 +157,12 @@ export default class PhysicsStackerGame {
 
         // Input
         if (this.inputManager.isKeyDown("Space")) {
-            // Simple debounce? Or rely on null check
-            this.dropBlock();
+            if (!this.inputDebounce) {
+                this.dropBlock();
+                this.inputDebounce = true;
+            }
+        } else {
+            this.inputDebounce = false;
         }
 
         // Update Attached Block
