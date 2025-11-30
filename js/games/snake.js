@@ -1,5 +1,6 @@
 import SoundManager from '../core/SoundManager.js';
 import InputManager from '../core/InputManager.js';
+import SaveSystem from '../core/SaveSystem.js';
 
 export default class SnakeGame {
     constructor() {
@@ -25,20 +26,47 @@ export default class SnakeGame {
 
         this.soundManager = SoundManager.getInstance();
         this.inputManager = InputManager.getInstance();
+        this.saveSystem = SaveSystem.getInstance();
     }
 
     init(container) {
-        this.canvas = document.getElementById("snakeCanvas");
+        // Create Canvas if it doesn't exist (clean slate)
+        let canvas = container.querySelector('#snakeCanvas');
+        if (!canvas) {
+            container.innerHTML = `
+                <h2>🐍 Snake Game</h2>
+                <div class="relative">
+                     <canvas id="snakeCanvas" width="400" height="400" class="border-2 border-green-500 rounded-lg bg-black"></canvas>
+                     <div class="absolute top-2 left-2 text-white font-mono">
+                        Score: <span id="snake-score">0</span>
+                        <br>
+                        High Score: <span id="snake-high-score">0</span>
+                     </div>
+                </div>
+                <p class="mt-4 text-slate-300">Use <b>Arrow Keys</b> to move. Hold <b>Shift</b> to dash.</p>
+                <button class="back-btn mt-4 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded">Back</button>
+            `;
+            canvas = container.querySelector('#snakeCanvas');
+
+            // Re-bind back button since we overwrote innerHTML
+            container.querySelector('.back-btn').addEventListener('click', () => {
+                 if (window.miniGameHub) window.miniGameHub.goBack();
+            });
+        }
+
+        this.canvas = canvas;
         this.ctx = this.canvas.getContext("2d");
+
+        // Update High Score UI
+        const hs = this.saveSystem.getHighScore('snake-game');
+        container.querySelector('#snake-high-score').textContent = hs;
+
         this.active = true;
         this.resetGame();
-
-        container.querySelector('.back-btn').addEventListener('click', () => {
-             if (window.miniGameHub) window.miniGameHub.goBack();
-        });
     }
 
     resetGame() {
+        if (!this.canvas) return;
         this.snake = [{ x: 10, y: 10 }];
         this.createFood();
         this.dx = 1;
@@ -46,10 +74,12 @@ export default class SnakeGame {
         this.score = 0;
         this.timeSinceLastMove = 0;
         this.updateScoreUI();
+        this.active = true;
     }
 
     shutdown() {
         this.active = false;
+        // Event listeners are handled by InputManager, so no need to remove them manually here
     }
 
     update(dt) {
@@ -121,10 +151,16 @@ export default class SnakeGame {
     }
 
     gameOver() {
+        this.active = false;
         this.soundManager.playSound('explosion');
-        // Simple alert for now, could be better UI
-        alert("Game Over! Your score: " + this.score);
-        this.resetGame();
+        this.saveSystem.setHighScore('snake-game', this.score);
+
+        if (window.miniGameHub && window.miniGameHub.showGameOver) {
+            window.miniGameHub.showGameOver(this.score, () => this.resetGame());
+        } else {
+            // Fallback
+            this.resetGame();
+        }
     }
 
     updateScoreUI() {
