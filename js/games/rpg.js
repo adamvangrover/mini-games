@@ -19,6 +19,7 @@ export default class RPGGame {
         ];
         this.log = [];
         this.container = null;
+        this.isActive = false;
 
         this.soundManager = SoundManager.getInstance();
         this.saveSystem = SaveSystem.getInstance();
@@ -26,6 +27,7 @@ export default class RPGGame {
 
     init(container) {
         this.container = container;
+        this.isActive = true;
 
         // Inject Visual UI (Pokemon Style)
         this.container.innerHTML = `
@@ -98,9 +100,8 @@ export default class RPGGame {
     }
 
     shutdown() {
+        this.isActive = false;
         if (this.container) {
-             // Removing listeners not strictly needed as elements are destroyed,
-             // but good practice if we had persistent refs.
              const btns = this.container.querySelectorAll('button');
              btns.forEach(b => b.onclick = null);
         }
@@ -118,7 +119,7 @@ export default class RPGGame {
     }
 
     updateUI() {
-        if (!this.container) return;
+        if (!this.container || !this.isActive) return;
         const p = this.player;
         const e = this.enemy;
 
@@ -147,7 +148,7 @@ export default class RPGGame {
     }
 
     handleAttack() {
-        if (!this.enemy || this.player.hp <= 0) return;
+        if (!this.enemy || this.player.hp <= 0 || !this.isActive) return;
 
         // Player attacks
         const playerDamage = Math.floor(Math.random() * this.player.attack) + 5;
@@ -182,7 +183,7 @@ export default class RPGGame {
     }
 
     handleHeal() {
-        if (!this.enemy || this.player.hp <= 0) return;
+        if (!this.enemy || this.player.hp <= 0 || !this.isActive) return;
 
         const healAmount = Math.floor(Math.random() * 20) + 10;
         this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmount);
@@ -199,7 +200,7 @@ export default class RPGGame {
     }
 
     enemyTurn() {
-        if (!this.enemy || this.enemy.hp <= 0) return;
+        if (!this.enemy || this.enemy.hp <= 0 || !this.isActive) return;
 
         const enemyDamage = Math.floor(Math.random() * this.enemy.attack) + 1;
         this.player.hp -= enemyDamage;
@@ -215,14 +216,16 @@ export default class RPGGame {
         if (this.player.hp <= 0) {
             this.player.hp = 0;
             this.logMessage("Defeated! Game Over.");
-            // Reset player?
+            this.updateUI();
+
             setTimeout(() => {
-                // alert("Game Over");
-                this.player.hp = this.player.maxHp;
-                window.miniGameHub.goBack();
-            }, 2000);
+                if(window.miniGameHub && window.miniGameHub.showGameOver) {
+                    window.miniGameHub.showGameOver(this.player.level * 100, () => this.resetGame());
+                }
+            }, 1500);
+        } else {
+            this.updateUI();
         }
-        this.updateUI();
     }
 
     levelUp() {
@@ -234,5 +237,10 @@ export default class RPGGame {
         this.player.attack += 5;
         this.logMessage(`LEVEL UP! You are now level ${this.player.level}.`);
         this.soundManager.playSound('score');
+    }
+
+    resetGame() {
+        this.player.hp = this.player.maxHp;
+        this.spawnEnemy();
     }
 }

@@ -216,8 +216,9 @@ export default class TetrisGame {
         this.isGameOver = true;
         this.soundManager.playSound('explosion');
         this.saveSystem.setHighScore('tetris-game', this.score);
-        alert("Game Over! Score: " + this.score);
-        this.resetGame();
+        if(window.miniGameHub && window.miniGameHub.showGameOver) {
+            window.miniGameHub.showGameOver(this.score, () => this.resetGame());
+        }
     }
 
     draw() {

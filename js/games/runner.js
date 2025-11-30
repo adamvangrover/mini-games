@@ -1,6 +1,7 @@
 import SoundManager from '../core/SoundManager.js';
 import InputManager from '../core/InputManager.js';
 import SaveSystem from '../core/SaveSystem.js';
+import ParticleSystem from '../core/ParticleSystem.js';
 
 export default class RunnerGame {
     constructor() {
@@ -11,12 +12,13 @@ export default class RunnerGame {
         this.obstacles = [];
         this.gameSpeed = 200;
         this.score = 0;
-        this.isGameOver = false;
+        this.active = false;
         this.obstacleTimer = 0;
 
         this.soundManager = SoundManager.getInstance();
         this.inputManager = InputManager.getInstance();
         this.saveSystem = SaveSystem.getInstance();
+        this.particleSystem = ParticleSystem.getInstance();
     }
 
     init(container) {
@@ -41,6 +43,7 @@ export default class RunnerGame {
 
         this.canvas = canvas;
         this.ctx = this.canvas.getContext("2d");
+        this.active = true;
         this.resetGame();
     }
 
@@ -49,15 +52,17 @@ export default class RunnerGame {
         this.obstacles = [];
         this.gameSpeed = 200;
         this.score = 0;
-        this.isGameOver = false;
+        this.active = true;
         this.obstacleTimer = 0;
         this.updateScoreUI();
     }
 
-    shutdown() { }
+    shutdown() {
+        this.active = false;
+    }
 
     update(dt) {
-        if (this.isGameOver) return;
+        if (!this.active) return;
 
         // Input
         if (this.inputManager.isKeyDown("Space")) {
@@ -77,6 +82,10 @@ export default class RunnerGame {
 
         // Ground collision
         if (this.player.y >= 150) {
+            if (this.player.isJumping) {
+                 // Land effect
+                 this.particleSystem.emit(this.ctx, this.player.x + 10, 170, '#00ff00', 5);
+            }
             this.player.y = 150;
             this.player.isJumping = false;
             this.player.velocityY = 0;
@@ -98,6 +107,12 @@ export default class RunnerGame {
             }
         });
 
+        // Particles
+        this.particleSystem.update(dt);
+        if (this.player.isJumping) {
+             this.particleSystem.emit(this.ctx, this.player.x + 10, this.player.y + 20, '#00ff00', 1);
+        }
+
         // Score
         this.score += 10 * dt;
         this.gameSpeed += 10 * dt; // Accel
@@ -109,6 +124,7 @@ export default class RunnerGame {
             this.player.velocityY = -500;
             this.player.isJumping = true;
             this.soundManager.playSound('jump');
+            this.particleSystem.emit(this.ctx, this.player.x + 10, this.player.y + 20, '#ffffff', 10);
         }
     }
 
@@ -118,14 +134,14 @@ export default class RunnerGame {
     }
 
     gameOver() {
-        this.isGameOver = true;
+        this.active = false;
         this.soundManager.playSound('explosion');
+        this.particleSystem.emit(this.ctx, this.player.x + 10, this.player.y + 10, '#ff0000', 50);
         this.saveSystem.setHighScore('runner-game', Math.floor(this.score));
 
-        setTimeout(() => {
-            alert("Game Over! Score: " + Math.floor(this.score));
-            this.resetGame();
-        }, 100);
+        if (window.miniGameHub && window.miniGameHub.showGameOver) {
+            window.miniGameHub.showGameOver(Math.floor(this.score), () => this.resetGame());
+        }
     }
 
     updateScoreUI() {
@@ -140,6 +156,8 @@ export default class RunnerGame {
         // Floor
         this.ctx.strokeStyle = "#00ffff";
         this.ctx.lineWidth = 2;
+        this.ctx.shadowBlur = 10;
+        this.ctx.shadowColor = "#00ffff";
         this.ctx.beginPath();
         this.ctx.moveTo(0, 170);
         this.ctx.lineTo(600, 170);
@@ -150,7 +168,6 @@ export default class RunnerGame {
         this.ctx.shadowBlur = 10;
         this.ctx.shadowColor = "#00ff00";
         this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
-        this.ctx.shadowBlur = 0;
 
         // Obstacles
         this.ctx.fillStyle = "#ff4500";
@@ -160,5 +177,7 @@ export default class RunnerGame {
             this.ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
         });
         this.ctx.shadowBlur = 0;
+
+        this.particleSystem.draw(this.ctx);
     }
 }
