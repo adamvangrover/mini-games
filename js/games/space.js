@@ -370,7 +370,25 @@ export default class SpaceShooterGame {
     }
 
     gameOver() {
+        this.isActive = false;
         this.saveSystem.setHighScore('space-game', this.score);
-        window.miniGameHub.goBack();
+        if (window.miniGameHub && window.miniGameHub.showGameOver) {
+             window.miniGameHub.showGameOver(this.score, () => {
+                 this.resetGame();
+             });
+        }
+    }
+
+    resetGame() {
+        this.score = 0;
+        this.bullets.forEach(b => this.scene.remove(b));
+        this.bullets = [];
+        this.enemies.forEach(e => this.scene.remove(e));
+        this.enemies = [];
+        this.explosions.forEach(e => this.scene.remove(e));
+        this.explosions = [];
+        if(this.scoreEl) this.scoreEl.textContent = 0;
+        this.isActive = true;
+        this.player.position.set(0, 0, 0);
     }
 }

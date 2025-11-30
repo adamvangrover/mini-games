@@ -1,5 +1,6 @@
 import SoundManager from '../core/SoundManager.js';
 import InputManager from '../core/InputManager.js';
+import ParticleSystem from '../core/ParticleSystem.js';
 
 export default class MazeGame {
     constructor() {
@@ -14,9 +15,11 @@ export default class MazeGame {
         this.enemies = [];
         this.enemyMoveTimer = 0;
         this.inputCooldown = 0;
+        this.active = false;
 
         this.soundManager = SoundManager.getInstance();
         this.inputManager = InputManager.getInstance();
+        this.particleSystem = ParticleSystem.getInstance();
     }
 
     init(container) {
@@ -38,6 +41,7 @@ export default class MazeGame {
 
         this.canvas = canvas;
         this.ctx = this.canvas.getContext("2d");
+        this.active = true;
         this.resetGame();
     }
 
@@ -47,9 +51,12 @@ export default class MazeGame {
         this.enemies = [{ x: 4, y: 4 }, { x: 6, y: 2 }];
         this.generateMaze();
         this.enemyMoveTimer = 0;
+        this.active = true;
     }
 
-    shutdown() { }
+    shutdown() {
+        this.active = false;
+    }
 
     generateMaze() {
         this.maze = Array.from({ length: this.rows }, () => Array(this.cols).fill(1));
@@ -78,6 +85,8 @@ export default class MazeGame {
     }
 
     update(dt) {
+        if (!this.active) return;
+
         if (this.inputCooldown > 0) this.inputCooldown -= dt;
         else {
             let moved = false;
@@ -94,6 +103,8 @@ export default class MazeGame {
             this.moveEnemies();
             this.enemyMoveTimer = 0;
         }
+
+        this.particleSystem.update(dt);
     }
 
     movePlayer(dx, dy) {
@@ -102,11 +113,10 @@ export default class MazeGame {
             this.player.x = nx;
             this.player.y = ny;
             this.soundManager.playSound('click');
+            this.particleSystem.emit(this.ctx, this.player.x * this.tileSize + 20, this.player.y * this.tileSize + 20, '#00ffff', 5);
 
             if (this.player.x === this.goal.x && this.player.y === this.goal.y) {
-                this.soundManager.playSound('score');
-                alert("🏆 You Won!");
-                this.resetGame();
+                this.winGame();
             }
         }
     }
@@ -126,11 +136,34 @@ export default class MazeGame {
             }
 
             if (enemy.x === this.player.x && enemy.y === this.player.y) {
-                this.soundManager.playSound('explosion');
-                alert("💀 You Got Caught!");
-                this.resetGame();
+                this.loseGame();
             }
         });
+    }
+
+    winGame() {
+        this.soundManager.playSound('score');
+        this.particleSystem.emit(this.ctx, this.goal.x * this.tileSize + 20, this.goal.y * this.tileSize + 20, '#fbbf24', 50);
+        this.active = false;
+
+        setTimeout(() => {
+             if (window.miniGameHub && window.miniGameHub.showGameOver) {
+                // Show a "Success" overlay by hacking score display or just creating a generic showGameOver with score
+                window.miniGameHub.showGameOver(100, () => this.resetGame());
+            }
+        }, 500);
+    }
+
+    loseGame() {
+        this.soundManager.playSound('explosion');
+        this.particleSystem.emit(this.ctx, this.player.x * this.tileSize + 20, this.player.y * this.tileSize + 20, '#ff0000', 30);
+        this.active = false;
+
+         setTimeout(() => {
+             if (window.miniGameHub && window.miniGameHub.showGameOver) {
+                window.miniGameHub.showGameOver(0, () => this.resetGame());
+            }
+        }, 500);
     }
 
     draw() {
@@ -150,17 +183,20 @@ export default class MazeGame {
             }
         }
 
+        // Goal
         this.ctx.shadowBlur = 10;
         this.ctx.shadowColor = '#fbbf24';
         this.ctx.fillStyle = '#fbbf24';
         this.ctx.fillRect(this.goal.x * this.tileSize + 10, this.goal.y * this.tileSize + 10, this.tileSize - 20, this.tileSize - 20);
 
+        // Player
         this.ctx.shadowColor = '#00ffff';
         this.ctx.fillStyle = '#00ffff';
         this.ctx.beginPath();
         this.ctx.arc(this.player.x * this.tileSize + this.tileSize/2, this.player.y * this.tileSize + this.tileSize/2, this.tileSize/3, 0, Math.PI*2);
         this.ctx.fill();
 
+        // Enemies
         this.ctx.shadowColor = '#ef4444';
         this.ctx.fillStyle = '#ef4444';
         this.enemies.forEach(enemy => {
@@ -170,5 +206,7 @@ export default class MazeGame {
         });
 
         this.ctx.shadowBlur = 0;
+
+        this.particleSystem.draw(this.ctx);
     }
 }
