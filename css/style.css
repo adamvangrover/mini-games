@@ -1,126 +1,36 @@
-:root {
-    --primary-glow: 0 0 10px #0ff, 0 0 20px #0ff;
-    --secondary-glow: 0 0 10px #f0f, 0 0 20px #f0f;
-    --bg-color: #0f172a;
-    --card-bg: rgba(30, 41, 59, 0.8);
-}
-
-body {
-    font-family: 'Poppins', sans-serif;
-    background-color: var(--bg-color);
-    color: white;
-    margin: 0;
-    overflow-x: hidden;
-}
-
-#menu {
-    position: relative;
-    z-index: 10;
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    text-align: center;
-}
-
-h1 {
-    font-size: 3rem;
-    margin-bottom: 2rem;
-    text-shadow: var(--primary-glow);
-    background: linear-gradient(to right, #0ff, #f0f);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-button[data-game] {
-    background: var(--card-bg);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 2rem;
-    font-size: 1.2rem;
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 150px;
-}
-
-button[data-game]:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--primary-glow);
-    border-color: #0ff;
-    background: rgba(30, 41, 59, 1);
-}
-
-.hidden {
-    display: none !important;
-}
-
-.game-container {
-    position: fixed;
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
 /* --- Global Variables --- */
 :root {
     --primary-neon: #00ffff;
     --secondary-neon: #ff00ff;
     --background-dark: #0d0221;
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
     --card-hover: rgba(255, 255, 255, 0.15);
+    --primary-glow: 0 0 10px #0ff, 0 0 20px #0ff;
+    --secondary-glow: 0 0 10px #f0f, 0 0 20px #f0f;
 }
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
+/* --- Base Styles --- */
 body {
     font-family: 'Poppins', sans-serif;
-    text-align: center;
     background-color: var(--background-dark);
     color: white;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
-    /* Retro Grid Background will be handled by canvas or complex CSS */
-    background-image:
-        radial-gradient(circle at 50% 50%, #2a0e4b 0%, #0d0221 100%);
     min-height: 100vh;
+    /* Deep space gradient */
+    background: radial-gradient(circle at 50% 50%, #1a0b2e 0%, #050505 100%);
 }
 
 h1, h2, h3 {
     font-family: 'Press Start 2P', cursive;
     color: var(--secondary-neon);
-    text-shadow: 0 0 10px var(--secondary-neon);
-}
-
-.hidden {
-    display: none !important;
-}
-
-/* --- Main Menu (Grid of Cards) --- */
-#menu {
-    padding: 40px 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-#menu h1 {
-    font-size: 2.5rem;
-    margin-bottom: 50px;
-    animation: glow 2s ease-in-out infinite alternate;
-}
-    background-color: #050505;
-    color: #fff;
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
-}
-
-h1, h2 {
-    color: #ff00ff;
-    text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff;
+    text-shadow: var(--secondary-glow);
 }
 
 .title-glow {
@@ -131,11 +41,26 @@ h1, h2 {
     display: none !important;
 }
 
-/* New Menu Card Styles */
+/* --- Menu --- */
+#menu {
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 10;
+}
+
+#menu h1 {
+    font-size: 2.5rem; /* Responsive sizing handled via Tailwind classes mostly, but this is backup */
+    margin-bottom: 50px;
+    text-align: center;
+}
+
+/* --- Game Cards --- */
 .game-card {
     position: relative;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
     border-radius: 16px;
     padding: 24px;
     display: flex;
@@ -143,10 +68,12 @@ h1, h2 {
     align-items: center;
     justify-content: center;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(10px);
     cursor: pointer;
     overflow: hidden;
-    font-family: 'Inter', sans-serif; /* Cleaner font for cards */
+    font-family: 'Inter', sans-serif;
+    min-height: 200px;
+    text-align: center;
 }
 
 .game-card::before {
@@ -166,7 +93,7 @@ h1, h2 {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.3);
     box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5),
-                0 0 15px rgba(255, 0, 255, 0.2); /* Neon glow hint */
+                0 0 15px rgba(255, 0, 255, 0.2);
 }
 
 .game-card:hover::before {
@@ -174,418 +101,114 @@ h1, h2 {
 }
 
 .game-card h3 {
-    text-shadow: none; /* Reset pixel shadow for Inter font */
-}
-
-.back-btn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    font-family: 'Press Start 2P', cursive;
-    background-color: rgba(0,0,0,0.8);
-    color: #ff00ff;
-    border: 2px solid #ff00ff;
-    border-radius: 5px;
-    padding: 10px 20px;
-    z-index: 2000;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 5px #ff00ff;
-}
-
-.back-btn:hover {
-    background-color: #ff00ff;
-    color: #0d0221;
-    box-shadow: 0 0 15px #ff00ff;
-}
-
-
-/* --- Game Containers --- */
-.game-container {
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background: rgba(0,0,0,0.8); /* Dim background */
-}
-
-/* Specific Canvas Styles */
-canvas {
-    border: 2px solid #ff00ff;
-    background: black;
-    box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
-}
-
-/* --- Legacy Styles Preserved Below --- */
-
-@keyframes glow {
-    from { text-shadow: 0 0 10px var(--secondary-neon), 0 0 20px var(--secondary-neon); }
-    to { text-shadow: 0 0 20px var(--secondary-neon), 0 0 30px var(--secondary-neon), 0 0 40px var(--primary-neon); }
-}
-
-.game-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 30px;
-}
-
-.game-card {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    backdrop-filter: blur(10px);
-    border-radius: 15px;
-    padding: 20px;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 200px;
-}
-
-.game-card:hover {
-    transform: translateY(-10px) scale(1.02);
-    background: var(--card-hover);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--primary-neon);
-    border-color: var(--primary-neon);
-}
-
-.game-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--bg-color);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 20;
-}
-
-.back-btn {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    padding: 10px 20px;
-    background: #ef4444;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    z-index: 100;
-}
-
-.back-btn:hover {
-    background: #dc2626;
-}
-
-/* Canvas styling */
-canvas {
-    border-radius: 8px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    background: #000; /* Fallback */
-}
-
-/* Specific Game Styles */
-#pongCanvas {
-    border: 2px solid #0ff;
-    box-shadow: var(--primary-glow);
-}
-
-/* Tower Defense */
-#tdCanvas {
-    border: 2px solid #fbbf24;
-}
-
-/* Stacker */
-#stackerCanvas {
-    border: 2px solid #a3e635;
-}
-
-/* Aetheria & Matterhorn full screen overrides */
-#aetheria-game-container, #matterhornCanvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-
-/* Matterhorn UI */
-#mh-ui-root {
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transform: translateX(-100%);
-    transition: 0.5s;
-}
-
-.game-card:hover::before {
-    transform: translateX(100%);
-}
-
-.game-card h3 {
-    font-size: 1.2rem;
-    margin: 10px 0;
-    color: white;
-    text-shadow: 0 0 5px rgba(0,0,0,0.5);
     font-family: 'Poppins', sans-serif;
     font-weight: 700;
+    font-size: 1.2rem;
+    margin: 10px 0;
+    text-shadow: none;
+    color: white;
 }
 
-.game-icon {
+.game-card i {
     font-size: 3rem;
     margin-bottom: 10px;
 }
 
-/* --- Common UI Elements --- */
-.back-btn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 100;
-    font-family: 'Press Start 2P', cursive;
-    background: rgba(0, 0, 0, 0.6);
-    color: var(--primary-neon);
-    border: 2px solid var(--primary-neon);
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(5px);
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
-}
-
-.back-btn:hover {
-    background: var(--primary-neon);
-    color: black;
-    box-shadow: 0 0 20px var(--primary-neon);
-}
-
-/* --- Canvas Styles --- */
-canvas {
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    border-radius: 4px;
-    display: block;
-    margin: 0 auto;
-}
-
-/* --- Specific Game Overrides --- */
-
-/* Pong specific */
-#pong-game canvas {
-    border: 2px solid var(--secondary-neon);
-    box-shadow: 0 0 15px var(--secondary-neon);
-}
-
-/* Matterhorn & Aetheria Fullscreen */
-#matterhorn-game, #aetheria-game {
+/* --- Game Containers --- */
+.game-container {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: black;
-    z-index: 50;
-    padding: 0;
-    margin: 0;
-}
-
-#matterhorn-game canvas, #aetheria-game canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    border: none;
-    box-shadow: none;
-    border-radius: 0;
-}
-
-/* --- Matterhorn UI (Ported) --- */
-#mh-ui-root {
-    font-family: 'Inter', sans-serif; /* Override global font for HUD */
-}
-#mh-hud-container {
-    position: absolute;
-    top: 20px;
-    left: 20px;
     display: flex;
-    gap: 20px;
-}
-.mh-hud-box {
-    background: rgba(15, 23, 42, 0.75);
-    padding: 12px 18px;
-    backdrop-filter: blur(10px);
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.1);
-    font-size: 0.9rem;
-    text-align: left;
-    color: white;
-}
-.mh-bar {
-    width: 120px;
-    height: 6px;
-    margin-top: 4px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 3px;
-    overflow: hidden;
-}
-.mh-bar-fill {
-    height: 100%;
-    width: 100%;
-    transition: width 0.2s;
-}
-#mh-prompt {
-    position: absolute;
-    bottom: 22%;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 10px 20px;
-    background: rgba(0,0,0,0.75);
-    border-radius: 20px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s;
-    color: white;
-}
-#mh-start-screen {
-    position: absolute;
-    inset: 0;
-    display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat;
-    z-index: 60;
+    background: rgba(0,0,0,0.9);
+    z-index: 20;
+    overflow: hidden;
 }
-#mh-start-content {
-    background: rgba(0,0,0,0.7);
-    padding: 40px;
-    text-align: center;
-    border-radius: 20px;
-    backdrop-filter: blur(6px);
-}
-.mh-btn {
-    padding: 14px 35px;
-    border-radius: 10px;
-    border: none;
-    font-weight: 700;
-    letter-spacing: 1px;
-    cursor: pointer;
-    color: white;
-    margin-top: 20px;
-    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-    transition: transform 0.1s;
-}
-.mh-btn:hover { transform: scale(1.05); }
 
+/* --- Canvas Defaults --- */
+canvas {
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    display: block;
+    /* Default canvas styling, often overridden by Tailwind classes */
+}
 
-/* --- Aetheria UI (Ported) --- */
-#aetheria-ui-layer {
+/* --- Navigation --- */
+.back-btn {
+    /* Tailwind handles most, but specific positioning for games */
+    /* Often overridden by absolute positioning in games */
+    font-family: 'Press Start 2P', cursive;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    z-index: 100;
+}
+
+/* --- Overlay --- */
+#global-overlay {
+    backdrop-filter: blur(5px);
+}
+
+.overlay-panel {
+    background: rgba(15, 23, 42, 0.95);
+    border: 2px solid var(--secondary-neon);
+    border-radius: 12px;
+    box-shadow: var(--secondary-glow);
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* --- Specific Game Overrides --- */
+
+/* Matterhorn & Aetheria Fullscreen Canvas */
+#matterhorn-game canvas, #aetheria-game-container canvas {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none;
-}
-.interactive {
-    pointer-events: auto !important;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
 }
 
-/* Eclipse UI */
-.grid-container {
-    display: grid;
-    gap: 2px;
-    background: #333;
-    padding: 2px;
+/* Matterhorn UI */
+#mh-ui-root {
+    font-family: 'Inter', sans-serif;
+}
+#mh-hud-container {
+    /* Positioned absolutely in js/html */
+}
+
+/* Aetheria UI */
 #aetheria-selection-screen {
-    background: rgba(10, 10, 20, 0.85);
-    backdrop-filter: blur(10px);
-    padding: 40px;
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.1);
-    text-align: center;
-    pointer-events: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-.aetheria-avatars {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-}
-.aetheria-avatar-card {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 20px;
-    border-radius: 15px;
-    cursor: pointer;
-    width: 150px;
-    transition: all 0.3s ease;
-}
-.aetheria-avatar-card:hover {
-    transform: translateY(-10px);
-    background: rgba(255,255,255,0.1);
-}
-.aetheria-avatar-icon {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 15px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-}
-#aetheria-hud {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    color: white;
-    font-family: monospace;
-    display: none;
-}
-#aetheria-controls-hint {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    color: rgba(255,255,255,0.5);
-    font-size: 0.9rem;
-    text-align: right;
+    /* Styled via Tailwind/In-line, but fallback here */
+    background: rgba(15, 23, 42, 0.95);
 }
 
-/* --- Eclipse Logic Puzzle --- */
+/* Eclipse Logic Puzzle Grid */
 #eclipselogic-grid-container {
-    background-color: #f1f5f9;
+    background-color: #334155;
+    padding: 2px;
+    border-radius: 4px;
 }
 .grid-cell {
-    background-color: #f1f5f9;
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: pointer;
 }
-
-.overlay-panel {
-    background: rgba(14, 14, 22, 0.95);
-    border: 2px solid #f0f;
-    border-radius: 12px;
-    padding: 2rem;
-    position: relative;
-    box-shadow: 0 0 15px #f0f, 0 0 30px #f0f;
-    transform: scale(0.9);
-    opacity: 0;
-    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
-}
-
-#global-overlay:not(.hidden) .overlay-panel {
-    transform: scale(1);
-    opacity: 1;
+.grid-cell:hover {
+    background-color: #334155;
 }
