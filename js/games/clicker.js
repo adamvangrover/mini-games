@@ -1,15 +1,3 @@
-export default {
-    money: 0,
-    clickPower: 1,
-    autoClickers: 0,
-    autoClickRate: 0,
-    prestigeMultiplier: 1,
-    upgradeCost: 10,
-    autoClickerCost: 50,
-    interval: null,
-    buttonHandlers: [],
-
-    init: function() {
 import SoundManager from '../core/SoundManager.js';
 import SaveSystem from '../core/SaveSystem.js';
 
@@ -22,10 +10,10 @@ export default class ClickerGame {
         this.prestigeMultiplier = 1;
         this.upgradeCost = 10;
         this.autoClickerCost = 50;
+        this.autoClickTimer = 0;
 
         this.soundManager = SoundManager.getInstance();
         this.saveSystem = SaveSystem.getInstance();
-        this.autoClickTimer = 0;
     }
 
     init(container) {
@@ -39,40 +27,61 @@ export default class ClickerGame {
         this.autoClickerCost = config.autoClickerCost || 50;
         this.updateAutoRate();
 
-        // Bind Buttons (Assume HTML structure exists in index.html for now, OR inject it)
-        // Since index.html has legacy structure, we should query selectors specifically within container.
-        // Wait, the container passed is the div with id="clicker-game".
+        // Inject UI if missing
+        let moneyEl = container.querySelector('#money');
+        if (!moneyEl) {
+            container.innerHTML = `
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold mb-4 text-fuchsia-500">💰 Clicker</h2>
+                    <p class="text-xl mb-6">Money: <span id="money" class="text-green-400 font-mono">0</span> 💸</p>
 
-        // Let's re-bind handlers.
-        // Note: The previous legacy code added listeners. We should assume we are starting fresh.
-        // But if we navigate away and back, we need to handle listener cleanup.
-        // We will replace the innerHTML to clear old listeners and ensure clean slate,
-        // OR use `addEventListener` with `shutdown` cleanup.
-        // Given we want to persist the HTML structure defined in index.html, we attach listeners.
-        // However, standardizing means we should probably control the UI.
+                    <button id="click-btn" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-4 px-8 rounded-full shadow-lg transform active:scale-95 transition-all text-2xl mb-8">
+                        💵 Click for Cash!
+                    </button>
 
-        // Let's assume index.html structure is fine but we need to find buttons.
-        const buttons = container.querySelectorAll('button:not(.back-btn)');
-        // 0: Click, 1: Upgrade, 2: Auto, 3: Prestige (hidden)
+                    <h3 class="text-xl font-bold text-slate-300 mb-4">🛒 Store</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg mx-auto mb-6">
+                        <button id="upgrade-btn" class="bg-slate-700 hover:bg-slate-600 p-4 rounded-lg border border-slate-600">
+                            <div class="font-bold text-cyan-400">⚡ Upgrade Click</div>
+                            <div class="text-sm text-slate-400">Cost: <span id="upgrade-cost">10</span></div>
+                        </button>
+                        <button id="auto-btn" class="bg-slate-700 hover:bg-slate-600 p-4 rounded-lg border border-slate-600">
+                            <div class="font-bold text-purple-400">🤖 Auto-Clicker</div>
+                            <div class="text-sm text-slate-400">Cost: <span id="autoclicker-cost">50</span></div>
+                        </button>
+                    </div>
 
-        // Better: select by text content or order?
-        // The legacy code used index. Let's try to be robust.
-        // We can look for text content or add IDs.
-        // The index.html has IDs for spans, but buttons don't have IDs except prestige-btn.
+                    <button id="prestige-btn" class="hidden bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-2 px-6 rounded shadow-lg border border-yellow-400 mb-6">
+                        🔁 Prestige (Reset for Bonus!)
+                    </button>
 
-        // Let's just grab them by order, matching legacy.
-        if (buttons[0]) buttons[0].onclick = () => this.clickMoney();
-        if (buttons[1]) buttons[1].onclick = () => this.buyUpgrade();
-        if (buttons[2]) buttons[2].onclick = () => this.buyAutoClicker();
-        const prestigeBtn = container.querySelector('#prestige-btn');
-        if (prestigeBtn) prestigeBtn.onclick = () => this.prestige();
+                    <div class="text-slate-400 text-sm grid grid-cols-3 gap-2 max-w-md mx-auto">
+                        <p>Click Power: <span id="click-power" class="text-white">1</span></p>
+                        <p>Auto/Sec: <span id="auto-rate" class="text-white">0</span></p>
+                        <p>Multiplier: <span id="prestige-multiplier" class="text-white">1x</span></p>
+                    </div>
+
+                    <button class="back-btn mt-8 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded">Back</button>
+                </div>
+            `;
+
+            container.querySelector('.back-btn').addEventListener('click', () => {
+                 if (window.miniGameHub) window.miniGameHub.goBack();
+            });
+        }
 
         this.container = container;
+
+        // Bind Listeners
+        container.querySelector('#click-btn').onclick = (e) => this.clickMoney(e);
+        container.querySelector('#upgrade-btn').onclick = () => this.buyUpgrade();
+        container.querySelector('#auto-btn').onclick = () => this.buyAutoClicker();
+        container.querySelector('#prestige-btn').onclick = () => this.prestige();
+
         this.updateUI();
     }
 
     shutdown() {
-        // Save state
         this.saveSystem.saveGameConfig('clicker-game', {
             money: this.money,
             clickPower: this.clickPower,
@@ -82,7 +91,6 @@ export default class ClickerGame {
             autoClickerCost: this.autoClickerCost
         });
 
-        // Clear listeners
         if (this.container) {
             const buttons = this.container.querySelectorAll('button');
             buttons.forEach(b => b.onclick = null);
@@ -90,7 +98,6 @@ export default class ClickerGame {
     }
 
     update(dt) {
-        // Auto Clicker Logic
         if (this.autoClickRate > 0) {
             this.autoClickTimer += dt;
             if (this.autoClickTimer >= 1.0) {
@@ -98,48 +105,19 @@ export default class ClickerGame {
                 this.autoClickTimer = 0;
                 this.updateUI();
             }
-        }, 1000);
-
-        const buttons = document.querySelectorAll('#clicker-game button:not(.back-btn)');
-        // Ensure buttons exist before attaching. The querySelectorAll relies on order which is fragile.
-        // Let's assume order: Click, Upgrade, Auto, Prestige.
-        // Better: select by text content if possible or structure, but for now order is 0,1,2,3
-
-        const handlers = [
-            () => this.clickMoney(),
-            () => this.buyUpgrade(),
-            () => this.buyAutoClicker(),
-            () => this.prestige()
-        ];
-
-        buttons.forEach((button, index) => {
-            if (handlers[index]) {
-                const handler = handlers[index];
-                this.buttonHandlers.push({ button, handler });
-                button.addEventListener('click', handler);
-            }
-        });
-    },
-
-    shutdown: function() {
-        if (this.interval) clearInterval(this.interval);
-        this.buttonHandlers.forEach(({ button, handler }) => {
-            button.removeEventListener('click', handler);
-        });
-        this.buttonHandlers = [];
-    },
         }
     }
 
-    clickMoney() {
-        this.money += this.clickPower * this.prestigeMultiplier;
+    clickMoney(e) {
+        const gain = this.clickPower * this.prestigeMultiplier;
+        this.money += gain;
         this.soundManager.playSound('click');
         this.updateUI();
-        if(window.soundManager) window.soundManager.playSound('click');
 
         // Visual effect
-        this.spawnFloatingText(event.clientX, event.clientY, `+$${this.clickPower * this.prestigeMultiplier}`);
-    },
+        if (e && e.clientX) {
+             this.spawnFloatingText(e.clientX, e.clientY, `+$${gain}`);
+        }
     }
 
     buyUpgrade() {
@@ -149,9 +127,8 @@ export default class ClickerGame {
             this.upgradeCost = Math.floor(this.upgradeCost * 1.5);
             this.soundManager.playSound('score');
             this.updateUI();
-            if(window.soundManager) window.soundManager.playTone(600, 'sine', 0.1, true);
         } else {
-             if(window.soundManager) window.soundManager.playTone(150, 'sawtooth', 0.1);
+             this.soundManager.playTone(150, 'sawtooth', 0.1);
         }
     }
 
@@ -163,9 +140,8 @@ export default class ClickerGame {
             this.autoClickerCost = Math.floor(this.autoClickerCost * 1.7);
             this.soundManager.playSound('score');
             this.updateUI();
-            if(window.soundManager) window.soundManager.playTone(600, 'sine', 0.1, true);
         } else {
-             if(window.soundManager) window.soundManager.playTone(150, 'sawtooth', 0.1);
+             this.soundManager.playTone(150, 'sawtooth', 0.1);
         }
     }
 
@@ -178,13 +154,12 @@ export default class ClickerGame {
             this.upgradeCost = 10;
             this.autoClickerCost = 50;
             this.prestigeMultiplier *= 2;
-            this.soundManager.playSound('explosion'); // Big sound
+            this.soundManager.playSound('explosion');
             this.updateUI();
-            if(window.soundManager) window.soundManager.playSound('score');
         }
-    },
+    }
 
-    spawnFloatingText: function(x, y, text) {
+    spawnFloatingText(x, y, text) {
         const el = document.createElement('div');
         el.innerText = text;
         el.style.position = 'fixed';
@@ -194,30 +169,15 @@ export default class ClickerGame {
         el.style.fontWeight = 'bold';
         el.style.pointerEvents = 'none';
         el.style.transition = 'all 1s ease-out';
+        el.style.zIndex = '1000';
         document.body.appendChild(el);
 
         requestAnimationFrame(() => {
-            el.style.top = (y - 50) + 'px';
+            el.style.transform = 'translateY(-50px)';
             el.style.opacity = 0;
         });
 
         setTimeout(() => el.remove(), 1000);
-    },
-
-    updateUI: function() {
-        document.getElementById("money").textContent = Math.floor(this.money);
-        document.getElementById("click-power").textContent = this.clickPower;
-        document.getElementById("auto-rate").textContent = this.autoClickRate;
-        document.getElementById("upgrade-cost").textContent = this.upgradeCost;
-        document.getElementById("autoclicker-cost").textContent = this.autoClickerCost;
-        document.getElementById("prestige-multiplier").textContent = this.prestigeMultiplier + "x";
-
-        const prestigeBtn = document.getElementById("prestige-btn");
-        if (this.money >= 1000) {
-             prestigeBtn.classList.remove("hidden");
-        } else {
-             prestigeBtn.classList.add("hidden");
-        }
     }
 
     updateAutoRate() {
@@ -232,7 +192,7 @@ export default class ClickerGame {
             if(el) el.textContent = val;
         };
 
-        setText("money", this.money);
+        setText("money", Math.floor(this.money));
         setText("click-power", this.clickPower);
         setText("auto-rate", this.autoClickRate);
         setText("upgrade-cost", this.upgradeCost);

@@ -10,11 +10,21 @@ import TowerDefenseGame from './games/towerDefense.js';
 import PhysicsStackerGame from './games/physicsStacker.js';
 import AetheriaGame from './games/aetheria/aetheria.js';
 
-// Legacy Wrappers (We will try to dynamic import these or just reference globals if we must)
-// Ideally we refactor them all, but for time we can wrap.
-// For this plan, I'm assuming we rely on the existing files being loaded as scripts for now
-// OR we dynamically import them if they are modules.
-// Currently most are simple objects.
+// Legacy Refactored to Classes
+import SnakeGame from './games/snake.js';
+import PongGame from './games/pong.js';
+import SpaceShooterGame from './games/space.js';
+import BreakoutGame from './games/breakout.js';
+import TetrisGame from './games/tetris.js';
+import MazeGame from './games/maze.js';
+import RunnerGame from './games/runner.js';
+import TypingGame from './games/typing.js';
+import ClickerGame from './games/clicker.js';
+import RPGGame from './games/rpg.js';
+import EclipseGame from './games/eclipse.js';
+import EclipsePuzzleGame from './games/eclipsePuzzle.js';
+import EclipseLogicPuzzleGame from './games/eclipseLogicPuzzle.js';
+import MatterhornGame from './games/matterhorn.js'; // Adapter
 
 // We will create a Registry.
 const gameRegistry = {
@@ -22,21 +32,21 @@ const gameRegistry = {
     'stacker-game': { name: 'Physics Stacker', description: 'Balance Blocks', icon: 'fa-solid fa-cubes-stacked', category: 'New Games', module: PhysicsStackerGame },
     'aetheria-game': { name: 'Aetheria', description: 'Floating Isles Exploration', icon: 'fa-solid fa-cloud', category: '3D Immersive', module: AetheriaGame, wide: true },
 
-    // Legacy placeholders - these will be handled via the LegacyAdapter if they are not proper classes
-    'clicker-game': { name: 'Clicker', description: 'Exponential Growth', icon: 'fa-solid fa-hand-pointer', category: 'Quick Minigames', legacyId: 'clicker-game' },
-    'maze-game': { name: 'Maze', description: 'Find the Path', icon: 'fa-solid fa-dungeon', category: 'Quick Minigames', legacyId: 'maze-game' },
-    'runner-game': { name: 'Endless Runner', description: 'Jump the Obstacles', icon: 'fa-solid fa-person-running', category: 'Quick Minigames', legacyId: 'runner-game' },
-    'typing-game': { name: 'Speed Type', description: 'Test Your WPM', icon: 'fa-solid fa-keyboard', category: 'Quick Minigames', legacyId: 'typing-game' },
-    'snake-game': { name: 'Snake', description: 'Eat & Grow', icon: 'fa-solid fa-snake', category: 'Arcade Classics', legacyId: 'snake-game' },
-    'pong-game': { name: 'Pong', description: 'Retro Tennis', icon: 'fa-solid fa-table-tennis-paddle-ball', category: 'Arcade Classics', legacyId: 'pong-game' },
-    'space-game': { name: 'Space Shooter', description: 'Defend the Galaxy', icon: 'fa-solid fa-rocket', category: 'Arcade Classics', legacyId: 'space-game' },
-    'tetris-game': { name: 'Tetris', description: 'Stack the Blocks', icon: 'fa-solid fa-shapes', category: 'Arcade Classics', legacyId: 'tetris-game' },
-    'breakout-game': { name: 'Breakout', description: 'Smash the Bricks', icon: 'fa-solid fa-kaaba', category: 'Arcade Classics', legacyId: 'breakout-game' },
-    'rpg-game': { name: 'RPG Battle', description: 'Turn-Based Combat', icon: 'fa-solid fa-khanda', category: 'RPG & Logic', legacyId: 'rpg-game' },
-    'eclipse-game': { name: 'Eclipse', description: 'Strategy Board', icon: 'fa-solid fa-sun', category: 'RPG & Logic', legacyId: 'eclipse-game' },
-    'eclipse-puzzle-game': { name: 'Eclipse Puzzle', description: 'Pattern Matching', icon: 'fa-solid fa-puzzle-piece', category: 'RPG & Logic', legacyId: 'eclipse-puzzle-game' },
-    'eclipse-logic-puzzle-game': { name: 'Logic Puzzle', description: 'Deduction Grid', icon: 'fa-solid fa-lightbulb', category: 'RPG & Logic', legacyId: 'eclipse-logic-puzzle-game' },
-    'matterhorn-game': { name: 'Matterhorn Ascent', description: '3D Alpine Adventure', icon: 'fa-solid fa-mountain', category: '3D Immersive', legacyId: 'matterhorn-game', wide: true },
+    // Legacy Refactored
+    'snake-game': { name: 'Snake', description: 'Eat & Grow', icon: 'fa-solid fa-snake', category: 'Arcade Classics', module: SnakeGame },
+    'pong-game': { name: 'Pong', description: 'Retro Tennis', icon: 'fa-solid fa-table-tennis-paddle-ball', category: 'Arcade Classics', module: PongGame },
+    'space-game': { name: 'Space Shooter', description: 'Defend the Galaxy', icon: 'fa-solid fa-rocket', category: 'Arcade Classics', module: SpaceShooterGame },
+    'breakout-game': { name: 'Breakout', description: 'Smash the Bricks', icon: 'fa-solid fa-kaaba', category: 'Arcade Classics', module: BreakoutGame },
+    'tetris-game': { name: 'Tetris', description: 'Stack the Blocks', icon: 'fa-solid fa-shapes', category: 'Arcade Classics', module: TetrisGame },
+    'maze-game': { name: 'Maze', description: 'Find the Path', icon: 'fa-solid fa-dungeon', category: 'Quick Minigames', module: MazeGame },
+    'runner-game': { name: 'Endless Runner', description: 'Jump the Obstacles', icon: 'fa-solid fa-person-running', category: 'Quick Minigames', module: RunnerGame },
+    'typing-game': { name: 'Speed Type', description: 'Test Your WPM', icon: 'fa-solid fa-keyboard', category: 'Quick Minigames', module: TypingGame },
+    'clicker-game': { name: 'Clicker', description: 'Exponential Growth', icon: 'fa-solid fa-hand-pointer', category: 'Quick Minigames', module: ClickerGame },
+    'rpg-game': { name: 'RPG Battle', description: 'Turn-Based Combat', icon: 'fa-solid fa-khanda', category: 'RPG & Logic', module: RPGGame },
+    'eclipse-game': { name: 'Eclipse', description: 'Strategy Board', icon: 'fa-solid fa-sun', category: 'RPG & Logic', module: EclipseGame },
+    'eclipse-puzzle-game': { name: 'Eclipse Puzzle', description: 'Pattern Matching', icon: 'fa-solid fa-puzzle-piece', category: 'RPG & Logic', module: EclipsePuzzleGame },
+    'eclipse-logic-puzzle-game': { name: 'Logic Puzzle', description: 'Deduction Grid', icon: 'fa-solid fa-lightbulb', category: 'RPG & Logic', module: EclipseLogicPuzzleGame },
+    'matterhorn-game': { name: 'Matterhorn Ascent', description: '3D Alpine Adventure', icon: 'fa-solid fa-mountain', category: '3D Immersive', module: MatterhornGame, wide: true },
 };
 
 // State Machine
@@ -146,34 +156,15 @@ async function transitionToState(newState, context = {}) {
                 }
             } else if (gameInfo.legacyId) {
                 // Legacy Global Object Adapter
-                // We assume legacy games attach themselves to window or are just script functions.
-                // Most of the legacy games in this repo seem to be global objects or functions triggered by data attributes.
-                // We will try to simulate the old behavior.
-
-                // For this project, many legacy games (pong, snake) use a global object like `snakeGame` or `pongGame`
-                // but they are not consistently named or exported.
-                // They often just run when their container is visible or need a specific init call.
-
-                // Let's try to find the global object.
                 const guessName = gameId.replace(/-([a-z])/g, (g) => g[1].toUpperCase()).replace('Game', '') + 'Game';
-                // e.g. 'pong-game' -> 'pongGame'
-
-                // Special cases
                 let globalObj = window[guessName];
-
-                // For matterhorn, it's 'matterhornGame' but might be a module now? No, we kept it as legacy for now in registry.
                 if (gameId === 'matterhorn-game') globalObj = window.matterhornGame;
 
                 if (globalObj && globalObj.init) {
                     currentGameInstance = globalObj;
                     currentGameInstance.init();
                 } else {
-                     // If no object found, it might be one of the simple ones that just runs on load (bad practice but exists).
-                     // Or it relies on the old main.js logic which we are replacing.
-                     // We might need to manually re-implement the init logic for them or fix them to be objects.
-                     console.warn(`Legacy game object ${guessName} not found. Checking specific adapters.`);
-
-                     // Fallback for games that might not have a global object exposed yet
+                     console.warn(`Legacy game object ${guessName} not found.`);
                 }
             }
         } catch (err) {
@@ -194,6 +185,35 @@ function showOverlay(title, content) {
 
 function hideOverlay() {
     document.getElementById('global-overlay').classList.add('hidden');
+}
+
+function showGameOver(score, onRetry) {
+    const content = `
+        <p class="mb-4 text-xl">Final Score: <span class="text-yellow-400 font-bold">${score}</span></p>
+        <div class="flex justify-center gap-4">
+            <button id="overlay-retry-btn" class="px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded">Try Again</button>
+            <button id="overlay-menu-btn" class="px-6 py-2 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded">Main Menu</button>
+        </div>
+    `;
+
+    // Set PAUSED to stop updates
+    currentState = AppState.PAUSED;
+    showOverlay('GAME OVER', content);
+
+    // Bind buttons
+    // Note: We use setTimeout to ensure DOM is updated if needed, though innerHTML is sync.
+    const retryBtn = document.getElementById('overlay-retry-btn');
+    const menuBtn = document.getElementById('overlay-menu-btn');
+
+    if (retryBtn) retryBtn.onclick = () => {
+        hideOverlay();
+        currentState = AppState.IN_GAME; // Resume updates
+        if (onRetry) onRetry();
+    };
+
+    if (menuBtn) menuBtn.onclick = () => {
+        transitionToState(AppState.MENU);
+    };
 }
 
 function togglePause() {
@@ -292,6 +312,7 @@ window.miniGameHub = {
     transitionToState,
     soundManager,
     saveSystem,
+    showGameOver,
     goBack: () => transitionToState(AppState.MENU)
 };
 

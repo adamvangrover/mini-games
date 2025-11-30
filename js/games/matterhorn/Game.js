@@ -191,11 +191,6 @@ class GameController {
 
     update(dt) {
         if (!this.paused) {
-            // Use deltaTime provided by main loop or internal clock?
-            // Since main.js provides dt, we can use it, but keeping internal clock is fine too.
-            // Let's use the passed dt if provided, otherwise fallback.
-            // Wait, main.js calls update(deltaTime).
-
             // Update systems
             if (this.input) this.input.update();
             if (this.lightingManager) this.lightingManager.update();
@@ -217,10 +212,7 @@ class GameController {
         }
     }
 
-    render() {
-         if (this.renderer && this.scene && this.camera) {
     draw() {
-        // Render
         if (this.renderer && this.scene && this.camera) {
             this.renderer.render(this.scene, this.camera);
         }

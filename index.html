@@ -8,35 +8,48 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <!-- Background Canvas -->
     <canvas id="bg-canvas" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1;"></canvas>
 
+    <!-- Global UI Overlay -->
     <div id="global-overlay" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
-        <div class="overlay-panel w-full max-w-md">
-            <h2 id="overlay-title" class="text-3xl font-bold text-center mb-4 text-white title-glow">PAUSED</h2>
-            <div id="overlay-content" class="text-center text-slate-300">
+        <div class="overlay-panel w-full max-w-md relative bg-slate-900 border border-fuchsia-500 shadow-[0_0_20px_rgba(255,0,255,0.3)] rounded-lg p-6">
+            <h2 id="overlay-title" class="text-3xl font-bold text-center mb-4 text-white title-glow font-[Poppins]">PAUSED</h2>
+            <div id="overlay-content" class="text-center text-slate-300 font-[Poppins]">
                 <p>Game is paused. Press ESC to resume.</p>
             </div>
-            <div class="flex justify-center mt-6">
-                <button id="overlay-main-menu-btn" class="mh-btn">Main Menu</button>
+            <div class="flex justify-center mt-6 gap-4">
+                 <button id="overlay-main-menu-btn" class="px-6 py-2 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-bold rounded transition-all transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-home mr-2"></i>Main Menu
+                 </button>
             </div>
-            <button id="overlay-close-btn" class="absolute top-4 right-4 text-white text-2xl hover:text-fuchsia-500">&times;</button>
+            <button id="overlay-close-btn" class="absolute top-4 right-4 text-white text-2xl hover:text-fuchsia-500 transition-colors">&times;</button>
         </div>
     </div>
 
-    <div id="menu" class="relative z-10 max-w-6xl mx-auto pt-10 px-4">
-        <h1 class="text-4xl md:text-6xl font-black text-center mb-12 title-glow tracking-tighter text-white">
-            <span class="text-fuchsia-500">NEON</span> ARCADE HUB
-        </h1>
+    <!-- Main Menu -->
+    <div id="menu" class="relative z-10 max-w-7xl mx-auto pt-10 px-4 pb-20">
+        <header class="text-center mb-16">
+            <h1 class="text-5xl md:text-7xl font-black text-center mb-4 title-glow tracking-tighter text-white font-[Poppins]">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 to-cyan-500">NEON</span> ARCADE
+            </h1>
+            <p class="text-slate-400 text-lg max-w-2xl mx-auto">Explore a universe of retro-futuristic mini-games.</p>
+        </header>
 
-        <div id="hub-stats" class="text-center mb-8">
-            <span class="text-2xl text-yellow-400 font-bold">💰 <span id="total-currency">0</span></span>
+        <div id="hub-stats" class="text-center mb-12 flex justify-center gap-8">
+            <div class="bg-slate-800/50 backdrop-blur px-6 py-3 rounded-full border border-slate-700">
+                <span class="text-xl text-yellow-400 font-bold"><i class="fas fa-coins mr-2"></i> <span id="total-currency">0</span></span>
+            </div>
         </div>
 
         <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
@@ -44,248 +57,35 @@
         </div>
     </div>
 
-    <!-- Game Containers -->
+    <!-- Game Containers (Ideally these are empty and populated by JS, or contain minimal structure) -->
+    <!-- We keep specific IDs because some legacy logic or CSS might depend on them,
+         but we should aim to have the Game Class populate them. -->
 
-    <!-- New Module-based Containers (Clean) -->
-    <div id="tower-defense-game" class="hidden game-container"></div>
-    <div id="stacker-game" class="hidden game-container"></div>
-    <div id="aetheria-game" class="hidden game-container"></div>
+    <!-- For refactored games, we can just have empty divs or generic containers created by main.js -->
+    <!-- However, to be safe with the 'legacy' scripts that might still look for IDs immediately: -->
 
-    <!-- Legacy Game Containers (Populated by legacy scripts) -->
+    <div id="clicker-game" class="hidden game-container"></div>
+    <div id="maze-game" class="hidden game-container"></div>
+    <div id="runner-game" class="hidden game-container"></div>
+    <div id="typing-game" class="hidden game-container"></div>
+    <div id="snake-game" class="hidden game-container"></div>
+    <div id="pong-game" class="hidden game-container"></div>
+    <div id="space-game" class="hidden game-container"></div>
+    <div id="tetris-game" class="hidden game-container"></div>
+    <div id="breakout-game" class="hidden game-container"></div>
+    <div id="rpg-game" class="hidden game-container"></div>
+    <div id="eclipse-game" class="hidden game-container"></div>
+    <div id="eclipse-puzzle-game" class="hidden game-container"></div>
+    <div id="eclipse-logic-puzzle-game" class="hidden game-container"></div>
+    <div id="matterhorn-game" class="hidden game-container"></div>
 
-    <div id="clicker-game" class="hidden game-container">
-        <h2>💰 Clicker Game</h2>
-        <p>Money: <span id="money">0</span> 💸</p>
-        <button>💵 Click for Cash!</button>
-        <h3>🛒 Store</h3>
-        <button>⚡ Upgrade Click (Cost: <span id="upgrade-cost">10</span>)</button>
-        <button>🤖 Auto-Clicker (Cost: <span id="autoclicker-cost">50</span>)</button>
-        <button id="prestige-btn" class="hidden">🔁 Prestige (Reset for Bonus!)</button>
-        <p>Click Power: <span id="click-power">1</span> 🖱️</p>
-        <p>Auto-Clicks Per Second: <span id="auto-rate">0</span> ⏳</p>
-        <p>Prestige Multiplier: <span id="prestige-multiplier">1x</span> 🚀</p>
-        <button class="back-btn">Back</button>
-    </div>
-
-    <div id="maze-game" class="hidden game-container">
-        <h2>🌀 Maze Game</h2>
-        <canvas id="mazeCanvas" width="400" height="400"></canvas>
-        <p>Use <b>Arrow Keys</b> to navigate the maze!</p>
-        <p>🏆 Reach the gold square to win!</p>
-        <p>👾 Avoid the enemies!</p>
-        <button class="back-btn">Back</button>
-    </div>
-
-    <div id="runner-game" class="hidden game-container">
-        <h2>🏃 Endless Runner</h2>
-        <canvas id="runnerCanvas" width="600" height="200"></canvas>
-        <p>Press <b>Spacebar</b> to jump over obstacles!</p>
-        <p>Score: <span id="runner-score">0</span></p>
-        <button class="back-btn">Back</button>
-    </div>
-
-    <div id="typing-game" class="hidden game-container">
-        <h2>⌨ Typing Speed Test</h2>
-        <p>Type the sentence below as fast as you can:</p>
-        <p id="typing-sentence" style="font-weight: bold;"></p>
-        <input type="text" id="typing-input" placeholder="Start typing...">
-        <p>⏳ Time: <span id="typing-timer">0</span> seconds</p>
-        <p>⚡ WPM: <span id="typing-wpm">0</span></p>
-        <p>🎯 Accuracy: <span id="typing-accuracy">100%</span></p>
-        <button>🔄 Try Again</button>
-        <button class="back-btn">Back</button>
-    </div>
-
-    <div id="snake-game" class="hidden game-container">
-        <h2>🐍 Snake Game</h2>
-        <canvas id="snakeCanvas" width="400" height="400"></canvas>
-        <p>Use <b>Arrow Keys</b> to move!</p>
-        <p>🍎 Score: <span id="snake-score">0</span></p>
-        <button class="back-btn">Back</button>
-    </div>
-
-    <div id="pong-game" class="hidden game-container">
-        <h2>🏓 Pong</h2>
-        <canvas id="pongCanvas" width="600" height="400"></canvas>
-        <p>Player 1: <b>W / S</b> | Player 2: <b>Up / Down</b></p>
-        <p>🎯 Score: <span id="pong-score">0 - 0</span></p>
-        <button class="back-btn">Back</button>
-    </div>
-
-    <div id="space-game" class="hidden game-container">
-        <h2>🚀 Space Shooter</h2>
-        <canvas id="spaceCanvas" width="500" height="400"></canvas>
-        <p>Use <b>Arrow Keys</b> to move & <b>Spacebar</b> to shoot!</p>
-        <p>🎯 Score: <span id="space-score">0</span></p>
-        <button class="back-btn">Back</button>
-    </div>
-
-    <div id="tetris-game" class="hidden game-container">
-        <h2>🧱 Tetris</h2>
-        <canvas id="tetrisCanvas" width="200" height="400"></canvas>
-        <p>Score: <span id="tetris-score">0</span></p>
-        <button class="back-btn">Back</button>
-    </div>
-
-    <div id="breakout-game" class="hidden game-container">
-        <h2>🧱 Breakout</h2>
-        <canvas id="breakoutCanvas" width="480" height="320"></canvas>
-        <button class="back-btn">Back</button>
-    </div>
-
-    <div id="rpg-game" class="hidden game-container">
-        <h2>⚔️ RPG</h2>
-        <div id="rpg-player-stats">
-            <p>Player HP: <span id="rpg-player-hp"></span></p>
-            <p>Player Level: <span id="rpg-player-level"></span></p>
-            <p>Player XP: <span id="rpg-player-xp"></span></p>
-        </div>
-        <div id="rpg-enemy-stats">
-            <p>Enemy: <span id="rpg-enemy-name"></span></p>
-            <p>Enemy HP: <span id="rpg-enemy-hp"></span></p>
-        </div>
-        <div id="rpg-actions">
-            <button id="rpg-attack-btn">Attack</button>
-            <button id="rpg-heal-btn">Heal</button>
-        </div>
-        <div id="rpg-log"></div>
-        <button class="back-btn">Back</button>
-    </div>
-
-    <div id="eclipse-game" class="hidden game-container">
-        <h2>☀️ Eclipse</h2>
-        <div id="eclipse-grid" class="grid-container"></div>
-        <div id="eclipse-info">
-            <p>Time: <span id="eclipse-timer">0</span>s</p>
-            <button id="eclipse-hint-btn">Hint</button>
-            <button id="eclipse-share-btn">Share</button>
-        </div>
-        <div id="eclipse-message" class="game-message"></div>
-        <button class="back-btn">Back</button>
-    </div>
-
-    <div id="eclipse-puzzle-game" class="hidden game-container">
-        <h2>🧩 Eclipse Puzzle</h2>
-        <p>Fill the grid with suns and moons. Each row and column must have three of each. No more than two of the same symbol can be adjacent.</p>
-        <div class="eclipse-game-area">
-            <div class="eclipse-grid-container">
-                <div id="eclipse-puzzle-grid" class="eclipse-grid"></div>
-                <div id="eclipse-puzzle-clue-layer" class="eclipse-clue-layer"></div>
-            </div>
-            <div class="eclipse-sidebar">
-                <div id="eclipse-puzzle-timer" class="eclipse-timer">Time: 0s</div>
-                <div class="eclipse-game-controls">
-                    <button id="eclipse-puzzle-validate-btn">Validate</button>
-                    <button id="eclipse-puzzle-reset-btn">Reset</button>
-                </div>
-            </div>
-        </div>
-        <button class="back-btn">Back</button>
-    </div>
-
-    <div id="eclipse-logic-puzzle-game" class="hidden game-container">
-         <!-- Game Title -->
-         <div class="flex items-center gap-2 mb-6">
-            <h1 class="text-4xl font-bold text-slate-700">Eclipse Logic Puzzle</h1>
-        </div>
-
-        <!-- Game Board -->
-        <div id="eclipselogic-grid-container" class="grid-container aspect-square w-full max-w-sm sm:max-w-md md:max-w-lg rounded-lg p-2 bg-slate-200">
-            <!-- Indicators will be generated by JS -->
-            <div id="eclipselogic-game-board" class="game-grid rounded-md overflow-hidden"></div>
-        </div>
-
-        <!-- Controls -->
-        <div class="flex items-center justify-center flex-wrap gap-3 mt-6 w-full max-w-sm sm:max-w-md md:max-w-lg">
-            <div class="bg-white rounded-lg px-4 py-2 text-slate-700 font-semibold text-lg shadow-sm">
-                Time: <span id="eclipselogic-timer">0s</span>
-            </div>
-            <button id="eclipselogic-reset-button" class="px-5 py-2 bg-slate-400 text-white font-semibold rounded-lg shadow-md hover:bg-slate-500 transition-all transform hover:scale-105">Reset</button>
-            <button id="eclipselogic-ai-hint-button" class="px-5 py-2 bg-sky-500 text-white font-semibold rounded-lg shadow-md hover:bg-sky-600 transition-all transform hover:scale-105 flex items-center gap-2">✨ AI Hint</button>
-            <button id="eclipselogic-check-solution-button" class="px-5 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition-all transform hover:scale-105">Check Solution</button>
-        </div>
-
-        <!-- Message Area -->
-        <div id="eclipselogic-message-area" class="mt-4 text-center h-6 font-semibold"></div>
-
-        <!-- Win Modal -->
-        <div id="eclipselogic-win-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 fade-in">
-            <div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full">
-                <h2 class="text-3xl font-bold text-yellow-500 mb-2">You Solved It!</h2>
-                <p class="text-slate-600 mb-6">Congratulations! You finished in <span id="eclipselogic-final-time" class="font-bold">0s</span>.</p>
-                <div class="flex flex-col gap-3">
-                     <button id="eclipselogic-share-score-button" class="w-full px-8 py-3 bg-blue-500 text-white font-bold rounded-lg shadow-lg hover:bg-blue-600 transition-all transform hover:scale-105">Share Score</button>
-                     <button id="eclipselogic-play-again-button" class="w-full px-8 py-3 bg-slate-400 text-white font-bold rounded-lg hover:bg-slate-500 transition-all">Play Again</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Share Modal -->
-        <div id="eclipselogic-share-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 fade-in">
-            <div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full">
-                <h2 class="text-3xl font-bold text-blue-500 mb-4">Share Your Grid</h2>
-                <textarea id="eclipselogic-share-text" class="w-full h-48 p-2 border rounded-md bg-slate-100 text-sm font-mono" readonly></textarea>
-                <div class="flex flex-col gap-3 mt-4">
-                     <button id="eclipselogic-copy-button" class="w-full px-8 py-3 bg-green-500 text-white font-bold rounded-lg shadow-lg hover:bg-green-600 transition-all">Copy to Clipboard</button>
-                     <button id="eclipselogic-close-share-button" class="w-full px-8 py-3 bg-slate-400 text-white font-bold rounded-lg hover:bg-slate-500 transition-all">Close</button>
-                </div>
-            </div>
-        </div>
-        <button class="back-btn">Back</button>
-    </div>
-
-    <div id="matterhorn-game" class="hidden game-container">
-        <canvas id="matterhornCanvas"></canvas>
-        <div id="mh-ui-root" class="layer interactive">
-            <div id="mh-hud-container" class="hidden">
-                <div class="mh-hud-box">
-                    ALT: <span id="mh-hud-alt">0m</span><br>
-                    TEMP
-                    <div class="mh-bar"><div id="mh-hud-temp" class="mh-bar-fill" style="background:#ef4444"></div></div>
-                    STAMINA
-                    <div class="mh-bar"><div id="mh-hud-stamina" class="mh-bar-fill" style="background:#fbbf24"></div></div>
-                </div>
-                <div class="mh-hud-box">
-                    ₣ <span id="mh-hud-money">0</span><br>
-                    <span style="font-size:0.75rem;color:#aaa;">
-                        Objective: <span id="mh-hud-objective">Explore Zermatt</span>
-                    </span>
-                </div>
-            </div>
-            <div id="mh-prompt">PRESS [E]</div>
-            <div id="mh-notifications"></div>
-            <div id="mh-start-screen" class="layer interactive">
-                <div id="mh-start-content">
-                    <h1>MATTERHORN</h1>
-                    <h2>Legends of the Alps</h2>
-                    <p style="max-width:400px;margin:auto;color:#ddd;margin-bottom: 20px;">
-                        Build your alpine reputation, master the lake, and gather gear to survive the ascent.
-                    </p>
-                    <button id="mh-start-btn" class="mh-btn">Begin Ascent</button>
-                </div>
-            </div>
-        </div>
-        <button class="back-btn" style="position: absolute; top: 20px; right: 20px; z-index: 200;">Back to Hub</button>
-    </div>
-
-    <!-- Legacy Scripts (Loaded here to ensure they exist for the adapter) -->
-    <script src="js/games/clicker.js"></script>
-    <script src="js/games/maze.js"></script>
-    <script src="js/games/runner.js"></script>
-    <script src="js/games/typing.js"></script>
-    <script src="js/games/snake.js"></script>
-    <script src="js/games/space.js"></script>
-    <script src="js/games/tetris.js"></script>
-    <script src="js/games/breakout.js"></script>
-    <script src="js/games/rpg.js"></script>
-    <script src="js/games/eclipse.js"></script>
-    <script src="js/games/eclipsePuzzle.js"></script>
-    <script src="js/games/eclipseLogicPuzzle.js"></script>
-    <!-- Matterhorn is handled via global window.matterhornGame if it's not a module? Wait, looking at file list it's matterhorn.js.
-         Let's just include it here to be safe for legacy loading if it attaches to window. -->
-    <script src="js/games/matterhorn.js"></script>
-    <!-- Pong too -->
-    <script src="js/games/pong.js"></script>
+    <!-- Legacy Scripts: REMOVED.
+         We are switching to ES Modules.
+         Any game not yet refactored to a module will need to be imported in main.js as a shim or we refactor it now.
+         The plan is to refactor ALL of them.
+         I will keep the logic/puzzle games in the list but comment them out if they break,
+         but my plan is to refactor them all.
+    -->
 
     <!-- Main Module Entry -->
     <script type="module" src="js/main.js"></script>

@@ -1,25 +1,86 @@
-export default {
-    grid: [],
-    initialGrid: [],
-    solution: [],
-    clues: [],
-    isGameWon: false,
-    time: 0,
-    timerInterval: null,
+import SoundManager from '../core/SoundManager.js';
+import SaveSystem from '../core/SaveSystem.js';
 
-    // Handlers
-    validateHandler: null,
-    resetHandler: null,
+export default class EclipsePuzzleGame {
+    constructor() {
+        this.grid = [];
+        this.initialGrid = [];
+        this.solution = [];
+        this.clues = [];
+        this.isGameWon = false;
+        this.time = 0;
+        this.timerInterval = null;
+
+        this.soundManager = SoundManager.getInstance();
+        this.saveSystem = SaveSystem.getInstance();
+    }
+
+    init(container) {
+        this.container = container;
+
+        // Inject UI if missing
+        let gridEl = container.querySelector('#eclipse-puzzle-grid');
+        if (!gridEl) {
+             container.innerHTML = `
+                <h2 class="text-3xl font-bold mb-4 text-cyan-400">🧩 Eclipse Puzzle</h2>
+                <p class="text-slate-400 text-sm mb-4">Rule: 3 Suns/Moons per row/col. No 3 same adjacent.</p>
+                <div class="relative w-[300px] h-[300px] mx-auto mb-4">
+                     <div id="eclipse-puzzle-grid" class="absolute inset-0 grid grid-cols-6 gap-1 bg-slate-700 p-1 rounded"></div>
+                     <div id="eclipse-puzzle-clue-layer" class="absolute inset-0 pointer-events-none"></div>
+                </div>
+
+                <div class="flex justify-between items-center max-w-[300px] mx-auto mb-4 text-slate-300">
+                    <div id="eclipse-puzzle-timer" class="font-mono text-white">Time: 0s</div>
+                    <div class="space-x-2">
+                        <button id="eclipse-puzzle-validate-btn" class="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-sm">Validate</button>
+                        <button id="eclipse-puzzle-reset-btn" class="bg-yellow-600 hover:bg-yellow-500 text-white px-3 py-1 rounded text-sm">Reset</button>
+                    </div>
+                </div>
+
+                <div id="ep-message" class="h-6 font-bold text-center"></div>
+                <button class="back-btn mt-6 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded">Back</button>
+             `;
+             gridEl = container.querySelector('#eclipse-puzzle-grid');
+             container.querySelector('.back-btn').addEventListener('click', () => {
+                 if (window.miniGameHub) window.miniGameHub.goBack();
+            });
+        }
+
+        this.gridElement = gridEl;
+        this.clueLayer = container.querySelector('#eclipse-puzzle-clue-layer');
+        this.timerElement = container.querySelector('#eclipse-puzzle-timer');
+        this.messageElement = container.querySelector('#ep-message');
+
+        this.validateBtn = container.querySelector('#eclipse-puzzle-validate-btn');
+        this.resetBtn = container.querySelector('#eclipse-puzzle-reset-btn');
+
+        this.validateBtn.onclick = () => this.handleValidate();
+        this.resetBtn.onclick = () => this.handleReset();
+
+        this.generateDailyPuzzle();
+        this.renderGrid();
+        this.renderClues();
+        this.startTimer();
+    }
+
+    shutdown() {
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        this.timerInterval = null;
+        if (this.validateBtn) this.validateBtn.onclick = null;
+        if (this.resetBtn) this.resetBtn.onclick = null;
+    }
 
     // --- Puzzle Generation Logic ---
-    mulberry32: (seed) => () => {
-        let t = seed += 0x6D2B79F5;
-        t = Math.imul(t ^ t >>> 15, t | 1);
-        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-        return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    },
+    mulberry32(seed) {
+        return () => {
+            let t = seed += 0x6D2B79F5;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
 
-    checkBalance: function(grid) {
+    checkBalance(grid) {
         const size = grid.length;
         const half = size / 2;
         for (let i = 0; i < size; i++) {
@@ -32,9 +93,9 @@ export default {
             if (rowSunCount > half || colSunCount > half) return false;
         }
         return true;
-    },
+    }
 
-    checkNeighbors: function(grid) {
+    checkNeighbors(grid) {
         const size = grid.length;
         for (let i = 0; i < size; i++) {
             for (let j = 0; j < size; j++) {
@@ -44,9 +105,9 @@ export default {
             }
         }
         return true;
-    },
+    }
 
-    fillGrid: function(grid, random) {
+    fillGrid(grid, random) {
         const size = grid.length;
         for (let i = 0; i < size; i++) {
             for (let j = 0; j < size; j++) {
@@ -66,9 +127,9 @@ export default {
             }
         }
         return true;
-    },
+    }
 
-    generateDailyPuzzle: function() {
+    generateDailyPuzzle() {
         const dateString = new Date().toISOString().slice(0, 10);
         const seed = dateString.split('-').reduce((acc, part) => acc + parseInt(part, 10), 0);
         const random = this.mulberry32(seed);
@@ -101,10 +162,9 @@ export default {
         this.solution = solution;
         this.grid = puzzle.map(row => [...row]);
         this.initialGrid = puzzle.map(row => [...row]);
-    },
+    }
 
-    // --- Puzzle Validation Logic ---
-    validateSolution: function(grid) {
+    validateSolution(grid) {
         const size = grid.length;
         const half = size / 2;
 
@@ -131,79 +191,53 @@ export default {
         }
 
         return true;
-    },
+    }
 
-    init: function() {
-        this.generateDailyPuzzle();
-        this.renderGrid();
-        this.renderClues();
-        this.startTimer();
-
-        this.validateBtn = document.getElementById('eclipse-puzzle-validate-btn');
-        this.resetBtn = document.getElementById('eclipse-puzzle-reset-btn');
-
-        // Remove old listeners
-        if (this.validateHandler) this.validateBtn.removeEventListener('click', this.validateHandler);
-        if (this.resetHandler) this.resetBtn.removeEventListener('click', this.resetHandler);
-
-        this.validateHandler = () => this.handleValidate();
-        this.resetHandler = () => this.handleReset();
-
-        this.validateBtn.addEventListener('click', this.validateHandler);
-        this.resetBtn.addEventListener('click', this.resetHandler);
-    },
-
-    shutdown: function() {
-        if (this.timerInterval) clearInterval(this.timerInterval);
-        this.timerInterval = null;
-        if (this.validateBtn && this.validateHandler) this.validateBtn.removeEventListener('click', this.validateHandler);
-        if (this.resetBtn && this.resetHandler) this.resetBtn.removeEventListener('click', this.resetHandler);
-
-        const grid = document.getElementById('eclipse-puzzle-grid');
-        const clues = document.getElementById('eclipse-puzzle-clue-layer');
-        if (grid) grid.innerHTML = '';
-        if (clues) clues.innerHTML = '';
-    },
-
-    renderGrid: function() {
-        const gridEl = document.getElementById('eclipse-puzzle-grid');
-        gridEl.innerHTML = '';
+    renderGrid() {
+        this.gridElement.innerHTML = '';
         this.grid.forEach((row, r) => {
             row.forEach((cellValue, c) => {
                 const cell = document.createElement('div');
-                cell.className = 'eclipse-cell';
+                cell.className = 'w-full h-full bg-slate-800 border border-slate-600 flex items-center justify-center text-2xl cursor-pointer hover:bg-slate-600 transition-colors select-none';
                 if (this.initialGrid[r][c] !== 0) {
-                    cell.classList.add('initial');
+                    cell.classList.add('bg-slate-900', 'cursor-default');
+                    cell.classList.remove('cursor-pointer', 'hover:bg-slate-600');
                 }
                 cell.dataset.r = r;
                 cell.dataset.c = c;
                 this.updateCellContent(cell, cellValue);
                 cell.addEventListener('click', () => this.handleCellClick(r, c));
-                gridEl.appendChild(cell);
+                this.gridElement.appendChild(cell);
             });
         });
-    },
+    }
 
-    renderClues: function() {
-        const clueLayer = document.getElementById('eclipse-puzzle-clue-layer');
-        clueLayer.innerHTML = '';
-        this.clues.forEach((clue, index) => {
+    renderClues() {
+        this.clueLayer.innerHTML = '';
+        this.clues.forEach((clue) => {
             const [cell1, cell2] = clue.cells;
             const isHorizontal = cell1.r === cell2.r;
             const clueEl = document.createElement('div');
-            clueEl.className = 'eclipse-clue';
+            clueEl.className = 'flex items-center justify-center bg-slate-800 text-white text-xs font-bold w-4 h-4 rounded-full border border-slate-500 z-10';
             clueEl.textContent = clue.type;
             clueEl.style.position = 'absolute';
-            clueEl.style.top = `calc(${Math.min(cell1.r, cell2.r) * 16.66}% + ${isHorizontal ? '8.33%' : '16.66%'} - 10px)`;
-            clueEl.style.left = `calc(${Math.min(cell1.c, cell2.c) * 16.66}% + ${isHorizontal ? '16.66%' : '8.33%'} - 10px)`;
-            if (!isHorizontal) {
-                clueEl.style.transform = 'rotate(90deg)';
-            }
-            clueLayer.appendChild(clueEl);
-        });
-    },
+            // Simple percentage positioning
+            const row = Math.min(cell1.r, cell2.r);
+            const col = Math.min(cell1.c, cell2.c);
 
-    updateCellContent: function(cellElement, value) {
+            if (isHorizontal) {
+                clueEl.style.top = `calc(${(row + 0.5) * 16.66}% - 8px)`;
+                clueEl.style.left = `calc(${(col + 1) * 16.66}% - 8px)`; // Middle of two cells
+            } else {
+                clueEl.style.top = `calc(${(row + 1) * 16.66}% - 8px)`;
+                clueEl.style.left = `calc(${(col + 0.5) * 16.66}% - 8px)`;
+            }
+
+            this.clueLayer.appendChild(clueEl);
+        });
+    }
+
+    updateCellContent(cellElement, value) {
         if (value === 1) {
             cellElement.innerHTML = '☀️';
             cellElement.style.color = '#f59e0b';
@@ -213,47 +247,53 @@ export default {
         } else {
             cellElement.innerHTML = '';
         }
-    },
+    }
 
-    handleCellClick: function(row, col) {
+    handleCellClick(row, col) {
         if (this.isGameWon || this.initialGrid[row][col] !== 0) return;
 
         const newGrid = this.grid.map(r => [...r]);
         newGrid[row][col] = (newGrid[row][col] + 1) % 3; // 0 -> 1 -> 2 -> 0
         this.grid = newGrid;
 
-        const cellEl = document.querySelector(`.eclipse-cell[data-r='${row}'][data-c='${col}']`);
+        const cellEl = this.gridElement.querySelector(`div[data-r='${row}'][data-c='${col}']`);
         this.updateCellContent(cellEl, this.grid[row][col]);
-        if(window.soundManager) window.soundManager.playTone(400 + (this.grid[row][col] * 100), 'sine', 0.05);
-    },
+        this.soundManager.playTone(400 + (this.grid[row][col] * 100), 'sine', 0.05);
+    }
 
-    handleValidate: function() {
+    handleValidate() {
         if (this.validateSolution(this.grid)) {
             this.isGameWon = true;
             if (this.timerInterval) clearInterval(this.timerInterval);
-            if(window.soundManager) window.soundManager.playTone(800, 'sine', 0.5, true);
-            alert(`Congratulations! You solved it in ${this.time} seconds!`);
+            this.soundManager.playSound('score');
+            this.showMessage(`Solved in ${this.time}s!`, false);
         } else {
-            if(window.soundManager) window.soundManager.playTone(200, 'sawtooth', 0.1);
-            alert('Not quite right. Keep trying!');
+            this.soundManager.playTone(200, 'sawtooth', 0.1);
+            this.showMessage('Not quite right.', true);
         }
-    },
+    }
 
-    handleReset: function() {
+    showMessage(msg, isError) {
+        this.messageElement.textContent = msg;
+        this.messageElement.className = `h-6 font-bold text-center ${isError ? 'text-red-500' : 'text-green-400'}`;
+        setTimeout(() => this.messageElement.textContent = '', 3000);
+    }
+
+    handleReset() {
         this.grid = this.initialGrid.map(row => [...row]);
         this.isGameWon = false;
         this.time = 0;
         this.renderGrid();
         this.startTimer();
-    },
+    }
 
-    startTimer: function() {
+    startTimer() {
         if (this.timerInterval) clearInterval(this.timerInterval);
         this.time = 0;
-        const timerEl = document.getElementById('eclipse-puzzle-timer');
+        this.timerElement.textContent = `Time: 0s`;
         this.timerInterval = setInterval(() => {
             this.time++;
-            timerEl.textContent = `Time: ${this.time}s`;
+            this.timerElement.textContent = `Time: ${this.time}s`;
         }, 1000);
     }
-};
+}
