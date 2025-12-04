@@ -137,7 +137,7 @@ export default class TowerDefenseGame {
                 this.money += e.reward;
                 this.enemies.splice(i, 1);
                 this.soundManager.playSound('coin');
-                this.particleSystem.emit(e.x, e.y, { count: 5, color: '#ff0000', speed: 50 });
+                this.particleSystem.emit(e.x, e.y, '#ff0000', 5, { speed: 50 });
             }
         }
 
@@ -167,6 +167,8 @@ export default class TowerDefenseGame {
                  window.miniGameHub.showGameOver(this.wave, () => this.resetGame());
              }
         }
+
+        this.particleSystem.update(dt);
     }
 
     spawnEnemy() {
@@ -251,7 +253,7 @@ export default class TowerDefenseGame {
         if (dist < 15) {
             p.target.hp -= p.damage;
             p.hit = true;
-            this.particleSystem.emit(p.x, p.y, { color: '#ffff00', count: 3, speed: 30 });
+            this.particleSystem.emit(p.x, p.y, '#ffff00', 3, { speed: 30 });
         } else {
             p.x += (dx/dist) * p.speed * dt;
             p.y += (dy/dist) * p.speed * dt;
@@ -285,7 +287,7 @@ export default class TowerDefenseGame {
                 this.map[r][c] = 3;
                 this.soundManager.playSound('powerup');
 
-                this.particleSystem.emit(c * this.tileSize + 32, r * this.tileSize + 32, { count: 20, color: '#ffffff', speed: 60 });
+                this.particleSystem.emit(c * this.tileSize + 32, r * this.tileSize + 32, '#ffffff', 20, { speed: 60 });
             } else {
                 this.soundManager.playSound('error');
             }
@@ -351,6 +353,8 @@ export default class TowerDefenseGame {
             ctx.arc(p.x, p.y, 4, 0, Math.PI*2);
             ctx.fill();
         });
+
+        this.particleSystem.draw(ctx);
     }
 
     shutdown() {
