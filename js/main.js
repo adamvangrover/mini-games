@@ -9,6 +9,9 @@ import BackgroundShader from './core/BackgroundShader.js';
 import TowerDefenseGame from './games/towerDefense.js';
 import PhysicsStackerGame from './games/physicsStacker.js';
 import AetheriaGame from './games/aetheria/aetheria.js';
+import Neon2048 from './games/neon2048.js';
+import NeonFlap from './games/neonFlap.js';
+import NeonMemory from './games/neonMemory.js';
 
 // Legacy Refactored to Classes
 import SnakeGame from './games/snake.js';
@@ -31,6 +34,9 @@ const gameRegistry = {
     'tower-defense-game': { name: 'Tower Defense', description: 'Defend the Base', icon: 'fa-solid fa-chess-rook', category: 'New Games', module: TowerDefenseGame },
     'stacker-game': { name: 'Physics Stacker', description: 'Balance Blocks', icon: 'fa-solid fa-cubes-stacked', category: 'New Games', module: PhysicsStackerGame },
     'aetheria-game': { name: 'Aetheria', description: 'Floating Isles Exploration', icon: 'fa-solid fa-cloud', category: '3D Immersive', module: AetheriaGame, wide: true },
+    'neon-2048': { name: 'Neon 2048', description: 'Merge the Grid', icon: 'fa-solid fa-border-all', category: 'New Games', module: Neon2048 },
+    'neon-flap': { name: 'Neon Flap', description: 'Flappy Clone', icon: 'fa-solid fa-dove', category: 'New Games', module: NeonFlap },
+    'neon-memory': { name: 'Neon Memory', description: 'Simon Says', icon: 'fa-solid fa-brain', category: 'New Games', module: NeonMemory },
 
     // Legacy Refactored
     'snake-game': { name: 'Snake', description: 'Eat & Grow', icon: 'fa-solid fa-snake', category: 'Arcade Classics', module: SnakeGame },

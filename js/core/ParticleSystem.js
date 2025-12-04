@@ -9,7 +9,7 @@ export default class ParticleSystem {
         if (!ParticleSystem.instance) ParticleSystem.instance = new ParticleSystem();
         return ParticleSystem.instance;
     }
-    emit(ctx, x, y, color, count, options = {}) {
+    emit(x, y, color, count, options = {}) {
         for (let i = 0; i < count; i++) {
             const size = options.size || (Math.random() * 3 + 1);
             const life = options.life || 1.0;
@@ -61,6 +61,12 @@ export default class ParticleSystem {
             if (this.shake.magnitude < 0) this.shake.magnitude = 0;
         }
     }
+
+    updateAndDraw(ctx, dt) {
+        this.update(dt);
+        this.draw(ctx);
+    }
+
     draw(ctx) {
         ctx.save();
         this.particles.forEach(p => {
