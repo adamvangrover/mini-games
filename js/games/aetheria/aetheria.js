@@ -16,6 +16,11 @@ export default class AetheriaGameAdapter {
     }
 
     init(container) {
+        if (typeof THREE === 'undefined') {
+            container.innerHTML = `<div class="p-4 text-red-500">Error: Three.js is not loaded. Please check your internet connection or standard libraries.</div>`;
+            return;
+        }
+
         // Inject UI HTML if missing
         if (!container.querySelector('#aetheria-game-container')) {
             container.innerHTML = `

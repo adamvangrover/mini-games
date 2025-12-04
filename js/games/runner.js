@@ -84,7 +84,7 @@ export default class RunnerGame {
         if (this.player.y >= 150) {
             if (this.player.isJumping) {
                  // Land effect
-                 this.particleSystem.emit(this.ctx, this.player.x + 10, 170, '#00ff00', 5);
+                 this.particleSystem.emit(this.player.x + 10, 170, '#00ff00', 5);
             }
             this.player.y = 150;
             this.player.isJumping = false;
@@ -110,7 +110,7 @@ export default class RunnerGame {
         // Particles
         this.particleSystem.update(dt);
         if (this.player.isJumping) {
-             this.particleSystem.emit(this.ctx, this.player.x + 10, this.player.y + 20, '#00ff00', 1);
+             this.particleSystem.emit(this.player.x + 10, this.player.y + 20, '#00ff00', 1);
         }
 
         // Score
@@ -124,7 +124,7 @@ export default class RunnerGame {
             this.player.velocityY = -500;
             this.player.isJumping = true;
             this.soundManager.playSound('jump');
-            this.particleSystem.emit(this.ctx, this.player.x + 10, this.player.y + 20, '#ffffff', 10);
+            this.particleSystem.emit(this.player.x + 10, this.player.y + 20, '#ffffff', 10);
         }
     }
 
@@ -136,7 +136,7 @@ export default class RunnerGame {
     gameOver() {
         this.active = false;
         this.soundManager.playSound('explosion');
-        this.particleSystem.emit(this.ctx, this.player.x + 10, this.player.y + 10, '#ff0000', 50);
+        this.particleSystem.emit(this.player.x + 10, this.player.y + 10, '#ff0000', 50);
         this.saveSystem.setHighScore('runner-game', Math.floor(this.score));
 
         if (window.miniGameHub && window.miniGameHub.showGameOver) {

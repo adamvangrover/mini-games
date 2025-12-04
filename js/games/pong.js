@@ -89,7 +89,7 @@ export default class PongGame {
         if (this.ball.y + this.ball.radius > this.canvas.height || this.ball.y - this.ball.radius < 0) {
             this.ball.dy = -this.ball.dy;
             this.soundManager.playSound('click');
-            this.particleSystem.emit(this.ctx, this.ball.x, this.ball.y, '#00ffff', 5);
+            this.particleSystem.emit(this.ball.x, this.ball.y, '#00ffff', 5);
         }
 
         if (
@@ -130,7 +130,7 @@ export default class PongGame {
 
     handlePaddleHit() {
         this.soundManager.playSound('click');
-        this.particleSystem.emit(this.ctx, this.ball.x, this.ball.y, '#ff00ff', 10);
+        this.particleSystem.emit(this.ball.x, this.ball.y, '#ff00ff', 10);
         this.shakeTimer = 0.2;
     }
 

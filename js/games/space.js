@@ -26,6 +26,11 @@ export default class SpaceShooterGame {
     }
 
     async init(container) {
+        if (typeof THREE === 'undefined') {
+            container.innerHTML = `<div class="p-4 text-red-500">Error: Three.js is not loaded. Please check your internet connection or standard libraries.</div>`;
+            return;
+        }
+
         let canvas = container.querySelector('#spaceCanvas');
         if (!canvas) {
             container.innerHTML = `

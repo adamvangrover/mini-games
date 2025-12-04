@@ -210,7 +210,7 @@ export default class BreakoutGame {
 
             this.soundManager.playSound('explosion');
             this.triggerShake(0.5, 15);
-            this.particleSystem.emit(this.ctx, this.x, this.y, '#FF0000', 50, { life: 1.0, size: 5 });
+            this.particleSystem.emit(this.x, this.y, '#FF0000', 50, { life: 1.0, size: 5 });
 
             // Game Over
             if (window.miniGameHub) {
@@ -248,7 +248,7 @@ export default class BreakoutGame {
 
             this.soundManager.playSound('click'); // Paddle sound
             this.triggerShake(0.1, 5);
-            this.particleSystem.emit(this.ctx, closestX, closestY, '#00FF00', 10, { life: 0.3, size: 3 });
+            this.particleSystem.emit(closestX, closestY, '#00FF00', 10, { life: 0.3, size: 3 });
         }
 
         this.x = nextX;
@@ -257,7 +257,7 @@ export default class BreakoutGame {
         // Trail
         this.trailTimer -= dt;
         if(this.trailTimer <= 0) {
-            this.particleSystem.emit(this.ctx, this.x, this.y, '#FFFFFF', 1, { life: 0.2, size: 3, velocity: {x: 0, y: 0} });
+            this.particleSystem.emit(this.x, this.y, '#FFFFFF', 1, { life: 0.2, size: 3, velocity: {x: 0, y: 0} });
             this.trailTimer = this.trailInterval;
         }
 
@@ -301,7 +301,7 @@ export default class BreakoutGame {
                         b.status = 0;
                         this.score += 10;
                         this.soundManager.playSound('score');
-                        this.particleSystem.emit(this.ctx, closestX, closestY, b.color, 15, { life: 0.5, size: 4 });
+                        this.particleSystem.emit(closestX, closestY, b.color, 15, { life: 0.5, size: 4 });
                         this.triggerShake(0.1, 3);
 
                         // Check Win
