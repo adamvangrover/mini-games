@@ -23,3 +23,9 @@ export function noise2D(x, y) {
     return mix(mix(dot(grad3[AA % 12], x, y), dot(grad3[BA % 12], x-1, y), u),
                mix(dot(grad3[AB % 12], x, y-1), dot(grad3[BB % 12], x-1, y-1), u), v);
 }
+
+export const utils = {
+    lerp: (a, b, t) => a + (b - a) * t,
+    rand: (min, max) => Math.random() * (max - min) + min,
+    clamp: (v, min, max) => Math.max(min, Math.min(max, v))
+};
