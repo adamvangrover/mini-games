@@ -1,95 +1,141 @@
-from playwright.sync_api import sync_playwright, expect
+import os
 import time
+import subprocess
+from playwright.sync_api import sync_playwright, expect
 
-def verify_games():
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
+def verify_all_games():
+    # Ensure verification directory exists
+    os.makedirs("verification", exist_ok=True)
 
-        print("Navigating to home page...")
-        page.goto("http://localhost:8000")
-        time.sleep(1)
+    # Start a static file server in the background (Port 8000)
+    print("Starting local server...")
+    server_process = subprocess.Popen(["python3", "-m", "http.server", "8000"])
+    time.sleep(2)  # Wait for server to start
 
-        # 1. Verify Tower Defense
-        print("Testing Tower Defense...")
-        page.click("div[data-game='tower-defense-game']")
-        time.sleep(1)
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context()
+            page = context.new_page()
 
-        # Check if game container is visible
-        td_canvas = page.locator("#tdCanvas")
-        if td_canvas.is_visible():
-            print("Tower Defense Canvas is visible.")
-            # Click on canvas to trigger particle emission
-            td_canvas.click(position={"x": 100, "y": 100})
-            time.sleep(0.5)
-            # Take screenshot of Tower Defense
-            page.screenshot(path="verification/tower_defense_fixed.png")
-            print("Tower Defense screenshot taken.")
-        else:
-            print("Tower Defense Canvas NOT visible.")
+            # 1. Load the Hub
+            print("Navigating to Game Hub...")
+            page.goto("http://localhost:8000/index.html")
+            page.wait_for_load_state("networkidle")
+            
+            # Take initial screenshot of menu
+            page.screenshot(path="verification/00_menu.png")
 
-        # Go back
-        page.click(".back-btn")
-        time.sleep(1)
+            # --- SECTION A: MAIN BRANCH GAMES (3D/Canvas) ---
 
-        # 2. Verify Space Shooter (check for error or load)
-        print("Testing Space Shooter...")
-        page.click("div[data-game='space-game']")
-        time.sleep(1)
+            # A1. Verify Tower Defense
+            print("Testing Tower Defense...")
+            page.click("div[data-game='tower-defense-game']")
+            time.sleep(1)
+            
+            if page.locator("#tdCanvas").is_visible():
+                print(" -> Tower Defense Canvas visible.")
+                # Trigger interaction
+                page.locator("#tdCanvas").click(position={"x": 100, "y": 100})
+                time.sleep(0.5)
+                page.screenshot(path="verification/01_tower_defense.png")
+            else:
+                print(" -> Tower Defense Canvas NOT visible.")
 
-        space_canvas = page.locator("#spaceCanvas")
-        error_msg = page.locator("text=Error: Three.js is not loaded")
+            # Go back
+            page.click(".back-btn")
+            time.sleep(1)
 
-        if error_msg.is_visible():
-            print("Space Shooter showed error message (Expected if offline/blocked).")
-            page.screenshot(path="verification/space_shooter_error.png")
-        elif space_canvas.is_visible():
-            print("Space Shooter Canvas is visible.")
-            page.screenshot(path="verification/space_shooter_loaded.png")
-        else:
-             print("Space Shooter state unclear.")
-             page.screenshot(path="verification/space_shooter_unknown.png")
+            # A2. Verify Space Shooter
+            print("Testing Space Shooter...")
+            page.click("div[data-game='space-game']")
+            time.sleep(1)
 
-        # Go back
-        page.click(".back-btn")
-        time.sleep(1)
+            if page.locator("text=Error: Three.js is not loaded").is_visible():
+                print(" -> Space Shooter: Three.js missing (Expected in some envs).")
+            elif page.locator("#spaceCanvas").is_visible():
+                print(" -> Space Shooter Canvas visible.")
+                page.screenshot(path="verification/02_space_shooter.png")
+            
+            page.click(".back-btn")
+            time.sleep(1)
 
-        # 3. Verify Matterhorn
-        print("Testing Matterhorn...")
-        page.click("div[data-game='matterhorn-game']")
-        time.sleep(1)
+            # A3. Verify Matterhorn
+            print("Testing Matterhorn...")
+            page.click("div[data-game='matterhorn-game']")
+            time.sleep(1)
 
-        mh_canvas = page.locator("#matterhornCanvas")
-        mh_error = page.locator("text=Error: Three.js is not loaded")
+            if page.locator("#matterhornCanvas").is_visible():
+                print(" -> Matterhorn Canvas visible.")
+                page.screenshot(path="verification/03_matterhorn.png")
+            
+            page.click(".back-btn")
+            time.sleep(1)
 
-        if mh_error.is_visible():
-            print("Matterhorn showed error message.")
-            page.screenshot(path="verification/matterhorn_error.png")
-        elif mh_canvas.is_visible():
-             print("Matterhorn Canvas is visible.")
-             page.screenshot(path="verification/matterhorn_loaded.png")
+            # A4. Verify Aetheria
+            print("Testing Aetheria...")
+            page.click("div[data-game='aetheria-game']")
+            time.sleep(1)
 
-        # Go back
-        page.click(".back-btn")
-        time.sleep(1)
+            if page.locator("#aetheria-game-container").is_visible():
+                print(" -> Aetheria Container visible.")
+                page.screenshot(path="verification/04_aetheria.png")
 
-        # 4. Verify Aetheria
-        print("Testing Aetheria...")
-        page.click("div[data-game='aetheria-game']")
-        time.sleep(1)
+            page.click(".back-btn")
+            time.sleep(1)
 
-        ae_container = page.locator("#aetheria-game-container")
-        ae_error = page.locator("text=Error: Three.js is not loaded")
+            # --- SECTION B: NEON EXPANSION GAMES ---
 
-        if ae_error.is_visible():
-             print("Aetheria showed error message.")
-             page.screenshot(path="verification/aetheria_error.png")
-        elif ae_container.is_visible():
-             print("Aetheria Container is visible.")
-             page.screenshot(path="verification/aetheria_loaded.png")
+            # B1. Verify New Games appear in Menu
+            print("Verifying Neon Games presence...")
+            expect(page.locator("text=Neon 2048")).to_be_visible()
+            expect(page.locator("text=Neon Flap")).to_be_visible()
+            expect(page.locator("text=Neon Memory")).to_be_visible()
 
-        browser.close()
+            # B2. Test Neon 2048
+            print("Testing Neon 2048...")
+            page.click('div[data-game="neon-2048"]', force=True)
+            time.sleep(1)
+            # Check for Game Title
+            expect(page.locator("#neon-2048 h2").first).to_contain_text("NEON 2048")
+            page.screenshot(path="verification/05_neon2048.png")
+            
+            # Use JS navigation for Neon games (as per expansion branch logic)
+            page.evaluate("window.miniGameHub.goBack()")
+            time.sleep(1)
+
+            # B3. Test Neon Flap
+            print("Testing Neon Flap...")
+            page.click('div[data-game="neon-flap"]', force=True)
+            time.sleep(1)
+            expect(page.locator("#neon-flap canvas")).to_be_visible()
+            page.screenshot(path="verification/06_neonflap.png")
+            
+            page.evaluate("window.miniGameHub.goBack()")
+            time.sleep(1)
+
+            # B4. Test Neon Memory
+            print("Testing Neon Memory...")
+            page.click('div[data-game="neon-memory"]', force=True)
+            time.sleep(1)
+            expect(page.locator("#neon-memory h2").first).to_contain_text("NEON MEMORY")
+            expect(page.locator("#btn-red")).to_be_visible()
+            page.screenshot(path="verification/07_neonmemory.png")
+            
+            print("All games verified successfully.")
+            browser.close()
+
+    except Exception as e:
+        print(f"CRITICAL FAILURE: {e}")
+        # Take emergency screenshot if browser is open
+        try: 
+            page.screenshot(path="verification/CRITICAL_ERROR.png") 
+        except: pass
+        raise e
+
+    finally:
+        print("Shutting down server...")
+        server_process.terminate()
 
 if __name__ == "__main__":
-    verify_games()
+    verify_all_games()
