@@ -113,7 +113,7 @@ export default class MazeGame {
             this.player.x = nx;
             this.player.y = ny;
             this.soundManager.playSound('click');
-            this.particleSystem.emit(this.ctx, this.player.x * this.tileSize + 20, this.player.y * this.tileSize + 20, '#00ffff', 5);
+            this.particleSystem.emit(this.player.x * this.tileSize + 20, this.player.y * this.tileSize + 20, '#00ffff', 5);
 
             if (this.player.x === this.goal.x && this.player.y === this.goal.y) {
                 this.winGame();
@@ -143,7 +143,7 @@ export default class MazeGame {
 
     winGame() {
         this.soundManager.playSound('score');
-        this.particleSystem.emit(this.ctx, this.goal.x * this.tileSize + 20, this.goal.y * this.tileSize + 20, '#fbbf24', 50);
+        this.particleSystem.emit(this.goal.x * this.tileSize + 20, this.goal.y * this.tileSize + 20, '#fbbf24', 50);
         this.active = false;
 
         setTimeout(() => {
@@ -156,7 +156,7 @@ export default class MazeGame {
 
     loseGame() {
         this.soundManager.playSound('explosion');
-        this.particleSystem.emit(this.ctx, this.player.x * this.tileSize + 20, this.player.y * this.tileSize + 20, '#ff0000', 30);
+        this.particleSystem.emit(this.player.x * this.tileSize + 20, this.player.y * this.tileSize + 20, '#ff0000', 30);
         this.active = false;
 
          setTimeout(() => {

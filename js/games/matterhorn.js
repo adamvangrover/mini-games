@@ -8,6 +8,11 @@ export default class MatterhornGame {
     }
 
     async init(container) {
+        if (typeof THREE === 'undefined') {
+            container.innerHTML = `<div class="p-4 text-red-500">Error: Three.js is not loaded. Please check your internet connection or standard libraries.</div>`;
+            return;
+        }
+
         // Inject HTML if missing
         if (!container.querySelector('#matterhornCanvas')) {
             container.innerHTML = `
