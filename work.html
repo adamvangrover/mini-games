@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Grind 98 - Life Simulator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        :root {
+            --bg-color: #1a1a1a;
+            --crt-blue: #0000aa;
+            --crt-green: #00aa00;
+            --crt-amber: #ffb000;
+            --crt-white: #e0e0e0;
+            --scanline: rgba(0, 0, 0, 0.5);
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050505;
+            font-family: 'VT323', monospace;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: var(--crt-green);
+        }
+
+        /* CRT Monitor Styling */
+        #monitor {
+            width: 95vw;
+            height: 90vh;
+            max-width: 1024px;
+            background: #000;
+            border-radius: 20px;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.1), inset 0 0 20px rgba(255,255,255,0.1);
+            border: 20px solid #333;
+            overflow: hidden;
+        }
+
+        #screen {
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Scanlines & CRT Effects */
+        #monitor::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 10;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        #monitor::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: radial-gradient(circle, rgba(0,0,0,0) 50%, rgba(0,0,0,0.4) 100%);
+            z-index: 11;
+            pointer-events: none;
+        }
+
+        /* UI Elements */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--crt-green);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            text-shadow: 0 0 5px var(--crt-green);
+        }
+
+        .main-area {
+            flex-grow: 1;
+            display: flex;
+            gap: 20px;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 250px;
+            border-right: 2px solid var(--crt-green);
+            padding-right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .content {
+            flex-grow: 1;
+            position: relative;
+            background: rgba(0, 20, 0, 0.3);
+            border: 1px solid var(--crt-green);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        button {
+            background: transparent;
+            border: 2px solid var(--crt-green);
+            color: var(--crt-green);
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.1s;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: var(--crt-green);
+            color: #000;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            border-color: #555;
+            color: #555;
+            cursor: not-allowed;
+        }
+
+        .job-select-btn {
+            text-align: left;
+            margin-bottom: 5px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Game Specific Styles */
+        .game-canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+        }
+        
+        canvas {
+            image-rendering: pixelated; 
+        }
+
+        /* Shop Grid */
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            overflow-y: auto;
+            height: 100%;
+            padding-right: 10px;
+        }
+
+        .shop-item {
+            border: 1px solid var(--crt-green);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .shop-item:hover {
+            background: rgba(0, 170, 0, 0.1);
+        }
+
+        .shop-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        /* Stats */
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Notifications */
+        #notification-area {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 20;
+        }
+
+        .toast {
+            background: var(--crt-green);
+            color: black;
+            padding: 10px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Intro Screen */
+        #intro-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        
+        h1 { font-size: 4rem; margin: 0; text-shadow: 2px 2px var(--crt-green); }
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #000; border: 1px solid var(--crt-green); }
+        ::-webkit-scrollbar-thumb { background: var(--crt-green); }
+
+        /* Polaroid Modal */
+        #polaroid-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.9);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #polaroid-canvas {
+            background: white;
+            padding: 20px 20px 60px 20px;
+            box-shadow: 0 0 20px rgba(255,255,255,0.2);
+            transform: rotate(-2deg);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="monitor">
+        <!-- Intro Screen -->
+        <div id="intro-screen">
+            <h1>THE GRIND '98</h1>
+            <p style="font-size: 1.5rem; margin-top: 20px;">[ LIFE SIMULATION SOFTWARE v1.0 ]</p>
+            <br>
+            <button onclick="startGame()" style="font-size: 2rem; padding: 10px 40px;" class="blink">INSERT COIN (CLICK TO START)</button>
+        </div>
+
+        <!-- Main Game UI -->
+        <div id="screen" class="hidden">
+            <div class="top-bar">
+                <div>THE GRIND '98</div>
+                <div id="clock">09:00 AM</div>
+                <div>BANK: $<span id="money-display">0</span></div>
+            </div>
+
+            <div class="main-area">
+                <!-- Sidebar Navigation -->
+                <div class="sidebar">
+                    <div style="margin-bottom: 20px;">
+                        <div class="stat-row"><span>ENERGY</span><span id="energy-val">100%</span></div>
+                        <div style="width: 100%; height: 10px; border: 1px solid var(--crt-green); margin-top: 5px;">
+                            <div id="energy-bar" style="width: 100%; height: 100%; background: var(--crt-green);"></div>
+                        </div>
+                    </div>
+
+                    <button onclick="setMode('work')" id="btn-work">GO TO WORK</button>
+                    <button onclick="setMode('shop')" id="btn-shop">MALL</button>
+                    <button onclick="setMode('gallery')" id="btn-gallery">GALLERY</button>
+                    
+                    <hr style="border-color: var(--crt-green); width: 100%; margin: 15px 0;">
+                    
+                    <div style="font-size: 1.1rem; margin-bottom: 5px;">CAREER PATH:</div>
+                    <select id="job-selector" onchange="changeJob(this.value)" style="background: black; color: var(--crt-green); border: 1px solid var(--crt-green); padding: 5px; font-family: inherit; font-size: 1rem; width: 100%;">
+                        <option value="cashier">Grocery Cashier</option>
+                        <option value="developer">Software Engineer</option>
+                        <option value="analyst">Bank Analyst</option>
+                        <option value="sales">Yacht Salesman</option>
+                    </select>
+
+                    <div id="job-desc" style="margin-top: 10px; font-size: 0.9rem; color: var(--crt-white);">
+                        Scanning groceries. Honest work.<br>Pay: Low
+                    </div>
+                </div>
+
+                <!-- Content Area -->
+                <div class="content">
+                    
+                    <!-- Work Modes -->
+                    <div id="view-work" class="game-view">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <span id="job-title-display">GROCERY CASHIER</span>
+                            <span id="shift-timer">SHIFT: 0s</span>
+                        </div>
+                        <div class="game-canvas-container" id="game-container">
+                            <!-- Dynamic Game Canvas Injection -->
+                            <canvas id="gameCanvas" width="600" height="400"></canvas>
+                            <div id="start-work-overlay" style="position:absolute; background:rgba(0,0,0,0.8); width:100%; height:100%; display:flex; justify-content:center; align-items:center; flex-direction:column;">
+                                <h2 id="tutorial-text">CLICK ITEMS TO SCAN</h2>
+                                <button onclick="startShift()">START SHIFT</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shop View -->
+                    <div id="view-shop" class="game-view hidden">
+                        <div style="margin-bottom: 15px; border-bottom: 1px dashed var(--crt-green);">WELCOME TO THE MALL</div>
+                        <div class="shop-grid" id="shop-container">
+                            <!-- Items injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Gallery View -->
+                    <div id="view-gallery" class="game-view hidden">
+                        <div style="margin-bottom: 15px; border-bottom: 1px dashed var(--crt-green);">YOUR ACHIEVEMENTS</div>
+                        <div class="shop-grid" id="gallery-container">
+                            <div style="padding: 20px;">No photos yet. Go buy something!</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        
+        <div id="notification-area"></div>
+    </div>
+
+    <!-- Hidden Canvas for Photo Generation -->
+    <canvas id="photoGen" width="400" height="450" style="display:none;"></canvas>
+
+    <!-- Modal for New Photo -->
+    <div id="polaroid-modal" class="hidden">
+        <h2 style="color: white; margin-bottom: 20px;">NEW MEMORY UNLOCKED!</h2>
+        <img id="polaroid-result" style="border: 10px solid white; border-bottom: 50px solid white; box-shadow: 0 0 20px black; max-height: 60vh;">
+        <div style="margin-top: 20px; display: flex; gap: 20px;">
+            <button onclick="downloadPhoto()" style="border-color: white; color: white;">SAVE TO DISK</button>
+            <button onclick="closeModal()" style="border-color: white; color: white;">CLOSE</button>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME STATE ---
+        const state = {
+            money: 0,
+            energy: 100,
+            job: 'cashier',
+            inventory: [],
+            photos: [],
+            isPlaying: false,
+            shiftActive: false,
+            dayTime: 540 // 9:00 AM in minutes
+        };
+
+        const jobs = {
+            cashier: { title: "GROCERY CASHIER", pay: 5, risk: 0, desc: "Scan items before they fall. Click to scan.", tutorial: "CLICK ITEMS TO SCAN" },
+            developer: { title: "SOFTWARE ENGINEER", pay: 15, risk: 10, desc: "Write code to meet deadlines. Type ANY keys fast!", tutorial: "TYPE ANY KEYS FAST" },
+            analyst: { title: "BANK ANALYST", pay: 30, risk: 20, desc: "Approve high credit (Green), Deny low (Red).", tutorial: "CLICK GREEN NUMBERS ONLY" },
+            sales: { title: "YACHT SALESMAN", pay: 100, risk: 50, desc: "Negotiate deals. Choose the right dialogue.", tutorial: "CHOOSE WISELY" }
+        };
+
+        const shopItems = [
+            { id: 1, name: "Fast Food", price: 15, icon: "🍔", type: "food", energy: 30 },
+            { id: 2, name: "Coffee", price: 5, icon: "☕", type: "food", energy: 15 },
+            { id: 3, name: "Pager", price: 50, icon: "📟", type: "item", desc: "Stay connected" },
+            { id: 4, name: "GameBoy", price: 120, icon: "👾", type: "item", desc: "For the commute" },
+            { id: 5, name: "Sneakers", price: 200, icon: "👟", type: "item", desc: "Run faster" },
+            { id: 6, name: "Used Sedan", price: 2500, icon: "🚗", type: "car", desc: "It runs... mostly" },
+            { id: 7, name: "Brick Phone", price: 900, icon: "📱", type: "item", desc: "Cutting edge tech" },
+            { id: 8, name: "Sports Car", price: 25000, icon: "🏎️", type: "car", desc: "Mid-life crisis" },
+            { id: 9, name: "Suburban House", price: 150000, icon: "🏡", type: "house", desc: "The American Dream" },
+            { id: 10, name: "Yacht", price: 1000000, icon: "🛥️", type: "boat", desc: "You made it" }
+        ];
+
+        // --- CORE ENGINE ---
+
+        function startGame() {
+            document.getElementById('intro-screen').classList.add('hidden');
+            document.getElementById('screen').classList.remove('hidden');
+            state.isPlaying = true;
+            renderShop();
+            updateUI();
+            gameLoop();
+        }
+
+        function updateUI() {
+            document.getElementById('money-display').innerText = state.money.toLocaleString();
+            document.getElementById('energy-val').innerText = Math.floor(state.energy) + "%";
+            document.getElementById('energy-bar').style.width = state.energy + "%";
+            
+            // Time
+            let h = Math.floor(state.dayTime / 60);
+            let m = state.dayTime % 60;
+            let ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12;
+            h = h ? h : 12; 
+            m = m < 10 ? '0'+m : m;
+            document.getElementById('clock').innerText = `${h}:${m} ${ampm}`;
+        }
+
+        function setMode(mode) {
+            if(state.shiftActive) {
+                notify("FINISH SHIFT FIRST!");
+                return;
+            }
+            document.querySelectorAll('.game-view').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${mode}`).classList.remove('hidden');
+            if (mode === 'gallery') renderGallery();
+        }
+
+        function changeJob(jobKey) {
+            if(state.shiftActive) return;
+            state.job = jobKey;
+            document.getElementById('job-title-display').innerText = jobs[jobKey].title;
+            document.getElementById('job-desc').innerHTML = jobs[jobKey].desc + `<br>Max Pay: $${jobs[jobKey].pay}`;
+            document.getElementById('tutorial-text').innerText = jobs[jobKey].tutorial;
+        }
+
+        function notify(msg) {
+            const area = document.getElementById('notification-area');
+            const el = document.createElement('div');
+            el.className = 'toast';
+            el.innerText = `> ${msg}`;
+            area.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+
+        // --- MINI GAMES ---
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let gameLoopId;
+        let gameEntities = [];
+        let gameScore = 0;
+        let shiftTime = 0;
+
+        function startShift() {
+            if (state.energy < 5) {
+                notify("TOO TIRED! EAT SOMETHING.");
+                return;
+            }
+            document.getElementById('start-work-overlay').classList.add('hidden');
+            state.shiftActive = true;
+            gameEntities = [];
+            gameScore = 0;
+            shiftTime = 20; // 20 seconds shift
+            
+            // Init specific game
+            if(state.job === 'cashier') initCashier();
+            if(state.job === 'developer') initDev();
+            if(state.job === 'analyst') initAnalyst();
+            if(state.job === 'sales') initSales();
+
+            gameLoopId = requestAnimationFrame(updateGame);
+            
+            // Input Handlers
+            canvas.onmousedown = handleGameClick;
+            window.onkeydown = handleGameKey;
+        }
+
+        function endShift(success) {
+            state.shiftActive = false;
+            cancelAnimationFrame(gameLoopId);
+            document.getElementById('start-work-overlay').classList.remove('hidden');
+            
+            // Calculate pay
+            let pay = 0;
+            if(state.job === 'cashier') pay = Math.floor(gameScore * 2); 
+            if(state.job === 'developer') pay = Math.floor(gameScore * 0.5); // Score is chars typed
+            if(state.job === 'analyst') pay = Math.floor(gameScore * 10);
+            if(state.job === 'sales') pay = gameScore > 0 ? jobs.sales.pay : 0; // All or nothing
+
+            if(pay > 0) {
+                state.money += pay;
+                notify(`SHIFT OVER. EARNED $${pay}`);
+            } else {
+                notify("SHIFT FAILED. NO PAY.");
+            }
+
+            state.energy -= 10;
+            if(state.energy < 0) state.energy = 0;
+            updateUI();
+        }
+
+        // 1. CASHIER LOGIC
+        function initCashier() {
+            // Entities are groceries
+        }
+
+        // 2. DEV LOGIC
+        let codeLines = [];
+        const codeSnippets = ["function optimize() {", "  return true;", "  if(bug) fix();", "  while(alive) code();", "  console.log('$$$');", "  git push origin master", "  // TODO: Fix this mess"];
+        function initDev() {
+            codeLines = ["// START CODING..."];
+        }
+
+        // 3. ANALYST LOGIC
+        function initAnalyst() {
+            spawnNumber();
+        }
+        function spawnNumber() {
+            gameEntities.push({
+                x: Math.random() * 500 + 50,
+                y: Math.random() * 300 + 50,
+                val: Math.floor(Math.random() * 1000), // Credit Score
+                good: Math.random() > 0.5, // Actually good vs bad loan
+                life: 100
+            });
+        }
+
+        // 4. SALES LOGIC
+        let negotiationState = 0; // 0: Start, 1: Pitch, 2: Close
+        let clientPatience = 100;
+        function initSales() {
+            negotiationState = 0;
+            clientPatience = 100;
+        }
+
+        // --- MAIN GAME LOOP ---
+
+        function updateGame() {
+            if (!state.shiftActive) return;
+
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Timer
+            shiftTime -= 0.016;
+            document.getElementById('shift-timer').innerText = `TIME: ${Math.ceil(shiftTime)}s`;
+            if(shiftTime <= 0) {
+                endShift(true);
+                return;
+            }
+
+            // --- DISPATCH JOB LOGIC ---
+
+            if (state.job === 'cashier') {
+                // Spawn
+                if(Math.random() < 0.02) {
+                    gameEntities.push({x: 0, y: 200, type: Math.floor(Math.random()*3), w: 30, h: 30});
+                }
+                // Draw Belt
+                ctx.fillStyle = '#333';
+                ctx.fillRect(0, 230, 600, 10);
+
+                // Update Items
+                ctx.font = "30px Arial";
+                for(let i=gameEntities.length-1; i>=0; i--) {
+                    let e = gameEntities[i];
+                    e.x += 2;
+                    if(e.type === 0) ctx.fillText("🍎", e.x, e.y+25);
+                    if(e.type === 1) ctx.fillText("🍞", e.x, e.y+25);
+                    if(e.type === 2) ctx.fillText("🥚", e.x, e.y+25);
+                    
+                    if(e.x > 600) {
+                        gameEntities.splice(i, 1);
+                        notify("MISSED ITEM!");
+                        gameScore = Math.max(0, gameScore - 1);
+                    }
+                }
+                ctx.fillStyle = 'white';
+                ctx.font = "20px VT323";
+                ctx.fillText(`SCANNED: ${gameScore}`, 20, 40);
+            }
+
+            else if (state.job === 'developer') {
+                ctx.fillStyle = '#00aa00';
+                ctx.font = "16px monospace";
+                let y = 30;
+                codeLines.forEach(line => {
+                    ctx.fillText(line, 20, y);
+                    y += 20;
+                });
+                // Progress Bar
+                ctx.fillStyle = '#333';
+                ctx.fillRect(20, 350, 560, 20);
+                ctx.fillStyle = '#00aa00';
+                ctx.fillRect(20, 350, (gameScore/1000) * 560, 20); // Cap at 1000 chars for max pay
+                
+                ctx.fillStyle = 'white';
+                ctx.fillText("MASH KEYBOARD TO CODE", 20, 385);
+            }
+
+            else if (state.job === 'analyst') {
+                if(Math.random() < 0.05 && gameEntities.length < 5) spawnNumber();
+                
+                for(let i=gameEntities.length-1; i>=0; i--) {
+                    let e = gameEntities[i];
+                    e.life--;
+                    
+                    // Logic: High Credit Score (>700) is Green (Approve), Low is Red (Deny)
+                    let isPrime = e.val > 700;
+                    ctx.fillStyle = isPrime ? '#00ff00' : '#ff0000';
+                    ctx.font = "24px VT323";
+                    ctx.fillText(e.val, e.x, e.y);
+                    
+                    if(e.life <= 0) gameEntities.splice(i, 1);
+                }
+                ctx.fillStyle = 'white';
+                ctx.fillText(`MEMOS FILED: ${gameScore}`, 20, 40);
+            }
+
+            else if (state.job === 'sales') {
+                // Draw Client
+                ctx.font = "100px Arial";
+                ctx.fillText("🤵", 250, 150);
+                
+                // Draw Patience
+                ctx.fillStyle = 'red';
+                ctx.fillRect(200, 50, 200, 10);
+                ctx.fillStyle = 'green';
+                ctx.fillRect(200, 50, clientPatience*2, 10);
+                ctx.fillStyle = 'white';
+                ctx.font = "20px VT323";
+                ctx.fillText("CLIENT INTEREST", 200, 40);
+
+                // Options
+                ctx.strokeStyle = 'white';
+                ctx.strokeRect(50, 250, 150, 100);
+                ctx.fillText("1. COMPLIMENT", 60, 300);
+                
+                ctx.strokeRect(220, 250, 150, 100);
+                ctx.fillText("2. DISCUSS SPECS", 230, 300);
+
+                ctx.strokeRect(390, 250, 150, 100);
+                ctx.fillText("3. HARD SELL", 400, 300);
+
+                clientPatience -= 0.1;
+                if(clientPatience <= 0) {
+                    notify("CLIENT WALKED OUT.");
+                    shiftTime = 0; // End immediately
+                }
+                if(clientPatience > 150) {
+                    gameScore = 1; // Deal closed
+                    notify("DEAL CLOSED!");
+                    shiftTime = 0;
+                }
+            }
+
+            gameLoopId = requestAnimationFrame(updateGame);
+        }
+
+        // --- INPUT HANDLING ---
+
+        function handleGameClick(e) {
+            if (!state.shiftActive) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (state.job === 'cashier') {
+                for(let i=gameEntities.length-1; i>=0; i--) {
+                    let en = gameEntities[i];
+                    if(x > en.x && x < en.x+30 && y > 180 && y < 250) {
+                        gameScore++;
+                        gameEntities.splice(i, 1);
+                        // Beep
+                    }
+                }
+            }
+            else if (state.job === 'analyst') {
+                for(let i=gameEntities.length-1; i>=0; i--) {
+                    let en = gameEntities[i];
+                    // Hitbox approx
+                    if(Math.abs(x - en.x) < 30 && Math.abs(y - en.y) < 20) {
+                        if(en.val > 700) { gameScore++; notify("APPROVED"); }
+                        else { gameScore--; notify("BAD LOAN!"); }
+                        gameEntities.splice(i, 1);
+                    }
+                }
+            }
+            else if (state.job === 'sales') {
+                // Click logic for buttons
+                let impact = 0;
+                if(y > 250 && y < 350) {
+                    if(x > 50 && x < 200) impact = 10; // Compliment
+                    if(x > 220 && x < 370) impact = 5; // Specs
+                    if(x > 390 && x < 540) impact = (Math.random() > 0.7) ? 40 : -30; // Risky hard sell
+                }
+                clientPatience += impact;
+                notify(impact > 0 ? "CLIENT LIKED THAT" : "CLIENT ANNOYED");
+            }
+        }
+
+        function handleGameKey(e) {
+            if (!state.shiftActive) return;
+            
+            if (state.job === 'developer') {
+                gameScore++;
+                if (gameScore % 5 === 0) {
+                    let line = codeSnippets[Math.floor(Math.random()*codeSnippets.length)];
+                    codeLines.push(line);
+                    if(codeLines.length > 15) codeLines.shift();
+                }
+            }
+        }
+
+        // --- SHOP & ECONOMY ---
+
+        function renderShop() {
+            const container = document.getElementById('shop-container');
+            container.innerHTML = '';
+            shopItems.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'shop-item';
+                el.innerHTML = `
+                    <div class="shop-icon">${item.icon}</div>
+                    <div style="font-weight:bold">${item.name}</div>
+                    <div>$${item.price.toLocaleString()}</div>
+                    <div style="font-size:0.8em; color:#aaa;">${item.type === 'food' ? '+Energy' : 'Asset'}</div>
+                `;
+                el.onclick = () => buyItem(item);
+                container.appendChild(el);
+            });
+        }
+
+        function buyItem(item) {
+            if (state.money >= item.price) {
+                state.money -= item.price;
+                if (item.type === 'food') {
+                    state.energy = Math.min(100, state.energy + item.energy);
+                    notify(`ATE ${item.name}. YUM.`);
+                } else {
+                    state.inventory.push(item);
+                    notify(`BOUGHT ${item.name}!`);
+                    generatePolaroid(item);
+                }
+                updateUI();
+            } else {
+                notify("INSUFFICIENT FUNDS.");
+            }
+        }
+
+        // --- POLAROID GENERATOR ---
+
+        function generatePolaroid(item) {
+            const pCanvas = document.getElementById('photoGen');
+            const pCtx = pCanvas.getContext('2d');
+            
+            // Background (Sky & Ground)
+            const skyColor = ['#87CEEB', '#191970', '#FF4500'][Math.floor(Math.random()*3)];
+            pCtx.fillStyle = skyColor;
+            pCtx.fillRect(0,0,400,300);
+            
+            pCtx.fillStyle = '#228B22'; // Grass
+            pCtx.fillRect(0, 300, 400, 150);
+
+            // Draw Asset (Giant Emoji)
+            pCtx.font = "150px Arial";
+            pCtx.textAlign = "center";
+            pCtx.fillText(item.icon, 200, 250);
+
+            // Draw Player (Stick figure)
+            pCtx.strokeStyle = 'black';
+            pCtx.lineWidth = 5;
+            pCtx.beginPath();
+            pCtx.arc(280, 320, 20, 0, Math.PI*2); // Head
+            pCtx.moveTo(280, 340); pCtx.lineTo(280, 400); // Body
+            pCtx.moveTo(280, 360); pCtx.lineTo(250, 340); // Arms (Cheering)
+            pCtx.moveTo(280, 360); pCtx.lineTo(310, 340);
+            pCtx.moveTo(280, 400); pCtx.lineTo(260, 440); // Legs
+            pCtx.moveTo(280, 400); pCtx.lineTo(300, 440);
+            pCtx.stroke();
+
+            // Overlay Texture (Grain)
+            pCtx.fillStyle = 'rgba(255, 255, 0, 0.1)';
+            pCtx.fillRect(0,0,400,450);
+
+            // Date Stamp
+            pCtx.font = "20px VT323";
+            pCtx.fillStyle = '#ff8800';
+            pCtx.textAlign = "right";
+            pCtx.fillText("98 12 25", 380, 430);
+            
+            // Text Caption
+            pCtx.font = "30px Brush Script MT";
+            pCtx.fillStyle = 'white';
+            pCtx.strokeStyle = 'black';
+            pCtx.lineWidth = 1;
+            pCtx.textAlign = "center";
+            pCtx.fillText(`My New ${item.name}!`, 200, 50);
+            pCtx.strokeText(`My New ${item.name}!`, 200, 50);
+
+            // Show Modal
+            const dataUrl = pCanvas.toDataURL("image/png");
+            const img = document.getElementById('polaroid-result');
+            img.src = dataUrl;
+            
+            // Save to state for gallery
+            state.photos.push({src: dataUrl, name: item.name});
+
+            document.getElementById('polaroid-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('polaroid-modal').classList.add('hidden');
+        }
+
+        function downloadPhoto() {
+            const link = document.createElement('a');
+            link.download = `the_grind_98_memory_${Date.now()}.png`;
+            link.href = document.getElementById('polaroid-result').src;
+            link.click();
+        }
+
+        function renderGallery() {
+            const container = document.getElementById('gallery-container');
+            container.innerHTML = '';
+            if(state.photos.length === 0) {
+                container.innerHTML = '<div style="padding:20px">Buy items to create memories.</div>';
+                return;
+            }
+            state.photos.forEach(photo => {
+                const el = document.createElement('div');
+                el.className = 'shop-item';
+                el.innerHTML = `<img src="${photo.src}" style="width:100%; border:5px solid white;"><div>${photo.name}</div>`;
+                container.appendChild(el);
+            });
+        }
+
+        // Global Tick (Day/Night)
+        setInterval(() => {
+            if(!state.isPlaying) return;
+            state.dayTime++;
+            updateUI();
+        }, 1000);
+
+    </script>
+</body>
+</html>
