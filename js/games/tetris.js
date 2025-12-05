@@ -18,6 +18,10 @@ export default class TetrisGame {
         this.dropInterval = 0.5; // seconds
         this.inputCooldown = 0;
 
+        this.locking = false;
+        this.lockTimer = 0;
+        this.lockDelay = 0.5; // Time before locking in place
+
         this.shapes = [
             [[1,1,1,1]],
             [[1,1],[1,1]],
@@ -70,6 +74,8 @@ export default class TetrisGame {
         this.score = 0;
         this.isGameOver = false;
         this.dropTimer = 0;
+        this.locking = false;
+        this.lockTimer = 0;
         this.newPiece();
         this.updateScoreUI();
     }
@@ -114,6 +120,14 @@ export default class TetrisGame {
             this.drop();
             this.dropTimer = 0;
         }
+
+        // Lock Logic
+        if (this.locking) {
+            this.lockTimer += dt;
+            if (this.lockTimer > this.lockDelay) {
+                this.solidify();
+            }
+        }
     }
 
     move(dir) {
@@ -122,6 +136,9 @@ export default class TetrisGame {
             this.currentPiece.x -= dir;
         } else {
             this.soundManager.playSound('click');
+            if (this.locking) {
+                this.lockTimer = 0; // Reset lock timer on move (classic "infinite spin" behavior allowed)
+            }
         }
     }
 
@@ -129,8 +146,15 @@ export default class TetrisGame {
         this.currentPiece.y++;
         if (this.collides()) {
             this.currentPiece.y--;
-            this.solidify();
-            this.soundManager.playSound('click'); // landing sound
+            // Collision detected, start locking phase
+            if (!this.locking) {
+                this.locking = true;
+                this.lockTimer = 0;
+                this.soundManager.playSound('click'); // landing sound
+            }
+        } else {
+            // Successfully dropped, reset locking if we were in air or moved to free space
+            this.locking = false;
         }
     }
 
@@ -152,6 +176,9 @@ export default class TetrisGame {
             this.currentPiece.shape = oldShape;
         } else {
             this.soundManager.playSound('click');
+            if (this.locking) {
+                this.lockTimer = 0; // Reset lock timer on rotation
+            }
         }
     }
 
@@ -171,6 +198,9 @@ export default class TetrisGame {
     }
 
     solidify() {
+        this.locking = false;
+        this.lockTimer = 0;
+
         this.currentPiece.shape.forEach((row, y) => {
             row.forEach((value, x) => {
                 if (value > 0) {

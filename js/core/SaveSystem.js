@@ -103,4 +103,53 @@ export default class SaveSystem {
         this.data.gameConfigs[gameId] = config;
         this.save();
     }
+
+    // Export current data as a Base64 encoded string
+    exportData() {
+        const json = JSON.stringify(this.data);
+        return this.encrypt(json);
+    }
+
+    // Import data from a Base64 encoded string
+    importData(encodedStr) {
+        try {
+            const json = this.decrypt(encodedStr);
+            const data = JSON.parse(json);
+
+            // Basic validation
+            if (!data.highScores || !data.achievements) {
+                return false;
+            }
+
+            this.data = data;
+            this.save();
+            return true;
+        } catch (e) {
+            console.error("Failed to import data:", e);
+            return false;
+        }
+    }
+
+    // Get a formatted string of stats for sharing
+    getFormattedStats() {
+        let text = "🏆 Neon Arcade High Scores 🏆\n\n";
+
+        const scores = Object.entries(this.data.highScores)
+            .sort((a, b) => b[1] - a[1]); // Sort by score descending (though different games have different scales)
+
+        if (scores.length === 0) {
+            text += "No high scores yet! Play some games to earn your place.";
+        } else {
+            scores.forEach(([gameId, score]) => {
+                // Format game ID to name (simple replace)
+                const name = gameId.replace(/-game|-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).trim();
+                text += `${name}: ${score}\n`;
+            });
+        }
+
+        text += `\n💰 Total Currency: ${this.data.totalCurrency}`;
+        text += `\n🏅 Achievements: ${this.data.achievements.length}`;
+
+        return text;
+    }
 }
