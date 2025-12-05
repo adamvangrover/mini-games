@@ -234,6 +234,83 @@ function togglePause() {
     }
 }
 
+function showSettingsOverlay() {
+    const content = `
+        <div class="flex flex-col gap-4">
+            <button id="copy-stats-btn" class="px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded flex items-center justify-center gap-2">
+                <i class="fas fa-share-alt"></i> Share High Scores (Copy)
+            </button>
+            <hr class="border-slate-700 my-2">
+            <h3 class="text-white font-bold">Save Data Backup</h3>
+            <textarea id="export-area" class="w-full bg-slate-800 text-xs text-slate-300 p-2 rounded h-24 font-mono select-all" readonly>Generating...</textarea>
+            <div class="flex gap-2">
+                 <button id="refresh-export-btn" class="flex-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded">Refresh Export</button>
+                 <button id="copy-export-btn" class="flex-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded">Copy Data</button>
+            </div>
+
+            <hr class="border-slate-700 my-2">
+            <h3 class="text-white font-bold">Import Data</h3>
+            <textarea id="import-area" class="w-full bg-slate-800 text-xs text-white p-2 rounded h-24 font-mono" placeholder="Paste save data here..."></textarea>
+            <button id="import-btn" class="w-full px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded">
+                <i class="fas fa-file-import"></i> Import & Overwrite
+            </button>
+            <p id="import-status" class="text-center text-xs text-slate-400 mt-1"></p>
+        </div>
+    `;
+
+    showOverlay('DATA MANAGEMENT', content);
+
+    // Populate Export Area
+    const exportArea = document.getElementById('export-area');
+    const updateExport = () => {
+        exportArea.value = saveSystem.exportData();
+    };
+    updateExport();
+
+    // Bind Buttons
+    document.getElementById('refresh-export-btn').onclick = updateExport;
+
+    document.getElementById('copy-export-btn').onclick = () => {
+        exportArea.select();
+        document.execCommand('copy');
+        document.getElementById('copy-export-btn').textContent = "Copied!";
+        setTimeout(() => document.getElementById('copy-export-btn').textContent = "Copy Data", 2000);
+    };
+
+    document.getElementById('copy-stats-btn').onclick = () => {
+        const stats = saveSystem.getFormattedStats();
+        navigator.clipboard.writeText(stats).then(() => {
+            const btn = document.getElementById('copy-stats-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-check"></i> Copied to Clipboard!`;
+            setTimeout(() => btn.innerHTML = originalText, 2000);
+        });
+    };
+
+    document.getElementById('import-btn').onclick = () => {
+        const data = document.getElementById('import-area').value.trim();
+        const statusEl = document.getElementById('import-status');
+
+        if (!data) {
+            statusEl.textContent = "Please paste data first.";
+            statusEl.className = "text-center text-xs text-red-400 mt-1";
+            return;
+        }
+
+        if (confirm("WARNING: This will overwrite your current progress. Are you sure?")) {
+            const success = saveSystem.importData(data);
+            if (success) {
+                statusEl.textContent = "Import Successful! reloading...";
+                statusEl.className = "text-center text-xs text-green-400 mt-1";
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                statusEl.textContent = "Invalid Data. Import failed.";
+                statusEl.className = "text-center text-xs text-red-400 mt-1";
+            }
+        }
+    };
+}
+
 function populateGameMenu() {
     const menuGrid = document.getElementById('menu-grid');
     if (!menuGrid) return;
@@ -304,6 +381,14 @@ document.addEventListener('DOMContentLoaded', () => {
             transitionToState(AppState.MENU);
         }
     });
+
+    // Bind Settings Button
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            showSettingsOverlay();
+        });
+    }
 
     // Start the main loop
     lastTime = performance.now();
