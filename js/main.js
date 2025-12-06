@@ -3,7 +3,7 @@
 import SoundManager from './core/SoundManager.js';
 import SaveSystem from './core/SaveSystem.js';
 import InputManager from './core/InputManager.js';
-import BackgroundShader from './core/BackgroundShader.js';
+import ArcadeHub from './core/ArcadeHub.js';
 
 // Import New/Refactored Games
 import TowerDefenseGame from './games/towerDefense.js';
@@ -71,8 +71,9 @@ const soundManager = SoundManager.getInstance();
 const saveSystem = SaveSystem.getInstance();
 const inputManager = InputManager.getInstance(); // Ensure it attaches listeners
 
-// Init Background
-new BackgroundShader();
+// Global Hub
+let arcadeHub = null;
+let is3DView = true;
 
 // Centralized Game Loop
 function mainLoop(timestamp) {
@@ -122,6 +123,19 @@ async function transitionToState(newState, context = {}) {
         soundManager.setBGMVolume(0.1);
 
         document.getElementById("menu").classList.remove("hidden");
+
+        if (arcadeHub) {
+            arcadeHub.resume();
+            if (is3DView) {
+                document.getElementById('menu-grid').classList.add('hidden');
+                document.getElementById('view-toggle-text').textContent = 'Grid View';
+            } else {
+                 arcadeHub.pause(); // Just in case
+                 document.getElementById('menu-grid').classList.remove('hidden');
+                 document.getElementById('view-toggle-text').textContent = '3D View';
+            }
+        }
+
         currentState = AppState.MENU;
     }
 
@@ -130,6 +144,7 @@ async function transitionToState(newState, context = {}) {
         currentState = AppState.TRANSITIONING;
         const { gameId } = context;
 
+        if (arcadeHub) arcadeHub.pause();
         document.getElementById("menu").classList.add("hidden");
 
         const gameInfo = gameRegistry[gameId];
@@ -348,9 +363,48 @@ function updateHubStats() {
     }
 }
 
+function toggleView() {
+    is3DView = !is3DView;
+    const btnText = document.getElementById('view-toggle-text');
+    const menuGrid = document.getElementById('menu-grid');
+
+    if (is3DView) {
+        btnText.textContent = 'Grid View';
+        menuGrid.classList.add('hidden');
+        if (arcadeHub) arcadeHub.resume();
+    } else {
+        btnText.textContent = '3D View';
+        menuGrid.classList.remove('hidden');
+        if (arcadeHub) arcadeHub.pause();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     populateGameMenu();
     updateHubStats();
+
+    // Init 3D Arcade Hub
+    try {
+        arcadeHub = new ArcadeHub('bg-canvas', gameRegistry, (gameId) => {
+            transitionToState(AppState.IN_GAME, { gameId });
+        });
+
+        // Default to 3D view
+        document.getElementById('menu-grid').classList.add('hidden');
+        document.getElementById('view-toggle-text').textContent = 'Grid View';
+    } catch (e) {
+        console.error("Failed to init ArcadeHub", e);
+        // Fallback to grid
+        is3DView = false;
+        document.getElementById('menu-grid').classList.remove('hidden');
+        document.getElementById('view-toggle-text').textContent = '3D View';
+    }
+
+    // Bind View Toggle
+    const toggleBtn = document.getElementById('view-toggle-btn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleView);
+    }
 
     // Bind Overlay Close Button
     document.getElementById('overlay-close-btn').addEventListener('click', () => {
