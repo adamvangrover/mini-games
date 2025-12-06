@@ -46,16 +46,19 @@
             <p class="text-slate-400 text-lg max-w-2xl mx-auto">Explore a universe of retro-futuristic mini-games.</p>
         </header>
 
-        <div id="hub-stats" class="text-center mb-12 flex justify-center gap-4 relative">
+        <div id="hub-stats" class="text-center mb-12 flex justify-center gap-4 relative pointer-events-auto">
             <div class="bg-slate-800/50 backdrop-blur px-6 py-3 rounded-full border border-slate-700">
                 <span class="text-xl text-yellow-400 font-bold"><i class="fas fa-coins mr-2"></i> <span id="total-currency">0</span></span>
             </div>
              <button id="settings-btn" class="bg-slate-800/50 backdrop-blur px-4 py-3 rounded-full border border-slate-700 text-slate-300 hover:text-white hover:border-fuchsia-500 transition-colors">
                 <i class="fas fa-cog"></i> Data
             </button>
+            <button id="view-toggle-btn" class="bg-slate-800/50 backdrop-blur px-4 py-3 rounded-full border border-slate-700 text-slate-300 hover:text-white hover:border-fuchsia-500 transition-colors">
+                <i class="fas fa-cube"></i> <span id="view-toggle-text">Grid View</span>
+            </button>
         </div>
 
-        <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
+        <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4 pointer-events-auto transition-opacity duration-500">
             <!-- Game cards will be dynamically inserted here -->
         </div>
     </div>
