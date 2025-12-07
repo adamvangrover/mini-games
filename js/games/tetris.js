@@ -45,15 +45,15 @@ export default class TetrisGame {
         let canvas = container.querySelector('#tetrisCanvas');
         if (!canvas) {
             container.innerHTML = `
-                <h2>🧱 Tetris</h2>
-                <div class="relative inline-block">
-                    <canvas id="tetrisCanvas" width="240" height="400" class="border-2 border-cyan-500 rounded-lg bg-black mx-auto"></canvas>
-                    <div class="absolute top-2 left-2 text-white font-mono text-sm">
+                <h2 class="text-xl md:text-2xl mb-2">🧱 Tetris</h2>
+                <div class="relative flex justify-center items-center w-full h-[60vh] md:h-[70vh]">
+                    <canvas id="tetrisCanvas" class="border-2 border-cyan-500 rounded-lg bg-black block max-w-full max-h-full"></canvas>
+                    <div class="absolute top-2 left-2 text-white font-mono text-sm bg-black/50 px-2 rounded pointer-events-none">
                         Score: <span id="tetris-score">0</span>
                     </div>
                 </div>
-                <p class="mt-4 text-slate-300">Arrows to Move/Rotate. Space to Drop.</p>
-                <button class="back-btn mt-4 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded">Back</button>
+                <p class="mt-2 text-slate-300 text-sm">Arrows to Move/Rotate. Space to Drop.</p>
+                <button class="back-btn mt-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded">Back</button>
             `;
             canvas = container.querySelector('#tetrisCanvas');
             container.querySelector('.back-btn').addEventListener('click', () => {
@@ -63,10 +63,36 @@ export default class TetrisGame {
 
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
-        // Set block size based on canvas width
-        this.blockSize = this.canvas.width / this.cols;
+        
+        // Handle Resizing
+        this.resize();
+        this._resizeHandler = () => this.resize();
+        window.addEventListener('resize', this._resizeHandler);
 
         this.resetGame();
+    }
+
+    resize() {
+        if(!this.canvas) return;
+        const parent = this.canvas.parentElement;
+        const rect = parent.getBoundingClientRect();
+        
+        // Aspect ratio 10:20 (1:2)
+        let w = rect.width;
+        let h = rect.height;
+        
+        if (w / h > 0.5) {
+            w = h * 0.5;
+        } else {
+            h = w * 2;
+        }
+
+        this.canvas.width = w;
+        this.canvas.height = h;
+        this.blockSize = this.canvas.width / this.cols;
+        
+        // Redraw if game is active or paused
+        if(this.board) this.draw();
     }
 
     resetGame() {
@@ -80,7 +106,11 @@ export default class TetrisGame {
         this.updateScoreUI();
     }
 
-    shutdown() {}
+    shutdown() {
+        if(this._resizeHandler) {
+            window.removeEventListener('resize', this._resizeHandler);
+        }
+    }
 
     createBoard() {
         return Array.from({length: this.rows}, () => Array(this.cols).fill(0));
