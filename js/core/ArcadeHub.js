@@ -1,363 +1,354 @@
-
 export default class ArcadeHub {
-    constructor(canvasId, gameRegistry, onGameSelect) {
-        this.canvas = document.getElementById(canvasId);
-        if (!this.canvas) {
-            console.error(`Canvas with id ${canvasId} not found`);
-            return;
-        }
-
+    constructor(container, gameRegistry, onGameSelect) {
+        this.container = container;
         this.gameRegistry = gameRegistry;
         this.onGameSelect = onGameSelect;
-        this.cabinets = [];
-        this.isInteracting = false;
-        this.onMouseDownMouseX = 0;
-        this.onMouseDownMouseY = 0;
-        this.lon = 0;
-        this.onMouseDownLon = 0;
-        this.lat = 0;
-        this.onMouseDownLat = 0;
-        this.phi = 0;
-        this.theta = 0;
-        this.cameraTarget = new THREE.Vector3();
+
+        // Core Three.js components
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
+
+        this.cabinets = [];
+        this.isHovering = false;
         this.isActive = true;
+
+        // Navigation State
+        this.isDragging = false;
+        this.previousMousePosition = { x: 0, y: 0 };
+        this.cameraRotation = { x: 0, y: 0 }; 
 
         this.init();
     }
 
     init() {
-        // Scene setup
+        // --- Scene Setup (From Overhaul: Better Colors/Fog) ---
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.FogExp2(0x050505, 0.02);
+        this.scene.background = new THREE.Color(0x050510);
+        this.scene.fog = new THREE.FogExp2(0x050510, 0.02);
 
-        // Camera setup
-        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.camera.position.set(0, 1.6, 0); // Eye level
+        // --- Camera Setup ---
+        this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.camera.position.set(0, 1.6, 0.1); // Center of room
 
-        // Renderer setup
-        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true });
+        // --- Renderer Setup ---
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setPixelRatio(window.devicePixelRatio); // Added from Main
         this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        
+        // Append to container (Overhaul style)
+        if (this.container) {
+            this.container.appendChild(this.renderer.domElement);
+        } else {
+            console.error("ArcadeHub: No container provided.");
+            return;
+        }
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.5); // Soft white light
+        // --- Lighting (From Overhaul: Neon Theme) ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
         this.scene.add(ambientLight);
 
-        const pointLight = new THREE.PointLight(0xff00ff, 1, 100);
-        pointLight.position.set(0, 10, 0);
-        this.scene.add(pointLight);
+        // Neon Points
+        this.createNeonLight(0, 5, 0, 0xff00ff, 2, 20);     // Center Magenta
+        this.createNeonLight(-10, 5, -10, 0x00ffff, 2, 20); // Left Cyan
+        this.createNeonLight(10, 5, -10, 0xffff00, 2, 20);  // Right Yellow
 
-        // Floor
+        // --- Environment ---
         this.createFloor();
+        this.generateCabinets();
 
-        // Cabinets
-        this.createCabinets();
+        // --- Event Listeners ---
+        window.addEventListener('resize', this.onResize.bind(this));
 
-        // Event Listeners
-        window.addEventListener('resize', this.onWindowResize.bind(this));
+        // Mouse Events
+        this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this));
+        window.addEventListener('mousemove', this.onMouseMove.bind(this));
+        window.addEventListener('mouseup', this.onMouseUp.bind(this));
+        this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
 
-        // Input Handling
-        this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
-        document.addEventListener('mousemove', this.onMouseMove.bind(this));
-        document.addEventListener('mouseup', this.onMouseUp.bind(this));
+        // Touch Events (Adapted from Main to work with Overhaul rotation)
+        this.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
+        window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
+        window.addEventListener('touchend', this.onMouseUp.bind(this));
 
-        // Touch support
-        this.canvas.addEventListener('touchstart', this.onTouchStart.bind(this));
-        document.addEventListener('touchmove', this.onTouchMove.bind(this));
-        document.addEventListener('touchend', this.onMouseUp.bind(this));
-
-        // Click detection
-        this.canvas.addEventListener('click', this.onClick.bind(this));
-
+        // Start Loop
         this.animate();
     }
 
+    createNeonLight(x, y, z, color, intensity, distance) {
+        const light = new THREE.PointLight(color, intensity, distance);
+        light.position.set(x, y, z);
+        this.scene.add(light);
+    }
+
     createFloor() {
-        // Grid helper style floor
-        const geometry = new THREE.PlaneGeometry(200, 200, 50, 50);
-        const material = new THREE.MeshBasicMaterial({
-            color: 0x222222,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.3
+        // Using Overhaul's Grid+Standard Material for better retro aesthetics
+        const geometry = new THREE.PlaneGeometry(100, 100);
+        const material = new THREE.MeshStandardMaterial({
+            color: 0x111111,
+            roughness: 0.1,
+            metalness: 0.8,
+            side: THREE.DoubleSide
         });
         const floor = new THREE.Mesh(geometry, material);
         floor.rotation.x = -Math.PI / 2;
-        this.scene.add(floor);
+        floor.receiveShadow = true;
 
-        // Add some reflections/glow to floor
-        const reflectGeo = new THREE.PlaneGeometry(200, 200);
-        const reflectMat = new THREE.MeshStandardMaterial({
-            color: 0x050505,
-            roughness: 0.1,
-            metalness: 0.8
-        });
-        const reflectFloor = new THREE.Mesh(reflectGeo, reflectMat);
-        reflectFloor.rotation.x = -Math.PI / 2;
-        reflectFloor.position.y = -0.1;
-        this.scene.add(reflectFloor);
+        // Retro Grid
+        const gridHelper = new THREE.GridHelper(100, 50, 0xff00ff, 0x222222);
+        gridHelper.position.y = 0.01;
+        this.scene.add(gridHelper);
+
+        this.scene.add(floor);
     }
 
-    createLabelTexture(text, iconClass) {
+    generateCabinets() {
+        const games = Object.entries(this.gameRegistry);
+        const radius = 8;
+        const count = games.length;
+        const angleStep = (Math.PI * 2) / count;
+
+        games.forEach(([id, game], index) => {
+            const angle = index * angleStep;
+            const x = Math.sin(angle) * radius;
+            const z = Math.cos(angle) * radius;
+
+            // Face center: angle + PI
+            this.createCabinet(x, 0, z, angle + Math.PI, id, game);
+        });
+    }
+
+    // Using Overhaul's high-detail cabinet generation
+    createCabinet(x, y, z, rotation, id, gameInfo) {
+        const group = new THREE.Group();
+        group.position.set(x, y, z);
+        group.rotation.y = rotation;
+
+        // Cabinet Body
+        const bodyGeo = new THREE.BoxGeometry(1.2, 2.2, 1.0);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.5 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 1.1;
+        body.castShadow = true;
+        body.receiveShadow = true;
+        group.add(body);
+
+        // Screen (Emissive Texture)
+        const screenGeo = new THREE.PlaneGeometry(0.9, 0.7);
         const canvas = document.createElement('canvas');
         canvas.width = 512;
-        canvas.height = 512;
+        canvas.height = 384;
         const ctx = canvas.getContext('2d');
-
-        // Background
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, 512, 512);
-
-        // Border
-        ctx.strokeStyle = '#00ffff';
-        ctx.lineWidth = 20;
-        ctx.strokeRect(10, 10, 492, 492);
-
-        // Text
-        ctx.fillStyle = '#ff00ff';
-        ctx.font = 'bold 40px "Courier New"'; // Use a standard font for canvas
+        
+        // Draw screen content
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, 512, 384);
+        ctx.fillStyle = this.getNeonColor(id);
+        ctx.font = 'bold 40px Arial';
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        // Simple word wrap
-        const words = text.split(' ');
-        let line = '';
-        let y = 300;
-
-        // Icon (simplified as text for now, or just the title)
-        ctx.fillStyle = '#00ffff';
-        ctx.font = 'bold 60px Arial';
-        ctx.fillText(text, 256, 256);
-
-        // Glow effect
-        ctx.shadowColor = '#ff00ff';
-        ctx.shadowBlur = 20;
-        ctx.strokeText(text, 256, 256);
+        ctx.fillText(gameInfo.name, 256, 192);
+        // Add a glow line
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(20, 20, 472, 344);
 
         const texture = new THREE.CanvasTexture(canvas);
-        return texture;
-    }
+        const screenMat = new THREE.MeshBasicMaterial({ map: texture });
+        const screen = new THREE.Mesh(screenGeo, screenMat);
+        screen.position.set(0, 1.5, 0.51);
+        group.add(screen);
 
-    createCabinets() {
-        const games = Object.entries(this.gameRegistry);
-        const count = games.length;
-        const radius = 8; // Distance from center
-
-        games.forEach(([id, info], index) => {
-            const angle = (index / count) * Math.PI * 2;
-            const x = Math.cos(angle) * radius;
-            const z = Math.sin(angle) * radius;
-
-            // Cabinet Group
-            const group = new THREE.Group();
-            group.position.set(x, 0, z);
-            group.lookAt(0, 0, 0); // Face center
-
-            // Main Body
-            const bodyGeo = new THREE.BoxGeometry(1.2, 2.2, 1);
-            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 });
-            const body = new THREE.Mesh(bodyGeo, bodyMat);
-            body.position.y = 1.1;
-            group.add(body);
-
-            // Screen
-            const screenGeo = new THREE.PlaneGeometry(1, 0.8);
-            const screenTex = this.createLabelTexture(info.name);
-            const screenMat = new THREE.MeshBasicMaterial({ map: screenTex });
-            const screen = new THREE.Mesh(screenGeo, screenMat);
-            screen.position.set(0, 1.6, 0.51); // Slightly in front
-            // Tilt screen slightly
-            screen.rotation.x = -0.2;
-            screen.position.z -= 0.1; // push back a bit
-            screen.position.y -= 0.1;
-
-            // Add a bezel for screen
-            const bezelGeo = new THREE.BoxGeometry(1.1, 0.9, 0.1);
-            const bezelMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-            const bezel = new THREE.Mesh(bezelGeo, bezelMat);
-            bezel.position.set(0, 1.5, 0.45);
-            bezel.rotation.x = -0.2;
-            group.add(bezel);
-            group.add(screen);
-
-            // Marquee (Top)
-            const marqueeGeo = new THREE.BoxGeometry(1.2, 0.4, 1.1);
-            const marqueeMat = new THREE.MeshStandardMaterial({ color: 0x222222, emissive: 0x220022 });
-            const marquee = new THREE.Mesh(marqueeGeo, marqueeMat);
-            marquee.position.y = 2.4;
-            marquee.position.z = 0.05;
-            group.add(marquee);
-
-            // Control Panel
-            const panelGeo = new THREE.BoxGeometry(1.2, 0.1, 0.6);
-            const panelMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-            const panel = new THREE.Mesh(panelGeo, panelMat);
-            panel.position.set(0, 1.0, 0.3);
-            panel.rotation.x = 0.3;
-            group.add(panel);
-
-            // Joystick/Buttons (Visuals)
-            const joyGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.2);
-            const joyMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-            const joy = new THREE.Mesh(joyGeo, joyMat);
-            joy.position.set(-0.3, 1.15, 0.3);
-            joy.rotation.x = 0.3;
-            group.add(joy);
-
-            const btnGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.05);
-            const btnMat = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-            const btn1 = new THREE.Mesh(btnGeo, btnMat);
-            btn1.position.set(0.1, 1.1, 0.35);
-            btn1.rotation.x = 0.3;
-            group.add(btn1);
-
-            const btn2 = new THREE.Mesh(btnGeo, btnMat);
-            btn2.position.set(0.3, 1.1, 0.35);
-            btn2.rotation.x = 0.3;
-            group.add(btn2);
-
-            // Neon Trim
-            const trimGeo = new THREE.BoxGeometry(1.25, 2.25, 0.05);
-            const color = new THREE.Color().setHSL(Math.random(), 1, 0.5);
-            const trimMat = new THREE.MeshBasicMaterial({ color: color });
-            const trim = new THREE.Mesh(trimGeo, trimMat);
-            trim.position.set(0, 1.1, -0.52); // Backglow
-            group.add(trim);
-
-            // Side Glow
-            const sideTrimGeo = new THREE.BoxGeometry(0.02, 2.2, 1);
-            const sideTrimMat = new THREE.MeshBasicMaterial({ color: color });
-            const leftTrim = new THREE.Mesh(sideTrimGeo, sideTrimMat);
-            leftTrim.position.set(-0.61, 1.1, 0);
-            group.add(leftTrim);
-
-            const rightTrim = new THREE.Mesh(sideTrimGeo, sideTrimMat);
-            rightTrim.position.set(0.61, 1.1, 0);
-            group.add(rightTrim);
-
-
-            // Store metadata
-            group.userData = { gameId: id };
-            this.scene.add(group);
-            this.cabinets.push(group);
+        // Marquee (Top)
+        const marqueeGeo = new THREE.BoxGeometry(1.2, 0.3, 1.0);
+        const marqueeMat = new THREE.MeshStandardMaterial({ 
+            color: this.getNeonColor(id), 
+            emissive: this.getNeonColor(id), 
+            emissiveIntensity: 0.5 
         });
+        const marquee = new THREE.Mesh(marqueeGeo, marqueeMat);
+        marquee.position.set(0, 2.35, 0);
+        group.add(marquee);
+
+        // Control Panel & Joystick (High detail geometry)
+        const panelGeo = new THREE.BoxGeometry(1.2, 0.1, 0.5);
+        const panelMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+        const panel = new THREE.Mesh(panelGeo, panelMat);
+        panel.position.set(0, 1.1, 0.6);
+        panel.rotation.x = 0.2;
+        group.add(panel);
+
+        const joyGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.2);
+        const joyMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        const joy = new THREE.Mesh(joyGeo, joyMat);
+        joy.position.set(-0.3, 1.25, 0.65);
+        joy.rotation.x = 0.2;
+        group.add(joy);
+
+        // Buttons
+        const btnGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.05);
+        const btnMat = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+        const btn1 = new THREE.Mesh(btnGeo, btnMat);
+        btn1.position.set(0.1, 1.15, 0.65);
+        btn1.rotation.x = 0.2;
+        group.add(btn1);
+
+        const btn2 = new THREE.Mesh(btnGeo, btnMat);
+        btn2.position.set(0.3, 1.15, 0.65);
+        btn2.rotation.x = 0.2;
+        group.add(btn2);
+
+        // Store metadata on the group for easy Raycasting retrieval
+        group.userData = { gameId: id }; 
+        this.cabinets.push(group);
+        this.scene.add(group);
     }
 
-    onWindowResize() {
+    getNeonColor(id) {
+        let hash = 0;
+        for (let i = 0; i < id.length; i++) {
+            hash = id.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+        return '#' + '00000'.substring(0, 6 - c.length) + c;
+    }
+
+    onResize() {
+        if (!this.camera || !this.renderer) return;
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
+    // --- Input Handling ---
+
     onMouseDown(event) {
-        event.preventDefault();
-        this.isInteracting = true;
-        this.onMouseDownMouseX = event.clientX;
-        this.onMouseDownMouseY = event.clientY;
-        this.onMouseDownLon = this.lon;
-        this.onMouseDownLat = this.lat;
-    }
-
-    onMouseMove(event) {
-        if (this.isInteracting === true) {
-            this.lon = (this.onMouseDownMouseX - event.clientX) * 0.1 + this.onMouseDownLon;
-            this.lat = (event.clientY - this.onMouseDownMouseY) * 0.1 + this.onMouseDownLat;
-        }
-
-        // Hover effect logic
-        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-        // Optional: Highlight cabinet under cursor
-        // This requires casting ray every frame or mouse move.
-        // We do it in animate loop or here.
+        if (!this.isActive) return;
+        this.isDragging = true;
+        this.previousMousePosition = { x: event.clientX, y: event.clientY };
     }
 
     onTouchStart(event) {
-        if(event.touches.length == 1) {
-            event.preventDefault(); // prevent scroll
-            this.isInteracting = true;
-            this.onMouseDownMouseX = event.touches[0].pageX;
-            this.onMouseDownMouseY = event.touches[0].pageY;
-            this.onMouseDownLon = this.lon;
-            this.onMouseDownLat = this.lat;
+        if (!this.isActive || event.touches.length !== 1) return;
+        event.preventDefault(); // Prevent scrolling
+        this.isDragging = true;
+        this.previousMousePosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    }
+
+    onMouseUp() {
+        this.isDragging = false;
+    }
+
+    onMouseMove(event) {
+        // Raycaster update
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        if (this.isDragging) {
+            this.handleCameraRotation(event.clientX, event.clientY);
         }
     }
 
     onTouchMove(event) {
-        if (this.isInteracting === true && event.touches.length == 1) {
+        if (this.isDragging && event.touches.length === 1) {
             event.preventDefault();
-            this.lon = (this.onMouseDownMouseX - event.touches[0].pageX) * 0.1 + this.onMouseDownLon;
-            this.lat = (event.touches[0].pageY - this.onMouseDownMouseY) * 0.1 + this.onMouseDownLat;
+            this.handleCameraRotation(event.touches[0].clientX, event.touches[0].clientY);
         }
     }
 
-    onMouseUp() {
-        this.isInteracting = false;
+    handleCameraRotation(clientX, clientY) {
+        const deltaMove = {
+            x: clientX - this.previousMousePosition.x,
+            y: clientY - this.previousMousePosition.y
+        };
+
+        const rotationSpeed = 0.005;
+        this.cameraRotation.y -= deltaMove.x * rotationSpeed;
+        this.cameraRotation.x -= deltaMove.y * rotationSpeed;
+
+        // Clamp vertical rotation so user doesn't flip over
+        this.cameraRotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, this.cameraRotation.x));
+
+        // Apply rotation
+        this.camera.rotation.x = this.cameraRotation.x;
+        this.camera.rotation.y = this.cameraRotation.y;
+        this.camera.rotation.z = 0; 
+
+        this.previousMousePosition = { x: clientX, y: clientY };
     }
 
     onClick(event) {
-        // Calculate mouse position in normalized device coordinates
-        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        if (!this.isActive) return;
 
+        // Update raycaster for click (incase mouse didn't move)
         this.raycaster.setFromCamera(this.mouse, this.camera);
-
-        // Check intersections recursively
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
         if (intersects.length > 0) {
-            // Traverse up to find the group with userData
-            let target = intersects[0].object;
-            while(target.parent && !target.userData.gameId) {
-                target = target.parent;
+            // Find parent cabinet group
+            let object = intersects[0].object;
+            while(object.parent && !object.userData.gameId) {
+                object = object.parent;
             }
 
-            if (target.userData && target.userData.gameId) {
-                this.onGameSelect(target.userData.gameId);
+            if (object.userData && object.userData.gameId) {
+                if (this.onGameSelect) {
+                    this.onGameSelect(object.userData.gameId);
+                }
             }
         }
     }
 
-    update() {
-        this.lat = Math.max(-85, Math.min(85, this.lat));
-        this.phi = THREE.MathUtils.degToRad(90 - this.lat);
-        this.theta = THREE.MathUtils.degToRad(this.lon);
+    animate() {
+        if (!this.renderer) return;
+        
+        requestAnimationFrame(this.animate.bind(this));
 
-        this.cameraTarget.x = 500 * Math.sin(this.phi) * Math.cos(this.theta);
-        this.cameraTarget.y = 500 * Math.cos(this.phi);
-        this.cameraTarget.z = 500 * Math.sin(this.phi) * Math.sin(this.theta);
+        if(!this.isActive) return;
 
-        this.camera.lookAt(this.cameraTarget);
+        // --- Hover Effects (From Overhaul) ---
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
-        // Animate cabinets (bobbing or glowing)
+        let hovered = false;
+        if (intersects.length > 0) {
+            let object = intersects[0].object;
+            while(object.parent && !object.userData.gameId) {
+                object = object.parent;
+            }
+            if (object.userData && object.userData.gameId) {
+                hovered = true;
+            }
+        }
+
+        if (hovered) {
+            document.body.style.cursor = 'pointer';
+        } else {
+            document.body.style.cursor = this.isDragging ? 'grabbing' : 'grab';
+        }
+
+        // --- Floating Animation (From Main) ---
+        // Subtle floating effect adds life to the scene
         const time = Date.now() * 0.001;
         this.cabinets.forEach((cab, i) => {
-             cab.position.y = Math.sin(time + i) * 0.05; // Gentle float
+             cab.position.y = Math.sin(time + i) * 0.05; 
         });
-    }
 
-    animate() {
-        if (!this.isActive) return;
-
-        requestAnimationFrame(this.animate.bind(this));
-        this.update();
         this.renderer.render(this.scene, this.camera);
-    }
-
-    pause() {
-        this.isActive = false;
-        // Optionally hide canvas
-        this.canvas.style.display = 'none';
     }
 
     resume() {
         this.isActive = true;
-        this.canvas.style.display = 'block';
-        this.animate();
-        this.onWindowResize(); // ensure size is correct
+        this.container.style.display = 'block';
+        this.onResize();
+    }
+
+    pause() {
+        this.isActive = false;
+        this.container.style.display = 'none';
+        document.body.style.cursor = 'default';
     }
 }

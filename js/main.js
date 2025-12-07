@@ -3,6 +3,7 @@
 import SoundManager from './core/SoundManager.js';
 import SaveSystem from './core/SaveSystem.js';
 import InputManager from './core/InputManager.js';
+// BackgroundShader is removed as ArcadeHub handles the background now
 import ArcadeHub from './core/ArcadeHub.js';
 
 // Import New/Refactored Games
@@ -12,6 +13,7 @@ import AetheriaGame from './games/aetheria/aetheria.js';
 import Neon2048 from './games/neon2048.js';
 import NeonFlap from './games/neonFlap.js';
 import NeonMemory from './games/neonMemory.js';
+import TheGrind98 from './games/work.js';
 
 // Legacy Refactored to Classes
 import SnakeGame from './games/snake.js';
@@ -37,6 +39,7 @@ const gameRegistry = {
     'neon-2048': { name: 'Neon 2048', description: 'Merge the Grid', icon: 'fa-solid fa-border-all', category: 'New Games', module: Neon2048 },
     'neon-flap': { name: 'Neon Flap', description: 'Flappy Clone', icon: 'fa-solid fa-dove', category: 'New Games', module: NeonFlap },
     'neon-memory': { name: 'Neon Memory', description: 'Simon Says', icon: 'fa-solid fa-brain', category: 'New Games', module: NeonMemory },
+    'work-game': { name: 'The Grind 98', description: 'Life Simulator', icon: 'fa-solid fa-briefcase', category: 'Simulation', module: TheGrind98, wide: true },
 
     // Legacy Refactored
     'snake-game': { name: 'Snake', description: 'Eat & Grow', icon: 'fa-solid fa-snake', category: 'Arcade Classics', module: SnakeGame },
@@ -67,13 +70,14 @@ let currentState = AppState.MENU;
 let currentGameInstance = null;
 let lastTime = 0;
 
+// Global Hub State
+let arcadeHub = null;
+let is3DView = true;
+
 const soundManager = SoundManager.getInstance();
 const saveSystem = SaveSystem.getInstance();
 const inputManager = InputManager.getInstance(); // Ensure it attaches listeners
 
-// Global Hub
-let arcadeHub = null;
-let is3DView = true;
 
 // Centralized Game Loop
 function mainLoop(timestamp) {
@@ -92,7 +96,8 @@ function mainLoop(timestamp) {
             }
             break;
         case AppState.MENU:
-            // Future menu animations can go here
+            // ArcadeHub handles its own animation loop internally via requestAnimationFrame
+            // We do not need to update it here.
             break;
     }
 
@@ -121,19 +126,33 @@ async function transitionToState(newState, context = {}) {
         currentState = AppState.TRANSITIONING;
         hideOverlay(); // Ensure overlay is hidden when returning to menu
         soundManager.setBGMVolume(0.1);
-
+        
+        // Reveal the main menu container
         document.getElementById("menu").classList.remove("hidden");
 
+        // Handle View Logic (3D Hub vs 2D Grid)
         if (arcadeHub) {
-            arcadeHub.resume();
             if (is3DView) {
-                document.getElementById('menu-grid').classList.add('hidden');
-                document.getElementById('view-toggle-text').textContent = 'Grid View';
+                arcadeHub.resume();
+                // Ensure 2D grid is hidden
+                const menuGrid = document.getElementById('menu-grid');
+                if(menuGrid) menuGrid.classList.add('hidden');
+                
+                const toggleText = document.getElementById('view-toggle-text');
+                if(toggleText) toggleText.textContent = 'Grid View';
             } else {
-                 arcadeHub.pause(); // Just in case
-                 document.getElementById('menu-grid').classList.remove('hidden');
-                 document.getElementById('view-toggle-text').textContent = '3D View';
+                 arcadeHub.pause(); 
+                 // Ensure 2D grid is visible
+                 const menuGrid = document.getElementById('menu-grid');
+                 if(menuGrid) menuGrid.classList.remove('hidden');
+                 
+                 const toggleText = document.getElementById('view-toggle-text');
+                 if(toggleText) toggleText.textContent = '3D View';
             }
+        } else {
+            // Fallback if Hub failed to load: force grid
+            const menuGrid = document.getElementById('menu-grid');
+            if(menuGrid) menuGrid.classList.remove('hidden');
         }
 
         currentState = AppState.MENU;
@@ -144,6 +163,7 @@ async function transitionToState(newState, context = {}) {
         currentState = AppState.TRANSITIONING;
         const { gameId } = context;
 
+        // Hide Arcade Hub / Menu
         if (arcadeHub) arcadeHub.pause();
         document.getElementById("menu").classList.add("hidden");
 
@@ -156,7 +176,6 @@ async function transitionToState(newState, context = {}) {
 
         let container = document.getElementById(gameId);
         if (!container) {
-            console.error(`Container for game ${gameId} not found!`);
             // Attempt to create one if it's missing (mostly for new modules)
             container = document.createElement('div');
             container.id = gameId;
@@ -326,36 +345,6 @@ function showSettingsOverlay() {
     };
 }
 
-function populateGameMenu() {
-    const menuGrid = document.getElementById('menu-grid');
-    if (!menuGrid) return;
-    menuGrid.innerHTML = ''; // Clear existing cards
-
-    for (const [gameId, gameInfo] of Object.entries(gameRegistry)) {
-        const button = document.createElement('div');
-        let classList = 'game-card group';
-        if (gameInfo.wide) {
-            classList += ' col-span-1 md:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800';
-        }
-        button.className = classList;
-        button.dataset.game = gameId;
-
-        const highScore = saveSystem.getHighScore(gameId);
-        button.innerHTML = `
-            <div class="text-4xl mb-2"><i class="${gameInfo.icon} text-cyan-400 group-hover:text-white transition-colors"></i></div>
-            <h3 class="text-xl font-bold text-cyan-400 group-hover:text-white transition-colors">${gameInfo.name}</h3>
-            <p class="text-xs text-slate-400 mt-1">${gameInfo.description}</p>
-            ${highScore > 0 ? `<div class="absolute top-2 right-2 text-yellow-400 text-xs font-bold">🏆 ${highScore}</div>` : ''}
-        `;
-
-        button.addEventListener('click', () => {
-            transitionToState(AppState.IN_GAME, { gameId });
-        });
-
-        menuGrid.appendChild(button);
-    }
-}
-
 function updateHubStats() {
     const currencyEl = document.getElementById('total-currency');
     if (currencyEl) {
@@ -369,35 +358,40 @@ function toggleView() {
     const menuGrid = document.getElementById('menu-grid');
 
     if (is3DView) {
-        btnText.textContent = 'Grid View';
-        menuGrid.classList.add('hidden');
+        if(btnText) btnText.textContent = 'Grid View';
+        if(menuGrid) menuGrid.classList.add('hidden');
         if (arcadeHub) arcadeHub.resume();
     } else {
-        btnText.textContent = '3D View';
-        menuGrid.classList.remove('hidden');
+        if(btnText) btnText.textContent = '3D View';
+        if(menuGrid) menuGrid.classList.remove('hidden');
         if (arcadeHub) arcadeHub.pause();
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    populateGameMenu();
     updateHubStats();
 
-    // Init 3D Arcade Hub
-    try {
-        arcadeHub = new ArcadeHub('bg-canvas', gameRegistry, (gameId) => {
+    // Initialize Arcade Hub (using Container approach from overhaul)
+    const hubContainer = document.getElementById('arcade-hub-container');
+    if (hubContainer) {
+        arcadeHub = new ArcadeHub(hubContainer, gameRegistry, (gameId) => {
             transitionToState(AppState.IN_GAME, { gameId });
         });
 
-        // Default to 3D view
-        document.getElementById('menu-grid').classList.add('hidden');
-        document.getElementById('view-toggle-text').textContent = 'Grid View';
-    } catch (e) {
-        console.error("Failed to init ArcadeHub", e);
-        // Fallback to grid
+        // Initialize state based on is3DView
+        if (is3DView) {
+             const menuGrid = document.getElementById('menu-grid');
+             if(menuGrid) menuGrid.classList.add('hidden');
+             arcadeHub.resume();
+        } else {
+             arcadeHub.pause();
+        }
+    } else {
+        // Fallback: If no 3D container, force 2D view
+        console.warn("Arcade Hub Container missing! Falling back to 2D Grid.");
         is3DView = false;
-        document.getElementById('menu-grid').classList.remove('hidden');
-        document.getElementById('view-toggle-text').textContent = '3D View';
+        const menuGrid = document.getElementById('menu-grid');
+        if(menuGrid) menuGrid.classList.remove('hidden');
     }
 
     // Bind View Toggle
