@@ -22,10 +22,13 @@ export default class PhysicsStackerGame {
             return;
         }
 
+        // Calculate responsive size (max 600x600, but fit in window)
+        const size = Math.min(600, window.innerHeight * 0.6, window.innerWidth - 40);
+
         container.innerHTML = `
             <h2>🏗️ Physics Stacker</h2>
-            <div id="stacker-container" class="relative bg-slate-800 rounded-lg overflow-hidden border border-slate-600" style="width: 600px; height: 600px;"></div>
-            <div class="mt-4 flex justify-between items-center w-[600px]">
+            <div id="stacker-container" class="relative bg-slate-800 rounded-lg overflow-hidden border border-slate-600 mx-auto"></div>
+            <div class="mt-4 flex justify-between items-center max-w-[600px] mx-auto w-full">
                  <div class="text-xl font-bold text-white">Height: <span id="stacker-score" class="text-cyan-400">0</span></div>
                  <p class="text-sm text-slate-400">SPACE or CLICK to drop.</p>
             </div>
@@ -37,6 +40,9 @@ export default class PhysicsStackerGame {
         });
 
         const element = container.querySelector('#stacker-container');
+        element.style.width = `${size}px`;
+        element.style.height = `${size}px`;
+
         this.scoreEl = container.querySelector('#stacker-score');
 
         // Setup Matter.js
@@ -54,15 +60,18 @@ export default class PhysicsStackerGame {
             element: element,
             engine: this.engine,
             options: {
-                width: 600,
-                height: 600,
+                width: size,
+                height: size,
                 wireframes: false,
                 background: 'transparent'
             }
         });
 
-        // Ground
-        const ground = Bodies.rectangle(300, 610, 610, 60, { isStatic: true, render: { fillStyle: '#475569' } });
+        // Scale ratio if not 600x600
+        this.scaleRatio = size / 600;
+
+        // Ground (scaled)
+        const ground = Bodies.rectangle(size / 2, size + 30, size + 20, 60, { isStatic: true, render: { fillStyle: '#475569' } });
         Composite.add(this.world, ground);
 
         Render.run(this.render);
@@ -73,6 +82,7 @@ export default class PhysicsStackerGame {
 
         // Mouse click
         element.addEventListener('mousedown', () => this.dropBlock());
+        element.addEventListener('touchstart', (e) => { e.preventDefault(); this.dropBlock(); });
 
         this.engine.world.gravity.y = 1;
 
@@ -151,8 +161,15 @@ export default class PhysicsStackerGame {
 
     update(dt) {
         // Crane Movement
+        const size = this.render ? this.render.options.width : 600;
+        const center = size / 2;
+        const range = size / 3;
+        
         this.crane.angle += dt * 1;
-        this.crane.x = 300 + Math.sin(this.crane.angle) * 200;
+        // Scale crane movement
+        this.crane.x = center + Math.sin(this.crane.angle) * range;
+        // Scale crane Y
+        const craneY = 50 * this.scaleRatio;
 
         // Input Key
         if (this.inputManager.isKeyDown("Space")) {
@@ -164,19 +181,13 @@ export default class PhysicsStackerGame {
             this.inputDebounce = false;
         }
 
-        // Draw Crane Overlay (Manual Canvas Draw on top of Matter.js canvas?)
-        // Matter.Render is clearing canvas. We can hook into afterRender event of Matter.js render
-        // But for simplicity, we can manipulate the holding block via Matter.js if we wanted,
-        // but since we want it 'attached', external drawing is easier.
-        // Actually, we can just use the Render's context.
-
         if (this.render && this.render.context) {
              const ctx = this.render.context;
-
+             
              // Crane Line
              ctx.beginPath();
-             ctx.moveTo(300, 0);
-             ctx.lineTo(this.crane.x, this.crane.y);
+             ctx.moveTo(center, 0);
+             ctx.lineTo(this.crane.x, craneY);
              ctx.strokeStyle = '#aaa';
              ctx.lineWidth = 4;
              ctx.stroke();
@@ -184,18 +195,21 @@ export default class PhysicsStackerGame {
              // Holding Block
              if (this.currentHolding) {
                  ctx.fillStyle = this.currentHolding.color;
-                 const w = this.currentHolding.width;
-                 const h = this.currentHolding.height;
-                 ctx.fillRect(this.crane.x - w/2, this.crane.y, w, h);
+                 // Scale block visual
+                 const w = this.currentHolding.width * this.scaleRatio;
+                 const h = this.currentHolding.height * this.scaleRatio;
+                 ctx.fillRect(this.crane.x - w/2, craneY, w, h);
              }
 
              // Calculate Height
-             let minHeight = 600;
+             let minHeight = size;
              const bodies = Matter.Composite.allBodies(this.world);
              bodies.forEach(b => {
                  if (!b.isStatic && b.position.y < minHeight) minHeight = b.position.y;
              });
-             this.score = Math.floor(600 - minHeight);
+             
+             // Unscale score
+             this.score = Math.floor((size - minHeight) / this.scaleRatio);
              if (this.score < 0) this.score = 0;
              if (this.scoreEl) this.scoreEl.textContent = this.score;
         }
