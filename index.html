@@ -16,14 +16,27 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        /* Glassmorphism for overlays */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+    </style>
 </head>
 <body>
-    <!-- Background Canvas -->
-    <canvas id="bg-canvas" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1;"></canvas>
+    <!-- 3D Arcade Hub Container -->
+    <div id="arcade-hub-container" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:0;"></div>
+
+    <!-- Background Canvas (Legacy/Fallback) -->
+    <canvas id="bg-canvas" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-2; display:none;"></canvas>
 
     <!-- Global UI Overlay -->
     <div id="global-overlay" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
-        <div class="overlay-panel w-full max-w-md relative bg-slate-900 border border-fuchsia-500 shadow-[0_0_20px_rgba(255,0,255,0.3)] rounded-lg p-6">
+        <div class="overlay-panel w-full max-w-md relative glass-panel rounded-lg p-6">
             <h2 id="overlay-title" class="text-3xl font-bold text-center mb-4 text-white title-glow font-[Poppins]">PAUSED</h2>
             <div id="overlay-content" class="text-center text-slate-300 font-[Poppins]">
                 <p>Game is paused. Press ESC to resume.</p>
@@ -37,8 +50,8 @@
         </div>
     </div>
 
-    <!-- Main Menu -->
-    <div id="menu" class="relative z-10 max-w-7xl mx-auto pt-10 px-4 pb-20">
+    <!-- Main Menu (Hidden by default, replaced by 3D Hub) -->
+    <div id="menu" class="relative z-10 max-w-7xl mx-auto pt-10 px-4 pb-20 hidden">
         <header class="text-center mb-16">
             <h1 class="text-5xl md:text-7xl font-black text-center mb-4 title-glow tracking-tighter text-white font-[Poppins]">
                 <span class="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 to-cyan-500">NEON</span> ARCADE
@@ -60,13 +73,23 @@
         </div>
     </div>
 
-    <!-- Game Containers (Ideally these are empty and populated by JS, or contain minimal structure) -->
-    <!-- We keep specific IDs because some legacy logic or CSS might depend on them,
-         but we should aim to have the Game Class populate them. -->
+    <!-- Hub HUD (Floating Buttons over 3D) -->
+    <div id="hub-hud" class="fixed top-4 right-4 z-20 flex gap-4 pointer-events-auto">
+        <div class="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-white">
+            <i class="fas fa-coins text-yellow-400"></i> <span id="total-currency">0</span>
+        </div>
+        <button id="settings-btn" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition">
+            <i class="fas fa-cog"></i>
+        </button>
+    </div>
 
-    <!-- For refactored games, we can just have empty divs or generic containers created by main.js -->
-    <!-- However, to be safe with the 'legacy' scripts that might still look for IDs immediately: -->
+    <div class="fixed bottom-4 left-0 w-full text-center z-20 pointer-events-none">
+        <p class="text-white/50 text-sm font-[Poppins] glass-panel inline-block px-4 py-1 rounded-full">
+            CLICK A CABINET TO PLAY • DRAG TO LOOK AROUND
+        </p>
+    </div>
 
+    <!-- Game Containers -->
     <div id="clicker-game" class="hidden game-container"></div>
     <div id="maze-game" class="hidden game-container"></div>
     <div id="runner-game" class="hidden game-container"></div>
@@ -81,14 +104,6 @@
     <div id="eclipse-puzzle-game" class="hidden game-container"></div>
     <div id="eclipse-logic-puzzle-game" class="hidden game-container"></div>
     <div id="matterhorn-game" class="hidden game-container"></div>
-
-    <!-- Legacy Scripts: REMOVED.
-         We are switching to ES Modules.
-         Any game not yet refactored to a module will need to be imported in main.js as a shim or we refactor it now.
-         The plan is to refactor ALL of them.
-         I will keep the logic/puzzle games in the list but comment them out if they break,
-         but my plan is to refactor them all.
-    -->
 
     <!-- Main Module Entry -->
     <script type="module" src="js/main.js"></script>

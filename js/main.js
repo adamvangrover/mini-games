@@ -4,6 +4,7 @@ import SoundManager from './core/SoundManager.js';
 import SaveSystem from './core/SaveSystem.js';
 import InputManager from './core/InputManager.js';
 import BackgroundShader from './core/BackgroundShader.js';
+import ArcadeHub from './core/ArcadeHub.js';
 
 // Import New/Refactored Games
 import TowerDefenseGame from './games/towerDefense.js';
@@ -12,6 +13,7 @@ import AetheriaGame from './games/aetheria/aetheria.js';
 import Neon2048 from './games/neon2048.js';
 import NeonFlap from './games/neonFlap.js';
 import NeonMemory from './games/neonMemory.js';
+import TheGrind98 from './games/work.js';
 
 // Legacy Refactored to Classes
 import SnakeGame from './games/snake.js';
@@ -37,6 +39,7 @@ const gameRegistry = {
     'neon-2048': { name: 'Neon 2048', description: 'Merge the Grid', icon: 'fa-solid fa-border-all', category: 'New Games', module: Neon2048 },
     'neon-flap': { name: 'Neon Flap', description: 'Flappy Clone', icon: 'fa-solid fa-dove', category: 'New Games', module: NeonFlap },
     'neon-memory': { name: 'Neon Memory', description: 'Simon Says', icon: 'fa-solid fa-brain', category: 'New Games', module: NeonMemory },
+    'work-game': { name: 'The Grind 98', description: 'Life Simulator', icon: 'fa-solid fa-briefcase', category: 'Simulation', module: TheGrind98, wide: true },
 
     // Legacy Refactored
     'snake-game': { name: 'Snake', description: 'Eat & Grow', icon: 'fa-solid fa-snake', category: 'Arcade Classics', module: SnakeGame },
@@ -66,13 +69,14 @@ const AppState = {
 let currentState = AppState.MENU;
 let currentGameInstance = null;
 let lastTime = 0;
+let arcadeHub = null;
 
 const soundManager = SoundManager.getInstance();
 const saveSystem = SaveSystem.getInstance();
 const inputManager = InputManager.getInstance(); // Ensure it attaches listeners
 
-// Init Background
-new BackgroundShader();
+// Init Background (Optional, ArcadeHub has its own, but keeping for legacy overlay if needed)
+// new BackgroundShader();
 
 // Centralized Game Loop
 function mainLoop(timestamp) {
@@ -91,7 +95,8 @@ function mainLoop(timestamp) {
             }
             break;
         case AppState.MENU:
-            // Future menu animations can go here
+            // ArcadeHub handles its own animation loop internally via requestAnimationFrame
+            // But if we wanted to control it here we could.
             break;
     }
 
@@ -121,7 +126,13 @@ async function transitionToState(newState, context = {}) {
         hideOverlay(); // Ensure overlay is hidden when returning to menu
         soundManager.setBGMVolume(0.1);
 
-        document.getElementById("menu").classList.remove("hidden");
+        // Show Arcade Hub
+        if (arcadeHub) arcadeHub.show();
+
+        // Hide Old Menu if it exists
+        const oldMenu = document.getElementById("menu");
+        if(oldMenu) oldMenu.classList.add("hidden");
+
         currentState = AppState.MENU;
     }
 
@@ -130,7 +141,12 @@ async function transitionToState(newState, context = {}) {
         currentState = AppState.TRANSITIONING;
         const { gameId } = context;
 
-        document.getElementById("menu").classList.add("hidden");
+        // Hide Arcade Hub
+        if (arcadeHub) arcadeHub.hide();
+
+        // Hide Old Menu
+        const oldMenu = document.getElementById("menu");
+        if(oldMenu) oldMenu.classList.add("hidden");
 
         const gameInfo = gameRegistry[gameId];
         if (!gameInfo) {
@@ -141,7 +157,6 @@ async function transitionToState(newState, context = {}) {
 
         let container = document.getElementById(gameId);
         if (!container) {
-            console.error(`Container for game ${gameId} not found!`);
             // Attempt to create one if it's missing (mostly for new modules)
             container = document.createElement('div');
             container.id = gameId;
@@ -311,36 +326,6 @@ function showSettingsOverlay() {
     };
 }
 
-function populateGameMenu() {
-    const menuGrid = document.getElementById('menu-grid');
-    if (!menuGrid) return;
-    menuGrid.innerHTML = ''; // Clear existing cards
-
-    for (const [gameId, gameInfo] of Object.entries(gameRegistry)) {
-        const button = document.createElement('div');
-        let classList = 'game-card group';
-        if (gameInfo.wide) {
-            classList += ' col-span-1 md:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800';
-        }
-        button.className = classList;
-        button.dataset.game = gameId;
-
-        const highScore = saveSystem.getHighScore(gameId);
-        button.innerHTML = `
-            <div class="text-4xl mb-2"><i class="${gameInfo.icon} text-cyan-400 group-hover:text-white transition-colors"></i></div>
-            <h3 class="text-xl font-bold text-cyan-400 group-hover:text-white transition-colors">${gameInfo.name}</h3>
-            <p class="text-xs text-slate-400 mt-1">${gameInfo.description}</p>
-            ${highScore > 0 ? `<div class="absolute top-2 right-2 text-yellow-400 text-xs font-bold">🏆 ${highScore}</div>` : ''}
-        `;
-
-        button.addEventListener('click', () => {
-            transitionToState(AppState.IN_GAME, { gameId });
-        });
-
-        menuGrid.appendChild(button);
-    }
-}
-
 function updateHubStats() {
     const currencyEl = document.getElementById('total-currency');
     if (currencyEl) {
@@ -349,8 +334,27 @@ function updateHubStats() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    populateGameMenu();
     updateHubStats();
+
+    // Initialize 3D Arcade Hub
+    const hubContainer = document.getElementById('arcade-hub-container');
+    if (hubContainer) {
+        arcadeHub = new ArcadeHub(hubContainer, gameRegistry, (gameId) => {
+            transitionToState(AppState.IN_GAME, { gameId });
+        });
+
+        // Hide existing 2D menu
+        const menu = document.getElementById('menu');
+        if(menu) menu.classList.add('hidden');
+
+        // Hide background canvas of main page if 3D hub is active to avoid z-fighting or perf issues
+        const bgCanvas = document.getElementById('bg-canvas');
+        if(bgCanvas) bgCanvas.style.display = 'none';
+    } else {
+        // Fallback if container missing (should not happen if index.html updated)
+        // populateGameMenu();
+        console.error("Arcade Hub Container missing!");
+    }
 
     // Bind Overlay Close Button
     document.getElementById('overlay-close-btn').addEventListener('click', () => {
