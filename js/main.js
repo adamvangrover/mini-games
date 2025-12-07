@@ -14,6 +14,9 @@ import Neon2048 from './games/neon2048.js';
 import NeonFlap from './games/neonFlap.js';
 import NeonMemory from './games/neonMemory.js';
 import TheGrind98 from './games/work.js';
+import NeonGolf from './games/neonGolf.js';
+import NeonHoops from './games/neonHoops.js';
+import NeonShooter from './games/neonShooter.js';
 
 // Legacy Refactored to Classes
 import SnakeGame from './games/snake.js';
@@ -46,6 +49,9 @@ const gameRegistry = {
     'neon-2048': { name: 'Neon 2048', description: 'Merge the Grid', icon: 'fa-solid fa-border-all', category: 'New Games', module: Neon2048 },
     'neon-flap': { name: 'Neon Flap', description: 'Flappy Clone', icon: 'fa-solid fa-dove', category: 'New Games', module: NeonFlap },
     'neon-memory': { name: 'Neon Memory', description: 'Simon Says', icon: 'fa-solid fa-brain', category: 'New Games', module: NeonMemory },
+    'neon-golf': { name: 'Neon Golf', description: 'Mini Golf Challenge', icon: 'fa-solid fa-golf-ball-tee', category: 'Sports', module: NeonGolf },
+    'neon-hoops': { name: 'Neon Hoops', description: 'Arcade Basketball', icon: 'fa-solid fa-basketball', category: 'Sports', module: NeonHoops },
+    'neon-shooter': { name: 'Neon FPS', description: 'Cyber Defense', icon: 'fa-solid fa-gun', category: 'Action', module: NeonShooter },
     'work-game': { name: 'The Grind 98', description: 'Life Simulator', icon: 'fa-solid fa-briefcase', category: 'Simulation', module: TheGrind98, wide: true },
     'life-sim-game': { name: 'Neon Life', description: 'Live Your Best Life', icon: 'fa-solid fa-user-astronaut', category: 'Simulation', module: LifeSimGame, wide: true },
 
