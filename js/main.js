@@ -30,9 +30,13 @@ import EclipseGame from './games/eclipse.js';
 import EclipsePuzzleGame from './games/eclipsePuzzle.js';
 import EclipseLogicPuzzleGame from './games/eclipseLogicPuzzle.js';
 import MatterhornGame from './games/matterhorn.js'; // Adapter
+import AlpineGame from './games/alpine.js';
+import MatterhornArcade from './games/matterhornArcade.js';
 
 // We will create a Registry.
 const gameRegistry = {
+    'alpine-game': { name: 'Alpine Adventure', description: 'Open World Exploration', icon: 'fa-solid fa-mountain-sun', category: '3D Immersive', module: AlpineGame, wide: true },
+    'matterhorn-arcade': { name: 'Matterhorn Arcade', description: 'Retro Climbing Challenge', icon: 'fa-solid fa-person-hiking', category: 'Arcade Classics', module: MatterhornArcade, wide: true },
     'tower-defense-game': { name: 'Tower Defense', description: 'Defend the Base', icon: 'fa-solid fa-chess-rook', category: 'New Games', module: TowerDefenseGame },
     'stacker-game': { name: 'Physics Stacker', description: 'Balance Blocks', icon: 'fa-solid fa-cubes-stacked', category: 'New Games', module: PhysicsStackerGame },
     'aetheria-game': { name: 'Aetheria', description: 'Floating Isles Exploration', icon: 'fa-solid fa-cloud', category: '3D Immersive', module: AetheriaGame, wide: true },
@@ -129,6 +133,7 @@ async function transitionToState(newState, context = {}) {
         
         // Reveal the main menu container
         document.getElementById("menu").classList.remove("hidden");
+        populateMenuGrid(); // Ensure grid is up to date
 
         // Handle View Logic (3D Hub vs 2D Grid)
         if (arcadeHub) {
@@ -228,8 +233,14 @@ function hideOverlay() {
 }
 
 function showGameOver(score, onRetry) {
+    const coinsEarned = Math.floor(score / 10);
+    if(coinsEarned > 0) {
+        saveSystem.addCurrency(coinsEarned);
+    }
+
     const content = `
         <p class="mb-4 text-xl">Final Score: <span class="text-yellow-400 font-bold">${score}</span></p>
+        ${coinsEarned > 0 ? `<p class="mb-4 text-sm text-yellow-300">Earned +${coinsEarned} Coins!</p>` : ''}
         <div class="flex justify-center gap-4">
             <button id="overlay-retry-btn" class="px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded">Try Again</button>
             <button id="overlay-menu-btn" class="px-6 py-2 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded">Main Menu</button>
@@ -368,8 +379,115 @@ function toggleView() {
     }
 }
 
+function populateMenuGrid() {
+    const grid = document.getElementById('menu-grid');
+    if(!grid) return;
+    grid.innerHTML = ''; // Clear
+
+    Object.entries(gameRegistry).forEach(([id, game]) => {
+        // Check if unlocked? For now assume all unlocked or default
+        const card = document.createElement('div');
+        card.className = "bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden";
+        
+        // Icon
+        card.innerHTML = `
+            <div class="absolute top-0 right-0 p-2 opacity-50 text-xs uppercase font-bold tracking-wider">${game.category || 'Game'}</div>
+            <div class="flex flex-col items-center text-center gap-3 pt-4">
+                <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-cyan-400 transition-colors shadow-lg shadow-fuchsia-500/20 group-hover:shadow-cyan-500/20">
+                    <i class="${game.icon || 'fas fa-gamepad'}"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">${game.name}</h3>
+                <p class="text-sm text-slate-400 line-clamp-2">${game.description}</p>
+            </div>
+            <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+            </div>
+        `;
+        
+        card.onclick = () => transitionToState(AppState.IN_GAME, { gameId: id });
+        grid.appendChild(card);
+    });
+}
+
+function showShopOverlay() {
+    const items = [
+        { id: 'prize_plush', name: 'Neon Plushie', cost: 100, icon: 'fa-cat' },
+        { id: 'prize_trophy', name: 'Gold Trophy', cost: 500, icon: 'fa-trophy' },
+        { id: 'prize_ship', name: 'Model Ship', cost: 250, icon: 'fa-ship' },
+        { id: 'game_unlock_mystery', name: 'Mystery Game Key', cost: 1000, icon: 'fa-key' }
+    ];
+
+    const inventory = saveSystem.getInventory();
+    const balance = saveSystem.getCurrency();
+
+    let content = `
+        <div class="text-center mb-6">
+            <p class="text-yellow-400 text-xl font-bold"><i class="fas fa-coins"></i> Balance: ${balance}</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4 max-h-[300px] overflow-y-auto">
+    `;
+
+    items.forEach(item => {
+        const owned = inventory.includes(item.id);
+        content += `
+            <div class="bg-slate-800 p-4 rounded border border-slate-600 flex flex-col items-center">
+                <i class="fas ${item.icon} text-3xl mb-2 ${owned ? 'text-green-400' : 'text-slate-400'}"></i>
+                <h4 class="font-bold text-white">${item.name}</h4>
+                <p class="text-yellow-400 text-sm font-bold mb-2">${item.cost}</p>
+                <button 
+                    onclick="window.miniGameHub.buyItem('${item.id}', ${item.cost})"
+                    class="px-4 py-1 rounded text-sm font-bold ${owned ? 'bg-green-900 text-green-200 cursor-default' : (balance >= item.cost ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed')}"
+                    ${owned || balance < item.cost ? 'disabled' : ''}
+                >
+                    ${owned ? 'Owned' : 'Buy'}
+                </button>
+            </div>
+        `;
+    });
+
+    content += `</div>`;
+    showOverlay('PRIZE SHOP', content);
+}
+
+// Expose buyItem securely after DOM load or init, but here we attach to window
+// We need to ensure window.miniGameHub exists first if we are extending it,
+// but actually we define it at the bottom.
+// So we should move this definition or the buyItem assignment to inside/after DOMContentLoaded or inside the global exposure.
+
+function buyItem(itemId, cost) {
+    if(saveSystem.spendCurrency(cost)) {
+        saveSystem.addItem(itemId);
+        soundManager.playSound('score'); // Cha-ching
+        showShopOverlay(); // Refresh UI
+        updateHubStats();
+    } else {
+        alert("Not enough coins!");
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     updateHubStats();
+    populateMenuGrid(); // Initial population
+
+    // Add Shop Button
+    const hubStats = document.getElementById('hub-stats');
+    if (hubStats) {
+        const shopBtn = document.createElement('button');
+        shopBtn.className = "bg-slate-800/50 backdrop-blur px-4 py-3 rounded-full border border-slate-700 text-slate-300 hover:text-white hover:border-fuchsia-500 transition-colors";
+        shopBtn.innerHTML = '<i class="fas fa-store"></i> Shop';
+        shopBtn.onclick = showShopOverlay;
+        hubStats.appendChild(shopBtn);
+    }
+    
+    // Add Shop Button to Hub HUD as well
+    const hubHud = document.getElementById('hub-hud');
+    if (hubHud) {
+        const shopBtn = document.createElement('button');
+        shopBtn.className = "glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition";
+        shopBtn.innerHTML = '<i class="fas fa-store"></i>';
+        shopBtn.onclick = showShopOverlay;
+        hubHud.appendChild(shopBtn);
+    }
 
     // Initialize Arcade Hub (using Container approach from overhaul)
     const hubContainer = document.getElementById('arcade-hub-container');
@@ -377,6 +495,9 @@ document.addEventListener('DOMContentLoaded', () => {
         arcadeHub = new ArcadeHub(hubContainer, gameRegistry, (gameId) => {
             transitionToState(AppState.IN_GAME, { gameId });
         });
+
+        // Show Menu container
+        document.getElementById("menu").classList.remove("hidden");
 
         // Initialize state based on is3DView
         if (is3DView) {
@@ -452,7 +573,8 @@ window.miniGameHub = {
     soundManager,
     saveSystem,
     showGameOver,
-    goBack: () => transitionToState(AppState.MENU)
+    goBack: () => transitionToState(AppState.MENU),
+    buyItem: buyItem
 };
 
 // Legacy Compatibility: Expose systems globally for non-module games
