@@ -1,10 +1,10 @@
-
 export default class ArcadeHub {
-    constructor(container, gameRegistry, loadGameCallback) {
+    constructor(container, gameRegistry, onGameSelect) {
         this.container = container;
         this.gameRegistry = gameRegistry;
-        this.loadGameCallback = loadGameCallback;
+        this.onGameSelect = onGameSelect;
 
+        // Core Three.js components
         this.scene = null;
         this.camera = null;
         this.renderer = null;
@@ -13,61 +13,70 @@ export default class ArcadeHub {
 
         this.cabinets = [];
         this.isHovering = false;
+        this.isActive = true;
 
-        // Navigation
+        // Navigation State
         this.isDragging = false;
         this.previousMousePosition = { x: 0, y: 0 };
-        this.cameraRotation = { x: 0, y: 0 }; // Track accumulated rotation
+        this.cameraRotation = { x: 0, y: 0 }; 
 
         this.init();
     }
 
     init() {
-        // Setup Scene
+        // --- Scene Setup (From Overhaul: Better Colors/Fog) ---
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x050510);
         this.scene.fog = new THREE.FogExp2(0x050510, 0.02);
 
-        // Setup Camera
+        // --- Camera Setup ---
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.camera.position.set(0, 1.6, 0.1); // Center of room
 
-        // Setup Renderer
+        // --- Renderer Setup ---
         this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(window.devicePixelRatio); // Added from Main
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        this.container.appendChild(this.renderer.domElement);
+        
+        // Append to container (Overhaul style)
+        if (this.container) {
+            this.container.appendChild(this.renderer.domElement);
+        } else {
+            console.error("ArcadeHub: No container provided.");
+            return;
+        }
 
-        // Lights
+        // --- Lighting (From Overhaul: Neon Theme) ---
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
         this.scene.add(ambientLight);
 
-        // Neon Lights (Point Lights)
-        this.createNeonLight(0, 5, 0, 0xff00ff, 2, 20);
-        this.createNeonLight(-10, 5, -10, 0x00ffff, 2, 20);
-        this.createNeonLight(10, 5, -10, 0xffff00, 2, 20);
+        // Neon Points
+        this.createNeonLight(0, 5, 0, 0xff00ff, 2, 20);     // Center Magenta
+        this.createNeonLight(-10, 5, -10, 0x00ffff, 2, 20); // Left Cyan
+        this.createNeonLight(10, 5, -10, 0xffff00, 2, 20);  // Right Yellow
 
-        // Floor
+        // --- Environment ---
         this.createFloor();
-
-        // Generate Cabinets
         this.generateCabinets();
 
-        // Event Listeners
+        // --- Event Listeners ---
         window.addEventListener('resize', this.onResize.bind(this));
 
-        // Mouse / Touch Events for Drag Navigation
-        this.container.addEventListener('mousedown', this.onMouseDown.bind(this));
-        this.container.addEventListener('mousemove', this.onMouseMove.bind(this));
+        // Mouse Events
+        this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this));
+        window.addEventListener('mousemove', this.onMouseMove.bind(this));
         window.addEventListener('mouseup', this.onMouseUp.bind(this));
+        this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
 
-        this.container.addEventListener('click', this.onClick.bind(this));
+        // Touch Events (Adapted from Main to work with Overhaul rotation)
+        this.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
+        window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
+        window.addEventListener('touchend', this.onMouseUp.bind(this));
 
         // Start Loop
-        this.active = true;
-        this.animate = this.animate.bind(this);
-        requestAnimationFrame(this.animate);
+        this.animate();
     }
 
     createNeonLight(x, y, z, color, intensity, distance) {
@@ -77,6 +86,7 @@ export default class ArcadeHub {
     }
 
     createFloor() {
+        // Using Overhaul's Grid+Standard Material for better retro aesthetics
         const geometry = new THREE.PlaneGeometry(100, 100);
         const material = new THREE.MeshStandardMaterial({
             color: 0x111111,
@@ -88,7 +98,7 @@ export default class ArcadeHub {
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
 
-        // Grid pattern (Retro Grid)
+        // Retro Grid
         const gridHelper = new THREE.GridHelper(100, 50, 0xff00ff, 0x222222);
         gridHelper.position.y = 0.01;
         this.scene.add(gridHelper);
@@ -98,7 +108,7 @@ export default class ArcadeHub {
 
     generateCabinets() {
         const games = Object.entries(this.gameRegistry);
-        const radius = 8; // Increased radius
+        const radius = 8;
         const count = games.length;
         const angleStep = (Math.PI * 2) / count;
 
@@ -112,6 +122,7 @@ export default class ArcadeHub {
         });
     }
 
+    // Using Overhaul's high-detail cabinet generation
     createCabinet(x, y, z, rotation, id, gameInfo) {
         const group = new THREE.Group();
         group.position.set(x, y, z);
@@ -126,35 +137,43 @@ export default class ArcadeHub {
         body.receiveShadow = true;
         group.add(body);
 
-        // Screen (Emissive)
+        // Screen (Emissive Texture)
         const screenGeo = new THREE.PlaneGeometry(0.9, 0.7);
-        // Generate texture from name
         const canvas = document.createElement('canvas');
         canvas.width = 512;
         canvas.height = 384;
         const ctx = canvas.getContext('2d');
+        
+        // Draw screen content
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, 512, 384);
         ctx.fillStyle = this.getNeonColor(id);
         ctx.font = 'bold 40px Arial';
         ctx.textAlign = 'center';
         ctx.fillText(gameInfo.name, 256, 192);
+        // Add a glow line
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(20, 20, 472, 344);
 
         const texture = new THREE.CanvasTexture(canvas);
-        const screenMat = new THREE.MeshBasicMaterial({ map: texture, color: 0xffffff });
+        const screenMat = new THREE.MeshBasicMaterial({ map: texture });
         const screen = new THREE.Mesh(screenGeo, screenMat);
         screen.position.set(0, 1.5, 0.51);
-        screen.name = `screen-${id}`; // For raycasting
         group.add(screen);
 
         // Marquee (Top)
         const marqueeGeo = new THREE.BoxGeometry(1.2, 0.3, 1.0);
-        const marqueeMat = new THREE.MeshStandardMaterial({ color: this.getNeonColor(id), emissive: this.getNeonColor(id), emissiveIntensity: 0.5 });
+        const marqueeMat = new THREE.MeshStandardMaterial({ 
+            color: this.getNeonColor(id), 
+            emissive: this.getNeonColor(id), 
+            emissiveIntensity: 0.5 
+        });
         const marquee = new THREE.Mesh(marqueeGeo, marqueeMat);
         marquee.position.set(0, 2.35, 0);
         group.add(marquee);
 
-        // Control Panel
+        // Control Panel & Joystick (High detail geometry)
         const panelGeo = new THREE.BoxGeometry(1.2, 0.1, 0.5);
         const panelMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
         const panel = new THREE.Mesh(panelGeo, panelMat);
@@ -162,7 +181,6 @@ export default class ArcadeHub {
         panel.rotation.x = 0.2;
         group.add(panel);
 
-        // Joystick
         const joyGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.2);
         const joyMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
         const joy = new THREE.Mesh(joyGeo, joyMat);
@@ -183,13 +201,13 @@ export default class ArcadeHub {
         btn2.rotation.x = 0.2;
         group.add(btn2);
 
-        group.userData = { gameId: id }; // Store ID for interaction
+        // Store metadata on the group for easy Raycasting retrieval
+        group.userData = { gameId: id }; 
         this.cabinets.push(group);
         this.scene.add(group);
     }
 
     getNeonColor(id) {
-        // Hash string to color
         let hash = 0;
         for (let i = 0; i < id.length; i++) {
             hash = id.charCodeAt(i) + ((hash << 5) - hash);
@@ -199,77 +217,99 @@ export default class ArcadeHub {
     }
 
     onResize() {
+        if (!this.camera || !this.renderer) return;
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
+    // --- Input Handling ---
+
     onMouseDown(event) {
-        if (!this.active) return;
+        if (!this.isActive) return;
         this.isDragging = true;
         this.previousMousePosition = { x: event.clientX, y: event.clientY };
     }
 
-    onMouseUp(event) {
+    onTouchStart(event) {
+        if (!this.isActive || event.touches.length !== 1) return;
+        event.preventDefault(); // Prevent scrolling
+        this.isDragging = true;
+        this.previousMousePosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    }
+
+    onMouseUp() {
         this.isDragging = false;
     }
 
     onMouseMove(event) {
-        // Update Mouse for Raycaster
+        // Raycaster update
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-        // Navigation (Drag to Rotate)
         if (this.isDragging) {
-            const deltaMove = {
-                x: event.clientX - this.previousMousePosition.x,
-                y: event.clientY - this.previousMousePosition.y
-            };
-
-            const rotationSpeed = 0.005;
-            this.cameraRotation.y -= deltaMove.x * rotationSpeed;
-            this.cameraRotation.x -= deltaMove.y * rotationSpeed;
-
-            // Clamp vertical rotation
-            this.cameraRotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, this.cameraRotation.x));
-
-            // Apply rotation
-            this.camera.rotation.x = this.cameraRotation.x;
-            this.camera.rotation.y = this.cameraRotation.y;
-            this.camera.rotation.z = 0; // Keep level
-
-            this.previousMousePosition = { x: event.clientX, y: event.clientY };
+            this.handleCameraRotation(event.clientX, event.clientY);
         }
     }
 
-    onClick(event) {
-        if (!this.active) return;
+    onTouchMove(event) {
+        if (this.isDragging && event.touches.length === 1) {
+            event.preventDefault();
+            this.handleCameraRotation(event.touches[0].clientX, event.touches[0].clientY);
+        }
+    }
 
-        // Raycast
+    handleCameraRotation(clientX, clientY) {
+        const deltaMove = {
+            x: clientX - this.previousMousePosition.x,
+            y: clientY - this.previousMousePosition.y
+        };
+
+        const rotationSpeed = 0.005;
+        this.cameraRotation.y -= deltaMove.x * rotationSpeed;
+        this.cameraRotation.x -= deltaMove.y * rotationSpeed;
+
+        // Clamp vertical rotation so user doesn't flip over
+        this.cameraRotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, this.cameraRotation.x));
+
+        // Apply rotation
+        this.camera.rotation.x = this.cameraRotation.x;
+        this.camera.rotation.y = this.cameraRotation.y;
+        this.camera.rotation.z = 0; 
+
+        this.previousMousePosition = { x: clientX, y: clientY };
+    }
+
+    onClick(event) {
+        if (!this.isActive) return;
+
+        // Update raycaster for click (incase mouse didn't move)
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
         if (intersects.length > 0) {
-            // Find parent cabinet
+            // Find parent cabinet group
             let object = intersects[0].object;
             while(object.parent && !object.userData.gameId) {
                 object = object.parent;
             }
 
             if (object.userData && object.userData.gameId) {
-                console.log("Clicked Game:", object.userData.gameId);
-                this.loadGameCallback(object.userData.gameId);
+                if (this.onGameSelect) {
+                    this.onGameSelect(object.userData.gameId);
+                }
             }
         }
     }
 
     animate() {
         if (!this.renderer) return;
-        requestAnimationFrame(this.animate);
+        
+        requestAnimationFrame(this.animate.bind(this));
 
-        if(!this.active) return;
+        if(!this.isActive) return;
 
-        // Raycast for Hover Effect (Highlight Cabinet)
+        // --- Hover Effects (From Overhaul) ---
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
@@ -281,7 +321,6 @@ export default class ArcadeHub {
             }
             if (object.userData && object.userData.gameId) {
                 hovered = true;
-                // We could add an emissive glow here if desired
             }
         }
 
@@ -291,16 +330,24 @@ export default class ArcadeHub {
             document.body.style.cursor = this.isDragging ? 'grabbing' : 'grab';
         }
 
+        // --- Floating Animation (From Main) ---
+        // Subtle floating effect adds life to the scene
+        const time = Date.now() * 0.001;
+        this.cabinets.forEach((cab, i) => {
+             cab.position.y = Math.sin(time + i) * 0.05; 
+        });
+
         this.renderer.render(this.scene, this.camera);
     }
 
-    show() {
-        this.active = true;
+    resume() {
+        this.isActive = true;
         this.container.style.display = 'block';
+        this.onResize();
     }
 
-    hide() {
-        this.active = false;
+    pause() {
+        this.isActive = false;
         this.container.style.display = 'none';
         document.body.style.cursor = 'default';
     }

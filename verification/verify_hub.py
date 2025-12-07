@@ -5,26 +5,42 @@ def verify_arcade_hub():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         try:
+            print("Navigating to index...")
             page.goto("http://localhost:8000/index.html")
 
-            # Wait for the arcade hub container
+            # --- Step 1: Verify 3D Hub (Default) ---
+            print("Verifying 3D Hub...")
+            # Wait for the arcade hub container (Overhaul style)
             page.wait_for_selector("#arcade-hub-container")
-
-            # Wait a bit for Three.js to render
+            
+            # Wait for Three.js to render
             page.wait_for_timeout(3000)
+            
+            # Screenshot 3D View
+            page.screenshot(path="verification/1_arcade_hub_3d.png")
+            print("Snapshot: 3D Hub captured.")
 
-            # Take screenshot of Hub
-            page.screenshot(path="verification/arcade_hub.png")
-            print("Arcade Hub screenshot taken.")
+            # --- Step 2: Verify Toggle to Grid View ---
+            print("Verifying Grid Toggle...")
+            # Click the toggle button (Main style)
+            page.click("#view-toggle-btn")
+            
+            # Wait for grid to appear
+            page.wait_for_selector("#menu-grid:not(.hidden)")
+            page.wait_for_timeout(1000)
+            
+            # Screenshot Grid View
+            page.screenshot(path="verification/2_arcade_hub_grid.png")
+            print("Snapshot: Grid View captured.")
 
-            # Click on "The Grind 98" cabinet if visible (hard to target 3D object with standard selectors,
-            # but we can try simulated click in center or just verify hub for now).
-            # The hub renders canvases. We can't easily click 3D objects with Playwright without coordinate guessing.
-            # But we can verify the overlay HUD is present.
+            # --- Step 3: Verify Game Transition ---
+            print("Verifying Game Transition...")
+            # Toggle back to 3D for completeness (optional, but good test)
+            page.click("#view-toggle-btn")
+            page.wait_for_timeout(1000)
 
-            page.wait_for_selector("#hub-hud")
-
-            # Let's try to transition to a game via console to verify game loading logic
+            # Manually trigger transition via console to test the state machine
+            # (Simulating clicking a cabinet)
             page.evaluate("window.miniGameHub.transitionToState('IN_GAME', { gameId: 'work-game' })")
 
             page.wait_for_timeout(1000)
@@ -32,14 +48,15 @@ def verify_arcade_hub():
             # Check if game container is visible
             page.wait_for_selector("#work-game:not(.hidden)")
 
-            # Take screenshot of The Grind 98
-            page.screenshot(path="verification/the_grind_98.png")
-            print("The Grind 98 screenshot taken.")
+            # Screenshot The Grind 98
+            page.screenshot(path="verification/3_the_grind_98.png")
+            print("Snapshot: In-Game (The Grind 98) captured.")
 
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error during verification: {e}")
         finally:
             browser.close()
+            print("Verification session closed.")
 
 if __name__ == "__main__":
     verify_arcade_hub()

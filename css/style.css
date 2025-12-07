@@ -56,6 +56,12 @@ h1, h2, h3 {
     margin: 0 auto;
     position: relative;
     z-index: 10;
+    pointer-events: none; /* Allow clicks to pass through to canvas */
+}
+
+/* Re-enable pointer events for interactive children */
+#menu header, #hub-stats, #menu-grid {
+    pointer-events: auto;
 }
 
 #menu h1 {
