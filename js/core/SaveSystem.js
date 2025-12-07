@@ -51,6 +51,8 @@ export default class SaveSystem {
             highScores: {},
             totalCurrency: 0,
             achievements: [],
+            inventory: [],
+            unlockedGames: [],
             settings: {
                 muted: false
             },
@@ -82,8 +84,43 @@ export default class SaveSystem {
         this.save();
     }
 
+    spendCurrency(amount) {
+        if (this.data.totalCurrency >= amount) {
+            this.data.totalCurrency -= amount;
+            this.save();
+            return true;
+        }
+        return false;
+    }
+
     getCurrency() {
         return this.data.totalCurrency;
+    }
+
+    unlockGame(gameId) {
+        if (!this.data.unlockedGames) this.data.unlockedGames = [];
+        if (!this.data.unlockedGames.includes(gameId)) {
+            this.data.unlockedGames.push(gameId);
+            this.save();
+            return true;
+        }
+        return false;
+    }
+
+    isGameUnlocked(gameId) {
+        if (!this.data.unlockedGames) return false;
+        return this.data.unlockedGames.includes(gameId);
+    }
+
+    addItem(item) {
+        if (!this.data.inventory) this.data.inventory = [];
+        // Check if unique item? Let's assume yes for now
+        this.data.inventory.push(item);
+        this.save();
+    }
+
+    getInventory() {
+        return this.data.inventory || [];
     }
 
     unlockAchievement(achievementId) {
