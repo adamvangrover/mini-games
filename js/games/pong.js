@@ -17,6 +17,7 @@ export default class PongGame {
         this.particles = [];
         this.trail = [];
         this.shakeTimer = 0;
+        this.difficulty = 0.8; // AI speed factor
 
         this.soundManager = SoundManager.getInstance();
         this.inputManager = InputManager.getInstance();
@@ -36,12 +37,19 @@ export default class PongGame {
                     </div>
                 </div>
                 <p class="mt-4 text-slate-300">Player 1: <b>W / S</b> | Player 2: <b>Up / Down</b> (AI if idle)</p>
+                <div class="mt-2 flex gap-4">
+                     <button id="pong-easy" class="px-2 py-1 bg-green-700 text-xs rounded text-white">Easy</button>
+                     <button id="pong-hard" class="px-2 py-1 bg-red-700 text-xs rounded text-white">Hard</button>
+                </div>
                 <button class="back-btn mt-4 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded">Back</button>
             `;
             canvas = container.querySelector('#pongCanvas');
             container.querySelector('.back-btn').addEventListener('click', () => {
                  if (window.miniGameHub) window.miniGameHub.goBack();
             });
+
+            container.querySelector('#pong-easy').onclick = () => { this.difficulty = 0.5; this.resetBall(); };
+            container.querySelector('#pong-hard').onclick = () => { this.difficulty = 0.95; this.resetBall(); };
         }
         this.canvas = canvas;
         this.ctx = this.canvas.getContext("2d");
@@ -57,60 +65,85 @@ export default class PongGame {
     shutdown() {
         this.active = false;
         this.particles = [];
+        this.trail = [];
     }
 
     update(dt) {
         if (!this.active) return;
         const speed = 400 * dt;
 
+        // Player 1 Input
         if (this.inputManager.isKeyDown("KeyW") || this.inputManager.isKeyDown("w")) this.player1.y -= speed;
         if (this.inputManager.isKeyDown("KeyS") || this.inputManager.isKeyDown("s")) this.player1.y += speed;
 
+        // Player 2 Input or AI
+        let movedP2 = false;
         if (this.inputManager.isKeyDown("ArrowUp")) {
             this.player2.y -= speed;
+            movedP2 = true;
         } else if (this.inputManager.isKeyDown("ArrowDown")) {
             this.player2.y += speed;
-        } else {
+            movedP2 = true;
+        }
+
+        if (!movedP2) {
+            // AI
             const center = this.player2.y + this.paddleHeight / 2;
-            if (center < this.ball.y - 10) this.player2.y += speed * 0.8;
-            else if (center > this.ball.y + 10) this.player2.y -= speed * 0.8;
+            if (center < this.ball.y - 10) this.player2.y += speed * this.difficulty;
+            else if (center > this.ball.y + 10) this.player2.y -= speed * this.difficulty;
         }
 
         this.player1.y = Math.max(0, Math.min(this.player1.y, this.canvas.height - this.paddleHeight));
         this.player2.y = Math.max(0, Math.min(this.player2.y, this.canvas.height - this.paddleHeight));
 
+        // Trail Logic
         this.trail.push({x: this.ball.x, y: this.ball.y, alpha: 1.0});
         if (this.trail.length > 20) this.trail.shift();
-        this.trail.forEach(t => t.alpha -= dt * 2);
+        this.trail.forEach(t => t.alpha -= dt * 4); // Faster fade
 
+        // Ball Movement
         this.ball.x += this.ball.dx * dt;
         this.ball.y += this.ball.dy * dt;
 
+        // Wall Bounce (Top/Bottom)
         if (this.ball.y + this.ball.radius > this.canvas.height || this.ball.y - this.ball.radius < 0) {
             this.ball.dy = -this.ball.dy;
             this.soundManager.playSound('click');
             this.particleSystem.emit(this.ball.x, this.ball.y, '#00ffff', 5);
         }
 
+        // Paddle Collision - Player 1
         if (
-            (this.ball.x - this.ball.radius < this.player1.x + this.paddleWidth && this.ball.y > this.player1.y && this.ball.y < this.player1.y + this.paddleHeight)
+            this.ball.dx < 0 &&
+            this.ball.x - this.ball.radius < this.player1.x + this.paddleWidth &&
+            this.ball.y > this.player1.y &&
+            this.ball.y < this.player1.y + this.paddleHeight
         ) {
              this.ball.dx = Math.abs(this.ball.dx) * 1.05;
+             this.ball.x = this.player1.x + this.paddleWidth + this.ball.radius + 1; // Unstuck
              this.handlePaddleHit();
         }
 
+        // Paddle Collision - Player 2
         if (
-            (this.ball.x + this.ball.radius > this.player2.x && this.ball.y > this.player2.y && this.ball.y < this.player2.y + this.paddleHeight)
+            this.ball.dx > 0 &&
+            this.ball.x + this.ball.radius > this.player2.x &&
+            this.ball.y > this.player2.y &&
+            this.ball.y < this.player2.y + this.paddleHeight
         ) {
             this.ball.dx = -Math.abs(this.ball.dx) * 1.05;
+            this.ball.x = this.player2.x - this.ball.radius - 1; // Unstuck
             this.handlePaddleHit();
         }
 
-        this.ball.dx = Math.sign(this.ball.dx) * Math.min(Math.abs(this.ball.dx), 800);
+        // Max Speed Cap
+        this.ball.dx = Math.sign(this.ball.dx) * Math.min(Math.abs(this.ball.dx), 1000);
 
+        // Scoring
         if (this.ball.x - this.ball.radius < 0) {
             this.player2.score++;
             this.soundManager.playSound('score');
+            this.particleSystem.emit(this.ball.x, this.ball.y, '#ff0000', 20);
             this.resetBall();
             this.shakeTimer = 0.5;
         }
@@ -118,6 +151,7 @@ export default class PongGame {
         if (this.ball.x + this.ball.radius > this.canvas.width) {
             this.player1.score++;
             this.soundManager.playSound('score');
+            this.particleSystem.emit(this.ball.x, this.ball.y, '#ff0000', 20);
             this.resetBall();
             this.shakeTimer = 0.5;
         }
@@ -130,15 +164,15 @@ export default class PongGame {
 
     handlePaddleHit() {
         this.soundManager.playSound('click');
-        this.particleSystem.emit(this.ball.x, this.ball.y, '#ff00ff', 10);
+        this.particleSystem.emit(this.ball.x, this.ball.y, '#ff00ff', 15);
         this.shakeTimer = 0.2;
     }
 
     resetBall() {
         this.ball.x = this.canvas.width / 2;
         this.ball.y = this.canvas.height / 2;
-        this.ball.dx = -this.ball.dx;
-        this.ball.dy = (Math.random() > 0.5 ? 300 : -300);
+        this.ball.dx = (Math.random() > 0.5 ? 300 : -300);
+        this.ball.dy = (Math.random() > 0.5 ? 300 : -300) * (0.8 + Math.random() * 0.4);
         this.trail = [];
     }
 
@@ -156,14 +190,15 @@ export default class PongGame {
         this.ctx.save();
 
         if (this.shakeTimer > 0) {
-            const dx = (Math.random() - 0.5) * 10;
-            const dy = (Math.random() - 0.5) * 10;
+            const dx = (Math.random() - 0.5) * 10 * this.shakeTimer;
+            const dy = (Math.random() - 0.5) * 10 * this.shakeTimer;
             this.ctx.translate(dx, dy);
         }
 
+        // Draw Trail
         this.trail.forEach(t => {
             if (t.alpha <= 0) return;
-            this.ctx.globalAlpha = t.alpha * 0.5;
+            this.ctx.globalAlpha = t.alpha * 0.4;
             this.ctx.fillStyle = "#00ffff";
             this.ctx.beginPath();
             this.ctx.arc(t.x, t.y, this.ball.radius * 0.8, 0, Math.PI * 2);
@@ -171,21 +206,32 @@ export default class PongGame {
         });
         this.ctx.globalAlpha = 1.0;
 
-        this.ctx.fillStyle = "#ff00ff";
-        this.ctx.shadowBlur = 10;
-        this.ctx.shadowColor = "#ff00ff";
+        // Paddles
+        this.ctx.fillStyle = "#d946ef"; // Fuchsia-500
+        this.ctx.shadowBlur = 15;
+        this.ctx.shadowColor = "#d946ef";
         this.ctx.fillRect(this.player1.x, this.player1.y, this.paddleWidth, this.paddleHeight);
         this.ctx.fillRect(this.player2.x, this.player2.y, this.paddleWidth, this.paddleHeight);
         this.ctx.shadowBlur = 0;
 
+        // Ball
         this.ctx.beginPath();
         this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
-        this.ctx.fillStyle = "#00ffff";
-        this.ctx.shadowBlur = 10;
-        this.ctx.shadowColor = "#00ffff";
+        this.ctx.fillStyle = "#22d3ee"; // Cyan-400
+        this.ctx.shadowBlur = 15;
+        this.ctx.shadowColor = "#22d3ee";
         this.ctx.fill();
         this.ctx.closePath();
         this.ctx.shadowBlur = 0;
+
+        // Net
+        this.ctx.setLineDash([10, 15]);
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.canvas.width / 2, 0);
+        this.ctx.lineTo(this.canvas.width / 2, this.canvas.height);
+        this.ctx.strokeStyle = "#334155";
+        this.ctx.stroke();
+        this.ctx.setLineDash([]);
 
         this.particleSystem.draw(this.ctx);
 

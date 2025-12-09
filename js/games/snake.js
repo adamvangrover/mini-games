@@ -1,6 +1,7 @@
 import SoundManager from '../core/SoundManager.js';
 import InputManager from '../core/InputManager.js';
 import SaveSystem from '../core/SaveSystem.js';
+import ParticleSystem from '../core/ParticleSystem.js';
 
 export default class SnakeGame {
     constructor() {
@@ -23,10 +24,12 @@ export default class SnakeGame {
         this.foodPulse = 0;
         this.isDashing = false;
         this.active = false;
+        this.shakeTimer = 0;
 
         this.soundManager = SoundManager.getInstance();
         this.inputManager = InputManager.getInstance();
         this.saveSystem = SaveSystem.getInstance();
+        this.particleSystem = ParticleSystem.getInstance();
     }
 
     init(container) {
@@ -79,7 +82,7 @@ export default class SnakeGame {
 
     shutdown() {
         this.active = false;
-        // Event listeners are handled by InputManager, so no need to remove them manually here
+        this.shakeTimer = 0;
     }
 
     update(dt) {
@@ -104,6 +107,12 @@ export default class SnakeGame {
 
         // Pulse Effect
         this.foodPulse += dt * 5;
+
+        // Shake decay
+        if (this.shakeTimer > 0) this.shakeTimer -= dt;
+
+        // Particle update
+        this.particleSystem.update(dt);
     }
 
     move() {
@@ -133,6 +142,12 @@ export default class SnakeGame {
             this.score += 10;
             this.soundManager.playSound('score');
             this.updateScoreUI();
+
+            // Effect: Particles
+            const px = head.x * this.tileSize + this.tileSize/2;
+            const py = head.y * this.tileSize + this.tileSize/2;
+            this.particleSystem.emit(px, py, '#00ff00', 10);
+
             this.createFood();
             // Don't pop tail, so we grow
         } else {
@@ -153,14 +168,23 @@ export default class SnakeGame {
     gameOver() {
         this.active = false;
         this.soundManager.playSound('explosion');
+        this.shakeTimer = 0.5;
         this.saveSystem.setHighScore('snake-game', this.score);
 
-        if (window.miniGameHub && window.miniGameHub.showGameOver) {
-            window.miniGameHub.showGameOver(this.score, () => this.resetGame());
-        } else {
-            // Fallback
-            this.resetGame();
-        }
+        // Particles explosion at head
+        const head = this.snake[0];
+        const px = head.x * this.tileSize + this.tileSize/2;
+        const py = head.y * this.tileSize + this.tileSize/2;
+        this.particleSystem.emit(px, py, '#ff0000', 30);
+
+        // Wait a bit for effect before showing overlay
+        setTimeout(() => {
+            if (window.miniGameHub && window.miniGameHub.showGameOver) {
+                window.miniGameHub.showGameOver(this.score, () => this.resetGame());
+            } else {
+                this.resetGame();
+            }
+        }, 500);
     }
 
     updateScoreUI() {
@@ -171,6 +195,15 @@ export default class SnakeGame {
     draw() {
         if (!this.ctx) return;
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.ctx.save();
+
+        // Screen Shake
+        if (this.shakeTimer > 0) {
+            const dx = (Math.random() - 0.5) * 10;
+            const dy = (Math.random() - 0.5) * 10;
+            this.ctx.translate(dx, dy);
+        }
 
         // Snake Glow
         this.ctx.shadowBlur = 10;
@@ -192,5 +225,10 @@ export default class SnakeGame {
 
         // Reset Shadow
         this.ctx.shadowBlur = 0;
+
+        // Draw Particles
+        this.particleSystem.draw(this.ctx);
+
+        this.ctx.restore();
     }
 }
