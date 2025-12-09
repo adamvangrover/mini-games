@@ -50,6 +50,25 @@
         </div>
     </div>
 
+    <!-- Store Overlay -->
+    <div id="store-overlay" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-4xl relative glass-panel rounded-lg p-6 h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-4xl font-bold text-white title-glow font-[Poppins]"><i class="fas fa-store text-fuchsia-500"></i> NEON SHOP</h2>
+                <div class="flex items-center gap-4">
+                     <div class="bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700">
+                        <span class="text-xl text-yellow-400 font-bold"><i class="fas fa-coins mr-2"></i> <span id="store-currency">0</span></span>
+                    </div>
+                    <button id="store-close-btn" class="text-white text-3xl hover:text-fuchsia-500 transition-colors">&times;</button>
+                </div>
+            </div>
+
+            <div id="store-items" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                <!-- Store items injected here -->
+            </div>
+        </div>
+    </div>
+
     <!-- Main Menu (Hidden by default, replaced by 3D Hub) -->
     <div id="menu" class="relative z-10 max-w-7xl mx-auto pt-10 px-4 pb-20 hidden">
         <header class="text-center mb-16">
@@ -63,6 +82,9 @@
             <div class="bg-slate-800/50 backdrop-blur px-6 py-3 rounded-full border border-slate-700">
                 <span class="text-xl text-yellow-400 font-bold"><i class="fas fa-coins mr-2"></i> <span id="total-currency">0</span></span>
             </div>
+            <button id="shop-btn-menu" class="bg-slate-800/50 backdrop-blur px-4 py-3 rounded-full border border-slate-700 text-slate-300 hover:text-white hover:border-fuchsia-500 transition-colors">
+                <i class="fas fa-store"></i> Shop
+            </button>
              <button id="settings-btn" class="bg-slate-800/50 backdrop-blur px-4 py-3 rounded-full border border-slate-700 text-slate-300 hover:text-white hover:border-fuchsia-500 transition-colors">
                 <i class="fas fa-cog"></i> Data
             </button>
@@ -81,7 +103,10 @@
         <div class="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-white">
             <i class="fas fa-coins text-yellow-400"></i> <span id="total-currency">0</span>
         </div>
-        <button id="settings-btn" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition">
+        <button id="shop-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Store">
+            <i class="fas fa-store"></i>
+        </button>
+        <button id="settings-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Data/Settings">
             <i class="fas fa-cog"></i>
         </button>
     </div>

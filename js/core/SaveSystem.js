@@ -112,6 +112,35 @@ export default class SaveSystem {
         return this.data.unlockedGames.includes(gameId);
     }
 
+    // --- Item / Store System ---
+
+    unlockItem(itemId) {
+        if (!this.data.unlockedItems) this.data.unlockedItems = [];
+        if (!this.data.unlockedItems.includes(itemId)) {
+            this.data.unlockedItems.push(itemId);
+            this.save();
+            return true;
+        }
+        return false;
+    }
+
+    isItemUnlocked(itemId) {
+        if (!this.data.unlockedItems) return false;
+        return this.data.unlockedItems.includes(itemId);
+    }
+
+    // Helper to transact: returns true if successful, false if not enough funds
+    buyItem(itemId, cost) {
+        if (this.isItemUnlocked(itemId)) return true; // Already owned
+
+        if (this.getCurrency() >= cost) {
+            this.spendCurrency(cost);
+            this.unlockItem(itemId);
+            return true;
+        }
+        return false;
+    }
+
     addItem(item) {
         if (!this.data.inventory) this.data.inventory = [];
         // Check if unique item? Let's assume yes for now
