@@ -73,6 +73,9 @@ const gameRegistry = {
     'eclipse-puzzle-game': { name: 'Eclipse Puzzle', description: 'Pattern Matching', icon: 'fa-solid fa-puzzle-piece', category: 'RPG & Logic', module: EclipsePuzzleGame },
     'eclipse-logic-puzzle-game': { name: 'Logic Puzzle', description: 'Deduction Grid', icon: 'fa-solid fa-lightbulb', category: 'RPG & Logic', module: EclipseLogicPuzzleGame },
     'matterhorn-game': { name: 'Matterhorn Ascent', description: '3D Alpine Adventure', icon: 'fa-solid fa-mountain', category: '3D Immersive', module: MatterhornGame, wide: true },
+    'queens-game': { name: 'Queens', description: 'Place Queens', icon: 'fa-solid fa-chess-queen', category: 'Logic Puzzles', module: QueensGame },
+    'neon-mines-game': { name: 'Neon Mines', description: 'Avoid Mines', icon: 'fa-solid fa-bomb', category: 'Logic Puzzles', module: NeonMinesGame },
+    'neon-picross-game': { name: 'Neon Picross', description: 'Picture Cross', icon: 'fa-solid fa-pencil-alt', category: 'Logic Puzzles', module: NeonPicrossGame },
 };
 
 // State Machine
