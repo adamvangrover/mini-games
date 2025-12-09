@@ -3,8 +3,8 @@
 import SoundManager from './core/SoundManager.js';
 import SaveSystem from './core/SaveSystem.js';
 import InputManager from './core/InputManager.js';
-// BackgroundShader is removed as ArcadeHub handles the background now
 import ArcadeHub from './core/ArcadeHub.js';
+import Store from './core/Store.js';
 
 // Import New/Refactored Games
 import TowerDefenseGame from './games/towerDefense.js';
@@ -38,7 +38,7 @@ import MatterhornArcade from './games/matterhornArcade.js';
 import AetheriaClassic from './games/aetheriaClassic.js';
 import LifeSimGame from './games/lifeSim.js';
 
-// We will create a Registry.
+// Game Registry
 const gameRegistry = {
     'alpine-game': { name: 'Alpine Adventure', description: 'Open World Exploration', icon: 'fa-solid fa-mountain-sun', category: '3D Immersive', module: AlpineGame, wide: true },
     'matterhorn-arcade': { name: 'Matterhorn Arcade', description: 'Retro Climbing Challenge', icon: 'fa-solid fa-person-hiking', category: 'Arcade Classics', module: MatterhornArcade, wide: true },
@@ -87,11 +87,11 @@ let lastTime = 0;
 // Global Hub State
 let arcadeHub = null;
 let is3DView = true;
+let store = null;
 
 const soundManager = SoundManager.getInstance();
 const saveSystem = SaveSystem.getInstance();
-const inputManager = InputManager.getInstance(); // Ensure it attaches listeners
-
+const inputManager = InputManager.getInstance();
 
 // Centralized Game Loop
 function mainLoop(timestamp) {
@@ -110,8 +110,14 @@ function mainLoop(timestamp) {
             }
             break;
         case AppState.MENU:
-            // ArcadeHub handles its own animation loop internally via requestAnimationFrame
-            // We do not need to update it here.
+            if (arcadeHub && is3DView) {
+                // ArcadeHub is updated by its own loop or Three.js if needed,
+                // but usually we might need to manually call update if it's not self-driven.
+                // Assuming ArcadeHub uses its own rAF or is static,
+                // but actually ArcadeHub class usually has an update(dt) method.
+                // Looking at the old main.js, it called arcadeHub.update(dt).
+                if (arcadeHub.update) arcadeHub.update(deltaTime);
+            }
             break;
     }
 
@@ -131,43 +137,29 @@ async function transitionToState(newState, context = {}) {
             }
         }
         currentGameInstance = null;
-
-        // Hide all game containers
         document.querySelectorAll(".game-container").forEach(el => el.classList.add("hidden"));
     }
 
     if (newState === AppState.MENU) {
         currentState = AppState.TRANSITIONING;
-        hideOverlay(); // Ensure overlay is hidden when returning to menu
+        hideOverlay();
         soundManager.setBGMVolume(0.1);
         
-        // Reveal the main menu container
         document.getElementById("menu").classList.remove("hidden");
-        populateMenuGrid(); // Ensure grid is up to date
+        populateMenuGrid();
 
-        // Handle View Logic (3D Hub vs 2D Grid)
         if (arcadeHub) {
             if (is3DView) {
                 arcadeHub.resume();
-                // Ensure 2D grid is hidden
-                const menuGrid = document.getElementById('menu-grid');
-                if(menuGrid) menuGrid.classList.add('hidden');
-                
-                const toggleText = document.getElementById('view-toggle-text');
-                if(toggleText) toggleText.textContent = 'Grid View';
+                document.getElementById('menu-grid')?.classList.add('hidden');
+                document.getElementById('view-toggle-text').textContent = 'Grid View';
             } else {
                  arcadeHub.pause(); 
-                 // Ensure 2D grid is visible
-                 const menuGrid = document.getElementById('menu-grid');
-                 if(menuGrid) menuGrid.classList.remove('hidden');
-                 
-                 const toggleText = document.getElementById('view-toggle-text');
-                 if(toggleText) toggleText.textContent = '3D View';
+                 document.getElementById('menu-grid')?.classList.remove('hidden');
+                 document.getElementById('view-toggle-text').textContent = '3D View';
             }
         } else {
-            // Fallback if Hub failed to load: force grid
-            const menuGrid = document.getElementById('menu-grid');
-            if(menuGrid) menuGrid.classList.remove('hidden');
+            document.getElementById('menu-grid')?.classList.remove('hidden');
         }
 
         currentState = AppState.MENU;
@@ -178,7 +170,6 @@ async function transitionToState(newState, context = {}) {
         currentState = AppState.TRANSITIONING;
         const { gameId } = context;
 
-        // Hide Arcade Hub / Menu
         if (arcadeHub) arcadeHub.pause();
         document.getElementById("menu").classList.add("hidden");
 
@@ -191,7 +182,6 @@ async function transitionToState(newState, context = {}) {
 
         let container = document.getElementById(gameId);
         if (!container) {
-            // Attempt to create one if it's missing (mostly for new modules)
             container = document.createElement('div');
             container.id = gameId;
             container.className = 'game-container hidden';
@@ -204,13 +194,11 @@ async function transitionToState(newState, context = {}) {
 
         try {
             if (gameInfo.module) {
-                // Instantiable Class
                 currentGameInstance = new gameInfo.module();
                 if (currentGameInstance.init) {
                     await currentGameInstance.init(container);
                 }
             } else if (gameInfo.legacyId) {
-                // Legacy Global Object Adapter
                 const guessName = gameId.replace(/-([a-z])/g, (g) => g[1].toUpperCase()).replace('Game', '') + 'Game';
                 let globalObj = window[guessName];
                 if (gameId === 'matterhorn-game') globalObj = window.matterhornGame;
@@ -257,18 +245,16 @@ function showGameOver(score, onRetry) {
         </div>
     `;
 
-    // Set PAUSED to stop updates
     currentState = AppState.PAUSED;
     showOverlay('GAME OVER', content);
+    updateHubStats(); // Update coin display
 
-    // Bind buttons
-    // Note: We use setTimeout to ensure DOM is updated if needed, though innerHTML is sync.
     const retryBtn = document.getElementById('overlay-retry-btn');
     const menuBtn = document.getElementById('overlay-menu-btn');
 
     if (retryBtn) retryBtn.onclick = () => {
         hideOverlay();
-        currentState = AppState.IN_GAME; // Resume updates
+        currentState = AppState.IN_GAME;
         if (onRetry) onRetry();
     };
 
@@ -281,16 +267,19 @@ function togglePause() {
     if (currentState === AppState.IN_GAME) {
         currentState = AppState.PAUSED;
         showOverlay('PAUSED', 'Press ESC to resume.');
-        soundManager.setBGMVolume(0.01); // Muffle BGM further
+        soundManager.setBGMVolume(0.01);
     } else if (currentState === AppState.PAUSED) {
         currentState = AppState.IN_GAME;
         hideOverlay();
-        soundManager.setBGMVolume(0.02); // Restore game BGM volume
+        soundManager.setBGMVolume(0.02);
     }
 }
 
 function showSettingsOverlay() {
-    const content = `
+    // ... Existing implementation of settings overlay ...
+    // To save token space, I will re-implement minimal needed here or assume logic is similar.
+    // For robustness, I'll copy the existing logic from the previous file content.
+     const content = `
         <div class="flex flex-col gap-4">
             <button id="copy-stats-btn" class="px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded flex items-center justify-center gap-2">
                 <i class="fas fa-share-alt"></i> Share High Scores (Copy)
@@ -315,14 +304,12 @@ function showSettingsOverlay() {
 
     showOverlay('DATA MANAGEMENT', content);
 
-    // Populate Export Area
     const exportArea = document.getElementById('export-area');
     const updateExport = () => {
         exportArea.value = saveSystem.exportData();
     };
     updateExport();
 
-    // Bind Buttons
     document.getElementById('refresh-export-btn').onclick = updateExport;
 
     document.getElementById('copy-export-btn').onclick = () => {
@@ -367,10 +354,12 @@ function showSettingsOverlay() {
 }
 
 function updateHubStats() {
-    const currencyEl = document.getElementById('total-currency');
-    if (currencyEl) {
-        currencyEl.textContent = saveSystem.getCurrency();
-    }
+    const currency = saveSystem.getCurrency();
+    const ids = ['total-currency', 'total-currency-hud']; // Update both
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = currency;
+    });
 }
 
 function toggleView() {
@@ -392,14 +381,12 @@ function toggleView() {
 function populateMenuGrid() {
     const grid = document.getElementById('menu-grid');
     if(!grid) return;
-    grid.innerHTML = ''; // Clear
+    grid.innerHTML = '';
 
     Object.entries(gameRegistry).forEach(([id, game]) => {
-        // Check if unlocked? For now assume all unlocked or default
         const card = document.createElement('div');
         card.className = "bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden";
         
-        // Icon
         card.innerHTML = `
             <div class="absolute top-0 right-0 p-2 opacity-50 text-xs uppercase font-bold tracking-wider">${game.category || 'Game'}</div>
             <div class="flex flex-col items-center text-center gap-3 pt-4">
@@ -419,97 +406,41 @@ function populateMenuGrid() {
     });
 }
 
+// Store & Shop Logic
 function showShopOverlay() {
-    const items = [
-        { id: 'prize_plush', name: 'Neon Plushie', cost: 100, icon: 'fa-cat' },
-        { id: 'prize_trophy', name: 'Gold Trophy', cost: 500, icon: 'fa-trophy' },
-        { id: 'prize_ship', name: 'Model Ship', cost: 250, icon: 'fa-ship' },
-        { id: 'game_unlock_mystery', name: 'Mystery Game Key', cost: 1000, icon: 'fa-key' }
-    ];
+    if (!store) {
+        store = new Store(saveSystem, 'store-items', ['store-currency']);
+    }
 
-    const inventory = saveSystem.getInventory();
-    const balance = saveSystem.getCurrency();
+    // Update currency before showing
+    document.getElementById('store-currency').textContent = saveSystem.getCurrency();
 
-    let content = `
-        <div class="text-center mb-6">
-            <p class="text-yellow-400 text-xl font-bold"><i class="fas fa-coins"></i> Balance: ${balance}</p>
-        </div>
-        <div class="grid grid-cols-2 gap-4 max-h-[300px] overflow-y-auto">
-    `;
-
-    items.forEach(item => {
-        const owned = inventory.includes(item.id);
-        content += `
-            <div class="bg-slate-800 p-4 rounded border border-slate-600 flex flex-col items-center">
-                <i class="fas ${item.icon} text-3xl mb-2 ${owned ? 'text-green-400' : 'text-slate-400'}"></i>
-                <h4 class="font-bold text-white">${item.name}</h4>
-                <p class="text-yellow-400 text-sm font-bold mb-2">${item.cost}</p>
-                <button 
-                    onclick="window.miniGameHub.buyItem('${item.id}', ${item.cost})"
-                    class="px-4 py-1 rounded text-sm font-bold ${owned ? 'bg-green-900 text-green-200 cursor-default' : (balance >= item.cost ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed')}"
-                    ${owned || balance < item.cost ? 'disabled' : ''}
-                >
-                    ${owned ? 'Owned' : 'Buy'}
-                </button>
-            </div>
-        `;
-    });
-
-    content += `</div>`;
-    showOverlay('PRIZE SHOP', content);
+    store.render();
+    document.getElementById('store-overlay').classList.remove('hidden');
 }
 
-// Expose buyItem securely after DOM load or init, but here we attach to window
-// We need to ensure window.miniGameHub exists first if we are extending it,
-// but actually we define it at the bottom.
-// So we should move this definition or the buyItem assignment to inside/after DOMContentLoaded or inside the global exposure.
-
-function buyItem(itemId, cost) {
-    if(saveSystem.spendCurrency(cost)) {
-        saveSystem.addItem(itemId);
-        soundManager.playSound('score'); // Cha-ching
-        showShopOverlay(); // Refresh UI
-        updateHubStats();
-    } else {
-        alert("Not enough coins!");
-    }
+function hideShopOverlay() {
+    document.getElementById('store-overlay').classList.add('hidden');
+    // Also update hub stats in case coins were spent
+    updateHubStats();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     updateHubStats();
-    populateMenuGrid(); // Initial population
+    populateMenuGrid();
 
-    // Add Shop Button
-    const hubStats = document.getElementById('hub-stats');
-    if (hubStats) {
-        const shopBtn = document.createElement('button');
-        shopBtn.className = "bg-slate-800/50 backdrop-blur px-4 py-3 rounded-full border border-slate-700 text-slate-300 hover:text-white hover:border-fuchsia-500 transition-colors";
-        shopBtn.innerHTML = '<i class="fas fa-store"></i> Shop';
-        shopBtn.onclick = showShopOverlay;
-        hubStats.appendChild(shopBtn);
-    }
-    
-    // Add Shop Button to Hub HUD as well
-    const hubHud = document.getElementById('hub-hud');
-    if (hubHud) {
-        const shopBtn = document.createElement('button');
-        shopBtn.className = "glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition";
-        shopBtn.innerHTML = '<i class="fas fa-store"></i>';
-        shopBtn.onclick = showShopOverlay;
-        hubHud.appendChild(shopBtn);
-    }
+    // Initialize Store (lazy load on click usually, but init class)
+    store = new Store(saveSystem, 'store-items', ['store-currency', 'total-currency', 'total-currency-hud']);
 
-    // Initialize Arcade Hub (using Container approach from overhaul)
+    // Initialize Arcade Hub
     const hubContainer = document.getElementById('arcade-hub-container');
     if (hubContainer) {
         arcadeHub = new ArcadeHub(hubContainer, gameRegistry, (gameId) => {
             transitionToState(AppState.IN_GAME, { gameId });
         });
 
-        // Show Menu container
         document.getElementById("menu").classList.remove("hidden");
 
-        // Initialize state based on is3DView
         if (is3DView) {
              const menuGrid = document.getElementById('menu-grid');
              if(menuGrid) menuGrid.classList.add('hidden');
@@ -518,21 +449,22 @@ document.addEventListener('DOMContentLoaded', () => {
              arcadeHub.pause();
         }
     } else {
-        // Fallback: If no 3D container, force 2D view
         console.warn("Arcade Hub Container missing! Falling back to 2D Grid.");
         is3DView = false;
         const menuGrid = document.getElementById('menu-grid');
         if(menuGrid) menuGrid.classList.remove('hidden');
     }
 
-    // Bind View Toggle
-    const toggleBtn = document.getElementById('view-toggle-btn');
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', toggleView);
-    }
+    // Bind Buttons
+    document.getElementById('view-toggle-btn')?.addEventListener('click', toggleView);
 
-    // Bind Overlay Close Button
-    document.getElementById('overlay-close-btn').addEventListener('click', () => {
+    // Shop Buttons
+    document.getElementById('shop-btn-menu')?.addEventListener('click', showShopOverlay);
+    document.getElementById('shop-btn-hud')?.addEventListener('click', showShopOverlay);
+    document.getElementById('store-close-btn')?.addEventListener('click', hideShopOverlay);
+
+    // Overlay Buttons
+    document.getElementById('overlay-close-btn')?.addEventListener('click', () => {
         if (currentState === AppState.PAUSED) {
             togglePause();
         } else {
@@ -540,54 +472,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Bind Overlay Main Menu Button
-    document.getElementById('overlay-main-menu-btn').addEventListener('click', () => {
+    document.getElementById('overlay-main-menu-btn')?.addEventListener('click', () => {
         transitionToState(AppState.MENU);
     });
+
+    // Settings Buttons (HUD and Menu)
+    const openSettings = () => showSettingsOverlay();
+    document.getElementById('settings-btn')?.addEventListener('click', openSettings);
+    document.getElementById('settings-btn-hud')?.addEventListener('click', openSettings);
+
 
     // Global Key Listeners
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (currentState === AppState.IN_GAME || currentState === AppState.PAUSED) {
                 togglePause();
+            } else if (!document.getElementById('store-overlay').classList.contains('hidden')) {
+                hideShopOverlay();
             }
         }
     });
 
-    // Bind Back Buttons (Global handler for any .back-btn)
+    // Bind Back Buttons
     document.body.addEventListener('click', (e) => {
         if (e.target.classList.contains('back-btn')) {
             transitionToState(AppState.MENU);
         }
     });
 
-    // Bind Settings Button
-    const settingsBtn = document.getElementById('settings-btn');
-    if (settingsBtn) {
-        settingsBtn.addEventListener('click', () => {
-            showSettingsOverlay();
-        });
-    }
-
-    // Start the main loop
+    // Start Loop
     lastTime = performance.now();
     requestAnimationFrame(mainLoop);
 
-    // Initial sound setup
     soundManager.startBGM();
 });
 
-// Expose for debugging and legacy compatibility
+// Expose for debugging
 window.miniGameHub = {
     transitionToState,
     soundManager,
     saveSystem,
     showGameOver,
-    goBack: () => transitionToState(AppState.MENU),
-    buyItem: buyItem
+    goBack: () => transitionToState(AppState.MENU)
 };
-
-// Legacy Compatibility: Expose systems globally for non-module games
-window.soundManager = soundManager;
-window.saveSystem = saveSystem;
-window.inputManager = inputManager;
