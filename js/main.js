@@ -17,6 +17,9 @@ import TheGrind98 from './games/work.js';
 import NeonGolf from './games/neonGolf.js';
 import NeonHoops from './games/neonHoops.js';
 import NeonShooter from './games/neonShooter.js';
+import QueensGame from './games/queens.js';
+import NeonMinesGame from './games/neonMines.js';
+import NeonPicrossGame from './games/neonPicross.js';
 
 // Legacy Refactored to Classes
 import SnakeGame from './games/snake.js';
