@@ -5,6 +5,7 @@ import SaveSystem from './core/SaveSystem.js';
 import InputManager from './core/InputManager.js';
 import ArcadeHub from './core/ArcadeHub.js';
 import Store from './core/Store.js';
+import MobileControls from './core/MobileControls.js';
 
 // Import New/Refactored Games
 import TowerDefenseGame from './games/towerDefense.js';
@@ -20,6 +21,7 @@ import NeonShooter from './games/neonShooter.js';
 import QueensGame from './games/queens.js';
 import NeonMinesGame from './games/neonMines.js';
 import NeonPicrossGame from './games/neonPicross.js';
+import NeonFlow from './games/neonFlow.js';
 
 // Legacy Refactored to Classes
 import SnakeGame from './games/snake.js';
@@ -76,6 +78,7 @@ const gameRegistry = {
     'queens-game': { name: 'Queens', description: 'Place Queens', icon: 'fa-solid fa-chess-queen', category: 'Logic Puzzles', module: QueensGame },
     'neon-mines-game': { name: 'Neon Mines', description: 'Avoid Mines', icon: 'fa-solid fa-bomb', category: 'Logic Puzzles', module: NeonMinesGame },
     'neon-picross-game': { name: 'Neon Picross', description: 'Picture Cross', icon: 'fa-solid fa-pencil-alt', category: 'Logic Puzzles', module: NeonPicrossGame },
+    'neon-flow-game': { name: 'Neon Flow', description: 'Relax & Create', icon: 'fa-solid fa-wind', category: 'New Games', module: NeonFlow, wide: true },
 };
 
 // State Machine
@@ -89,6 +92,7 @@ const AppState = {
 let currentState = AppState.MENU;
 let currentGameInstance = null;
 let lastTime = 0;
+let mobileControls = null;
 
 // Global Hub State
 let arcadeHub = null;
@@ -141,6 +145,10 @@ async function transitionToState(newState, context = {}) {
             } catch (e) {
                 console.error("Error shutting down game:", e);
             }
+        }
+        if (mobileControls) {
+            mobileControls.destroy();
+            mobileControls = null;
         }
         currentGameInstance = null;
         document.querySelectorAll(".game-container").forEach(el => el.classList.add("hidden"));
@@ -204,6 +212,16 @@ async function transitionToState(newState, context = {}) {
                 if (currentGameInstance.init) {
                     await currentGameInstance.init(container);
                 }
+
+                // Init Mobile Controls if not Neon Flow (which handles own input) or other touch games
+                // For simplicity, we add D-pad to all games except explicit opt-outs or touch natives.
+                // Neon Flow is 'neon-flow-game'.
+                // Clicker is 'clicker-game'.
+                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap'];
+                if (!noDpadGames.includes(gameId)) {
+                    mobileControls = new MobileControls(container);
+                }
+
             } else if (gameInfo.legacyId) {
                 const guessName = gameId.replace(/-([a-z])/g, (g) => g[1].toUpperCase()).replace('Game', '') + 'Game';
                 let globalObj = window[guessName];
@@ -441,6 +459,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Arcade Hub
     const hubContainer = document.getElementById('arcade-hub-container');
     if (hubContainer) {
+        // Auto-switch to Grid View on Mobile
+        if (window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent)) {
+            is3DView = false;
+        }
+
         arcadeHub = new ArcadeHub(hubContainer, gameRegistry, (gameId) => {
             transitionToState(AppState.IN_GAME, { gameId });
         });
@@ -453,6 +476,10 @@ document.addEventListener('DOMContentLoaded', () => {
              arcadeHub.resume();
         } else {
              arcadeHub.pause();
+             const menuGrid = document.getElementById('menu-grid');
+             if(menuGrid) menuGrid.classList.remove('hidden');
+             const btnText = document.getElementById('view-toggle-text');
+             if(btnText) btnText.textContent = '3D View';
         }
     } else {
         console.warn("Arcade Hub Container missing! Falling back to 2D Grid.");
