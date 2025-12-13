@@ -19,6 +19,7 @@ export default class InputManager {
     }
 
     bindEvents() {
+        // Keyboard
         window.addEventListener('keydown', (e) => {
             this.keys[e.code] = true;
         });
@@ -27,6 +28,7 @@ export default class InputManager {
             this.keys[e.code] = false;
         });
 
+        // Mouse
         window.addEventListener('mousemove', (e) => {
             this.mouse.x = e.clientX;
             this.mouse.y = e.clientY;
@@ -39,6 +41,29 @@ export default class InputManager {
         window.addEventListener('mouseup', () => {
             this.mouse.down = false;
         });
+
+        // Touch - Map to Mouse for compatibility
+        window.addEventListener('touchstart', (e) => {
+            this.mouse.down = true;
+            this.updateTouchPos(e);
+        }, { passive: true });
+
+        window.addEventListener('touchend', (e) => {
+            this.mouse.down = false;
+            // Keep last position or update if touches remain?
+            // Usually keeping last pos is fine.
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            this.updateTouchPos(e);
+        }, { passive: true });
+    }
+
+    updateTouchPos(e) {
+        if (e.touches.length > 0) {
+            this.mouse.x = e.touches[0].clientX;
+            this.mouse.y = e.touches[0].clientY;
+        }
     }
 
     isKeyDown(code) {
