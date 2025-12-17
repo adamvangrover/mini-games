@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rage Quit 3D: Clinical Trial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #f0f0f0; font-family: 'Helvetica', 'Arial', sans-serif; }
+        
+        #instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #333;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border: 1px solid #ccc;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            cursor: pointer;
+            z-index: 20;
+        }
+
+        #overlay-message {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+
+        .btn {
+            background: #007AFF;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #0056b3; }
+
+        #interaction-prompt {
+            position: absolute;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #333;
+            font-weight: bold;
+            background: rgba(255,255,255,0.8);
+            padding: 10px 20px;
+            border-radius: 20px;
+            display: none;
+        }
+
+        .glitch { animation: glitch 2s linear infinite; }
+        @keyframes glitch {
+            2%, 64% { transform: translate(1px,0); }
+            4%, 60% { transform: translate(-1px,0); }
+            62% { transform: translate(0,0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- UI Layer -->
+    <div id="ui-layer" class="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-6">
+        <div class="flex justify-between items-start">
+            <div>
+                <div class="text-gray-800 font-bold text-2xl tracking-tight">PHASE: <span id="phase-display">1</span></div>
+                <div class="text-xs text-gray-400 font-mono">SUBJECT ID: <span id="subject-id">8392-B</span></div>
+            </div>
+            <div class="text-right">
+                <div class="text-gray-800 font-bold text-xl">STRESS: <span id="anxiety-level" class="text-red-500">0</span>%</div>
+                <div id="objective-text" class="text-gray-500 font-medium text-sm mt-1">Objective: Locate Exit</div>
+            </div>
+        </div>
+        
+        <!-- Troll Messages -->
+        <div id="troll-message" class="absolute top-1/3 w-full text-center text-5xl font-black text-gray-800 opacity-0 transition-opacity duration-300 drop-shadow-md">
+            OOPS!
+        </div>
+
+        <!-- Interaction Prompt -->
+        <div id="interaction-prompt">[E] INTERACT</div>
+
+        <!-- Crosshair -->
+        <div class="absolute top-1/2 left-1/2 w-3 h-3 -mt-1.5 -ml-1.5 border-2 border-gray-400 rounded-full bg-white/50"></div>
+    </div>
+
+    <!-- Instructions Overlay -->
+    <div id="instructions">
+        <h1 class="text-5xl font-black mb-2 tracking-tighter text-gray-900">THE PROGRAM</h1>
+        <p class="mb-6 text-gray-600 text-lg">Your participation is mandatory.</p>
+        <p class="text-sm text-gray-400 mb-6">(Click to Begin)</p>
+        <div class="text-xs text-red-400 uppercase font-bold tracking-widest">Safety protocols disabled</div>
+    </div>
+
+    <!-- Transition Overlay -->
+    <div id="overlay-message">
+        <h1 class="text-4xl font-bold text-gray-800 mb-2">TEST COMPLETE</h1>
+        <p class="text-gray-500">Processing biological response...</p>
+        <div class="mt-4 w-64 h-2 bg-gray-200 rounded overflow-hidden">
+            <div id="loading-bar" class="h-full bg-blue-500 w-0 transition-all duration-[3000ms]"></div>
+        </div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container" class="w-full h-full block bg-gray-100"></div>
+
+    <script>
+        class InputManager {
+            constructor() {
+                this.keys = {};
+                window.addEventListener('keydown', (e) => this.keys[e.key.toLowerCase()] = true);
+                window.addEventListener('keyup', (e) => this.keys[e.key.toLowerCase()] = false);
+            }
+            isKeyDown(key) { return !!this.keys[key.toLowerCase()]; }
+            static getInstance() {
+                if (!this.instance) this.instance = new InputManager();
+                return this.instance;
+            }
+        }
+
+        class SoundManager {
+            constructor() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.2;
+                this.masterGain.connect(this.ctx.destination);
+            }
+            playTone(freq, type, duration, ramp = true) {
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+                if(ramp) gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            }
+            playDing() { this.playTone(1200, 'sine', 0.3); setTimeout(()=>this.playTone(1600, 'sine', 0.5), 100); }
+            playError() { this.playTone(150, 'sawtooth', 0.3); }
+            playClick() { this.playTone(2000, 'square', 0.05); }
+            playAmbience() {
+                // Low drone
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.frequency.value = 50;
+                gain.gain.value = 0.05;
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start();
+            }
+            static getInstance() {
+                if (!this.instance) this.instance = new SoundManager();
+                return this.instance;
+            }
+        }
+
+        class RageQuit3DGame {
+            constructor() {
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.player = null;
+                this.clock = new THREE.Clock();
+                this.inputManager = InputManager.getInstance();
+                this.soundManager = SoundManager.getInstance();
+                this.raycaster = new THREE.Raycaster();
+                
+                this.active = false;
+                this.currentPhase = 0; // 0: Maze, 1: Bridge, 2: Button
+                this.anxietyLevel = 0;
+                
+                this.playerHeight = 1.7;
+                this.mouseSensitivity = 0.002;
+                this.velocity = new THREE.Vector3();
+                this.direction = new THREE.Vector3();
+                this.gravity = 30.0;
+                this.onGround = true;
+
+                this.levelObjects = []; // Meshes specific to current level
+                this.interactables = [];
+            }
+
+            init(container) {
+                const renderTarget = document.getElementById('game-container');
+                const ui = document.getElementById('instructions');
+
+                // Scene setup
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0xf5f7fa); 
+                this.scene.fog = new THREE.Fog(0xf5f7fa, 5, 50);
+
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.shadowMap.enabled = true;
+                renderTarget.appendChild(this.renderer.domElement);
+
+                // Lighting
+                const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+                this.scene.add(ambient);
+                const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+                dirLight.position.set(10, 20, 10);
+                dirLight.castShadow = true;
+                dirLight.shadow.mapSize.width = 2048;
+                dirLight.shadow.mapSize.height = 2048;
+                this.scene.add(dirLight);
+
+                // Player
+                this.player = new THREE.Object3D();
+                this.player.position.set(0, this.playerHeight, 0);
+                this.scene.add(this.player);
+                this.player.add(this.camera);
+
+                // Start first phase
+                this.loadPhase(0);
+
+                // Event Listeners
+                const startParams = () => {
+                    renderTarget.requestPointerLock();
+                    this.soundManager.playAmbience();
+                };
+                ui.addEventListener('click', startParams);
+                
+                document.addEventListener('pointerlockchange', () => {
+                    if (document.pointerLockElement === renderTarget) {
+                        this.active = true;
+                        ui.style.display = 'none';
+                        document.addEventListener('mousemove', this.onMouseMove.bind(this), false);
+                        document.addEventListener('mousedown', this.onMouseDown.bind(this), false);
+                    } else {
+                        this.active = false;
+                        ui.style.display = 'block';
+                        ui.querySelector('h1').innerText = "PAUSED";
+                        document.removeEventListener('mousemove', this.onMouseMove.bind(this), false);
+                        document.removeEventListener('mousedown', this.onMouseDown.bind(this), false);
+                    }
+                });
+
+                window.addEventListener('resize', this.onResize.bind(this));
+                this.animate();
+            }
+
+            // --- LEVEL MANAGEMENT ---
+
+            clearLevel() {
+                // Remove old level objects
+                this.levelObjects.forEach(obj => this.scene.remove(obj));
+                this.levelObjects = [];
+                this.interactables = [];
+                this.floorTiles = {}; // Reset collision map
+                this.velocity.set(0,0,0);
+                this.player.position.set(0, this.playerHeight, 0);
+                this.player.rotation.set(0,0,0);
+                this.camera.rotation.set(0,0,0);
+            }
+
+            transitionToNextPhase() {
+                this.active = false;
+                document.exitPointerLock();
+                
+                const overlay = document.getElementById('overlay-message');
+                const bar = document.getElementById('loading-bar');
+                overlay.style.display = 'flex';
+                // Trigger reflow
+                void overlay.offsetWidth;
+                overlay.style.opacity = '1';
+                bar.style.width = '0%';
+                
+                setTimeout(() => { bar.style.width = '100%'; }, 100);
+
+                setTimeout(() => {
+                    this.currentPhase = (this.currentPhase + 1) % 3;
+                    this.loadPhase(this.currentPhase);
+                    
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                        const renderTarget = document.getElementById('game-container');
+                        renderTarget.requestPointerLock();
+                        this.active = true;
+                    }, 1000);
+                }, 3500);
+            }
+
+            loadPhase(phaseIndex) {
+                this.clearLevel();
+                document.getElementById('phase-display').innerText = phaseIndex + 1;
+                
+                if (phaseIndex === 0) this.buildPhase1_Maze();
+                else if (phaseIndex === 1) this.buildPhase2_Bridge();
+                else if (phaseIndex === 2) this.buildPhase3_Button();
+            }
+
+            // --- PHASE 1: THE MAZE ---
+            buildPhase1_Maze() {
+                document.getElementById('objective-text').innerText = "Objective: Locate Exit";
+                const size = 11;
+                const wallSize = 4;
+                const offset = (size * wallSize) / 2;
+                
+                // Floor
+                const floorGeo = new THREE.PlaneGeometry(100, 100);
+                const floorMat = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
+                const floor = new THREE.Mesh(floorGeo, floorMat);
+                floor.rotation.x = -Math.PI/2;
+                this.scene.add(floor);
+                this.levelObjects.push(floor);
+
+                // Walls
+                const wallGeo = new THREE.BoxGeometry(wallSize, 6, wallSize);
+                const wallMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+                
+                // Simple Grid Maze
+                for(let x=0; x<size; x++) {
+                    for(let z=0; z<size; z++) {
+                        const xPos = (x * wallSize) - offset;
+                        const zPos = (z * wallSize) - offset;
+                        
+                        // Random walls, ensure center is clear
+                        if (Math.random() > 0.6 && (Math.abs(x-5)>1 || Math.abs(z-5)>1)) {
+                            const wall = new THREE.Mesh(wallGeo, wallMat);
+                            wall.position.set(xPos, 3, zPos);
+                            wall.castShadow = true;
+                            wall.receiveShadow = true;
+                            this.scene.add(wall);
+                            this.levelObjects.push(wall);
+                            // Store for collision
+                            this.levelObjects.push({
+                                type: 'wall',
+                                box: new THREE.Box3().setFromObject(wall)
+                            });
+                        }
+                    }
+                }
+
+                // The Exit (Fake)
+                const exitGeo = new THREE.BoxGeometry(2, 4, 1);
+                const exitMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+                this.exitObject = new THREE.Mesh(exitGeo, exitMat);
+                this.exitObject.position.set(15, 2, -15);
+                this.scene.add(this.exitObject);
+                this.levelObjects.push(this.exitObject);
+                
+                const light = new THREE.PointLight(0x00ff00, 1, 10);
+                light.position.copy(this.exitObject.position);
+                this.scene.add(light);
+                this.levelObjects.push(light);
+            }
+
+            updatePhase1(dt) {
+                // Check Win
+                if (this.player.position.distanceTo(this.exitObject.position) < 3.0) {
+                    this.soundManager.playDing();
+                    this.transitionToNextPhase();
+                }
+            }
+
+            // --- PHASE 2: THE BRIDGE ---
+            buildPhase2_Bridge() {
+                document.getElementById('objective-text').innerText = "Objective: Cross the Gap";
+                this.bridgeSegments = [];
+                
+                // Start Platform
+                const startGeo = new THREE.BoxGeometry(5, 1, 5);
+                const mat = new THREE.MeshLambertMaterial({ color: 0x4488ff });
+                const startPlat = new THREE.Mesh(startGeo, mat);
+                startPlat.position.set(0, -0.5, 0);
+                this.scene.add(startPlat);
+                this.levelObjects.push(startPlat);
+                this.bridgeSegments.push(startPlat);
+
+                // The Bridge
+                for(let i=1; i<20; i++) {
+                    const seg = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 3), mat);
+                    seg.position.set(0, -0.5, -i * 3.5);
+                    seg.castShadow = true;
+                    this.scene.add(seg);
+                    this.levelObjects.push(seg);
+                    this.bridgeSegments.push(seg);
+                }
+
+                // The Goal
+                this.goalObject = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+                this.goalObject.position.set(0, 1, -21 * 3.5);
+                this.scene.add(this.goalObject);
+                this.levelObjects.push(this.goalObject);
+            }
+
+            updatePhase2(dt) {
+                // Falling mechanics
+                this.bridgeSegments.forEach(seg => {
+                    // If player passed it, drop it
+                    if (seg.position.z > this.player.position.z + 2 && seg.position.y > -10) {
+                        seg.position.y -= 10 * dt;
+                        seg.rotation.x += dt;
+                    }
+                });
+
+                // Move goal away if close
+                const dist = this.player.position.distanceTo(this.goalObject.position);
+                if (dist < 8) {
+                    this.goalObject.position.z -= 5 * dt; // Run away!
+                }
+
+                // Fall Condition -> Fail Forward
+                if (this.player.position.y < -10) {
+                    this.soundManager.playError();
+                    this.showTrollMessage("GRAVITY CONFIRMED");
+                    this.increaseAnxiety(15);
+                    this.transitionToNextPhase();
+                }
+            }
+
+            // --- PHASE 3: THE BUTTON ---
+            buildPhase3_Button() {
+                document.getElementById('objective-text').innerText = "Objective: Follow Protocol";
+                
+                // Room
+                const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+                floor.rotation.x = -Math.PI/2;
+                this.scene.add(floor);
+                this.levelObjects.push(floor);
+
+                // Pedestal
+                const ped = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshLambertMaterial({ color: 0x888888 }));
+                ped.position.set(0, 1, -5);
+                this.scene.add(ped);
+                this.levelObjects.push(ped);
+
+                // Button
+                this.buttonMesh = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.4), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
+                this.buttonMesh.position.set(0, 2.1, -5);
+                this.scene.add(this.buttonMesh);
+                this.levelObjects.push(this.buttonMesh);
+                this.interactables.push({ mesh: this.buttonMesh, action: 'button' });
+
+                this.buttonPressCount = 0;
+            }
+
+            handleInteraction(interactable) {
+                if (interactable.action === 'button') {
+                    this.buttonPressCount++;
+                    this.soundManager.playClick();
+                    
+                    // Animate press
+                    interactable.mesh.position.y = 2.0;
+                    setTimeout(() => interactable.mesh.position.y = 2.1, 100);
+
+                    if (this.buttonPressCount < 5) {
+                        this.showTrollMessage("PROCESSING...");
+                    } else if (this.buttonPressCount < 10) {
+                        this.showTrollMessage("ERROR: PRESS HARDER");
+                        this.soundManager.playError();
+                        this.scene.fog.color.setHex(0xffcccc); // Red tint
+                    } else {
+                        this.showTrollMessage("SYSTEM FAILURE");
+                        this.increaseAnxiety(20);
+                        this.transitionToNextPhase(); // Cycle back to maze
+                    }
+                }
+            }
+
+            // --- CORE LOOP ---
+
+            animate() {
+                requestAnimationFrame(this.animate.bind(this));
+                const dt = this.clock.getDelta();
+                this.update(dt);
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            update(dt) {
+                if (!this.active) return;
+
+                // Input Movement
+                const speed = 8.0;
+                const moveForward = this.inputManager.isKeyDown('w') || this.inputManager.isKeyDown('ArrowUp');
+                const moveBackward = this.inputManager.isKeyDown('s') || this.inputManager.isKeyDown('ArrowDown');
+                const moveLeft = this.inputManager.isKeyDown('a') || this.inputManager.isKeyDown('ArrowLeft');
+                const moveRight = this.inputManager.isKeyDown('d') || this.inputManager.isKeyDown('ArrowRight');
+
+                // Determine target velocity
+                const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.player.quaternion);
+                const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.player.quaternion);
+                
+                // Flatten vectors
+                forward.y = 0; right.y = 0; forward.normalize(); right.normalize();
+
+                const moveDir = new THREE.Vector3();
+                if (moveForward) moveDir.add(forward);
+                if (moveBackward) moveDir.sub(forward);
+                if (moveRight) moveDir.add(right);
+                if (moveLeft) moveDir.sub(right);
+                moveDir.normalize();
+
+                if (this.onGround) {
+                    this.velocity.x += moveDir.x * speed * 10 * dt;
+                    this.velocity.z += moveDir.z * speed * 10 * dt;
+                    // Friction
+                    this.velocity.x *= 0.9;
+                    this.velocity.z *= 0.9;
+                }
+
+                // Gravity
+                this.velocity.y -= this.gravity * dt;
+
+                // Apply Position
+                this.player.position.add(this.velocity.clone().multiplyScalar(dt));
+
+                // Floor Collision
+                if (this.player.position.y < this.playerHeight && this.velocity.y < 0) {
+                    // Check if there is floor logic per level
+                    // For simplicity, Phase 1 and 3 have infinite plane at 0, Phase 2 relies on boxes
+                    if (this.currentPhase !== 1) { 
+                        this.player.position.y = this.playerHeight;
+                        this.velocity.y = 0;
+                        this.onGround = true;
+                    } else {
+                        // Bridge logic: Check collision with segments
+                        let hit = false;
+                        for(let seg of this.bridgeSegments) {
+                            const dx = Math.abs(this.player.position.x - seg.position.x);
+                            const dz = Math.abs(this.player.position.z - seg.position.z);
+                            if (dx < 1.5 && dz < 1.5 && this.player.position.y >= this.playerHeight - 0.5) {
+                                hit = true; 
+                                break;
+                            }
+                        }
+                        if (hit) {
+                            this.player.position.y = this.playerHeight;
+                            this.velocity.y = 0;
+                            this.onGround = true;
+                        } else {
+                            this.onGround = false;
+                        }
+                    }
+                }
+
+                // Phase Specific Updates
+                if (this.currentPhase === 0) this.updatePhase1(dt);
+                if (this.currentPhase === 1) this.updatePhase2(dt);
+                if (this.currentPhase === 2) this.checkInteractionHover();
+            }
+
+            checkInteractionHover() {
+                // Raycast for interactables
+                this.raycaster.setFromCamera(new THREE.Vector2(0,0), this.camera);
+                const intersects = this.raycaster.intersectObjects(this.interactables.map(i => i.mesh));
+                
+                const prompt = document.getElementById('interaction-prompt');
+                if (intersects.length > 0 && intersects[0].distance < 3) {
+                    prompt.style.display = 'block';
+                    this.hoveredInteractable = this.interactables.find(i => i.mesh === intersects[0].object);
+                } else {
+                    prompt.style.display = 'none';
+                    this.hoveredInteractable = null;
+                }
+            }
+
+            onMouseDown() {
+                if (this.hoveredInteractable) {
+                    this.handleInteraction(this.hoveredInteractable);
+                }
+            }
+
+            onMouseMove(event) {
+                if (!this.active) return;
+                const movementX = event.movementX || 0;
+                const movementY = event.movementY || 0;
+                this.player.rotation.y -= movementX * this.mouseSensitivity;
+                this.camera.rotation.x -= movementY * this.mouseSensitivity;
+                this.camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotation.x));
+            }
+
+            increaseAnxiety(amount) {
+                this.anxietyLevel = Math.min(100, this.anxietyLevel + amount);
+                document.getElementById('anxiety-level').innerText = Math.floor(this.anxietyLevel);
+            }
+
+            showTrollMessage(text) {
+                const el = document.getElementById('troll-message');
+                el.innerText = text;
+                el.style.opacity = 1;
+                setTimeout(() => el.style.opacity = 0, 2000);
+            }
+
+            onResize() {
+                if (this.camera && this.renderer) {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                }
+            }
+        }
+
+        const game = new RageQuit3DGame();
+        game.init(document.body);
+    </script>
+</body>
+</html>
