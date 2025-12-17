@@ -22,6 +22,9 @@ import QueensGame from './games/queens.js';
 import NeonMinesGame from './games/neonMines.js';
 import NeonPicrossGame from './games/neonPicross.js';
 import NeonFlow from './games/neonFlow.js';
+import NeonJump from './games/neonJump.js';
+import NeonSlice from './games/neonSlice.js';
+import NeonStack from './games/neonStack.js';
 
 // Legacy Refactored to Classes
 import SnakeGame from './games/snake.js';
@@ -79,6 +82,9 @@ const gameRegistry = {
     'neon-mines-game': { name: 'Neon Mines', description: 'Avoid Mines', icon: 'fa-solid fa-bomb', category: 'Logic Puzzles', module: NeonMinesGame },
     'neon-picross-game': { name: 'Neon Picross', description: 'Picture Cross', icon: 'fa-solid fa-pencil-alt', category: 'Logic Puzzles', module: NeonPicrossGame },
     'neon-flow-game': { name: 'Neon Flow', description: 'Relax & Create', icon: 'fa-solid fa-wind', category: 'New Games', module: NeonFlow, wide: true },
+    'neon-jump': { name: 'Neon Jump', description: 'Jump to the Stars', icon: 'fa-solid fa-arrow-up', category: 'Action', module: NeonJump },
+    'neon-slice': { name: 'Neon Slice', description: 'Slice the Shapes', icon: 'fa-solid fa-scissors', category: 'Action', module: NeonSlice },
+    'neon-stack': { name: 'Neon Stack', description: 'Stack the Blocks', icon: 'fa-solid fa-layer-group', category: 'Quick Minigames', module: NeonStack },
 };
 
 // State Machine
@@ -217,7 +223,7 @@ async function transitionToState(newState, context = {}) {
                 // For simplicity, we add D-pad to all games except explicit opt-outs or touch natives.
                 // Neon Flow is 'neon-flow-game'.
                 // Clicker is 'clicker-game'.
-                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap'];
+                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack'];
                 if (!noDpadGames.includes(gameId)) {
                     mobileControls = new MobileControls(container);
                 }
