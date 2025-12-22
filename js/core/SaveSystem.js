@@ -46,7 +46,7 @@ export default class SaveSystem {
         }
     }
 
-    getDefaultData() {
+       getDefaultData() {
         return {
             highScores: {},
             totalCurrency: 0,
@@ -54,13 +54,23 @@ export default class SaveSystem {
             inventory: [],
             unlockedGames: [],
             settings: {
-                muted: false,
-                adsEnabled: true
+                muted: false
             },
-            gameConfigs: {}
+            gameConfigs: {},
+            stats: {}
         };
     }
 
+    incrementStat(key, amount = 1) {
+        if (!this.data.stats) this.data.stats = {};
+        this.data.stats[key] = (this.data.stats[key] || 0) + amount;
+        this.save();
+    }
+
+    getStat(key) {
+        if (!this.data.stats) return 0;
+        return this.data.stats[key] || 0;
+    }
     getSetting(key) {
         if (!this.data.settings) this.data.settings = {};
         return this.data.settings[key];
