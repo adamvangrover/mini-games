@@ -54,10 +54,22 @@ export default class SaveSystem {
             inventory: [],
             unlockedGames: [],
             settings: {
-                muted: false
+                muted: false,
+                adsEnabled: true
             },
             gameConfigs: {}
         };
+    }
+
+    getSetting(key) {
+        if (!this.data.settings) this.data.settings = {};
+        return this.data.settings[key];
+    }
+
+    setSetting(key, value) {
+        if (!this.data.settings) this.data.settings = {};
+        this.data.settings[key] = value;
+        this.save();
     }
 
     save() {
