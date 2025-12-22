@@ -27,6 +27,10 @@ import NeonJump from './games/neonJump.js';
 import NeonSlice from './games/neonSlice.js';
 import NeonStack from './games/neonStack.js';
 import PrismRealms from './games/prismRealms.js';
+import SudokuGame from './games/sudoku.js';
+import ZenGardenGame from './games/zenGarden.js';
+import NeonGalagaGame from './games/neonGalaga.js';
+import TrophyRoom from './games/trophyRoom.js';
 
 // Legacy Refactored to Classes
 import SnakeGame from './games/snake.js';
@@ -88,6 +92,10 @@ const gameRegistry = {
     'neon-slice': { name: 'Neon Slice', description: 'Slice the Shapes', icon: 'fa-solid fa-scissors', category: 'Action', module: NeonSlice },
     'neon-stack': { name: 'Neon Stack', description: 'Stack the Blocks', icon: 'fa-solid fa-layer-group', category: 'Quick Minigames', module: NeonStack },
     'prism-realms-game': { name: 'Prism Realms', description: 'Shadowfall FPS', icon: 'fa-solid fa-ghost', category: '3D Immersive', module: PrismRealms, wide: true },
+    'sudoku-game': { name: 'Neon Sudoku', description: 'Classic Number Puzzle', icon: 'fa-solid fa-border-none', category: 'Logic Puzzles', module: SudokuGame },
+    'zen-garden-game': { name: 'Zen Garden', description: 'Relax & Create', icon: 'fa-solid fa-spa', category: 'Simulation', module: ZenGardenGame, wide: true },
+    'neon-galaga-game': { name: 'Neon Galaga', description: 'Space Warfare', icon: 'fa-solid fa-jet-fighter', category: 'Action', module: NeonGalagaGame },
+    'trophy-room': { name: 'Hall of Fame', description: 'View Achievements', icon: 'fa-solid fa-trophy', category: 'Meta', module: TrophyRoom, wide: true },
 };
 
 // State Machine
