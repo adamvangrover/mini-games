@@ -6,6 +6,7 @@ import InputManager from './core/InputManager.js';
 import ArcadeHub from './core/ArcadeHub.js';
 import Store from './core/Store.js';
 import MobileControls from './core/MobileControls.js';
+import AdsManager from './core/AdsManager.js';
 
 // Import New/Refactored Games
 import TowerDefenseGame from './games/towerDefense.js';
@@ -108,6 +109,8 @@ let store = null;
 const soundManager = SoundManager.getInstance();
 const saveSystem = SaveSystem.getInstance();
 const inputManager = InputManager.getInstance();
+const adsManager = AdsManager.getInstance();
+let gameOverCount = 0;
 
 // Centralized Game Loop
 function mainLoop(timestamp) {
@@ -261,36 +264,47 @@ function hideOverlay() {
 }
 
 function showGameOver(score, onRetry) {
-    const coinsEarned = Math.floor(score / 10);
-    if(coinsEarned > 0) {
-        saveSystem.addCurrency(coinsEarned);
+    gameOverCount++;
+
+    const runGameOverLogic = () => {
+        const coinsEarned = Math.floor(score / 10);
+        if(coinsEarned > 0) {
+            saveSystem.addCurrency(coinsEarned);
+        }
+
+        const content = `
+            <p class="mb-4 text-xl">Final Score: <span class="text-yellow-400 font-bold">${score}</span></p>
+            ${coinsEarned > 0 ? `<p class="mb-4 text-sm text-yellow-300">Earned +${coinsEarned} Coins!</p>` : ''}
+            <div class="flex justify-center gap-4">
+                <button id="overlay-retry-btn" class="px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded">Try Again</button>
+                <button id="overlay-menu-btn" class="px-6 py-2 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded">Main Menu</button>
+            </div>
+        `;
+
+        currentState = AppState.PAUSED;
+        showOverlay('GAME OVER', content);
+        updateHubStats(); // Update coin display
+
+        const retryBtn = document.getElementById('overlay-retry-btn');
+        const menuBtn = document.getElementById('overlay-menu-btn');
+
+        if (retryBtn) retryBtn.onclick = () => {
+            hideOverlay();
+            currentState = AppState.IN_GAME;
+            if (onRetry) onRetry();
+        };
+
+        if (menuBtn) menuBtn.onclick = () => {
+            transitionToState(AppState.MENU);
+        };
+    };
+
+    if (gameOverCount % 2 === 0) {
+        currentState = AppState.PAUSED;
+        adsManager.showAd(runGameOverLogic);
+    } else {
+        runGameOverLogic();
     }
-
-    const content = `
-        <p class="mb-4 text-xl">Final Score: <span class="text-yellow-400 font-bold">${score}</span></p>
-        ${coinsEarned > 0 ? `<p class="mb-4 text-sm text-yellow-300">Earned +${coinsEarned} Coins!</p>` : ''}
-        <div class="flex justify-center gap-4">
-            <button id="overlay-retry-btn" class="px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded">Try Again</button>
-            <button id="overlay-menu-btn" class="px-6 py-2 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded">Main Menu</button>
-        </div>
-    `;
-
-    currentState = AppState.PAUSED;
-    showOverlay('GAME OVER', content);
-    updateHubStats(); // Update coin display
-
-    const retryBtn = document.getElementById('overlay-retry-btn');
-    const menuBtn = document.getElementById('overlay-menu-btn');
-
-    if (retryBtn) retryBtn.onclick = () => {
-        hideOverlay();
-        currentState = AppState.IN_GAME;
-        if (onRetry) onRetry();
-    };
-
-    if (menuBtn) menuBtn.onclick = () => {
-        transitionToState(AppState.MENU);
-    };
 }
 
 function togglePause() {
@@ -323,6 +337,15 @@ function showSettingsOverlay() {
             </div>
 
             <hr class="border-slate-700 my-2">
+
+            <div class="flex items-center justify-between bg-slate-800 p-3 rounded">
+                <span class="text-white font-bold"><i class="fas fa-ad mr-2"></i> Show Ads</span>
+                <button id="toggle-ads-btn" class="px-4 py-1 rounded font-bold text-sm transition-colors ${adsManager.areAdsEnabled() ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}">
+                    ${adsManager.areAdsEnabled() ? 'ON' : 'OFF'}
+                </button>
+            </div>
+
+            <hr class="border-slate-700 my-2">
             <h3 class="text-white font-bold">Import Data</h3>
             <textarea id="import-area" class="w-full bg-slate-800 text-xs text-white p-2 rounded h-24 font-mono" placeholder="Paste save data here..."></textarea>
             <button id="import-btn" class="w-full px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded">
@@ -347,6 +370,24 @@ function showSettingsOverlay() {
         document.execCommand('copy');
         document.getElementById('copy-export-btn').textContent = "Copied!";
         setTimeout(() => document.getElementById('copy-export-btn').textContent = "Copy Data", 2000);
+    };
+
+    const toggleAdsBtn = document.getElementById('toggle-ads-btn');
+    toggleAdsBtn.onclick = () => {
+        const currentlyEnabled = adsManager.areAdsEnabled();
+        const newState = !currentlyEnabled;
+        adsManager.toggleAds(newState);
+
+        // Update UI
+        toggleAdsBtn.textContent = newState ? 'ON' : 'OFF';
+        toggleAdsBtn.className = `px-4 py-1 rounded font-bold text-sm transition-colors ${newState ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`;
+
+        // Visual feedback
+        if(newState) {
+            alert('Ads enabled! Thank you for supporting us (virtually).');
+        } else {
+             alert('Ads disabled. Enjoy the uninterrupted experience!');
+        }
     };
 
     document.getElementById('copy-stats-btn').onclick = () => {
