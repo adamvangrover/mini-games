@@ -74,6 +74,17 @@ export default class SaveSystem {
         };
     }
 
+    getSettings() {
+        if (!this.data.settings) {
+            this.data.settings = { muted: false, adsEnabled: true };
+        }
+        return this.data.settings;
+    }
+
+    setSetting(key, value) {
+        if (!this.data.settings) {
+            this.data.settings = { muted: false, adsEnabled: true };
+        }
     incrementStat(key, amount = 1) {
         if (!this.data.stats) this.data.stats = {};
         this.data.stats[key] = (this.data.stats[key] || 0) + amount;
