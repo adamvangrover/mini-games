@@ -46,7 +46,7 @@ export default class SaveSystem {
         }
     }
 
-    getDefaultData() {
+       getDefaultData() {
         return {
             highScores: {},
             totalCurrency: 0,
@@ -54,10 +54,56 @@ export default class SaveSystem {
             inventory: [],
             unlockedGames: [],
             settings: {
-                muted: false
+                muted: false,
+                adsEnabled: true,
+                crt: true
             },
-            gameConfigs: {}
+            gameConfigs: {},
+            stats: {}
+            xp: 0,
+            level: 1,
+            avatar: {
+                color: '#00ffff',
+                icon: 'fa-robot'
+            },
+            upgrades: {
+                coinMultiplier: 1, // 1.0, 1.2, 1.5, etc.
+                xpBoost: 1,
+                startHealth: 0 // Bonus health
+            }
         };
+    }
+
+    getSettings() {
+        if (!this.data.settings) {
+            this.data.settings = { muted: false, adsEnabled: true };
+        }
+        return this.data.settings;
+    }
+
+    setSetting(key, value) {
+        if (!this.data.settings) {
+            this.data.settings = { muted: false, adsEnabled: true };
+        }
+    incrementStat(key, amount = 1) {
+        if (!this.data.stats) this.data.stats = {};
+        this.data.stats[key] = (this.data.stats[key] || 0) + amount;
+        this.save();
+    }
+
+    getStat(key) {
+        if (!this.data.stats) return 0;
+        return this.data.stats[key] || 0;
+    }
+    getSetting(key) {
+        if (!this.data.settings) this.data.settings = {};
+        return this.data.settings[key];
+    }
+
+    setSetting(key, value) {
+        if (!this.data.settings) this.data.settings = {};
+        this.data.settings[key] = value;
+        this.save();
     }
 
     save() {
@@ -153,11 +199,30 @@ export default class SaveSystem {
     }
 
     unlockAchievement(achievementId) {
+        if (!this.data.achievements) this.data.achievements = [];
         if (!this.data.achievements.includes(achievementId)) {
             this.data.achievements.push(achievementId);
             this.save();
             return true;
         }
+        return false;
+    }
+
+    addXP(amount) {
+        if (!this.data.xp) this.data.xp = 0;
+        if (!this.data.level) this.data.level = 1;
+
+        this.data.xp += amount;
+
+        // Simple Level Formula: Level = Floor(XP / 1000) + 1
+        const newLevel = Math.floor(this.data.xp / 1000) + 1;
+
+        if (newLevel > this.data.level) {
+            this.data.level = newLevel;
+            this.save();
+            return true; // Level Up!
+        }
+        this.save();
         return false;
     }
 
