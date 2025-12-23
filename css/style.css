@@ -181,7 +181,7 @@ canvas {
 /* --- Specific Game Overrides --- */
 
 /* Matterhorn & Aetheria Fullscreen Canvas */
-#matterhorn-game canvas, #aetheria-game-container canvas {
+#matterhorn-game canvas, #aetheria-game-container canvas, #prism-realms-game canvas {
     position: absolute;
     top: 0;
     left: 0;
@@ -219,4 +219,115 @@ canvas {
 }
 .grid-cell:hover {
     background-color: #334155;
+}
+
+/* --- Prism Realms Styles --- */
+#prism-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    background: rgba(0,0,0,0.9); z-index: 100; cursor: pointer; text-align: center;
+}
+#prism-hud {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; padding: 30px; box-sizing: border-box; display: none;
+    flex-direction: column; justify-content: space-between; z-index: 10;
+}
+.prism-stats-top { display: flex; justify-content: space-between; width: 100%; }
+.prism-stat-group { border-left: 3px solid var(--primary-neon); padding-left: 15px; background: rgba(0, 255, 255, 0.05); backdrop-filter: blur(5px); }
+.prism-label { font-size: 10px; text-transform: uppercase; letter-spacing: 3px; opacity: 0.7; }
+.prism-value { font-size: 28px; font-weight: bold; text-shadow: 0 0 10px var(--primary-neon); }
+#prism-console {
+    width: 350px; height: 180px; font-size: 11px; overflow: hidden;
+    display: flex; flex-direction: column-reverse; opacity: 0.9;
+    mask-image: linear-gradient(to top, black 70%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to top, black 70%, transparent 100%);
+}
+.prism-log-entry { margin-bottom: 4px; border-left: 2px solid #333; padding-left: 8px; animation: glitch-flash 0.3s ease-out; }
+@keyframes glitch-flash { 0% { color: #fff; transform: translateX(5px); } 100% { color: var(--primary-neon); transform: translateX(0); } }
+#prism-crosshair {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 30px; height: 30px; pointer-events: none; opacity: 0.8;
+}
+#prism-crosshair::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: var(--primary-neon); }
+#prism-crosshair::after { content: ''; position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background: var(--primary-neon); }
+.prism-key { border: 1px solid var(--primary-neon); padding: 2px 6px; margin: 0 4px; font-size: 12px; }
+#prism-vignette {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; box-shadow: inset 0 0 150px rgba(0,0,0,1); z-index: 5;
+}
+
+/* --- CRT Effect --- */
+.crt-effect {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9999;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 2px, 3px 100%;
+    animation: flicker 0.15s infinite;
+    mix-blend-mode: overlay;
+    opacity: 0.8;
+}
+
+@keyframes flicker {
+    0% { opacity: 0.8; }
+    50% { opacity: 0.75; }
+    100% { opacity: 0.8; }
+}
+
+/* --- Avatar Customization --- */
+.avatar-preview {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+    margin-bottom: 2rem;
+    transition: all 0.3s;
+}
+
+/* --- Tech Tree --- */
+.tech-node {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #1e293b;
+    border: 2px solid #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.tech-node.unlocked {
+    background: #0f172a;
+    border-color: var(--primary-neon);
+    box-shadow: 0 0 15px var(--primary-neon);
+}
+.tech-node.purchased {
+    background: var(--primary-neon);
+    color: #000;
+    box-shadow: 0 0 25px var(--primary-neon);
+}
+.tech-node.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.tech-connection {
+    position: absolute;
+    height: 4px;
+    background: #475569;
+    z-index: -1;
+    transform-origin: 0 50%;
+}
+.tech-connection.active {
+    background: var(--primary-neon);
+    box-shadow: 0 0 10px var(--primary-neon);
 }
