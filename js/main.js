@@ -27,6 +27,10 @@ import NeonJump from './games/neonJump.js';
 import NeonSlice from './games/neonSlice.js';
 import NeonStack from './games/neonStack.js';
 import PrismRealms from './games/prismRealms.js';
+import TrophyRoom from './games/trophyRoom.js';
+import AvatarStation from './games/avatarStation.js';
+import TechTree from './games/techTree.js';
+import DevConsole from './core/DevConsole.js';
 
 // Legacy Refactored to Classes
 import SnakeGame from './games/snake.js';
@@ -88,6 +92,9 @@ const gameRegistry = {
     'neon-slice': { name: 'Neon Slice', description: 'Slice the Shapes', icon: 'fa-solid fa-scissors', category: 'Action', module: NeonSlice },
     'neon-stack': { name: 'Neon Stack', description: 'Stack the Blocks', icon: 'fa-solid fa-layer-group', category: 'Quick Minigames', module: NeonStack },
     'prism-realms-game': { name: 'Prism Realms', description: 'Shadowfall FPS', icon: 'fa-solid fa-ghost', category: '3D Immersive', module: PrismRealms, wide: true },
+    'trophy-room': { name: 'Trophy Room', description: 'Achievements & Stats', icon: 'fa-solid fa-trophy', category: 'System', module: TrophyRoom },
+    'avatar-station': { name: 'Avatar Station', description: 'Customize Identity', icon: 'fa-solid fa-user-gear', category: 'System', module: AvatarStation },
+    'tech-tree': { name: 'Tech Tree', description: 'System Upgrades', icon: 'fa-solid fa-network-wired', category: 'System', module: TechTree, wide: true },
 };
 
 // State Machine
@@ -228,7 +235,7 @@ async function transitionToState(newState, context = {}) {
                 // For simplicity, we add D-pad to all games except explicit opt-outs or touch natives.
                 // Neon Flow is 'neon-flow-game'.
                 // Clicker is 'clicker-game'.
-                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'prism-realms-game'];
+                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'prism-realms-game', 'trophy-room', 'avatar-station', 'tech-tree'];
                 if (!noDpadGames.includes(gameId)) {
                     mobileControls = new MobileControls(container);
                 }
@@ -269,7 +276,10 @@ function showGameOver(score, onRetry) {
     gameOverCount++;
 
     const runGameOverLogic = () => {
-        const coinsEarned = Math.floor(score / 10);
+        // Apply Tech Tree Multiplier
+        const multiplier = saveSystem.data.upgrades?.coinMultiplier || 1;
+        const coinsEarned = Math.floor((score / 10) * multiplier);
+
         if(coinsEarned > 0) {
             saveSystem.addCurrency(coinsEarned);
         }
@@ -587,6 +597,17 @@ document.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(mainLoop);
 
     soundManager.startBGM();
+
+    // Init Dev Console
+    new DevConsole();
+
+    // Init Global Effects
+    if (saveSystem.getSetting('crt')) {
+        const crt = document.createElement('div');
+        crt.id = 'crt-overlay';
+        crt.className = 'crt-effect';
+        document.body.appendChild(crt);
+    }
 });
 
 // Expose for debugging
@@ -595,5 +616,6 @@ window.miniGameHub = {
     soundManager,
     saveSystem,
     showGameOver,
-    goBack: () => transitionToState(AppState.MENU)
+    goBack: () => transitionToState(AppState.MENU),
+    getCurrentGame: () => currentGameInstance
 };

@@ -55,9 +55,21 @@ export default class SaveSystem {
             unlockedGames: [],
             settings: {
                 muted: false,
-                adsEnabled: true
+                adsEnabled: true,
+                crt: true
             },
-            gameConfigs: {}
+            gameConfigs: {},
+            xp: 0,
+            level: 1,
+            avatar: {
+                color: '#00ffff',
+                icon: 'fa-robot'
+            },
+            upgrades: {
+                coinMultiplier: 1, // 1.0, 1.2, 1.5, etc.
+                xpBoost: 1,
+                startHealth: 0 // Bonus health
+            }
         };
     }
 
@@ -165,11 +177,30 @@ export default class SaveSystem {
     }
 
     unlockAchievement(achievementId) {
+        if (!this.data.achievements) this.data.achievements = [];
         if (!this.data.achievements.includes(achievementId)) {
             this.data.achievements.push(achievementId);
             this.save();
             return true;
         }
+        return false;
+    }
+
+    addXP(amount) {
+        if (!this.data.xp) this.data.xp = 0;
+        if (!this.data.level) this.data.level = 1;
+
+        this.data.xp += amount;
+
+        // Simple Level Formula: Level = Floor(XP / 1000) + 1
+        const newLevel = Math.floor(this.data.xp / 1000) + 1;
+
+        if (newLevel > this.data.level) {
+            this.data.level = newLevel;
+            this.save();
+            return true; // Level Up!
+        }
+        this.save();
         return false;
     }
 
