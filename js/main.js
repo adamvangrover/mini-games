@@ -6,9 +6,12 @@ import InputManager from './core/InputManager.js';
 import ArcadeHub from './core/ArcadeHub.js';
 import Store from './core/Store.js';
 import MobileControls from './core/MobileControls.js';
+import TrophyRoom from './core/TrophyRoom.js';
+import AdManager from './core/AdManager.js';
 import AdsManager from './core/AdsManager.js';
 
 // Import New/Refactored Games
+import NeonCityGame from './games/neonCity.js';
 import TowerDefenseGame from './games/towerDefense.js';
 import PhysicsStackerGame from './games/physicsStacker.js';
 import AetheriaGame from './games/aetheria/aetheria.js';
@@ -26,6 +29,7 @@ import NeonFlow from './games/neonFlow.js';
 import NeonJump from './games/neonJump.js';
 import NeonSlice from './games/neonSlice.js';
 import NeonStack from './games/neonStack.js';
+import Lumina from './games/lumina.js';
 import PrismRealms from './games/prismRealms.js';
 import TrophyRoom from './games/trophyRoom.js';
 import HallOfFame from './games/hallOfFame.js';
@@ -62,6 +66,7 @@ const gameRegistry = {
     'matterhorn-arcade': { name: 'Matterhorn Arcade', description: 'Retro Climbing Challenge', icon: 'fa-solid fa-person-hiking', category: 'Arcade Classics', module: MatterhornArcade, wide: true },
     'tower-defense-game': { name: 'Tower Defense', description: 'Defend the Base', icon: 'fa-solid fa-chess-rook', category: 'New Games', module: TowerDefenseGame },
     'stacker-game': { name: 'Physics Stacker', description: 'Balance Blocks', icon: 'fa-solid fa-cubes-stacked', category: 'New Games', module: PhysicsStackerGame },
+    'neon-city-game': { name: 'Neon City', description: 'Open World RPG', icon: 'fa-solid fa-city', category: '3D Immersive', module: NeonCityGame, wide: true },
     'aetheria-game': { name: 'Aetheria', description: 'Floating Isles Exploration', icon: 'fa-solid fa-cloud', category: '3D Immersive', module: AetheriaGame, wide: true },
     'aetheria-classic': { name: 'Aetheria (Classic)', description: 'Standalone Version', icon: 'fa-solid fa-wind', category: '3D Immersive', module: AetheriaClassic, wide: true },
     'neon-2048': { name: 'Neon 2048', description: 'Merge the Grid', icon: 'fa-solid fa-border-all', category: 'New Games', module: Neon2048 },
@@ -95,6 +100,7 @@ const gameRegistry = {
     'neon-jump': { name: 'Neon Jump', description: 'Jump to the Stars', icon: 'fa-solid fa-arrow-up', category: 'Action', module: NeonJump },
     'neon-slice': { name: 'Neon Slice', description: 'Slice the Shapes', icon: 'fa-solid fa-scissors', category: 'Action', module: NeonSlice },
     'neon-stack': { name: 'Neon Stack', description: 'Stack the Blocks', icon: 'fa-solid fa-layer-group', category: 'Quick Minigames', module: NeonStack },
+    'lumina-game': { name: 'Lumina', description: 'Purify the Glitch', icon: 'fa-solid fa-cube', category: '3D Immersive', module: Lumina, wide: true },
     'prism-realms-game': { name: 'Prism Realms', description: 'Shadowfall FPS', icon: 'fa-solid fa-ghost', category: '3D Immersive', module: PrismRealms, wide: true },
     'trophy-room': { name: 'Trophy Room', description: 'Achievement Gallery', icon: 'fa-solid fa-trophy', category: 'System', module: TrophyRoom, wide: true },
     'hall-of-fame': { name: 'Hall of Fame', description: 'Global Stats & Records', icon: 'fa-solid fa-list-ol', category: 'System', module: HallOfFame, wide: true },
@@ -111,6 +117,7 @@ const AppState = {
     IN_GAME: 'IN_GAME',
     PAUSED: 'PAUSED',
     TRANSITIONING: 'TRANSITIONING',
+    TROPHY_ROOM: 'TROPHY_ROOM'
 };
 
 let currentState = AppState.MENU;
@@ -122,6 +129,7 @@ let mobileControls = null;
 let arcadeHub = null;
 let is3DView = true;
 let store = null;
+const adManager = new AdManager();
 
 const soundManager = SoundManager.getInstance();
 const saveSystem = SaveSystem.getInstance();
@@ -206,6 +214,32 @@ async function transitionToState(newState, context = {}) {
     }
 
     // --- Enter new state ---
+    if (newState === AppState.TROPHY_ROOM) {
+        currentState = AppState.TRANSITIONING;
+
+        if (arcadeHub) arcadeHub.pause();
+        document.getElementById("menu").classList.add("hidden");
+
+        // Create or reuse container
+        let trContainer = document.getElementById('trophy-room-container');
+        if (!trContainer) {
+            trContainer = document.createElement('div');
+            trContainer.id = 'trophy-room-container';
+            trContainer.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; z-index:15;";
+            document.body.appendChild(trContainer);
+        }
+        trContainer.innerHTML = ''; // Clear previous
+        trContainer.style.display = 'block';
+
+        new TrophyRoom(trContainer, () => {
+             trContainer.style.display = 'none';
+             transitionToState(AppState.MENU);
+        });
+
+        currentState = AppState.TROPHY_ROOM;
+        return;
+    }
+
     if (newState === AppState.IN_GAME) {
         currentState = AppState.TRANSITIONING;
         const { gameId } = context;
@@ -243,7 +277,7 @@ async function transitionToState(newState, context = {}) {
                 // For simplicity, we add D-pad to all games except explicit opt-outs or touch natives.
                 // Neon Flow is 'neon-flow-game'.
                 // Clicker is 'clicker-game'.
-                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'prism-realms-game', 'trophy-room', 'hall-of-fame', 'avatar-station', 'tech-tree'];
+                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'lumina-game', 'prism-realms-game', 'trophy-room', 'hall-of-fame', 'avatar-station', 'tech-tree'];
                 if (!noDpadGames.includes(gameId)) {
                     mobileControls = new MobileControls(container);
                 }
@@ -305,6 +339,15 @@ function showGameOver(score, onRetry) {
         showOverlay('GAME OVER', content);
         updateHubStats(); // Update coin display
 
+    if (menuBtn) menuBtn.onclick = () => {
+        // 30% Chance to show ad on exit
+        if (Math.random() < 0.3) {
+            adManager.showInterstitial(() => {
+                transitionToState(AppState.MENU);
+            });
+        } else {
+            transitionToState(AppState.MENU);
+        }
         const retryBtn = document.getElementById('overlay-retry-btn');
         const menuBtn = document.getElementById('overlay-menu-btn');
 
@@ -340,11 +383,19 @@ function togglePause() {
 }
 
 function showSettingsOverlay() {
-    // ... Existing implementation of settings overlay ...
-    // To save token space, I will re-implement minimal needed here or assume logic is similar.
-    // For robustness, I'll copy the existing logic from the previous file content.
+     const settings = saveSystem.getSettings();
+     const adsEnabled = settings.adsEnabled !== false; // Default true
+
      const content = `
         <div class="flex flex-col gap-4">
+            <div class="flex items-center justify-between bg-slate-800 p-3 rounded-lg border border-slate-700">
+                <span class="text-white font-bold">Enable Ads</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="settings-ads-toggle" class="sr-only peer" ${adsEnabled ? 'checked' : ''}>
+                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fuchsia-600"></div>
+                </label>
+            </div>
+
             <button id="copy-stats-btn" class="px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded flex items-center justify-center gap-2">
                 <i class="fas fa-share-alt"></i> Share High Scores (Copy)
             </button>
@@ -382,6 +433,11 @@ function showSettingsOverlay() {
         exportArea.value = saveSystem.exportData();
     };
     updateExport();
+
+    // Bind Ad Toggle
+    document.getElementById('settings-ads-toggle').addEventListener('change', (e) => {
+        saveSystem.setSetting('adsEnabled', e.target.checked);
+    });
 
     document.getElementById('refresh-export-btn').onclick = updateExport;
 
@@ -532,7 +588,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         arcadeHub = new ArcadeHub(hubContainer, gameRegistry, (gameId) => {
-            transitionToState(AppState.IN_GAME, { gameId });
+            if (gameId === 'TROPHY_ROOM') {
+                transitionToState(AppState.TROPHY_ROOM);
+            } else {
+                transitionToState(AppState.IN_GAME, { gameId });
+            }
         });
 
         document.getElementById("menu").classList.remove("hidden");
@@ -580,6 +640,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const openSettings = () => showSettingsOverlay();
     document.getElementById('settings-btn')?.addEventListener('click', openSettings);
     document.getElementById('settings-btn-hud')?.addEventListener('click', openSettings);
+
+    // Trophy Room Button
+    document.getElementById('trophy-btn-menu')?.addEventListener('click', () => {
+        transitionToState(AppState.TROPHY_ROOM);
+    });
 
 
     // Global Key Listeners

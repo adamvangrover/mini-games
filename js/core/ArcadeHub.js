@@ -60,6 +60,7 @@ export default class ArcadeHub {
         // --- Environment ---
         this.createFloor();
         this.generateCabinets();
+        this.createTeleporter();
 
         // --- Event Listeners ---
         window.addEventListener('resize', this.onResize.bind(this));
@@ -104,6 +105,72 @@ export default class ArcadeHub {
         this.scene.add(gridHelper);
 
         this.scene.add(floor);
+
+        // Add some ambient particles (dust/stars)
+        const particlesGeo = new THREE.BufferGeometry();
+        const particlesCount = 200;
+        const posArray = new Float32Array(particlesCount * 3);
+
+        for(let i = 0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 40;
+        }
+
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMat = new THREE.PointsMaterial({
+            size: 0.05,
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.5
+        });
+        const particles = new THREE.Points(particlesGeo, particlesMat);
+        particles.position.y = 2;
+        this.scene.add(particles);
+    }
+
+    createTeleporter() {
+        // A special area to go to Trophy Room
+        const group = new THREE.Group();
+        group.position.set(0, 0, 8); // Behind start position
+
+        // Pad
+        const padGeo = new THREE.CylinderGeometry(1.5, 1.5, 0.1, 32);
+        const padMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xffaa00, emissiveIntensity: 0.2 });
+        const pad = new THREE.Mesh(padGeo, padMat);
+        group.add(pad);
+
+        // Ring
+        const ringGeo = new THREE.TorusGeometry(1.2, 0.1, 16, 100);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = 0.5;
+        group.add(ring);
+
+        // Floating Text
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'rgba(0,0,0,0)';
+        ctx.fillRect(0,0,256,64);
+        ctx.font = 'bold 30px Arial';
+        ctx.fillStyle = '#ffaa00';
+        ctx.textAlign = 'center';
+        ctx.fillText("TROPHY ROOM", 128, 40);
+
+        const tex = new THREE.CanvasTexture(canvas);
+        const labelGeo = new THREE.PlaneGeometry(2, 0.5);
+        const labelMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
+        const label = new THREE.Mesh(labelGeo, labelMat);
+        label.position.set(0, 1.5, 0);
+        // label.lookAt(0, 1.6, 0.1); // Look at camera start pos roughly
+        // We'll make it billboard in animate
+        group.add(label);
+        this.label = label; // Store ref
+
+        group.userData = { isTeleporter: true, target: 'TROPHY_ROOM' };
+        this.teleporter = group;
+        this.scene.add(group);
     }
 
     generateCabinets() {
@@ -288,16 +355,25 @@ export default class ArcadeHub {
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
         if (intersects.length > 0) {
-            // Find parent cabinet group
             let object = intersects[0].object;
-            while(object.parent && !object.userData.gameId) {
-                object = object.parent;
-            }
 
-            if (object.userData && object.userData.gameId) {
-                if (this.onGameSelect) {
-                    this.onGameSelect(object.userData.gameId);
+            // Check up the tree
+            let current = object;
+            while(current) {
+                if (current.userData && current.userData.gameId) {
+                    if (this.onGameSelect) {
+                        this.onGameSelect(current.userData.gameId);
+                    }
+                    return;
                 }
+                if (current.userData && current.userData.isTeleporter) {
+                    if (this.onGameSelect) {
+                        // Using 'TROPHY_ROOM' as a special game ID that main.js handles
+                        this.onGameSelect('TROPHY_ROOM');
+                    }
+                    return;
+                }
+                current = current.parent;
             }
         }
     }
@@ -336,6 +412,18 @@ export default class ArcadeHub {
         this.cabinets.forEach((cab, i) => {
              cab.position.y = Math.sin(time + i) * 0.05; 
         });
+
+        // Teleporter animation
+        if (this.teleporter) {
+             const ring = this.teleporter.children.find(c => c.geometry.type === 'TorusGeometry');
+             if(ring) {
+                 ring.position.y = 0.5 + Math.sin(time * 2) * 0.1;
+                 ring.rotation.x = Math.PI/2 + Math.sin(time) * 0.1;
+             }
+             if (this.label) {
+                 this.label.lookAt(this.camera.position);
+             }
+        }
 
         this.renderer.render(this.scene, this.camera);
     }

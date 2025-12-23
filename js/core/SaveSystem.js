@@ -59,7 +59,15 @@ export default class SaveSystem {
                 crt: true
             },
             gameConfigs: {},
-            stats: {},
+            profile: {
+                name: "Player 1",
+                avatar: "fas fa-user-astronaut",
+                color: "#ff00ff"
+            },
+            equipped: {
+                theme: 'theme_neon_blue',
+                avatar: 'fas fa-user-astronaut'
+            stats: {}
             xp: 0,
             level: 1,
             avatar: {
@@ -74,6 +82,17 @@ export default class SaveSystem {
         };
     }
 
+    getSettings() {
+        if (!this.data.settings) {
+            this.data.settings = { muted: false, adsEnabled: true };
+        }
+        return this.data.settings;
+    }
+
+    setSetting(key, value) {
+        if (!this.data.settings) {
+            this.data.settings = { muted: false, adsEnabled: true };
+        }
     incrementStat(key, amount = 1) {
         if (!this.data.stats) this.data.stats = {};
         this.data.stats[key] = (this.data.stats[key] || 0) + amount;
@@ -96,9 +115,13 @@ export default class SaveSystem {
     }
 
     save() {
-        const json = JSON.stringify(this.data);
-        const encrypted = this.encrypt(json);
-        localStorage.setItem(this.storageKey, encrypted);
+        try {
+            const json = JSON.stringify(this.data);
+            const encrypted = this.encrypt(json);
+            localStorage.setItem(this.storageKey, encrypted);
+        } catch (e) {
+            console.error("SaveSystem: Failed to save data to localStorage.", e);
+        }
     }
 
     getHighScore(gameId) {
@@ -112,6 +135,38 @@ export default class SaveSystem {
             return true; // New high score!
         }
         return false;
+    }
+
+    equipItem(category, value) {
+        this.setEquippedItem(category, value);
+    }
+
+    getEquipped(category) {
+        return this.getEquippedItem(category);
+    }
+
+    setEquippedItem(type, itemId) {
+        if (!this.data.equipped) this.data.equipped = {};
+        this.data.equipped[type] = itemId;
+        this.save();
+    }
+
+    getEquippedItem(type) {
+        if (!this.data.equipped) return null;
+        return this.data.equipped[type];
+    }
+
+    setProfileName(name) {
+        if (!this.data.profile) this.data.profile = {};
+        this.data.profile.name = name;
+        this.save();
+    }
+
+    getProfile() {
+        if (!this.data.profile) {
+            this.data.profile = this.getDefaultData().profile;
+        }
+        return this.data.profile;
     }
 
     addCurrency(amount) {
