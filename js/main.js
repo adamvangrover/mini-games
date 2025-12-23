@@ -31,6 +31,10 @@ import TrophyRoom from './games/trophyRoom.js';
 import AvatarStation from './games/avatarStation.js';
 import TechTree from './games/techTree.js';
 import DevConsole from './core/DevConsole.js';
+import SudokuGame from './games/sudoku.js';
+import ZenGardenGame from './games/zenGarden.js';
+import NeonGalagaGame from './games/neonGalaga.js';
+import TrophyRoom from './games/trophyRoom.js';
 
 // Legacy Refactored to Classes
 import SnakeGame from './games/snake.js';
@@ -95,6 +99,10 @@ const gameRegistry = {
     'trophy-room': { name: 'Trophy Room', description: 'Achievements & Stats', icon: 'fa-solid fa-trophy', category: 'System', module: TrophyRoom },
     'avatar-station': { name: 'Avatar Station', description: 'Customize Identity', icon: 'fa-solid fa-user-gear', category: 'System', module: AvatarStation },
     'tech-tree': { name: 'Tech Tree', description: 'System Upgrades', icon: 'fa-solid fa-network-wired', category: 'System', module: TechTree, wide: true },
+    'sudoku-game': { name: 'Neon Sudoku', description: 'Classic Number Puzzle', icon: 'fa-solid fa-border-none', category: 'Logic Puzzles', module: SudokuGame },
+    'zen-garden-game': { name: 'Zen Garden', description: 'Relax & Create', icon: 'fa-solid fa-spa', category: 'Simulation', module: ZenGardenGame, wide: true },
+    'neon-galaga-game': { name: 'Neon Galaga', description: 'Space Warfare', icon: 'fa-solid fa-jet-fighter', category: 'Action', module: NeonGalagaGame },
+    'trophy-room': { name: 'Hall of Fame', description: 'View Achievements', icon: 'fa-solid fa-trophy', category: 'Meta', module: TrophyRoom, wide: true },
 };
 
 // State Machine
