@@ -46,7 +46,7 @@ export default class SaveSystem {
         }
     }
 
-       getDefaultData() {
+    getDefaultData() {
         return {
             highScores: {},
             totalCurrency: 0,
