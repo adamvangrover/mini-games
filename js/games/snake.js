@@ -2,6 +2,7 @@ import SoundManager from '../core/SoundManager.js';
 import InputManager from '../core/InputManager.js';
 import SaveSystem from '../core/SaveSystem.js';
 import ParticleSystem from '../core/ParticleSystem.js';
+import { AchievementRegistry } from '../core/AchievementRegistry.js';
 
 export default class SnakeGame {
     constructor() {
@@ -171,6 +172,17 @@ export default class SnakeGame {
         this.shakeTimer = 0.5;
         this.saveSystem.setHighScore('snake-game', this.score);
 
+        // Check Achievements
+        if (this.score >= 10) {
+            this.checkAchievement('snake-score-10');
+        }
+        if (this.score >= 50) {
+            this.checkAchievement('snake-score-50');
+        }
+
+        this.checkAchievement('first-play');
+        this.saveSystem.addXP(this.score);
+
         // Particles explosion at head
         const head = this.snake[0];
         const px = head.x * this.tileSize + this.tileSize/2;
@@ -185,6 +197,17 @@ export default class SnakeGame {
                 this.resetGame();
             }
         }, 500);
+    }
+
+    checkAchievement(id) {
+        if (this.saveSystem.unlockAchievement(id)) {
+            const ach = AchievementRegistry[id];
+            if (ach) {
+                this.saveSystem.addXP(ach.xp);
+                // Optional: Show notification toast?
+                console.log(`Unlocked: ${ach.title}`);
+            }
+        }
     }
 
     updateScoreUI() {

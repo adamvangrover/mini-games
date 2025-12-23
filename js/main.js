@@ -7,6 +7,7 @@ import ArcadeHub from './core/ArcadeHub.js';
 import Store from './core/Store.js';
 import MobileControls from './core/MobileControls.js';
 import AdManager from './core/AdManager.js';
+import AdsManager from './core/AdsManager.js';
 
 // Import New/Refactored Games
 import NeonCityGame from './games/neonCity.js';
@@ -27,6 +28,15 @@ import NeonFlow from './games/neonFlow.js';
 import NeonJump from './games/neonJump.js';
 import NeonSlice from './games/neonSlice.js';
 import NeonStack from './games/neonStack.js';
+import PrismRealms from './games/prismRealms.js';
+import TrophyRoom from './games/trophyRoom.js';
+import AvatarStation from './games/avatarStation.js';
+import TechTree from './games/techTree.js';
+import DevConsole from './core/DevConsole.js';
+import SudokuGame from './games/sudoku.js';
+import ZenGardenGame from './games/zenGarden.js';
+import NeonGalagaGame from './games/neonGalaga.js';
+import TrophyRoom from './games/trophyRoom.js';
 
 // Legacy Refactored to Classes
 import SnakeGame from './games/snake.js';
@@ -88,6 +98,14 @@ const gameRegistry = {
     'neon-jump': { name: 'Neon Jump', description: 'Jump to the Stars', icon: 'fa-solid fa-arrow-up', category: 'Action', module: NeonJump },
     'neon-slice': { name: 'Neon Slice', description: 'Slice the Shapes', icon: 'fa-solid fa-scissors', category: 'Action', module: NeonSlice },
     'neon-stack': { name: 'Neon Stack', description: 'Stack the Blocks', icon: 'fa-solid fa-layer-group', category: 'Quick Minigames', module: NeonStack },
+    'prism-realms-game': { name: 'Prism Realms', description: 'Shadowfall FPS', icon: 'fa-solid fa-ghost', category: '3D Immersive', module: PrismRealms, wide: true },
+    'trophy-room': { name: 'Trophy Room', description: 'Achievements & Stats', icon: 'fa-solid fa-trophy', category: 'System', module: TrophyRoom },
+    'avatar-station': { name: 'Avatar Station', description: 'Customize Identity', icon: 'fa-solid fa-user-gear', category: 'System', module: AvatarStation },
+    'tech-tree': { name: 'Tech Tree', description: 'System Upgrades', icon: 'fa-solid fa-network-wired', category: 'System', module: TechTree, wide: true },
+    'sudoku-game': { name: 'Neon Sudoku', description: 'Classic Number Puzzle', icon: 'fa-solid fa-border-none', category: 'Logic Puzzles', module: SudokuGame },
+    'zen-garden-game': { name: 'Zen Garden', description: 'Relax & Create', icon: 'fa-solid fa-spa', category: 'Simulation', module: ZenGardenGame, wide: true },
+    'neon-galaga-game': { name: 'Neon Galaga', description: 'Space Warfare', icon: 'fa-solid fa-jet-fighter', category: 'Action', module: NeonGalagaGame },
+    'trophy-room': { name: 'Hall of Fame', description: 'View Achievements', icon: 'fa-solid fa-trophy', category: 'Meta', module: TrophyRoom, wide: true },
 };
 
 // State Machine
@@ -112,6 +130,8 @@ const adManager = new AdManager();
 const soundManager = SoundManager.getInstance();
 const saveSystem = SaveSystem.getInstance();
 const inputManager = InputManager.getInstance();
+const adsManager = AdsManager.getInstance();
+let gameOverCount = 0;
 
 // Centralized Game Loop
 function mainLoop(timestamp) {
@@ -227,7 +247,7 @@ async function transitionToState(newState, context = {}) {
                 // For simplicity, we add D-pad to all games except explicit opt-outs or touch natives.
                 // Neon Flow is 'neon-flow-game'.
                 // Clicker is 'clicker-game'.
-                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack'];
+                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'prism-realms-game', 'trophy-room', 'avatar-station', 'tech-tree'];
                 if (!noDpadGames.includes(gameId)) {
                     mobileControls = new MobileControls(container);
                 }
@@ -265,32 +285,29 @@ function hideOverlay() {
 }
 
 function showGameOver(score, onRetry) {
-    const coinsEarned = Math.floor(score / 10);
-    if(coinsEarned > 0) {
-        saveSystem.addCurrency(coinsEarned);
-    }
+    gameOverCount++;
 
-    const content = `
-        <p class="mb-4 text-xl">Final Score: <span class="text-yellow-400 font-bold">${score}</span></p>
-        ${coinsEarned > 0 ? `<p class="mb-4 text-sm text-yellow-300">Earned +${coinsEarned} Coins!</p>` : ''}
-        <div class="flex justify-center gap-4">
-            <button id="overlay-retry-btn" class="px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded">Try Again</button>
-            <button id="overlay-menu-btn" class="px-6 py-2 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded">Main Menu</button>
-        </div>
-    `;
+    const runGameOverLogic = () => {
+        // Apply Tech Tree Multiplier
+        const multiplier = saveSystem.data.upgrades?.coinMultiplier || 1;
+        const coinsEarned = Math.floor((score / 10) * multiplier);
 
-    currentState = AppState.PAUSED;
-    showOverlay('GAME OVER', content);
-    updateHubStats(); // Update coin display
+        if(coinsEarned > 0) {
+            saveSystem.addCurrency(coinsEarned);
+        }
 
-    const retryBtn = document.getElementById('overlay-retry-btn');
-    const menuBtn = document.getElementById('overlay-menu-btn');
+        const content = `
+            <p class="mb-4 text-xl">Final Score: <span class="text-yellow-400 font-bold">${score}</span></p>
+            ${coinsEarned > 0 ? `<p class="mb-4 text-sm text-yellow-300">Earned +${coinsEarned} Coins!</p>` : ''}
+            <div class="flex justify-center gap-4">
+                <button id="overlay-retry-btn" class="px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded">Try Again</button>
+                <button id="overlay-menu-btn" class="px-6 py-2 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded">Main Menu</button>
+            </div>
+        `;
 
-    if (retryBtn) retryBtn.onclick = () => {
-        hideOverlay();
-        currentState = AppState.IN_GAME;
-        if (onRetry) onRetry();
-    };
+        currentState = AppState.PAUSED;
+        showOverlay('GAME OVER', content);
+        updateHubStats(); // Update coin display
 
     if (menuBtn) menuBtn.onclick = () => {
         // 30% Chance to show ad on exit
@@ -301,7 +318,26 @@ function showGameOver(score, onRetry) {
         } else {
             transitionToState(AppState.MENU);
         }
+        const retryBtn = document.getElementById('overlay-retry-btn');
+        const menuBtn = document.getElementById('overlay-menu-btn');
+
+        if (retryBtn) retryBtn.onclick = () => {
+            hideOverlay();
+            currentState = AppState.IN_GAME;
+            if (onRetry) onRetry();
+        };
+
+        if (menuBtn) menuBtn.onclick = () => {
+            transitionToState(AppState.MENU);
+        };
     };
+
+    if (gameOverCount % 2 === 0) {
+        currentState = AppState.PAUSED;
+        adsManager.showAd(runGameOverLogic);
+    } else {
+        runGameOverLogic();
+    }
 }
 
 function togglePause() {
@@ -342,6 +378,15 @@ function showSettingsOverlay() {
             </div>
 
             <hr class="border-slate-700 my-2">
+
+            <div class="flex items-center justify-between bg-slate-800 p-3 rounded">
+                <span class="text-white font-bold"><i class="fas fa-ad mr-2"></i> Show Ads</span>
+                <button id="toggle-ads-btn" class="px-4 py-1 rounded font-bold text-sm transition-colors ${adsManager.areAdsEnabled() ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}">
+                    ${adsManager.areAdsEnabled() ? 'ON' : 'OFF'}
+                </button>
+            </div>
+
+            <hr class="border-slate-700 my-2">
             <h3 class="text-white font-bold">Import Data</h3>
             <textarea id="import-area" class="w-full bg-slate-800 text-xs text-white p-2 rounded h-24 font-mono" placeholder="Paste save data here..."></textarea>
             <button id="import-btn" class="w-full px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded">
@@ -371,6 +416,24 @@ function showSettingsOverlay() {
         document.execCommand('copy');
         document.getElementById('copy-export-btn').textContent = "Copied!";
         setTimeout(() => document.getElementById('copy-export-btn').textContent = "Copy Data", 2000);
+    };
+
+    const toggleAdsBtn = document.getElementById('toggle-ads-btn');
+    toggleAdsBtn.onclick = () => {
+        const currentlyEnabled = adsManager.areAdsEnabled();
+        const newState = !currentlyEnabled;
+        adsManager.toggleAds(newState);
+
+        // Update UI
+        toggleAdsBtn.textContent = newState ? 'ON' : 'OFF';
+        toggleAdsBtn.className = `px-4 py-1 rounded font-bold text-sm transition-colors ${newState ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`;
+
+        // Visual feedback
+        if(newState) {
+            alert('Ads enabled! Thank you for supporting us (virtually).');
+        } else {
+             alert('Ads disabled. Enjoy the uninterrupted experience!');
+        }
     };
 
     document.getElementById('copy-stats-btn').onclick = () => {
@@ -568,6 +631,17 @@ document.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(mainLoop);
 
     soundManager.startBGM();
+
+    // Init Dev Console
+    new DevConsole();
+
+    // Init Global Effects
+    if (saveSystem.getSetting('crt')) {
+        const crt = document.createElement('div');
+        crt.id = 'crt-overlay';
+        crt.className = 'crt-effect';
+        document.body.appendChild(crt);
+    }
 });
 
 // Expose for debugging
@@ -576,5 +650,6 @@ window.miniGameHub = {
     soundManager,
     saveSystem,
     showGameOver,
-    goBack: () => transitionToState(AppState.MENU)
+    goBack: () => transitionToState(AppState.MENU),
+    getCurrentGame: () => currentGameInstance
 };
