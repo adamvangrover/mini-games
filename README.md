@@ -1,70 +1,70 @@
-# mini-games
+# 🎮 Neon Arcade Hub
 
+A **robust, modular, and immersive** web application featuring over 40+ mini-games, a 3D Arcade Hub, an integrated economy, and persistent progression.
 
----
+![Neon Arcade](hub_3d_v2.png)
 
-### 📜 `README.md`
+## 🕹️ Games Included
 
-# 🎮 Mini Game Hub
+The arcade features a massive collection of games across multiple genres:
 
-A **self-contained** HTML file featuring a collection of fun mini-games! No extra files or dependencies—just open `index.html` and play! 🚀  
+*   **Arcade Classics:** Snake, Pong, Tetris, Space Shooter, Breakout, Pac-Man style Maze.
+*   **New Neon Hits:** Neon Jump, Neon Slice, Neon Stack, Neon Flow, Neon 2048.
+*   **3D Immersive:** Neon City (Open World), Aetheria (Floating Islands), Matterhorn (Climbing), Lumina (FPS), Neon Shooter.
+*   **Logic & Puzzle:** Sudoku, Queens, Neon Mines (Minesweeper), Neon Picross, Eclipse.
+*   **Simulation:** The Grind 98 (Life Sim), Neon Life, Zen Garden.
+*   **Sports:** Neon Golf, Neon Hoops.
 
-## 🕹️ Games Included:
-1. **Clicker Game** – Click the button to earn points.  
-2. **Maze Game** – Navigate a small maze using arrow keys.  
-3. **Endless Runner** – Press space to jump over obstacles.  
-4. **Typing Speed Test** – Type the displayed word as fast as possible.
-5. **Snake Game** – Eat food, grow longer, and avoid crashing! 🐍  
-6. **Space Shooter** – Blast enemies and survive in space! 🚀👾  
-7. **Pong** – The classic 2-player paddle game! 🏓  
+For detailed instructions and walkthroughs for each game, please see [GAMES.md](GAMES.md).
 
 ## 📂 How to Run
 
-1. Clone the repository:
-   
-```
-    git clone https://github.com/adamvangrover/mini-games.git
-   ```
-2. Open the `index.html` file in your web browser.  
+Because this project uses **ES6 Modules**, it requires a local web server to run correctly (browsers block module imports from `file://` URLs for security).
 
-## 🎮 How to Play
-For detailed instructions and walkthroughs for each game, please see [GAMES.md](GAMES.md).
+### Option 1: Python (Recommended)
+If you have Python installed (Mac/Linux usually do):
 
-| Game | Controls |
-|------|---------|
-| **Clicker Game** | Click to earn points |
-| **Maze Game** | Arrow Keys to move |
-| **Endless Runner** | Spacebar to jump |
-| **Typing Speed Test** | Type as fast as you can! |
-| **Snake Game** | Arrow Keys to move |
-| **Space Shooter** | Left/Right to move, Spacebar to shoot |
-| **Pong** | Player 1: W/S | Player 2: Up/Down |
+1.  Open your terminal/command prompt.
+2.  Navigate to the project folder.
+3.  Run:
+    ```bash
+    python3 -m http.server 8000
+    ```
+4.  Open your browser and go to: `http://localhost:8000`
 
+### Option 2: Node.js (npx)
+If you have Node.js installed:
 
+1.  Open your terminal.
+2.  Run:
+    ```bash
+    npx serve
+    ```
+3.  Open the URL shown (usually `http://localhost:3000`).
+
+### Option 3: VS Code "Live Server"
+If you use Visual Studio Code:
+1.  Install the "Live Server" extension.
+2.  Right-click `index.html`.
+3.  Select "Open with Live Server".
 
 ## 🌟 Features
-✅ **Fully Self-Contained** – No external dependencies!  
-✅ **Classic & Addictive Games** – All in one HTML file!  
-✅ **Smooth Controls & Responsive Gameplay**  
-✅ **Score Tracking & Increasing Difficulty**  
 
+*   **3D Arcade Hub:** Explore a virtual arcade cabinet room using Three.js.
+*   **Save System:** Persistent progress (XP, Levels, Currency, High Scores) saved to local storage.
+*   **Economy & Store:** Earn coins to buy new Avatars, Themes, and Cabinet Styles.
+*   **Tech Tree:** Upgrade your stats (Coin Multiplier, XP Boost).
+*   **Achievements & Trophies:** Unlock trophies in the 3D Trophy Room.
+*   **Mobile Ready:** Touch controls and responsive design for phone and tablet.
+*   **Neon Aesthetics:** A unified "Glassmorphism" and Cyberpunk visual style.
 
-## 🔧 **Future Updates (Ideas)**
-- 🎖️ **High Score System** – Track and save your best scores!  
-- 🎵 **Sound Effects & Music** – Enhance the experience!  
-- 🏆 **Multiplayer Mode** – Play online with friends!  
-- 🎨 **Custom Themes** – Change the look of the games!  
+## 🛠️ Tech Stack
 
----
-
-## 🎮 **Start Playing Now!**
-Just open `index.html` and have fun! 🚀🔥  
-
+*   **HTML5 / CSS3 (Tailwind CSS)**
+*   **JavaScript (ES6 Modules)**
+*   **Three.js** (3D Rendering)
+*   **Matter.js** (2D Physics)
 
 ## 📜 License
-This project is open-source. Feel free to modify and improve it!  
 
----
-🔗 **Live Demo** (if hosted on GitHub Pages):  
-[https://adamvangrover.github.io/mini-games/](https://adamvangrover.github.io/mini-games/)  
-
+This project is open-source. Feel free to modify and improve it!

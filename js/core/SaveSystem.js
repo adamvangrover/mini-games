@@ -39,13 +39,33 @@ export default class SaveSystem {
             // Merge with default data to ensure new fields exist
             return { ...this.getDefaultData(), ...data };
         } catch (e) {
-            console.warn("Failed to decrypt save data, or data is legacy/unencrypted. Resetting or trying legacy parse.");
+            console.warn("Failed to decrypt save data, or data is legacy/unencrypted. Attempting backup restore...");
+            const backup = localStorage.getItem(this.storageKey + '_backup');
+            if (backup) {
+                try {
+                    const json = this.decrypt(backup);
+                    const data = JSON.parse(json);
+                    console.log("Backup restored successfully.");
+                    return { ...this.getDefaultData(), ...data };
+                } catch (backupErr) {
+                    console.error("Backup also corrupted.", backupErr);
+                }
+            }
+
             try {
-                const data = JSON.parse(raw); // Fallback for transition
+                const data = JSON.parse(raw); // Fallback for legacy transition
                 return { ...this.getDefaultData(), ...data };
             } catch (e2) {
+                console.error("Critical save failure. Resetting to defaults.");
                 return this.getDefaultData();
             }
+        }
+    }
+
+    createBackup() {
+        const raw = localStorage.getItem(this.storageKey);
+        if (raw) {
+            localStorage.setItem(this.storageKey + '_backup', raw);
         }
     }
 
@@ -122,6 +142,12 @@ export default class SaveSystem {
         try {
             const json = JSON.stringify(this.data);
             const encrypted = this.encrypt(json);
+
+            // Create backup before overwriting if data exists
+            if (localStorage.getItem(this.storageKey)) {
+                this.createBackup();
+            }
+
             localStorage.setItem(this.storageKey, encrypted);
         } catch (e) {
             console.error("SaveSystem: Failed to save data to localStorage.", e);
