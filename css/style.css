@@ -255,3 +255,79 @@ canvas {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     pointer-events: none; box-shadow: inset 0 0 150px rgba(0,0,0,1); z-index: 5;
 }
+
+/* --- CRT Effect --- */
+.crt-effect {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9999;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 2px, 3px 100%;
+    animation: flicker 0.15s infinite;
+    mix-blend-mode: overlay;
+    opacity: 0.8;
+}
+
+@keyframes flicker {
+    0% { opacity: 0.8; }
+    50% { opacity: 0.75; }
+    100% { opacity: 0.8; }
+}
+
+/* --- Avatar Customization --- */
+.avatar-preview {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+    margin-bottom: 2rem;
+    transition: all 0.3s;
+}
+
+/* --- Tech Tree --- */
+.tech-node {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #1e293b;
+    border: 2px solid #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.tech-node.unlocked {
+    background: #0f172a;
+    border-color: var(--primary-neon);
+    box-shadow: 0 0 15px var(--primary-neon);
+}
+.tech-node.purchased {
+    background: var(--primary-neon);
+    color: #000;
+    box-shadow: 0 0 25px var(--primary-neon);
+}
+.tech-node.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.tech-connection {
+    position: absolute;
+    height: 4px;
+    background: #475569;
+    z-index: -1;
+    transform-origin: 0 50%;
+}
+.tech-connection.active {
+    background: var(--primary-neon);
+    box-shadow: 0 0 10px var(--primary-neon);
+}

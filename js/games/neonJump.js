@@ -1,12 +1,15 @@
 import InputManager from '../core/InputManager.js';
 import SoundManager from '../core/SoundManager.js';
 import ParticleSystem from '../core/ParticleSystem.js';
+import { AchievementRegistry } from '../core/AchievementRegistry.js';
+import SaveSystem from '../core/SaveSystem.js';
 
 export default class NeonJump {
     constructor() {
         this.inputManager = InputManager.getInstance();
         this.soundManager = SoundManager.getInstance();
         this.particleSystem = ParticleSystem.getInstance();
+        this.saveSystem = SaveSystem.getInstance();
 
         this.canvas = null;
         this.ctx = null;
@@ -248,7 +251,25 @@ export default class NeonJump {
         this.particleSystem.shake.intensity = 10;
         this.particleSystem.shake.duration = 0.5;
 
-        window.miniGameHub.showGameOver(this.score, () => this.resetGame());
+        const displayScore = Math.floor(this.score);
+
+        // Achievements
+        if (displayScore >= 50) this.checkAchievement('neon-jump-50');
+        if (displayScore >= 100) this.checkAchievement('neon-jump-100');
+        this.checkAchievement('first-play');
+        this.saveSystem.addXP(Math.floor(displayScore / 10)); // 1 XP per 10 height
+
+        window.miniGameHub.showGameOver(displayScore, () => this.resetGame());
+    }
+
+    checkAchievement(id) {
+        if (this.saveSystem.unlockAchievement(id)) {
+            const ach = AchievementRegistry[id];
+            if (ach) {
+                this.saveSystem.addXP(ach.xp);
+                console.log(`Unlocked: ${ach.title}`);
+            }
+        }
     }
 
     draw() {
@@ -322,13 +343,31 @@ export default class NeonJump {
             this.ctx.scale(-1, 1);
         }
 
-        this.ctx.shadowBlur = 20;
-        this.ctx.shadowColor = '#06b6d4'; // Cyan
-        this.ctx.fillStyle = '#06b6d4';
+        const avatar = this.saveSystem.data.avatar || { color: '#06b6d4', icon: 'fa-robot' };
 
-        // Robot Icon
+        this.ctx.shadowBlur = 20;
+        this.ctx.shadowColor = avatar.color;
+        this.ctx.fillStyle = avatar.color;
+
+        // Robot Icon lookup (Canvas needs unicode)
+        // Simple map for now, fallback to default
+        const iconMap = {
+            'fa-robot': '\uf544',
+            'fa-ghost': '\uf6e2',
+            'fa-dragon': '\uf6d5',
+            'fa-cat': '\uf6be',
+            'fa-dog': '\uf6d3',
+            'fa-user-astronaut': '\uf4fb',
+            'fa-rocket': '\uf135',
+            'fa-skull': '\uf54c',
+            'fa-crown': '\uf521',
+            'fa-bolt': '\uf0e7',
+            'fa-heart': '\uf004'
+        };
+        const unicode = iconMap[avatar.icon] || '\uf544';
+
         this.ctx.font = '900 40px "Font Awesome 6 Free"';
-        this.ctx.fillText('\uf544', 0, 0); // Robot Icon
+        this.ctx.fillText(unicode, 0, 0);
 
         // Jet flame if moving up fast
         if (this.player.vy < -400) {
