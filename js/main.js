@@ -31,7 +31,6 @@ import NeonSlice from './games/neonSlice.js';
 import NeonStack from './games/neonStack.js';
 import Lumina from './games/lumina.js';
 import PrismRealms from './games/prismRealms.js';
-import TrophyRoom from './games/trophyRoom.js';
 import HallOfFame from './games/hallOfFame.js';
 import AvatarStation from './games/avatarStation.js';
 import TechTree from './games/techTree.js';
@@ -219,6 +218,8 @@ async function transitionToState(newState, context = {}) {
 
         if (arcadeHub) arcadeHub.pause();
         document.getElementById("menu").classList.add("hidden");
+        // Hide game containers just in case
+        document.querySelectorAll(".game-container").forEach(el => el.classList.add("hidden"));
 
         // Create or reuse container
         let trContainer = document.getElementById('trophy-room-container');
@@ -231,9 +232,16 @@ async function transitionToState(newState, context = {}) {
         trContainer.innerHTML = ''; // Clear previous
         trContainer.style.display = 'block';
 
-        new TrophyRoom(trContainer, () => {
-             trContainer.style.display = 'none';
-             transitionToState(AppState.MENU);
+        // Add class for verification script visibility check
+        trContainer.classList.add('game-container');
+        trContainer.classList.remove('hidden'); // Ensure it's visible despite .game-container global hide above
+
+        // Important: Wait for next frame to ensure DOM is updated and container is valid
+        requestAnimationFrame(() => {
+             new TrophyRoom(trContainer, () => {
+                 trContainer.style.display = 'none';
+                 transitionToState(AppState.MENU);
+            });
         });
 
         currentState = AppState.TROPHY_ROOM;
@@ -241,8 +249,15 @@ async function transitionToState(newState, context = {}) {
     }
 
     if (newState === AppState.IN_GAME) {
-        currentState = AppState.TRANSITIONING;
         const { gameId } = context;
+
+        // Redirect Trophy Room to special state
+        if (gameId === 'trophy-room') {
+            transitionToState(AppState.TROPHY_ROOM);
+            return;
+        }
+
+        currentState = AppState.TRANSITIONING;
 
         if (arcadeHub) arcadeHub.pause();
         document.getElementById("menu").classList.add("hidden");
@@ -339,15 +354,6 @@ function showGameOver(score, onRetry) {
         showOverlay('GAME OVER', content);
         updateHubStats(); // Update coin display
 
-    if (menuBtn) menuBtn.onclick = () => {
-        // 30% Chance to show ad on exit
-        if (Math.random() < 0.3) {
-            adManager.showInterstitial(() => {
-                transitionToState(AppState.MENU);
-            });
-        } else {
-            transitionToState(AppState.MENU);
-        }
         const retryBtn = document.getElementById('overlay-retry-btn');
         const menuBtn = document.getElementById('overlay-menu-btn');
 
@@ -358,7 +364,14 @@ function showGameOver(score, onRetry) {
         };
 
         if (menuBtn) menuBtn.onclick = () => {
-            transitionToState(AppState.MENU);
+            // 30% Chance to show ad on exit
+            if (Math.random() < 0.3) {
+                adManager.showInterstitial(() => {
+                    transitionToState(AppState.MENU);
+                });
+            } else {
+                transitionToState(AppState.MENU);
+            }
         };
     };
 

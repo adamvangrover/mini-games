@@ -35,11 +35,14 @@ export default class SaveSystem {
         try {
             // Attempt to decrypt
             const json = this.decrypt(raw);
-            return JSON.parse(json);
+            const data = JSON.parse(json);
+            // Merge with default data to ensure new fields exist
+            return { ...this.getDefaultData(), ...data };
         } catch (e) {
             console.warn("Failed to decrypt save data, or data is legacy/unencrypted. Resetting or trying legacy parse.");
             try {
-                return JSON.parse(raw); // Fallback for transition
+                const data = JSON.parse(raw); // Fallback for transition
+                return { ...this.getDefaultData(), ...data };
             } catch (e2) {
                 return this.getDefaultData();
             }
@@ -53,6 +56,7 @@ export default class SaveSystem {
             achievements: [],
             inventory: [],
             unlockedGames: [],
+            unlockedItems: [],
             settings: {
                 muted: false,
                 adsEnabled: true,
@@ -67,10 +71,11 @@ export default class SaveSystem {
             equipped: {
                 theme: 'theme_neon_blue',
                 avatar: 'fas fa-user-astronaut'
-            stats: {}
+            },
+            stats: {},
             xp: 0,
             level: 1,
-            avatar: {
+            avatarConfig: { // Separate specific avatar customization if needed, distinct from 'equipped.avatar' which is just icon
                 color: '#00ffff',
                 icon: 'fa-robot'
             },
@@ -84,15 +89,24 @@ export default class SaveSystem {
 
     getSettings() {
         if (!this.data.settings) {
-            this.data.settings = { muted: false, adsEnabled: true };
+            this.data.settings = { muted: false, adsEnabled: true, crt: true };
         }
         return this.data.settings;
     }
 
+    getSetting(key) {
+        const settings = this.getSettings();
+        return settings[key];
+    }
+
     setSetting(key, value) {
         if (!this.data.settings) {
-            this.data.settings = { muted: false, adsEnabled: true };
+            this.data.settings = { muted: false, adsEnabled: true, crt: true };
         }
+        this.data.settings[key] = value;
+        this.save();
+    }
+
     incrementStat(key, amount = 1) {
         if (!this.data.stats) this.data.stats = {};
         this.data.stats[key] = (this.data.stats[key] || 0) + amount;
@@ -102,16 +116,6 @@ export default class SaveSystem {
     getStat(key) {
         if (!this.data.stats) return 0;
         return this.data.stats[key] || 0;
-    }
-    getSetting(key) {
-        if (!this.data.settings) this.data.settings = {};
-        return this.data.settings[key];
-    }
-
-    setSetting(key, value) {
-        if (!this.data.settings) this.data.settings = {};
-        this.data.settings[key] = value;
-        this.save();
     }
 
     save() {
@@ -125,10 +129,12 @@ export default class SaveSystem {
     }
 
     getHighScore(gameId) {
+        if (!this.data.highScores) this.data.highScores = {};
         return this.data.highScores[gameId] || 0;
     }
 
     setHighScore(gameId, score) {
+        if (!this.data.highScores) this.data.highScores = {};
         if (score > this.getHighScore(gameId)) {
             this.data.highScores[gameId] = score;
             this.save();
@@ -170,11 +176,13 @@ export default class SaveSystem {
     }
 
     addCurrency(amount) {
+        if (!this.data.totalCurrency) this.data.totalCurrency = 0;
         this.data.totalCurrency += amount;
         this.save();
     }
 
     spendCurrency(amount) {
+        if (!this.data.totalCurrency) this.data.totalCurrency = 0;
         if (this.data.totalCurrency >= amount) {
             this.data.totalCurrency -= amount;
             this.save();
@@ -184,7 +192,7 @@ export default class SaveSystem {
     }
 
     getCurrency() {
-        return this.data.totalCurrency;
+        return this.data.totalCurrency || 0;
     }
 
     unlockGame(gameId) {
@@ -266,15 +274,21 @@ export default class SaveSystem {
             this.save();
             return true; // Level Up!
         }
+
+        // Check Achievements hooks?
+        // Ideally we would emit an event, but for now we can check hardcoded stats
+        // if (this.data.totalCurrency >= 100) this.unlockAchievement('collector-100');
         this.save();
         return false;
     }
 
     getGameConfig(gameId) {
+        if (!this.data.gameConfigs) this.data.gameConfigs = {};
         return this.data.gameConfigs[gameId] || {};
     }
 
     setGameConfig(gameId, config) {
+        if (!this.data.gameConfigs) this.data.gameConfigs = {};
         this.data.gameConfigs[gameId] = config;
         this.save();
     }
@@ -292,11 +306,11 @@ export default class SaveSystem {
             const data = JSON.parse(json);
 
             // Basic validation
-            if (!data.highScores || !data.achievements) {
+            if (!data.highScores && !data.achievements) {
                 return false;
             }
 
-            this.data = data;
+            this.data = { ...this.getDefaultData(), ...data }; // Merge with default to be safe
             this.save();
             return true;
         } catch (e) {
@@ -309,7 +323,7 @@ export default class SaveSystem {
     getFormattedStats() {
         let text = "🏆 Neon Arcade High Scores 🏆\n\n";
 
-        const scores = Object.entries(this.data.highScores)
+        const scores = Object.entries(this.data.highScores || {})
             .sort((a, b) => b[1] - a[1]); // Sort by score descending (though different games have different scales)
 
         if (scores.length === 0) {
@@ -322,8 +336,8 @@ export default class SaveSystem {
             });
         }
 
-        text += `\n💰 Total Currency: ${this.data.totalCurrency}`;
-        text += `\n🏅 Achievements: ${this.data.achievements.length}`;
+        text += `\n💰 Total Currency: ${this.data.totalCurrency || 0}`;
+        text += `\n🏅 Achievements: ${this.data.achievements ? this.data.achievements.length : 0}`;
 
         return text;
     }

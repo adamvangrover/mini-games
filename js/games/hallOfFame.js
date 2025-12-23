@@ -1,27 +1,10 @@
 import SaveSystem from '../core/SaveSystem.js';
+import { AchievementRegistry } from '../core/AchievementRegistry.js';
 
 export default class HallOfFame {
     constructor() {
         this.container = null;
         this.saveSystem = SaveSystem.getInstance();
-        // Thresholds for ranking (shared with TrophyRoom logic conceptually, but defined here for display)
-        this.thresholds = {
-            'snake-game': { bronze: 10, silver: 20, gold: 50 },
-            'pong-game': { bronze: 3, silver: 5, gold: 10 },
-            'space-game': { bronze: 1000, silver: 5000, gold: 10000 },
-            'breakout-game': { bronze: 500, silver: 1000, gold: 2000 },
-            'tetris-game': { bronze: 1000, silver: 5000, gold: 10000 },
-            'neon-jump': { bronze: 500, silver: 1500, gold: 3000 },
-            'neon-slice': { bronze: 100, silver: 300, gold: 500 },
-            'neon-stack': { bronze: 5, silver: 10, gold: 20 },
-            'neon-flap': { bronze: 5, silver: 10, gold: 20 },
-            'neon-2048': { bronze: 1000, silver: 2048, gold: 5000 },
-            'sudoku-game': { bronze: 100, silver: 500, gold: 800 },
-            'neon-zip-game': { bronze: 1000, silver: 5000, gold: 10000 },
-            'neon-galaga-game': { bronze: 1000, silver: 5000, gold: 10000 },
-            'neon-flow-game': { bronze: 5, silver: 10, gold: 20 },
-            'neon-memory': { bronze: 5, silver: 10, gold: 15 },
-        };
     }
 
     async init(container) {
@@ -68,8 +51,8 @@ export default class HallOfFame {
         const statsData = [
             { label: 'OPERATOR_LEVEL', value: this.saveSystem.data.level || 1, icon: 'fa-user-astronaut' },
             { label: 'TOTAL_XP', value: this.saveSystem.data.xp || 0, icon: 'fa-star' },
-            { label: 'CREDITS', value: this.saveSystem.data.currency || 0, icon: 'fa-coins' },
-            { label: 'GAMES_LOGGED', value: Object.keys(this.saveSystem.data.highScores || {}).length, icon: 'fa-gamepad' }
+            { label: 'CREDITS', value: this.saveSystem.data.totalCurrency || 0, icon: 'fa-coins' },
+            { label: 'ACHIEVEMENTS', value: `${(this.saveSystem.data.achievements || []).length} / ${Object.keys(AchievementRegistry).length}`, icon: 'fa-trophy' }
         ];
 
         statsData.forEach(stat => {
@@ -91,58 +74,63 @@ export default class HallOfFame {
         gridContainer.innerHTML = `<h2 class="text-xl ${terminalText} mb-4 uppercase tracking-widest border-b ${terminalBorder} pb-2"><i class="fas fa-list-ol mr-2"></i> HIGH_SCORE_DATABASE</h2>`;
 
         const table = document.createElement('div');
-        table.className = "w-full overflow-hidden border ${terminalBorder} rounded bg-black/50 backdrop-blur";
+        table.className = `w-full overflow-hidden border ${terminalBorder} rounded bg-black/50 backdrop-blur`;
 
         // Header Row
         const headerRow = document.createElement('div');
-        headerRow.className = "grid grid-cols-12 gap-4 p-4 border-b ${terminalBorder} bg-emerald-900/20 text-emerald-300 text-xs font-bold uppercase tracking-wider";
+        headerRow.className = `grid grid-cols-12 gap-4 p-4 border-b ${terminalBorder} bg-emerald-900/20 text-emerald-300 text-xs font-bold uppercase tracking-wider`;
         headerRow.innerHTML = `
             <div class="col-span-1">#</div>
             <div class="col-span-5">GAME_ID</div>
             <div class="col-span-3 text-right">HIGH_SCORE</div>
-            <div class="col-span-3 text-center">RATING</div>
+            <div class="col-span-3 text-center">RANK</div>
         `;
         table.appendChild(headerRow);
 
         // Rows
         const scores = this.saveSystem.data.highScores || {};
-        const sortedGames = Object.keys(scores).sort((a, b) => scores[b] - scores[a]); // Sort by score? No, different scales. Sort by name?
-        // Actually, let's sort by "tier" value, then name.
 
-        const gameList = [...new Set([...Object.keys(this.thresholds), ...Object.keys(scores)])];
+        // Convert to array and sort
+        // We want to show all games, even if 0 score? Or just played?
+        // Let's show all registered games that have a score > 0
+        const gameEntries = Object.entries(scores)
+            .filter(([_, score]) => score > 0)
+            .sort((a, b) => b[1] - a[1]); // This sort is naive (different games have different scales), but acceptable for "Hall of Fame" view
 
-        gameList.sort();
+        if (gameEntries.length === 0) {
+             table.innerHTML += `<div class="p-8 text-center text-emerald-600 italic">NO DATA_LOGS FOUND. INITIATE GAMEPLAY.</div>`;
+        } else {
+            gameEntries.forEach(([gameId, score], index) => {
+                const name = gameId.replace(/-game|-/g, ' ').toUpperCase();
 
-        gameList.forEach((gameId, index) => {
-            const score = scores[gameId] || 0;
-            const threshold = this.thresholds[gameId] || { bronze: 100, silver: 500, gold: 1000 };
+                // Simple Rank Logic based on Achievement status
+                let rank = "C";
+                let rankColor = "text-emerald-700";
 
-            let rating = "UNRANKED";
-            let ratingColor = "text-slate-600";
+                // Check if Gold/Silver/Bronze achievements exist for this game?
+                // Or just use generic scale for now.
+                // Better: Check if "Master" achievement unlocked for this game
+                const achievements = this.saveSystem.data.achievements || [];
+                const gameAchievements = Object.values(AchievementRegistry).filter(a => a.gameId === gameId);
+                const unlockedCount = gameAchievements.filter(a => achievements.includes(a.id)).length;
 
-            if (score >= threshold.gold) {
-                rating = "S-CLASS (GOLD)";
-                ratingColor = "text-yellow-400";
-            } else if (score >= threshold.silver) {
-                rating = "A-CLASS (SILVER)";
-                ratingColor = "text-gray-300";
-            } else if (score >= threshold.bronze) {
-                rating = "B-CLASS (BRONZE)";
-                ratingColor = "text-orange-400";
-            }
+                if (unlockedCount >= 2) { rank = "S"; rankColor = "text-yellow-400"; }
+                else if (unlockedCount >= 1) { rank = "A"; rankColor = "text-emerald-400"; }
+                else if (score > 1000) { rank = "B"; rankColor = "text-emerald-600"; }
 
-            const name = gameId.replace(/-game|-/g, ' ').toUpperCase();
-
-            const row = document.createElement('div');
-            row.className = `grid grid-cols-12 gap-4 p-4 border-b border-emerald-900/30 hover:bg-emerald-900/10 transition-colors items-center text-sm ${terminalText}`;
-            row.innerHTML = `
-                <div class="col-span-1 opacity-50">${(index + 1).toString().padStart(2, '0')}</div>
-                <div class="col-span-5 font-bold">${name}</div>
-                <div class="col-span-3 text-right font-mono">${score.toLocaleString()}</div>
-                <div class="col-span-3 text-center text-xs font-bold ${ratingColor}">${rating}</div>
-            `;
-            table.appendChild(row);
-        });
+                const row = document.createElement('div');
+                row.className = `grid grid-cols-12 gap-4 p-4 border-b border-emerald-900/30 hover:bg-emerald-900/10 transition-colors items-center text-sm ${terminalText}`;
+                row.innerHTML = `
+                    <div class="col-span-1 opacity-50">${(index + 1).toString().padStart(2, '0')}</div>
+                    <div class="col-span-5 font-bold flex items-center gap-2">
+                        <i class="fas fa-gamepad opacity-50"></i> ${name}
+                    </div>
+                    <div class="col-span-3 text-right font-mono">${score.toLocaleString()}</div>
+                    <div class="col-span-3 text-center text-xs font-bold ${rankColor}">${rank}-CLASS</div>
+                `;
+                table.appendChild(row);
+            });
+        }
 
         gridContainer.appendChild(table);
         this.container.appendChild(gridContainer);
@@ -152,7 +140,7 @@ export default class HallOfFame {
         if (backBtn) backBtn.onclick = () => window.miniGameHub.goBack();
 
         const trophyBtn = document.getElementById('hof-trophy-btn');
-        if (trophyBtn) trophyBtn.onclick = () => window.miniGameHub.transitionToState('IN_GAME', { gameId: 'trophy-room' });
+        if (trophyBtn) trophyBtn.onclick = () => window.miniGameHub.transitionToState('TROPHY_ROOM');
     }
 
     async shutdown() {

@@ -10,6 +10,14 @@ export default class CityUI {
         this.createChatUI();
         this.createShopUI();
         this.createMeditateUI();
+        this.createPromptUI();
+    }
+
+    createPromptUI() {
+        this.promptOverlay = document.createElement('div');
+        this.promptOverlay.className = 'absolute bottom-32 left-1/2 transform -translate-x-1/2 bg-black/70 border border-white/20 px-6 py-2 rounded text-white font-mono text-sm hidden pointer-events-none z-30 animate-pulse';
+        this.promptOverlay.textContent = 'Press E to Interact';
+        this.container.appendChild(this.promptOverlay);
     }
 
     createHUD() {
