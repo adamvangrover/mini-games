@@ -28,13 +28,13 @@ import NeonSlice from './games/neonSlice.js';
 import NeonStack from './games/neonStack.js';
 import PrismRealms from './games/prismRealms.js';
 import TrophyRoom from './games/trophyRoom.js';
+import HallOfFame from './games/hallOfFame.js';
 import AvatarStation from './games/avatarStation.js';
 import TechTree from './games/techTree.js';
 import DevConsole from './core/DevConsole.js';
 import SudokuGame from './games/sudoku.js';
 import ZenGardenGame from './games/zenGarden.js';
 import NeonGalagaGame from './games/neonGalaga.js';
-import TrophyRoom from './games/trophyRoom.js';
 
 // Legacy Refactored to Classes
 import SnakeGame from './games/snake.js';
@@ -96,13 +96,13 @@ const gameRegistry = {
     'neon-slice': { name: 'Neon Slice', description: 'Slice the Shapes', icon: 'fa-solid fa-scissors', category: 'Action', module: NeonSlice },
     'neon-stack': { name: 'Neon Stack', description: 'Stack the Blocks', icon: 'fa-solid fa-layer-group', category: 'Quick Minigames', module: NeonStack },
     'prism-realms-game': { name: 'Prism Realms', description: 'Shadowfall FPS', icon: 'fa-solid fa-ghost', category: '3D Immersive', module: PrismRealms, wide: true },
-    'trophy-room': { name: 'Trophy Room', description: 'Achievements & Stats', icon: 'fa-solid fa-trophy', category: 'System', module: TrophyRoom },
+    'trophy-room': { name: 'Trophy Room', description: 'Achievement Gallery', icon: 'fa-solid fa-trophy', category: 'System', module: TrophyRoom, wide: true },
+    'hall-of-fame': { name: 'Hall of Fame', description: 'Global Stats & Records', icon: 'fa-solid fa-list-ol', category: 'System', module: HallOfFame, wide: true },
     'avatar-station': { name: 'Avatar Station', description: 'Customize Identity', icon: 'fa-solid fa-user-gear', category: 'System', module: AvatarStation },
     'tech-tree': { name: 'Tech Tree', description: 'System Upgrades', icon: 'fa-solid fa-network-wired', category: 'System', module: TechTree, wide: true },
     'sudoku-game': { name: 'Neon Sudoku', description: 'Classic Number Puzzle', icon: 'fa-solid fa-border-none', category: 'Logic Puzzles', module: SudokuGame },
     'zen-garden-game': { name: 'Zen Garden', description: 'Relax & Create', icon: 'fa-solid fa-spa', category: 'Simulation', module: ZenGardenGame, wide: true },
     'neon-galaga-game': { name: 'Neon Galaga', description: 'Space Warfare', icon: 'fa-solid fa-jet-fighter', category: 'Action', module: NeonGalagaGame },
-    'trophy-room': { name: 'Hall of Fame', description: 'View Achievements', icon: 'fa-solid fa-trophy', category: 'Meta', module: TrophyRoom, wide: true },
 };
 
 // State Machine
@@ -243,7 +243,7 @@ async function transitionToState(newState, context = {}) {
                 // For simplicity, we add D-pad to all games except explicit opt-outs or touch natives.
                 // Neon Flow is 'neon-flow-game'.
                 // Clicker is 'clicker-game'.
-                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'prism-realms-game', 'trophy-room', 'avatar-station', 'tech-tree'];
+                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'prism-realms-game', 'trophy-room', 'hall-of-fame', 'avatar-station', 'tech-tree'];
                 if (!noDpadGames.includes(gameId)) {
                     mobileControls = new MobileControls(container);
                 }

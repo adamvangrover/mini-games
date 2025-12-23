@@ -46,7 +46,7 @@ export default class SaveSystem {
         }
     }
 
-       getDefaultData() {
+    getDefaultData() {
         return {
             highScores: {},
             totalCurrency: 0,
@@ -59,7 +59,7 @@ export default class SaveSystem {
                 crt: true
             },
             gameConfigs: {},
-            stats: {}
+            stats: {},
             xp: 0,
             level: 1,
             avatar: {
