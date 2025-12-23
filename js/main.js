@@ -6,6 +6,7 @@ import InputManager from './core/InputManager.js';
 import ArcadeHub from './core/ArcadeHub.js';
 import Store from './core/Store.js';
 import MobileControls from './core/MobileControls.js';
+import TrophyRoom from './core/TrophyRoom.js';
 import AdManager from './core/AdManager.js';
 import AdsManager from './core/AdsManager.js';
 
@@ -116,6 +117,7 @@ const AppState = {
     IN_GAME: 'IN_GAME',
     PAUSED: 'PAUSED',
     TRANSITIONING: 'TRANSITIONING',
+    TROPHY_ROOM: 'TROPHY_ROOM'
 };
 
 let currentState = AppState.MENU;
@@ -212,6 +214,32 @@ async function transitionToState(newState, context = {}) {
     }
 
     // --- Enter new state ---
+    if (newState === AppState.TROPHY_ROOM) {
+        currentState = AppState.TRANSITIONING;
+
+        if (arcadeHub) arcadeHub.pause();
+        document.getElementById("menu").classList.add("hidden");
+
+        // Create or reuse container
+        let trContainer = document.getElementById('trophy-room-container');
+        if (!trContainer) {
+            trContainer = document.createElement('div');
+            trContainer.id = 'trophy-room-container';
+            trContainer.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; z-index:15;";
+            document.body.appendChild(trContainer);
+        }
+        trContainer.innerHTML = ''; // Clear previous
+        trContainer.style.display = 'block';
+
+        new TrophyRoom(trContainer, () => {
+             trContainer.style.display = 'none';
+             transitionToState(AppState.MENU);
+        });
+
+        currentState = AppState.TROPHY_ROOM;
+        return;
+    }
+
     if (newState === AppState.IN_GAME) {
         currentState = AppState.TRANSITIONING;
         const { gameId } = context;
@@ -560,7 +588,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         arcadeHub = new ArcadeHub(hubContainer, gameRegistry, (gameId) => {
-            transitionToState(AppState.IN_GAME, { gameId });
+            if (gameId === 'TROPHY_ROOM') {
+                transitionToState(AppState.TROPHY_ROOM);
+            } else {
+                transitionToState(AppState.IN_GAME, { gameId });
+            }
         });
 
         document.getElementById("menu").classList.remove("hidden");
@@ -608,6 +640,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const openSettings = () => showSettingsOverlay();
     document.getElementById('settings-btn')?.addEventListener('click', openSettings);
     document.getElementById('settings-btn-hud')?.addEventListener('click', openSettings);
+
+    // Trophy Room Button
+    document.getElementById('trophy-btn-menu')?.addEventListener('click', () => {
+        transitionToState(AppState.TROPHY_ROOM);
+    });
 
 
     // Global Key Listeners
