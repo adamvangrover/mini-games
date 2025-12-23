@@ -5,7 +5,11 @@ export default class SoundManager {
         }
 
         this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        this.muted = false;
+
+        // Load mute preference
+        const saved = localStorage.getItem('neon_arcade_muted');
+        this.muted = saved === 'true';
+
         this.bgmOscillators = [];
         this.bgmGainNode = null;
 
@@ -29,6 +33,8 @@ export default class SoundManager {
 
     toggleMute() {
         this.muted = !this.muted;
+        localStorage.setItem('neon_arcade_muted', this.muted);
+
         if (this.muted) {
             if (this.audioCtx.state === 'running') {
                 this.audioCtx.suspend();

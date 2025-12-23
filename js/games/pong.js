@@ -206,30 +206,31 @@ export default class PongGame {
         });
         this.ctx.globalAlpha = 1.0;
 
-        // Paddles
+        // Paddles (Neon)
         this.ctx.fillStyle = "#d946ef"; // Fuchsia-500
-        this.ctx.shadowBlur = 15;
+        this.ctx.shadowBlur = 20;
         this.ctx.shadowColor = "#d946ef";
         this.ctx.fillRect(this.player1.x, this.player1.y, this.paddleWidth, this.paddleHeight);
         this.ctx.fillRect(this.player2.x, this.player2.y, this.paddleWidth, this.paddleHeight);
-        this.ctx.shadowBlur = 0;
 
-        // Ball
+        // Ball (Neon)
+        this.ctx.shadowBlur = 20;
+        this.ctx.shadowColor = "#22d3ee";
+        this.ctx.fillStyle = "#22d3ee"; // Cyan-400
         this.ctx.beginPath();
         this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
-        this.ctx.fillStyle = "#22d3ee"; // Cyan-400
-        this.ctx.shadowBlur = 15;
-        this.ctx.shadowColor = "#22d3ee";
         this.ctx.fill();
         this.ctx.closePath();
-        this.ctx.shadowBlur = 0;
 
-        // Net
+        // Net (Neon)
+        this.ctx.shadowBlur = 5;
+        this.ctx.shadowColor = "#334155";
         this.ctx.setLineDash([10, 15]);
         this.ctx.beginPath();
         this.ctx.moveTo(this.canvas.width / 2, 0);
         this.ctx.lineTo(this.canvas.width / 2, this.canvas.height);
-        this.ctx.strokeStyle = "#334155";
+        this.ctx.strokeStyle = "#94a3b8"; // Light Slate
+        this.ctx.lineWidth = 2;
         this.ctx.stroke();
         this.ctx.setLineDash([]);
 

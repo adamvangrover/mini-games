@@ -1,10 +1,11 @@
 import SaveSystem from './SaveSystem.js';
 
 export default class ArcadeHub {
-    constructor(container, gameRegistry, onGameSelect) {
+    constructor(container, gameRegistry, onGameSelect, onFallback) {
         this.container = container;
         this.gameRegistry = gameRegistry;
         this.onGameSelect = onGameSelect;
+        this.onFallback = onFallback;
 
         // Core Three.js components
         this.scene = null;
@@ -26,59 +27,73 @@ export default class ArcadeHub {
     }
 
     init() {
-        // --- Scene Setup ---
-        this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x050510);
-        this.scene.fog = new THREE.FogExp2(0x050510, 0.02);
+        try {
+            // --- Scene Setup ---
+            this.scene = new THREE.Scene();
+            this.scene.background = new THREE.Color(0x050510);
+            this.scene.fog = new THREE.FogExp2(0x050510, 0.02);
 
-        // --- Camera Setup ---
-        this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.camera.position.set(0, 1.6, 0.1); // Center of room
+            // --- Camera Setup ---
+            this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            this.camera.position.set(0, 1.6, 0.1); // Center of room
 
-        // --- Renderer Setup ---
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        
-        if (this.container) {
-            this.container.appendChild(this.renderer.domElement);
-        } else {
-            console.error("ArcadeHub: No container provided.");
-            return;
+            // --- Renderer Setup ---
+            this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.renderer.setPixelRatio(window.devicePixelRatio);
+            this.renderer.shadowMap.enabled = true;
+            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            if (this.container) {
+                this.container.appendChild(this.renderer.domElement);
+            } else {
+                console.error("ArcadeHub: No container provided.");
+                return;
+            }
+
+            // --- Lighting ---
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+            this.scene.add(ambientLight);
+
+            // Neon Points
+            this.createNeonLight(0, 5, 0, 0xff00ff, 2, 20);     // Center Magenta
+            this.createNeonLight(-10, 5, -10, 0x00ffff, 2, 20); // Left Cyan
+            this.createNeonLight(10, 5, -10, 0xffff00, 2, 20);  // Right Yellow
+
+            // --- Environment ---
+            this.createFloor();
+            this.generateCabinets();
+            this.createTeleporter();
+
+            // --- Event Listeners ---
+            window.addEventListener('resize', this.onResize.bind(this));
+
+            // Mouse Events
+            this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this));
+            window.addEventListener('mousemove', this.onMouseMove.bind(this));
+            window.addEventListener('mouseup', this.onMouseUp.bind(this));
+            this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
+
+            // Touch Events
+            this.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
+            window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
+            window.addEventListener('touchend', this.onMouseUp.bind(this));
+
+            // Start Loop
+            this.animate();
+        } catch (e) {
+            console.error("ArcadeHub: WebGL Initialization Failed. Falling back to Grid View.", e);
+            this.isActive = false;
+            if(this.renderer && this.renderer.domElement && this.renderer.domElement.parentNode) {
+                this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+            }
+
+            if(this.container) this.container.style.display = 'none';
+
+            if (this.onFallback) {
+                this.onFallback();
+            }
         }
-
-        // --- Lighting ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
-        this.scene.add(ambientLight);
-
-        // Neon Points
-        this.createNeonLight(0, 5, 0, 0xff00ff, 2, 20);     // Center Magenta
-        this.createNeonLight(-10, 5, -10, 0x00ffff, 2, 20); // Left Cyan
-        this.createNeonLight(10, 5, -10, 0xffff00, 2, 20);  // Right Yellow
-
-        // --- Environment ---
-        this.createFloor();
-        this.generateCabinets();
-        this.createTeleporter();
-
-        // --- Event Listeners ---
-        window.addEventListener('resize', this.onResize.bind(this));
-
-        // Mouse Events
-        this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this));
-        window.addEventListener('mousemove', this.onMouseMove.bind(this));
-        window.addEventListener('mouseup', this.onMouseUp.bind(this));
-        this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
-
-        // Touch Events
-        this.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
-        window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
-        window.addEventListener('touchend', this.onMouseUp.bind(this));
-
-        // Start Loop
-        this.animate();
     }
 
     createNeonLight(x, y, z, color, intensity, distance) {

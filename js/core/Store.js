@@ -1,4 +1,7 @@
 
+import SoundManager from './SoundManager.js';
+import ParticleSystem from './ParticleSystem.js';
+
 /**
  * Manages the in-game shop, including item rendering, purchasing, and equipping.
  */
@@ -275,6 +278,17 @@ export default class Store {
         try {
             if (this.saveSystem.buyItem(item.id, item.cost)) {
                 this.render();
+
+                // Visual feedback
+                const particleSystem = ParticleSystem.getInstance();
+                if (particleSystem) {
+                    // Try to spawn particles at screen center since we don't have click event coord easily here
+                    // Ideally we pass event to buy(), but for now center burst is fine
+                    particleSystem.emit(window.innerWidth / 2, window.innerHeight / 2, '#fbbf24', 30);
+                }
+
+                SoundManager.getInstance().playSound('score');
+
             } else {
                 alert("Not enough coins!");
             }

@@ -600,13 +600,25 @@ document.addEventListener('DOMContentLoaded', () => {
             is3DView = false;
         }
 
-        arcadeHub = new ArcadeHub(hubContainer, gameRegistry, (gameId) => {
-            if (gameId === 'TROPHY_ROOM') {
-                transitionToState(AppState.TROPHY_ROOM);
-            } else {
-                transitionToState(AppState.IN_GAME, { gameId });
+        arcadeHub = new ArcadeHub(
+            hubContainer,
+            gameRegistry,
+            (gameId) => {
+                if (gameId === 'TROPHY_ROOM') {
+                    transitionToState(AppState.TROPHY_ROOM);
+                } else {
+                    transitionToState(AppState.IN_GAME, { gameId });
+                }
+            },
+            () => { // onFallback
+                console.warn("WebGL Fallback Triggered.");
+                if (is3DView) {
+                    toggleView(); // Switch to grid
+                }
+                const toggleBtn = document.getElementById('view-toggle-btn');
+                if (toggleBtn) toggleBtn.style.display = 'none'; // Hide toggle
             }
-        });
+        );
 
         document.getElementById("menu").classList.remove("hidden");
 
@@ -659,6 +671,38 @@ document.addEventListener('DOMContentLoaded', () => {
         transitionToState(AppState.TROPHY_ROOM);
     });
 
+    // Mute Button Logic
+    const updateMuteIcon = () => {
+        const btn = document.getElementById('mute-btn-hud');
+        if (btn) {
+            btn.innerHTML = soundManager.muted ? '<i class="fas fa-volume-mute text-red-400"></i>' : '<i class="fas fa-volume-up"></i>';
+        }
+    };
+    // Sync initial state
+    updateMuteIcon();
+
+    document.getElementById('mute-btn-hud')?.addEventListener('click', () => {
+        soundManager.toggleMute();
+        updateMuteIcon();
+    });
+
+    // Mobile Swipe Support for Menu Grid
+    const menuGrid = document.getElementById('menu-grid');
+    if (menuGrid) {
+        menuGrid.style.touchAction = 'pan-y'; // Ensure vertical scroll is allowed
+
+        // Horizontal swipe could switch categories if implemented,
+        // but for now we just ensure scrolling works.
+    }
+
+    // Hide Loader
+    setTimeout(() => {
+        const loader = document.getElementById('app-loader');
+        if (loader) {
+            loader.classList.add('opacity-0');
+            setTimeout(() => loader.remove(), 1000);
+        }
+    }, 1500);
 
     // Global Key Listeners
     document.addEventListener('keydown', (e) => {
