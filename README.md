@@ -1,70 +1,80 @@
-# 🎮 Neon Arcade Hub
+# Neon Arcade Hub
 
-A **robust, modular, and immersive** web application featuring over 40+ mini-games, a 3D Arcade Hub, an integrated economy, and persistent progression.
+**A Modular, 3D Web-Based Arcade Platform.**
 
-![Neon Arcade](hub_3d_v2.png)
+This repository hosts a collection of over 40 mini-games within a unified, persistent "Neon Arcade" environment. It features a 3D hub, a robust economy system, and persistent player progression.
 
-## 🕹️ Games Included
+## 🚀 Getting Started
 
-The arcade features a massive collection of games across multiple genres:
+**Important: This application requires a local web server.**
 
-*   **Arcade Classics:** Snake, Pong, Tetris, Space Shooter, Breakout, Pac-Man style Maze.
-*   **New Neon Hits:** Neon Jump, Neon Slice, Neon Stack, Neon Flow, Neon 2048.
-*   **3D Immersive:** Neon City (Open World), Aetheria (Floating Islands), Matterhorn (Climbing), Lumina (FPS), Neon Shooter.
-*   **Logic & Puzzle:** Sudoku, Queens, Neon Mines (Minesweeper), Neon Picross, Eclipse.
-*   **Simulation:** The Grind 98 (Life Sim), Neon Life, Zen Garden.
-*   **Sports:** Neon Golf, Neon Hoops.
+Due to the use of modern ES6 Modules (`import`/`export`), you cannot simply double-click `index.html`. Browsers block module requests over the `file://` protocol for security reasons (CORS).
 
-For detailed instructions and walkthroughs for each game, please see [GAMES.md](GAMES.md).
+### Setup Instructions
 
-## 📂 How to Run
-
-Because this project uses **ES6 Modules**, it requires a local web server to run correctly (browsers block module imports from `file://` URLs for security).
-
-### Option 1: Python (Recommended)
-If you have Python installed (Mac/Linux usually do):
-
-1.  Open your terminal/command prompt.
-2.  Navigate to the project folder.
-3.  Run:
-    ```bash
-    python3 -m http.server 8000
-    ```
-4.  Open your browser and go to: `http://localhost:8000`
-
-### Option 2: Node.js (npx)
-If you have Node.js installed:
-
-1.  Open your terminal.
-2.  Run:
+1.  **Install Node.js** (Optional, but recommended)
+    - If you have Node.js installed, you can use `npx`:
     ```bash
     npx serve
     ```
-3.  Open the URL shown (usually `http://localhost:3000`).
+    - Open `http://localhost:3000` in your browser.
 
-### Option 3: VS Code "Live Server"
-If you use Visual Studio Code:
-1.  Install the "Live Server" extension.
-2.  Right-click `index.html`.
-3.  Select "Open with Live Server".
+2.  **Using Python**
+    - Every macOS/Linux machine (and many Windows setups) has Python installed.
+    ```bash
+    # Python 3
+    python3 -m http.server 8000
+    ```
+    - Open `http://localhost:8000` in your browser.
 
-## 🌟 Features
+3.  **Using VS Code**
+    - Install the **Live Server** extension.
+    - Right-click `index.html` and select "Open with Live Server".
 
-*   **3D Arcade Hub:** Explore a virtual arcade cabinet room using Three.js.
-*   **Save System:** Persistent progress (XP, Levels, Currency, High Scores) saved to local storage.
-*   **Economy & Store:** Earn coins to buy new Avatars, Themes, and Cabinet Styles.
-*   **Tech Tree:** Upgrade your stats (Coin Multiplier, XP Boost).
-*   **Achievements & Trophies:** Unlock trophies in the 3D Trophy Room.
-*   **Mobile Ready:** Touch controls and responsive design for phone and tablet.
-*   **Neon Aesthetics:** A unified "Glassmorphism" and Cyberpunk visual style.
+## 🎮 Features
 
-## 🛠️ Tech Stack
+### Core Systems
+*   **3D Arcade Hub**: Explore a virtual arcade cabinet room built with Three.js.
+*   **Fault-Tolerant Loading**: Games load dynamically. If a module is missing, the hub continues to function with a placeholder.
+*   **Save System**: LocalStorage persistence for:
+    *   High Scores
+    *   Currency (Coins) & Inventory
+    *   Achievements
+    *   Game Settings (Volume, Ads, CRT Effect)
+*   **Economy**: Earn coins by playing games. Spend them in the **Shop** to buy cabinet styles, themes, and avatars.
+*   **Tech Tree**: Upgrade global stats like "Coin Multiplier" and "XP Boost".
 
-*   **HTML5 / CSS3 (Tailwind CSS)**
-*   **JavaScript (ES6 Modules)**
-*   **Three.js** (3D Rendering)
-*   **Matter.js** (2D Physics)
+### Game Library
+The arcade includes over 40 titles across various genres:
+
+*   **3D Immersive**: Neon City (Open World), Matterhorn (Climbing), Aetheria (Flying).
+*   **Action**: Neon Shooter (FPS), Neon Jump, Neon Slice.
+*   **Puzzle**: Sudoku, Minesweeper, Picross, Queens.
+*   **Arcade Classics**: Snake, Pong, Tetris, Breakout, Space Shooter (Remastered).
+*   **Simulation**: The Grind 98, Life Sim, Zen Garden.
+
+## 🛠 Architecture
+
+*   **Modular Design**: Each game is a standalone ES6 module exporting a class with `init()`, `update()`, and `shutdown()`.
+*   **Dynamic Imports**: `js/main.js` lazy-loads games to ensure fast initial startup time.
+*   **Fallback Handling**:
+    *   If WebGL is unavailable, the app automatically switches to a high-fidelity **2D Grid View**.
+    *   On Mobile, the interface adapts with touch controls and optimized layouts.
+
+## 🤝 Contributing
+
+To add a new game:
+1.  Create a class file in `js/games/`.
+2.  Implement the `init(container)` and `shutdown()` methods.
+3.  Register the game in `js/main.js` inside the `gameRegistry` object using the dynamic import pattern:
+    ```javascript
+    'my-new-game': {
+        name: 'My Game',
+        // ... metadata
+        importFn: () => import('./games/myNewGame.js')
+    }
+    ```
 
 ## 📜 License
 
-This project is open-source. Feel free to modify and improve it!
+MIT License.
