@@ -7,7 +7,6 @@ import ArcadeHub from './core/ArcadeHub.js';
 import Store from './core/Store.js';
 import MobileControls from './core/MobileControls.js';
 import TrophyRoom from './core/TrophyRoom.js';
-import AdManager from './core/AdManager.js';
 import AdsManager from './core/AdsManager.js';
 
 // Import New/Refactored Games
@@ -409,13 +408,13 @@ let mobileControls = null;
 let arcadeHub = null;
 let is3DView = true;
 let store = null;
-const adManager = new AdManager();
 
 const soundManager = SoundManager.getInstance();
 const saveSystem = SaveSystem.getInstance();
 const inputManager = InputManager.getInstance();
 const adsManager = AdsManager.getInstance();
 let gameOverCount = 0;
+let dailyChallengeGameId = null;
 
 // Centralized Game Loop
 function mainLoop(timestamp) {
@@ -617,7 +616,16 @@ function showGameOver(score, onRetry) {
 
     const runGameOverLogic = () => {
         // Apply Tech Tree Multiplier
-        const multiplier = saveSystem.data.upgrades?.coinMultiplier || 1;
+        let multiplier = saveSystem.data.upgrades?.coinMultiplier || 1;
+
+        // Daily Challenge Bonus (Double Coins)
+        const currentGameId = Object.keys(gameRegistry).find(key => gameRegistry[key].module && currentGameInstance instanceof gameRegistry[key].module);
+        const isDaily = currentGameId === dailyChallengeGameId;
+
+        if (isDaily) {
+             multiplier *= 2;
+        }
+
         const coinsEarned = Math.floor((score / 10) * multiplier);
 
         if(coinsEarned > 0) {
@@ -627,6 +635,7 @@ function showGameOver(score, onRetry) {
         const content = `
             <p class="mb-4 text-xl">Final Score: <span class="text-yellow-400 font-bold">${score}</span></p>
             ${coinsEarned > 0 ? `<p class="mb-4 text-sm text-yellow-300">Earned +${coinsEarned} Coins!</p>` : ''}
+            ${isDaily ? `<p class="mb-4 text-xs text-fuchsia-400 font-bold animate-pulse">DAILY CHALLENGE BONUS APPLIED!</p>` : ''}
             <div class="flex justify-center gap-4">
                 <button id="overlay-retry-btn" class="px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded">Try Again</button>
                 <button id="overlay-menu-btn" class="px-6 py-2 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded">Main Menu</button>
@@ -650,7 +659,7 @@ function showGameOver(score, onRetry) {
         if (menuBtn) menuBtn.onclick = () => {
              // 30% Chance to show ad on exit
             if (Math.random() < 0.3) {
-                adManager.showInterstitial(() => {
+                adsManager.showAd(() => {
                     transitionToState(AppState.MENU);
                 });
             } else {
@@ -809,6 +818,37 @@ function populateMenuGrid() {
     if(!grid) return;
     grid.innerHTML = '';
 
+    // Pick Daily Challenge if not set
+    if (!dailyChallengeGameId) {
+        const keys = Object.keys(gameRegistry);
+        dailyChallengeGameId = keys[Math.floor(Math.random() * keys.length)];
+    }
+
+    Object.entries(gameRegistry).forEach(([id, game]) => {
+        const isDaily = id === dailyChallengeGameId;
+        const card = document.createElement('div');
+
+        let borderClass = isDaily ? "border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)]" : "border-slate-700";
+        card.className = `bg-slate-800/80 backdrop-blur rounded-xl p-4 border ${borderClass} hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden`;
+        
+        card.innerHTML = `
+            ${isDaily ? '<div class="absolute top-0 left-0 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 z-10">DAILY CHALLENGE</div>' : ''}
+            <div class="absolute top-0 right-0 p-2 opacity-50 text-xs uppercase font-bold tracking-wider">${game.category || 'Game'}</div>
+            <div class="flex flex-col items-center text-center gap-3 pt-4">
+                <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-cyan-400 transition-colors shadow-lg shadow-fuchsia-500/20 group-hover:shadow-cyan-500/20">
+                    <i class="${game.icon || 'fas fa-gamepad'}"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">${game.name}</h3>
+                <p class="text-sm text-slate-400 line-clamp-2">${game.description}</p>
+            </div>
+            <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+            </div>
+        `;
+        
+        card.onmouseenter = () => soundManager.playSound('hover');
+        card.onclick = () => transitionToState(AppState.IN_GAME, { gameId: id });
+        grid.appendChild(card);
     const theme = saveSystem.getEquippedItem('theme') || 'blue';
     const themeColors = {
         blue: { border: 'hover:border-fuchsia-500', icon: 'text-fuchsia-400', shadow: 'shadow-fuchsia-500/20', gradient: 'from-fuchsia-500 to-cyan-500' },
@@ -957,6 +997,30 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('settings-btn')?.addEventListener('click', openSettings);
     document.getElementById('settings-btn-hud')?.addEventListener('click', openSettings);
 
+    // Mute Button Logic
+    const muteBtn = document.getElementById('mute-btn-hud');
+    const updateMuteIcon = () => {
+        if(soundManager.muted) {
+            muteBtn.innerHTML = '<i class="fas fa-volume-mute text-red-400"></i>';
+        } else {
+             muteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+        }
+    };
+    // Sync initial state
+    if (saveSystem.getSettings().muted) {
+        soundManager.toggleMute(); // Defaults to false, so toggle makes true
+        updateMuteIcon();
+    }
+
+    if (muteBtn) {
+        muteBtn.addEventListener('click', () => {
+            soundManager.toggleMute();
+            updateMuteIcon();
+            saveSystem.setSetting('muted', soundManager.muted);
+        });
+    }
+
+    // Trophy Room Button
     document.getElementById('trophy-btn-menu')?.addEventListener('click', () => {
         transitionToState(AppState.TROPHY_ROOM);
     });
@@ -1025,5 +1089,6 @@ window.miniGameHub = {
     showGameOver,
     gameRegistry,
     goBack: () => transitionToState(AppState.MENU),
-    getCurrentGame: () => currentGameInstance
+    getCurrentGame: () => currentGameInstance,
+    gameRegistry // Exposed for testing/debugging
 };
