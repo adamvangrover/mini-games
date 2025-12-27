@@ -512,15 +512,6 @@ async function transitionToState(newState, context = {}) {
         // The previous logic used 'trophy-room-container', but verification checks 'trophy-room'.
         // Let's create a wrapper or just use the expected ID if possible, but 'trophy-room' might be reserved in registry.
         // We will add the ID dynamically to satisfy the check if it doesn't conflict.
-        if (trContainer.id !== 'trophy-room') {
-            // We can't easily change ID if we rely on it elsewhere, but we can add a dummy element or
-            // simply ensure the check passes.
-            // Better approach: Assign the ID 'trophy-room' to this container if it doesn't exist.
-            // But let's check if 'trophy-room' is already taken.
-            const existing = document.getElementById('trophy-room');
-            if (existing && existing !== trContainer) existing.remove();
-            trContainer.id = 'trophy-room';
-        }
 
         trContainer.classList.add('game-container');
         trContainer.classList.remove('hidden');
@@ -842,31 +833,6 @@ function populateMenuGrid() {
         dailyChallengeGameId = keys[Math.floor(Math.random() * keys.length)];
     }
 
-    Object.entries(gameRegistry).forEach(([id, game]) => {
-        const isDaily = id === dailyChallengeGameId;
-        const card = document.createElement('div');
-
-        let borderClass = isDaily ? "border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)]" : "border-slate-700";
-        card.className = `bg-slate-800/80 backdrop-blur rounded-xl p-4 border ${borderClass} hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden`;
-        
-        card.innerHTML = `
-            ${isDaily ? '<div class="absolute top-0 left-0 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 z-10">DAILY CHALLENGE</div>' : ''}
-            <div class="absolute top-0 right-0 p-2 opacity-50 text-xs uppercase font-bold tracking-wider">${game.category || 'Game'}</div>
-            <div class="flex flex-col items-center text-center gap-3 pt-4">
-                <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-cyan-400 transition-colors shadow-lg shadow-fuchsia-500/20 group-hover:shadow-cyan-500/20">
-                    <i class="${game.icon || 'fas fa-gamepad'}"></i>
-                </div>
-                <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">${game.name}</h3>
-                <p class="text-sm text-slate-400 line-clamp-2">${game.description}</p>
-            </div>
-            <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
-                <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
-            </div>
-        `;
-        
-        card.onmouseenter = () => soundManager.playSound('hover');
-        card.onclick = () => transitionToState(AppState.IN_GAME, { gameId: id });
-        grid.appendChild(card);
     const theme = saveSystem.getEquippedItem('theme') || 'blue';
     const themeColors = {
         blue: { border: 'hover:border-fuchsia-500', icon: 'text-fuchsia-400', shadow: 'shadow-fuchsia-500/20', gradient: 'from-fuchsia-500 to-cyan-500' },
@@ -893,10 +859,18 @@ function populateMenuGrid() {
         grid.appendChild(header);
 
         categories[cat].forEach(game => {
+            const isDaily = game.id === dailyChallengeGameId;
             const card = document.createElement('div');
-            card.className = `bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 ${t.border} transition-all hover:scale-105 cursor-pointer group relative overflow-hidden`;
+
+            // Logic for Daily Challenge border override
+            let borderClass = isDaily
+                ? "border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)]"
+                : `border-slate-700 ${t.border}`;
+
+            card.className = `bg-slate-800/80 backdrop-blur rounded-xl p-4 border ${borderClass} transition-all hover:scale-105 cursor-pointer group relative overflow-hidden`;
 
             card.innerHTML = `
+                ${isDaily ? '<div class="absolute top-0 left-0 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 z-10">DAILY CHALLENGE</div>' : ''}
                 <div class="flex flex-col items-center text-center gap-3 pt-2">
                     <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl ${t.icon} group-hover:text-white transition-colors shadow-lg ${t.shadow}">
                         <i class="${game.icon || 'fas fa-gamepad'}"></i>
@@ -909,6 +883,7 @@ function populateMenuGrid() {
                 </div>
             `;
 
+            card.onmouseenter = () => soundManager.playSound('hover');
             card.onclick = () => transitionToState(AppState.IN_GAME, { gameId: game.id });
             grid.appendChild(card);
         });
@@ -1041,19 +1016,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Trophy Room Button
     document.getElementById('trophy-btn-menu')?.addEventListener('click', () => {
         transitionToState(AppState.TROPHY_ROOM);
-    });
-
-    const updateMuteIcon = () => {
-        const btn = document.getElementById('mute-btn-hud');
-        if (btn) {
-            btn.innerHTML = soundManager.muted ? '<i class="fas fa-volume-mute text-red-400"></i>' : '<i class="fas fa-volume-up"></i>';
-        }
-    };
-    updateMuteIcon();
-
-    document.getElementById('mute-btn-hud')?.addEventListener('click', () => {
-        soundManager.toggleMute();
-        updateMuteIcon();
     });
 
     const menuGrid = document.getElementById('menu-grid');
