@@ -38,6 +38,7 @@ export default class ArcadeHub {
 
         // Target for click-to-move
         this.navTarget = null;
+        this.navMarker = null;
 
         this.init();
     }
@@ -81,18 +82,19 @@ export default class ArcadeHub {
             }
 
             // --- Lighting ---
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Increased ambient
             this.scene.add(ambientLight);
 
             // Main Overhead Lights
-            this.createCeilingLight(0, 8, 0, colors.light, 1, 20);
-            this.createCeilingLight(0, 8, -10, colors.light, 1, 20);
-            this.createCeilingLight(0, 8, 10, colors.light, 1, 20);
+            this.createCeilingLight(0, 8, 0, colors.light, 1.5, 25);
+            this.createCeilingLight(0, 8, -10, colors.light, 1.5, 25);
+            this.createCeilingLight(0, 8, 10, colors.light, 1.5, 25);
 
             // --- Environment ---
             this.createRoom(colors);
             this.organizeLayout();
             this.createTeleporter();
+            this.createNavMarker();
 
             // --- Event Listeners ---
             window.addEventListener('resize', this.onResize.bind(this));
@@ -270,12 +272,21 @@ export default class ArcadeHub {
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.set(x, y, z);
 
-        // Billboard behavior? Or fixed. Fixed is better for aisles.
-        // Actually, rotate 180 to face entrance
-        // mesh.rotation.y = Math.PI; // If text is backwards
-        // Canvas text is usually readable from front Z+ looking at Z-.
+        // Add Light for sign
+        const light = new THREE.PointLight(ctx.shadowColor, 0.8, 15);
+        light.position.set(x, y - 1, z);
+        this.scene.add(light);
 
         this.scene.add(mesh);
+    }
+
+    createNavMarker() {
+        const geometry = new THREE.RingGeometry(0.3, 0.4, 32);
+        const material = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+        this.navMarker = new THREE.Mesh(geometry, material);
+        this.navMarker.rotation.x = -Math.PI / 2;
+        this.navMarker.visible = false;
+        this.scene.add(this.navMarker);
     }
 
     createTeleporter() {
@@ -406,7 +417,10 @@ export default class ArcadeHub {
     }
 
     handleMovement(dt) {
-        const moveSpeed = this.player.speed * dt;
+        // Sprint
+        const isSprinting = this.inputManager.isKeyDown('ShiftLeft') || this.inputManager.isKeyDown('ShiftRight');
+        const speedMultiplier = isSprinting ? 2.0 : 1.0;
+        const moveSpeed = this.player.speed * speedMultiplier * dt;
         const velocity = new THREE.Vector3();
 
         // Keyboard
@@ -429,6 +443,12 @@ export default class ArcadeHub {
 
         // Click-to-Move Logic
         if (this.navTarget) {
+            if (this.navMarker) {
+                this.navMarker.visible = true;
+                this.navMarker.position.set(this.navTarget.x, 0.1, this.navTarget.z);
+                this.navMarker.rotation.z += dt * 2; // Spin effect
+            }
+
             const dir = new THREE.Vector3().subVectors(this.navTarget, this.player.position);
             dir.y = 0;
             const dist = dir.length();
@@ -438,6 +458,8 @@ export default class ArcadeHub {
                 dir.normalize().multiplyScalar(Math.min(moveSpeed, dist));
                 velocity.add(dir);
             }
+        } else {
+            if (this.navMarker) this.navMarker.visible = false;
         }
 
         // Collision Detection (Simple)

@@ -36,6 +36,7 @@ export default class TrophyRoom {
         this.isDragging = false;
         this.previousMousePosition = { x: 0, y: 0 };
         this.navTarget = null;
+        this.navMarker = null;
 
         if (this.container) {
             this.init(this.container);
@@ -74,15 +75,16 @@ export default class TrophyRoom {
             this.container.appendChild(this.overlay);
 
             // Lights
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Increased ambient
             this.scene.add(ambientLight);
 
-            const spotLight = new THREE.SpotLight(0xffaa00, 2);
+            const spotLight = new THREE.SpotLight(0xffaa00, 2.5); // Increased spot
             spotLight.position.set(0, 15, 0);
             spotLight.castShadow = true;
             this.scene.add(spotLight);
 
             this.createLights();
+            this.createNavMarker();
 
             // Environment
             this.createRoom();
@@ -120,13 +122,27 @@ export default class TrophyRoom {
     }
 
     createLights() {
-        const blueLight = new THREE.PointLight(0x00ffff, 1, 20);
+        const blueLight = new THREE.PointLight(0x00ffff, 1.2, 25);
         blueLight.position.set(-10, 5, -5);
         this.scene.add(blueLight);
 
-        const pinkLight = new THREE.PointLight(0xff00ff, 1, 20);
+        const pinkLight = new THREE.PointLight(0xff00ff, 1.2, 25);
         pinkLight.position.set(10, 5, -5);
         this.scene.add(pinkLight);
+
+        // Add more fill lights
+        const fillLight = new THREE.PointLight(0xffffff, 0.5, 30);
+        fillLight.position.set(0, 8, 10);
+        this.scene.add(fillLight);
+    }
+
+    createNavMarker() {
+        const geometry = new THREE.RingGeometry(0.3, 0.4, 32);
+        const material = new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+        this.navMarker = new THREE.Mesh(geometry, material);
+        this.navMarker.rotation.x = -Math.PI / 2;
+        this.navMarker.visible = false;
+        this.scene.add(this.navMarker);
     }
 
     createRoom() {
@@ -383,7 +399,9 @@ export default class TrophyRoom {
     }
 
     handleMovement(dt) {
-         const moveSpeed = this.player.speed * dt;
+         const isSprinting = this.inputManager.isKeyDown('ShiftLeft') || this.inputManager.isKeyDown('ShiftRight');
+         const speedMultiplier = isSprinting ? 2.0 : 1.0;
+         const moveSpeed = this.player.speed * speedMultiplier * dt;
          const velocity = new THREE.Vector3();
 
          // WASD
@@ -400,6 +418,12 @@ export default class TrophyRoom {
          }
 
          if (this.navTarget) {
+             if (this.navMarker) {
+                this.navMarker.visible = true;
+                this.navMarker.position.set(this.navTarget.x, 0.1, this.navTarget.z);
+                this.navMarker.rotation.z += dt * 2;
+             }
+
              const dir = new THREE.Vector3().subVectors(this.navTarget, this.player.position);
              dir.y = 0;
              const dist = dir.length();
@@ -408,6 +432,8 @@ export default class TrophyRoom {
                  dir.normalize().multiplyScalar(Math.min(moveSpeed, dist));
                  velocity.add(dir);
              }
+         } else {
+             if (this.navMarker) this.navMarker.visible = false;
          }
 
          const nextPos = this.player.position.clone().add(velocity);
