@@ -6,6 +6,7 @@ export default class LegacyAdapter {
         this.initFnName = initFnName;
         this.shutdownFnName = shutdownFnName;
         this.scriptElement = null;
+        this.canvas = null;
     }
 
     async init(container) {
@@ -21,6 +22,34 @@ export default class LegacyAdapter {
             // Some old games might just be a function
              window[this.globalName]();
         }
+
+        // Apply Neon Filter to Canvas
+        this.applyNeonFilter(container);
+    }
+
+    applyNeonFilter(container) {
+        // Find canvas inside container
+        // Sometimes legacy games append to body, so we might need to search globally if container is empty
+        // But ideally they should use the container passed.
+        let canvas = container.querySelector('canvas');
+
+        // If not found in container, check if the game object has a reference
+        const game = window[this.globalName];
+        if (!canvas && game && game.canvas) {
+            canvas = game.canvas;
+        }
+
+        if (canvas) {
+            this.canvas = canvas;
+            // Add class for CSS styling if not present
+            canvas.classList.add('neon-legacy-canvas');
+
+            // Or force style directly
+            canvas.style.filter = "drop-shadow(0 0 10px rgba(0, 255, 255, 0.7)) contrast(1.2) brightness(1.2)";
+            canvas.style.boxShadow = "0 0 20px rgba(0, 255, 255, 0.2)";
+            canvas.style.border = "2px solid rgba(255, 255, 255, 0.1)";
+            canvas.style.borderRadius = "8px";
+        }
     }
 
     shutdown() {
@@ -28,9 +57,13 @@ export default class LegacyAdapter {
         if (game && typeof game[this.shutdownFnName] === 'function') {
             game[this.shutdownFnName]();
         }
-        // We generally don't remove the script tag as it might be reused,
-        // but if we wanted to fully clean up we could.
-        // For legacy, we just assume it stays in memory.
+
+        // Clean up filter effects if needed (though container destruction handles most)
+        if (this.canvas) {
+            this.canvas.style.filter = "";
+            this.canvas.style.boxShadow = "";
+            this.canvas = null;
+        }
     }
 
     loadScript(src) {
@@ -49,9 +82,6 @@ export default class LegacyAdapter {
     }
 
     update(dt) {
-        // Legacy games usually have their own loop (setInterval or rAF)
-        // so we don't call update here usually.
-        // If they exposed an update function, we could call it.
         const game = window[this.globalName];
         if (game && typeof game.update === 'function') {
             game.update(dt);

@@ -288,6 +288,9 @@ export default class TetrisGame {
         this.ctx.save();
         this.ctx.scale(this.blockSize, this.blockSize);
 
+        // Neon Glow Global
+        this.ctx.shadowBlur = 10;
+
         this.drawBoard();
         this.drawPiece();
 
@@ -298,14 +301,17 @@ export default class TetrisGame {
         this.board.forEach((row, y) => {
             row.forEach((value, x) => {
                 if (value > 0) {
-                    this.ctx.fillStyle = this.colors[value - 1];
+                    const color = this.colors[value - 1];
+                    this.ctx.fillStyle = color;
+                    this.ctx.shadowColor = color; // Glow matches block
+
                     this.ctx.fillRect(x, y, 1, 1);
                     this.ctx.lineWidth = 0.05;
-                    this.ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+                    this.ctx.strokeStyle = 'rgba(255,255,255,0.5)'; // Brighter stroke
                     this.ctx.strokeRect(x, y, 1, 1);
 
                     // Highlight
-                    this.ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                    this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
                     this.ctx.fillRect(x, y, 1, 0.2);
                 }
             });
@@ -314,21 +320,26 @@ export default class TetrisGame {
 
     drawPiece() {
         if (!this.currentPiece) return;
-        this.ctx.fillStyle = this.currentPiece.color;
+
+        const color = this.currentPiece.color;
+        this.ctx.fillStyle = color;
+        this.ctx.shadowColor = color;
+
         this.currentPiece.shape.forEach((row, y) => {
             row.forEach((value, x) => {
                 if (value > 0) {
                     const px = this.currentPiece.x + x;
                     const py = this.currentPiece.y + y;
+
                     this.ctx.fillRect(px, py, 1, 1);
                     this.ctx.lineWidth = 0.05;
-                    this.ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+                    this.ctx.strokeStyle = 'rgba(255,255,255,0.5)';
                     this.ctx.strokeRect(px, py, 1, 1);
 
                      // Highlight
-                    this.ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                    this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
                     this.ctx.fillRect(px, py, 1, 0.2);
-                    this.ctx.fillStyle = this.currentPiece.color;
+                    this.ctx.fillStyle = color; // Reset for next rect
                 }
             });
         });

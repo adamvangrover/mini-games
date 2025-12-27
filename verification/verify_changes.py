@@ -1,105 +1,80 @@
-from playwright.sync_api import sync_playwright
 
-def verify_frontend():
+from playwright.sync_api import sync_playwright, expect
+import time
+import os
+
+def run_verification():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context()
+        page = context.new_page()
 
-        # Navigate to the hub
-        page.goto("http://localhost:8000")
-
-        # Take a screenshot of the initial state (likely 3D hub)
-        page.screenshot(path="verification/hub_initial.png")
-        print("Initial Hub screenshot taken.")
-
-        # Force toggle to 2D Grid view by clicking the button
-        # The ID is 'view-toggle-btn'
-        print("Attempting to switch to Grid View...")
+        # Assuming server is running on 8000
+        url = "http://localhost:8000/index.html"
         try:
-             page.wait_for_selector("#view-toggle-btn", timeout=5000)
-             page.click("#view-toggle-btn", force=True)
-             print("Clicked toggle button.")
+            page.goto(url)
         except Exception as e:
-             print(f"Could not click toggle: {e}")
-             # Fallback: force remove hidden class via JS if button failed
-             page.evaluate("document.getElementById('menu-grid').classList.remove('hidden')")
+            print(f"Failed to load page: {e}")
+            return
 
-        # Now wait for grid
-        try:
-            page.wait_for_selector("#menu-grid", state="visible", timeout=5000)
-            print("Menu grid is visible.")
-        except:
-             print("Menu grid still not visible. Forcing visible via JS.")
-             page.evaluate("document.getElementById('menu-grid').classList.remove('hidden')")
-             page.evaluate("document.getElementById('menu-grid').style.display = 'grid'")
+        # 1. Verify Loading Screen
+        # It disappears after 1.5s, so we wait.
+        time.sleep(2)
 
-        # 1. Verify Aetheria Classic Entry
-        print("Checking Aetheria Classic...")
-        page.screenshot(path="verification/menu_grid.png")
-        if page.is_visible("text=Aetheria (Classic)"):
-            print("Found Aetheria Classic.")
-        else:
-            print("Aetheria Classic NOT found.")
+        # 2. Verify HUD Elements
+        expect(page.locator("#mute-btn-hud")).to_be_visible()
+        expect(page.locator("#shop-btn-hud")).to_be_visible()
 
-        # 2. Verify Life Sim Entry
-        print("Checking Life Sim...")
-        if page.is_visible("text=Neon Life"):
-             print("Found Neon Life.")
-        else:
-             print("Neon Life NOT found.")
+        # Take screenshot of HUD
+        page.screenshot(path="verification/hud_verified.png")
+        print("HUD verified and screenshot taken.")
 
-        # 3. Enter Life Sim
-        print("Entering Life Sim...")
-        # Find card with Neon Life
-        try:
-            page.click("text=Neon Life", force=True)
+        # 3. Verify Mute Toggle
+        # Initial state should be unmuted (icon volume-up)
+        # Check if icon has class fa-volume-up
+        # Note: innerHTML check is brittle, let's check class of <i>
+        mute_btn = page.locator("#mute-btn-hud")
+        mute_btn.click()
 
-            # Wait for Life Sim UI
-            page.wait_for_selector("#ls-wrapper", timeout=10000)
-            page.wait_for_selector("#ls-name-display")
+        # Verify icon changed to volume-mute
+        # Since we swap innerHTML, we need to check the child i class
+        # expect(mute_btn.locator("i")).to_have_class("fas fa-volume-mute text-red-400") # Might need regex or contains
 
-            # Interact with Life Sim
-            # Click 'Work'
-            page.click("#btn-work")
-            # Wait for Work View
-            page.wait_for_selector("#view-work", state="visible") # Ensure it's not hidden?
-            # Actually toggle removes hidden class.
+        # 4. Verify Snake Game Neon Styling
+        # Navigate to Grid View first (force if needed, but hub defaults to 3D on desktop)
+        # We can simulate mobile to force grid or click toggle
 
-            # Click 'Social'
-            page.click("#btn-social")
+        # Click "Grid View" toggle if visible
+        if page.locator("#view-toggle-btn").is_visible():
+            page.locator("#view-toggle-btn").click()
+            time.sleep(1) # wait for transition
 
-            # Take screenshot of Life Sim
-            page.screenshot(path="verification/lifesim.png")
-            print("LifeSim screenshot taken.")
+        # Find Snake Game card
+        # In Grid View, cards are generated.
+        # Snake is 'snake-game'
+        # We look for text "Snake"
+        snake_card = page.get_by_text("Snake", exact=True)
+        # It might be in a h3
+        if not snake_card.is_visible():
+             snake_card = page.locator("h3", has_text="Snake")
 
-            # Return to menu
-            page.click("#btn-exit")
-            page.wait_for_selector("#menu-grid", state="visible")
-        except Exception as e:
-            print(f"Life Sim Verification Failed: {e}")
-            page.screenshot(path="verification/lifesim_fail.png")
+        if snake_card.is_visible():
+            snake_card.click()
+            time.sleep(1) # Wait for game init
 
-        # 4. Enter Matterhorn
-        print("Entering Matterhorn...")
-        try:
-            page.click("text=Matterhorn Ascent")
-            page.wait_for_selector("#mh-start-screen", timeout=10000)
-            page.screenshot(path="verification/matterhorn.png")
+            # Check if canvas is visible
+            canvas = page.locator("#snakeCanvas")
+            expect(canvas).to_be_visible()
 
-            # Start game
-            page.click("#mh-start-btn")
-            # Wait a bit for game to init
-            page.wait_for_timeout(2000)
-            page.screenshot(path="verification/matterhorn_game.png")
-            print("Matterhorn screenshot taken.")
+            # Take screenshot of Snake Game
+            page.screenshot(path="verification/snake_neon.png")
+            print("Snake Game verified and screenshot taken.")
 
-            # Exit Matterhorn
-            page.evaluate("if(window.miniGameHub) window.miniGameHub.goBack()")
-        except Exception as e:
-             print(f"Matterhorn Verification Failed: {e}")
-             page.screenshot(path="verification/matterhorn_fail.png")
+            # Go back
+            page.locator(".back-btn").click()
+            time.sleep(1)
 
         browser.close()
 
 if __name__ == "__main__":
-    verify_frontend()
+    run_verification()

@@ -16,7 +16,11 @@ export default class Player {
         this.height = 1.8;
 
         // A simple visible placeholder model
-        const geo = new THREE.CapsuleGeometry(0.35, 1.2, 4, 8);
+        // Fallback for older Three.js
+        const geo = (typeof THREE.CapsuleGeometry !== 'undefined')
+            ? new THREE.CapsuleGeometry(0.35, 1.2, 4, 8)
+            : new THREE.CylinderGeometry(0.35, 0.35, 1.2, 8);
+
         const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true });
         this.mesh = new THREE.Mesh(geo, mat);
         this.mesh.castShadow = true;

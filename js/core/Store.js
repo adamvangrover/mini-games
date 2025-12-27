@@ -1,4 +1,7 @@
 
+import SoundManager from './SoundManager.js';
+import ParticleSystem from './ParticleSystem.js';
+
 /**
  * Manages the in-game shop, including item rendering, purchasing, and equipping.
  */
@@ -163,6 +166,35 @@ export default class Store {
                 icon: 'fas fa-dragon',
                 type: 'avatar',
                 value: 'fas fa-dragon'
+            },
+
+            // --- TROPHY ROOM STYLES ---
+            {
+                id: 'trophy_room_default',
+                name: 'Classic Museum',
+                description: 'The standard exhibition hall.',
+                cost: 0,
+                icon: 'fas fa-columns',
+                type: 'trophy_room',
+                value: 'default'
+            },
+            {
+                id: 'trophy_room_neon',
+                name: 'Neon Grid',
+                description: 'Cyberpunk aesthetic for your wins.',
+                cost: 250,
+                icon: 'fas fa-border-all',
+                type: 'trophy_room',
+                value: 'neon'
+            },
+            {
+                id: 'trophy_room_gold',
+                name: 'Vault of Gold',
+                description: 'Luxurious gold plating everywhere.',
+                cost: 1000,
+                icon: 'fas fa-coins',
+                type: 'trophy_room',
+                value: 'gold'
             }
         ];
     }
@@ -181,13 +213,14 @@ export default class Store {
             let isEquipped = false;
             const equippedVal = this.saveSystem.getEquippedItem(item.type);
 
-            if (item.type === 'theme' || item.type === 'cabinet') {
+            if (item.type === 'theme' || item.type === 'cabinet' || item.type === 'trophy_room') {
                 isEquipped = equippedVal === item.value; // Store value for theme/cabinet
                 // Fallback: if undefined, check if default
                 if (equippedVal === undefined && item.cost === 0) isEquipped = true;
                 // Special check for theme_neon_blue and default
                 if (item.id === 'theme_neon_blue' && (equippedVal === 'blue' || !equippedVal)) isEquipped = true;
                 if (item.id === 'cabinet_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
+                if (item.id === 'trophy_room_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
 
                 // Strict check override
                 if (equippedVal) isEquipped = equippedVal === item.value;
@@ -264,6 +297,8 @@ export default class Store {
                 }
             } else if (item.type === 'cabinet') {
                 this.saveSystem.equipItem('cabinet', item.value);
+            } else if (item.type === 'trophy_room') {
+                this.saveSystem.equipItem('trophy_room', item.value);
             }
             this.render();
         } catch (e) {
@@ -275,6 +310,17 @@ export default class Store {
         try {
             if (this.saveSystem.buyItem(item.id, item.cost)) {
                 this.render();
+
+                // Visual feedback
+                const particleSystem = ParticleSystem.getInstance();
+                if (particleSystem) {
+                    // Try to spawn particles at screen center since we don't have click event coord easily here
+                    // Ideally we pass event to buy(), but for now center burst is fine
+                    particleSystem.emit(window.innerWidth / 2, window.innerHeight / 2, '#fbbf24', 30);
+                }
+
+                SoundManager.getInstance().playSound('score');
+
             } else {
                 alert("Not enough coins!");
             }

@@ -1,70 +1,80 @@
-# mini-games
+# Neon Arcade Hub
 
+**A Modular, 3D Web-Based Arcade Platform.**
 
----
+This repository hosts a collection of over 40 mini-games within a unified, persistent "Neon Arcade" environment. It features a 3D hub, a robust economy system, and persistent player progression.
 
-### 📜 `README.md`
+## 🚀 Getting Started
 
-# 🎮 Mini Game Hub
+**Important: This application requires a local web server.**
 
-A **self-contained** HTML file featuring a collection of fun mini-games! No extra files or dependencies—just open `index.html` and play! 🚀  
+Due to the use of modern ES6 Modules (`import`/`export`), you cannot simply double-click `index.html`. Browsers block module requests over the `file://` protocol for security reasons (CORS).
 
-## 🕹️ Games Included:
-1. **Clicker Game** – Click the button to earn points.  
-2. **Maze Game** – Navigate a small maze using arrow keys.  
-3. **Endless Runner** – Press space to jump over obstacles.  
-4. **Typing Speed Test** – Type the displayed word as fast as possible.
-5. **Snake Game** – Eat food, grow longer, and avoid crashing! 🐍  
-6. **Space Shooter** – Blast enemies and survive in space! 🚀👾  
-7. **Pong** – The classic 2-player paddle game! 🏓  
+### Setup Instructions
 
-## 📂 How to Run
+1.  **Install Node.js** (Optional, but recommended)
+    - If you have Node.js installed, you can use `npx`:
+    ```bash
+    npx serve
+    ```
+    - Open `http://localhost:3000` in your browser.
 
-1. Clone the repository:
-   
-```
-    git clone https://github.com/adamvangrover/mini-games.git
-   ```
-2. Open the `index.html` file in your web browser.  
+2.  **Using Python**
+    - Every macOS/Linux machine (and many Windows setups) has Python installed.
+    ```bash
+    # Python 3
+    python3 -m http.server 8000
+    ```
+    - Open `http://localhost:8000` in your browser.
 
-## 🎮 How to Play
-For detailed instructions and walkthroughs for each game, please see [GAMES.md](GAMES.md).
+3.  **Using VS Code**
+    - Install the **Live Server** extension.
+    - Right-click `index.html` and select "Open with Live Server".
 
-| Game | Controls |
-|------|---------|
-| **Clicker Game** | Click to earn points |
-| **Maze Game** | Arrow Keys to move |
-| **Endless Runner** | Spacebar to jump |
-| **Typing Speed Test** | Type as fast as you can! |
-| **Snake Game** | Arrow Keys to move |
-| **Space Shooter** | Left/Right to move, Spacebar to shoot |
-| **Pong** | Player 1: W/S | Player 2: Up/Down |
+## 🎮 Features
 
+### Core Systems
+*   **3D Arcade Hub**: Explore a virtual arcade cabinet room built with Three.js.
+*   **Fault-Tolerant Loading**: Games load dynamically. If a module is missing, the hub continues to function with a placeholder.
+*   **Save System**: LocalStorage persistence for:
+    *   High Scores
+    *   Currency (Coins) & Inventory
+    *   Achievements
+    *   Game Settings (Volume, Ads, CRT Effect)
+*   **Economy**: Earn coins by playing games. Spend them in the **Shop** to buy cabinet styles, themes, and avatars.
+*   **Tech Tree**: Upgrade global stats like "Coin Multiplier" and "XP Boost".
 
+### Game Library
+The arcade includes over 40 titles across various genres:
 
-## 🌟 Features
-✅ **Fully Self-Contained** – No external dependencies!  
-✅ **Classic & Addictive Games** – All in one HTML file!  
-✅ **Smooth Controls & Responsive Gameplay**  
-✅ **Score Tracking & Increasing Difficulty**  
+*   **3D Immersive**: Neon City (Open World), Matterhorn (Climbing), Aetheria (Flying).
+*   **Action**: Neon Shooter (FPS), Neon Jump, Neon Slice.
+*   **Puzzle**: Sudoku, Minesweeper, Picross, Queens.
+*   **Arcade Classics**: Snake, Pong, Tetris, Breakout, Space Shooter (Remastered).
+*   **Simulation**: The Grind 98, Life Sim, Zen Garden.
 
+## 🛠 Architecture
 
-## 🔧 **Future Updates (Ideas)**
-- 🎖️ **High Score System** – Track and save your best scores!  
-- 🎵 **Sound Effects & Music** – Enhance the experience!  
-- 🏆 **Multiplayer Mode** – Play online with friends!  
-- 🎨 **Custom Themes** – Change the look of the games!  
+*   **Modular Design**: Each game is a standalone ES6 module exporting a class with `init()`, `update()`, and `shutdown()`.
+*   **Dynamic Imports**: `js/main.js` lazy-loads games to ensure fast initial startup time.
+*   **Fallback Handling**:
+    *   If WebGL is unavailable, the app automatically switches to a high-fidelity **2D Grid View**.
+    *   On Mobile, the interface adapts with touch controls and optimized layouts.
 
----
+## 🤝 Contributing
 
-## 🎮 **Start Playing Now!**
-Just open `index.html` and have fun! 🚀🔥  
-
+To add a new game:
+1.  Create a class file in `js/games/`.
+2.  Implement the `init(container)` and `shutdown()` methods.
+3.  Register the game in `js/main.js` inside the `gameRegistry` object using the dynamic import pattern:
+    ```javascript
+    'my-new-game': {
+        name: 'My Game',
+        // ... metadata
+        importFn: () => import('./games/myNewGame.js')
+    }
+    ```
 
 ## 📜 License
-This project is open-source. Feel free to modify and improve it!  
 
----
-🔗 **Live Demo** (if hosted on GitHub Pages):  
-[https://adamvangrover.github.io/mini-games/](https://adamvangrover.github.io/mini-games/)  
-
+MIT License.

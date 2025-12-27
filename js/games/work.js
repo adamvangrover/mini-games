@@ -597,11 +597,9 @@ export default class TheGrind98 {
         if(this.timerInterval) clearInterval(this.timerInterval);
         if(this.gameLoopId) cancelAnimationFrame(this.gameLoopId);
         window.removeEventListener('keydown', this.boundKeyHandler);
-        // Return to main menu logic handled by main.js observing shutdown or explicit callback?
-        // Usually games don't self-destruct back to menu, they provide an exit button that calls window.miniGameHub.transitionToState(AppState.MENU).
-        // I'll call that here.
-        if(window.miniGameHub && window.miniGameHub.transitionToState) {
-            window.miniGameHub.transitionToState('MENU');
-        }
+
+        // Do NOT call transitionToState('MENU') here because shutdown() is called BY transitionToState.
+        // Calling it again creates an infinite loop.
+        this.container.innerHTML = '';
     }
 }
