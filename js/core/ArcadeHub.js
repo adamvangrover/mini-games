@@ -1,4 +1,5 @@
 import SaveSystem from './SaveSystem.js';
+import InputManager from './InputManager.js';
 
 export default class ArcadeHub {
     constructor(container, gameRegistry, onGameSelect, onFallback) {
@@ -13,15 +14,30 @@ export default class ArcadeHub {
         this.renderer = null;
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
+        this.clock = new THREE.Clock();
 
         this.cabinets = [];
+        this.colliders = []; // Array of Box3 for collision
+        this.walls = [];
         this.isHovering = false;
         this.isActive = true;
 
         // Navigation State
+        this.inputManager = InputManager.getInstance();
+        this.player = {
+            position: new THREE.Vector3(0, 1.6, 12), // Start at entrance
+            velocity: new THREE.Vector3(),
+            speed: 6.0,
+            radius: 0.5,
+            height: 1.6,
+            rotation: { x: 0, y: 0 }
+        };
+
         this.isDragging = false;
         this.previousMousePosition = { x: 0, y: 0 };
-        this.cameraRotation = { x: 0, y: 0 }; 
+
+        // Target for click-to-move
+        this.navTarget = null;
 
         this.init();
     }
@@ -29,40 +45,53 @@ export default class ArcadeHub {
     init() {
         try {
             // --- Scene Setup ---
+            const saveSystem = SaveSystem.getInstance();
+            const theme = saveSystem.getEquippedItem('theme') || 'blue';
+
+            // Theme Colors
+            const themeColors = {
+                blue: { bg: 0x050510, fog: 0x050510, grid: 0x00ffff, light: 0x0088ff },
+                pink: { bg: 0x100505, fog: 0x100505, grid: 0xff00ff, light: 0xff0088 },
+                gold: { bg: 0x101005, fog: 0x101005, grid: 0xffd700, light: 0xffaa00 },
+                green: { bg: 0x001000, fog: 0x001000, grid: 0x00ff00, light: 0x00ff00 },
+                red: { bg: 0x100000, fog: 0x100000, grid: 0xff0000, light: 0xff0000 }
+            };
+            const colors = themeColors[theme] || themeColors.blue;
+
             this.scene = new THREE.Scene();
-            this.scene.background = new THREE.Color(0x050510);
-            this.scene.fog = new THREE.FogExp2(0x050510, 0.02);
+            this.scene.background = new THREE.Color(colors.bg);
+            this.scene.fog = new THREE.FogExp2(colors.fog, 0.03);
 
             // --- Camera Setup ---
             this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-            this.camera.position.set(0, 1.6, 0.1); // Center of room
+            this.camera.position.copy(this.player.position);
 
             // --- Renderer Setup ---
             this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             this.renderer.setSize(window.innerWidth, window.innerHeight);
-            this.renderer.setPixelRatio(window.devicePixelRatio);
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap pixel ratio for performance
             this.renderer.shadowMap.enabled = true;
             this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
             if (this.container) {
+                this.container.innerHTML = '';
                 this.container.appendChild(this.renderer.domElement);
             } else {
-                console.error("ArcadeHub: No container provided.");
                 return;
             }
 
             // --- Lighting ---
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
             this.scene.add(ambientLight);
 
-            // Neon Points
-            this.createNeonLight(0, 5, 0, 0xff00ff, 2, 20);     // Center Magenta
-            this.createNeonLight(-10, 5, -10, 0x00ffff, 2, 20); // Left Cyan
-            this.createNeonLight(10, 5, -10, 0xffff00, 2, 20);  // Right Yellow
+            // Main Overhead Lights
+            this.createCeilingLight(0, 8, 0, colors.light, 1, 20);
+            this.createCeilingLight(0, 8, -10, colors.light, 1, 20);
+            this.createCeilingLight(0, 8, 10, colors.light, 1, 20);
 
             // --- Environment ---
-            this.createFloor();
-            this.generateCabinets();
+            this.createRoom(colors);
+            this.organizeLayout();
             this.createTeleporter();
 
             // --- Event Listeners ---
@@ -79,130 +108,219 @@ export default class ArcadeHub {
             window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
             window.addEventListener('touchend', this.onMouseUp.bind(this));
 
-            // Start Loop
-            this.animate();
+            // We don't use requestAnimationFrame loop here explicitly if main.js calls update()
+            // But we need a render call. We'll use animate() internally to handle render if main.js doesn't.
+            // Wait, main.js calls update(dt). It does NOT call draw/render.
+            // So we must render in update().
+
         } catch (e) {
-            console.error("ArcadeHub: WebGL Initialization Failed. Falling back to Grid View.", e);
-            this.isActive = false;
-            if(this.renderer && this.renderer.domElement && this.renderer.domElement.parentNode) {
-                this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
-            }
-
-            if(this.container) this.container.style.display = 'none';
-
-            if (this.onFallback) {
-                this.onFallback();
-            }
+            console.error("ArcadeHub: WebGL Initialization Failed.", e);
+            if (this.onFallback) this.onFallback();
         }
     }
 
-    createNeonLight(x, y, z, color, intensity, distance) {
+    createCeilingLight(x, y, z, color, intensity, distance) {
         const light = new THREE.PointLight(color, intensity, distance);
         light.position.set(x, y, z);
         this.scene.add(light);
+
+        // Glow mesh
+        const geometry = new THREE.SphereGeometry(0.2, 8, 8);
+        const material = new THREE.MeshBasicMaterial({ color: color });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(x, y, z);
+        this.scene.add(mesh);
     }
 
-    createFloor() {
-        const geometry = new THREE.PlaneGeometry(100, 100);
-        const material = new THREE.MeshStandardMaterial({
+    createRoom(colors) {
+        // Floor
+        const floorGeo = new THREE.PlaneGeometry(60, 80);
+        const floorMat = new THREE.MeshStandardMaterial({
             color: 0x111111,
             roughness: 0.1,
-            metalness: 0.8,
-            side: THREE.DoubleSide
+            metalness: 0.5,
+            side: THREE.FrontSide
         });
-        const floor = new THREE.Mesh(geometry, material);
+        const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
+        floor.position.y = 0;
         floor.receiveShadow = true;
-
-        // Retro Grid
-        const gridHelper = new THREE.GridHelper(100, 50, 0xff00ff, 0x222222);
-        gridHelper.position.y = 0.01;
-        this.scene.add(gridHelper);
-
         this.scene.add(floor);
 
-        // Add some ambient particles
-        const particlesGeo = new THREE.BufferGeometry();
-        const particlesCount = 200;
-        const posArray = new Float32Array(particlesCount * 3);
+        // Grid on floor
+        const gridHelper = new THREE.GridHelper(60, 30, colors.grid, 0x222222);
+        gridHelper.position.y = 0.02;
+        this.scene.add(gridHelper);
 
-        for(let i = 0; i < particlesCount * 3; i++) {
-            posArray[i] = (Math.random() - 0.5) * 40;
-        }
-
-        particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        const particlesMat = new THREE.PointsMaterial({
-            size: 0.05,
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.5
+        // Ceiling
+        const ceilGeo = new THREE.PlaneGeometry(60, 80);
+        const ceilMat = new THREE.MeshStandardMaterial({
+            color: 0x050505,
+            emissive: 0x050505,
+            side: THREE.FrontSide
         });
-        const particles = new THREE.Points(particlesGeo, particlesMat);
-        particles.position.y = 2;
-        this.scene.add(particles);
+        const ceil = new THREE.Mesh(ceilGeo, ceilMat);
+        ceil.rotation.x = Math.PI / 2;
+        ceil.position.y = 10;
+        this.scene.add(ceil);
+
+        // Walls
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+
+        // Back Wall
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(60, 10, 1), wallMat);
+        backWall.position.set(0, 5, -40);
+        this.scene.add(backWall);
+        this.addCollider(backWall);
+
+        // Front Wall (Behind player start)
+        const frontWall = new THREE.Mesh(new THREE.BoxGeometry(60, 10, 1), wallMat);
+        frontWall.position.set(0, 5, 40);
+        this.scene.add(frontWall);
+        this.addCollider(frontWall);
+
+        // Left Wall
+        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 80), wallMat);
+        leftWall.position.set(-30, 5, 0);
+        this.scene.add(leftWall);
+        this.addCollider(leftWall);
+
+        // Right Wall
+        const rightWall = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 80), wallMat);
+        rightWall.position.set(30, 5, 0);
+        this.scene.add(rightWall);
+        this.addCollider(rightWall);
+    }
+
+    addCollider(mesh) {
+        const box = new THREE.Box3().setFromObject(mesh);
+        this.colliders.push(box);
+    }
+
+    organizeLayout() {
+        const categories = {};
+
+        // Group games
+        Object.entries(this.gameRegistry).forEach(([id, game]) => {
+            const cat = game.category || 'Misc';
+            if (!categories[cat]) categories[cat] = [];
+            categories[cat].push({ id, ...game });
+        });
+
+        const catNames = Object.keys(categories).sort();
+
+        // Layout Config
+        let currentZ = 5;
+        const aisleSpacing = 12;
+        const cabinetSpacing = 2.5;
+        const rowWidth = 20;
+
+        catNames.forEach((cat, index) => {
+            const games = categories[cat];
+
+            // Create Aisle Sign
+            this.createNeonSign(cat, 0, 7, currentZ);
+
+            // Left Row (facing Right/Center)
+            // Right Row (facing Left/Center)
+
+            let leftX = -4;
+            let rightX = 4;
+            let rowZ = currentZ;
+
+            games.forEach((game, i) => {
+                const isLeft = i % 2 === 0;
+                // If many games, we might need multiple rows or extend Z
+                // We'll just stack them along Z for this aisle
+
+                const offsetZ = Math.floor(i / 2) * cabinetSpacing;
+
+                if (isLeft) {
+                    this.createCabinet(-6, 0, rowZ - offsetZ, Math.PI / 2, game.id, game);
+                } else {
+                    this.createCabinet(6, 0, rowZ - offsetZ, -Math.PI / 2, game.id, game);
+                }
+            });
+
+            currentZ -= aisleSpacing;
+        });
+    }
+
+    createNeonSign(text, x, y, z) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'rgba(0,0,0,0)'; // Transparent
+        ctx.fillRect(0, 0, 512, 128);
+
+        ctx.font = 'bold 60px "Press Start 2P", Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Glow effect
+        ctx.shadowColor = '#00ffff';
+        ctx.shadowBlur = 20;
+        ctx.fillText(text.toUpperCase(), 256, 64);
+
+        const tex = new THREE.CanvasTexture(canvas);
+        const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
+        const geo = new THREE.PlaneGeometry(10, 2.5);
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(x, y, z);
+
+        // Billboard behavior? Or fixed. Fixed is better for aisles.
+        // Actually, rotate 180 to face entrance
+        // mesh.rotation.y = Math.PI; // If text is backwards
+        // Canvas text is usually readable from front Z+ looking at Z-.
+
+        this.scene.add(mesh);
     }
 
     createTeleporter() {
         const group = new THREE.Group();
-        group.position.set(0, 0, 8); // Behind start position
+        group.position.set(0, 0, -35); // Back of room
 
-        // Pad
-        const padGeo = new THREE.CylinderGeometry(1.5, 1.5, 0.1, 32);
-        const padMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xffaa00, emissiveIntensity: 0.2 });
+        // Base
+        const padGeo = new THREE.CylinderGeometry(2, 2, 0.1, 32);
+        const padMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xffaa00, emissiveIntensity: 0.5 });
         const pad = new THREE.Mesh(padGeo, padMat);
         group.add(pad);
 
-        // Ring
-        const ringGeo = new THREE.TorusGeometry(1.2, 0.1, 16, 100);
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
-        const ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.rotation.x = Math.PI / 2;
-        ring.position.y = 0.5;
-        group.add(ring);
+        // Particles
+        // (Simplified for this file)
 
-        // Floating Text
+        // Label
         const canvas = document.createElement('canvas');
         canvas.width = 256;
         canvas.height = 64;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = 'rgba(0,0,0,0)';
-        ctx.fillRect(0,0,256,64);
         ctx.font = 'bold 30px Arial';
         ctx.fillStyle = '#ffaa00';
         ctx.textAlign = 'center';
         ctx.fillText("TROPHY ROOM", 128, 40);
-
         const tex = new THREE.CanvasTexture(canvas);
-        const labelGeo = new THREE.PlaneGeometry(2, 0.5);
-        const labelMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
-        const label = new THREE.Mesh(labelGeo, labelMat);
-        label.position.set(0, 1.5, 0);
+        const label = new THREE.Mesh(
+            new THREE.PlaneGeometry(3, 0.75),
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide })
+        );
+        label.position.set(0, 2, 0);
         group.add(label);
-        this.label = label;
 
         group.userData = { isTeleporter: true, target: 'TROPHY_ROOM' };
-        this.teleporter = group;
         this.scene.add(group);
-    }
+        this.addCollider(pad); // Collide with base to stop? Or trigger?
 
-    generateCabinets() {
-        // Clear existing if any
-        this.cabinets.forEach(cab => this.scene.remove(cab));
-        this.cabinets = [];
-
-        const games = Object.entries(this.gameRegistry);
-        const radius = 8;
-        const count = games.length;
-        const angleStep = (Math.PI * 2) / count;
-
-        games.forEach(([id, game], index) => {
-            const angle = index * angleStep;
-            const x = Math.sin(angle) * radius;
-            const z = Math.cos(angle) * radius;
-
-            // Face center: angle + PI
-            this.createCabinet(x, 0, z, angle + Math.PI, id, game);
-        });
+        // Teleporter Trigger Zone
+        const triggerGeo = new THREE.BoxGeometry(3, 3, 3);
+        const triggerMat = new THREE.MeshBasicMaterial({ visible: false });
+        const trigger = new THREE.Mesh(triggerGeo, triggerMat);
+        trigger.position.set(0, 1.5, -35);
+        trigger.userData = { isTrigger: true, target: 'TROPHY_ROOM' };
+        this.scene.add(trigger);
+        // We'll check distance in update() for triggers
+        this.teleporterTrigger = trigger;
     }
 
     createCabinet(x, y, z, rotation, id, gameInfo) {
@@ -214,104 +332,53 @@ export default class ArcadeHub {
         const saveSystem = SaveSystem.getInstance();
         const cabinetStyle = saveSystem.getEquippedItem('cabinet') || 'default';
 
-        let bodyColor = 0x222222;
-        let metalness = 0.5;
-        let roughness = 0.5;
+        let bodyColor = 0x333333;
 
-        // Apply Styles
-        if (cabinetStyle === 'wood') {
-             bodyColor = 0x5c4033;
-             metalness = 0.1;
-             roughness = 0.8;
-        } else if (cabinetStyle === 'carbon') {
-             bodyColor = 0x111111;
-             metalness = 0.9;
-             roughness = 0.2;
-        } else if (cabinetStyle === 'gold') {
-             bodyColor = 0xffd700;
-             metalness = 1.0;
-             roughness = 0.1;
-        }
+        if (cabinetStyle === 'wood') bodyColor = 0x5c4033;
+        else if (cabinetStyle === 'carbon') bodyColor = 0x111111;
+        else if (cabinetStyle === 'gold') bodyColor = 0xffd700;
 
-        // Cabinet Body
+        // Cabinet Mesh
         const bodyGeo = new THREE.BoxGeometry(1.2, 2.2, 1.0);
-        const bodyMat = new THREE.MeshStandardMaterial({
-            color: bodyColor,
-            roughness: roughness,
-            metalness: metalness
-        });
+        const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.5 });
         const body = new THREE.Mesh(bodyGeo, bodyMat);
         body.position.y = 1.1;
         body.castShadow = true;
         body.receiveShadow = true;
         group.add(body);
 
-        // Screen (Emissive Texture)
+        // Screen
         const screenGeo = new THREE.PlaneGeometry(0.9, 0.7);
         const canvas = document.createElement('canvas');
-        canvas.width = 512;
-        canvas.height = 384;
+        canvas.width = 256;
+        canvas.height = 192;
         const ctx = canvas.getContext('2d');
         
+        // Simple screen art
         ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, 512, 384);
+        ctx.fillRect(0,0,256,192);
         ctx.fillStyle = this.getNeonColor(id);
-        ctx.font = 'bold 40px Arial';
+        ctx.font = 'bold 20px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(gameInfo.name, 256, 192);
+        ctx.fillText(gameInfo.name, 128, 100);
 
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(20, 20, 472, 344);
-
-        const texture = new THREE.CanvasTexture(canvas);
-        const screenMat = new THREE.MeshBasicMaterial({ map: texture });
+        const tex = new THREE.CanvasTexture(canvas);
+        const screenMat = new THREE.MeshBasicMaterial({ map: tex });
         const screen = new THREE.Mesh(screenGeo, screenMat);
         screen.position.set(0, 1.5, 0.51);
         group.add(screen);
 
-        // Marquee (Top)
-        const marqueeGeo = new THREE.BoxGeometry(1.2, 0.3, 1.0);
-        const marqueeMat = new THREE.MeshStandardMaterial({ 
-            color: this.getNeonColor(id), 
-            emissive: this.getNeonColor(id), 
-            emissiveIntensity: 0.5 
-        });
-        const marquee = new THREE.Mesh(marqueeGeo, marqueeMat);
-        marquee.position.set(0, 2.35, 0);
-        group.add(marquee);
+        // Marquee
+        const marqGeo = new THREE.BoxGeometry(1.2, 0.3, 1.0);
+        const marqMat = new THREE.MeshStandardMaterial({ color: this.getNeonColor(id), emissive: this.getNeonColor(id), emissiveIntensity: 0.5 });
+        const marq = new THREE.Mesh(marqGeo, marqMat);
+        marq.position.set(0, 2.35, 0);
+        group.add(marq);
 
-        // Control Panel
-        const panelGeo = new THREE.BoxGeometry(1.2, 0.1, 0.5);
-        const panelMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-        const panel = new THREE.Mesh(panelGeo, panelMat);
-        panel.position.set(0, 1.1, 0.6);
-        panel.rotation.x = 0.2;
-        group.add(panel);
-
-        const joyGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.2);
-        const joyMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-        const joy = new THREE.Mesh(joyGeo, joyMat);
-        joy.position.set(-0.3, 1.25, 0.65);
-        joy.rotation.x = 0.2;
-        group.add(joy);
-
-        // Buttons
-        const btnGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.05);
-        const btnMat = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-        const btn1 = new THREE.Mesh(btnGeo, btnMat);
-        btn1.position.set(0.1, 1.15, 0.65);
-        btn1.rotation.x = 0.2;
-        group.add(btn1);
-
-        const btn2 = new THREE.Mesh(btnGeo, btnMat);
-        btn2.position.set(0.3, 1.15, 0.65);
-        btn2.rotation.x = 0.2;
-        group.add(btn2);
-
-        group.userData = { gameId: id }; 
-        this.cabinets.push(group);
+        group.userData = { gameId: id };
         this.scene.add(group);
+        this.addCollider(body);
+        this.cabinets.push(group);
     }
 
     getNeonColor(id) {
@@ -323,113 +390,98 @@ export default class ArcadeHub {
         return '#' + '00000'.substring(0, 6 - c.length) + c;
     }
 
-    onResize() {
-        if (!this.camera || !this.renderer) return;
-        this.camera.aspect = window.innerWidth / window.innerHeight;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-    }
+    // --- Input & Update ---
 
-    // --- Input Handling ---
+    update(dt) {
+        if (!this.isActive || !this.scene) return;
 
-    onMouseDown(event) {
-        if (!this.isActive) return;
-        this.isDragging = true;
-        this.previousMousePosition = { x: event.clientX, y: event.clientY };
-    }
-
-    onTouchStart(event) {
-        if (!this.isActive || event.touches.length !== 1) return;
-        event.preventDefault(); // Prevent scrolling
-        this.isDragging = true;
-        this.previousMousePosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
-    }
-
-    onMouseUp() {
-        this.isDragging = false;
-    }
-
-    onMouseMove(event) {
-        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-        if (this.isDragging) {
-            this.handleCameraRotation(event.clientX, event.clientY);
+        // Render
+        if (this.renderer && this.camera) {
+            this.renderer.render(this.scene, this.camera);
         }
+
+        // Movement Logic
+        this.handleMovement(dt);
+        this.checkInteractions();
     }
 
-    onTouchMove(event) {
-        if (this.isDragging && event.touches.length === 1) {
-            event.preventDefault();
-            this.handleCameraRotation(event.touches[0].clientX, event.touches[0].clientY);
+    handleMovement(dt) {
+        const moveSpeed = this.player.speed * dt;
+        const velocity = new THREE.Vector3();
+
+        // Keyboard
+        if (this.inputManager.isKeyDown('KeyW') || this.inputManager.isKeyDown('ArrowUp')) velocity.z -= 1;
+        if (this.inputManager.isKeyDown('KeyS') || this.inputManager.isKeyDown('ArrowDown')) velocity.z += 1;
+        if (this.inputManager.isKeyDown('KeyA') || this.inputManager.isKeyDown('ArrowLeft')) velocity.x -= 1;
+        if (this.inputManager.isKeyDown('KeyD') || this.inputManager.isKeyDown('ArrowRight')) velocity.x += 1;
+
+        // Normalize and Apply Camera Rotation
+        if (velocity.length() > 0) {
+            velocity.normalize().multiplyScalar(moveSpeed);
+
+            // Transform direction based on camera Y rotation
+            const euler = new THREE.Euler(0, this.camera.rotation.y, 0, 'YXZ');
+            velocity.applyEuler(euler);
+
+            // Clear nav target if manual move
+            this.navTarget = null;
         }
-    }
 
-    handleCameraRotation(clientX, clientY) {
-        const deltaMove = {
-            x: clientX - this.previousMousePosition.x,
-            y: clientY - this.previousMousePosition.y
-        };
+        // Click-to-Move Logic
+        if (this.navTarget) {
+            const dir = new THREE.Vector3().subVectors(this.navTarget, this.player.position);
+            dir.y = 0;
+            const dist = dir.length();
+            if (dist < 0.2) {
+                this.navTarget = null;
+            } else {
+                dir.normalize().multiplyScalar(Math.min(moveSpeed, dist));
+                velocity.add(dir);
+            }
+        }
 
-        const rotationSpeed = 0.005;
-        this.cameraRotation.y -= deltaMove.x * rotationSpeed;
-        this.cameraRotation.x -= deltaMove.y * rotationSpeed;
+        // Collision Detection (Simple)
+        const nextPos = this.player.position.clone().add(velocity);
 
-        this.cameraRotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, this.cameraRotation.x));
+        let collided = false;
+        // Check bounds
+        if (Math.abs(nextPos.x) > 28 || Math.abs(nextPos.z) > 38) collided = true; // Walls
 
-        this.camera.rotation.x = this.cameraRotation.x;
-        this.camera.rotation.y = this.cameraRotation.y;
-        this.camera.rotation.z = 0; 
+        // Check objects
+        const playerBox = new THREE.Box3().setFromCenterAndSize(nextPos, new THREE.Vector3(1, 2, 1));
+        for (let box of this.colliders) {
+            if (box.intersectsBox(playerBox)) {
+                collided = true;
+                break;
+            }
+        }
 
-        this.previousMousePosition = { x: clientX, y: clientY };
-    }
+        if (!collided) {
+            this.player.position.copy(nextPos);
+            this.camera.position.set(this.player.position.x, this.player.height, this.player.position.z);
+        }
 
-    onClick(event) {
-        if (!this.isActive) return;
-
-        this.raycaster.setFromCamera(this.mouse, this.camera);
-        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
-
-        if (intersects.length > 0) {
-            let object = intersects[0].object;
-
-            let current = object;
-            while(current) {
-                if (current.userData && current.userData.gameId) {
-                    if (this.onGameSelect) {
-                        this.onGameSelect(current.userData.gameId);
-                    }
-                    return;
-                }
-                if (current.userData && current.userData.isTeleporter) {
-                    if (this.onGameSelect) {
-                        this.onGameSelect('TROPHY_ROOM');
-                    }
-                    return;
-                }
-                current = current.parent;
+        // Check Teleporter
+        if (this.teleporterTrigger) {
+            const dist = this.player.position.distanceTo(this.teleporterTrigger.position);
+            if (dist < 2.0) {
+                if (this.onGameSelect) this.onGameSelect('TROPHY_ROOM');
             }
         }
     }
 
-    animate() {
-        if (!this.renderer) return;
-        
-        requestAnimationFrame(this.animate.bind(this));
-
-        if(!this.isActive) return;
-
-        // Hover Logic
+    checkInteractions() {
+        // Hover Raycast
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
         let hovered = false;
         if (intersects.length > 0) {
-            let object = intersects[0].object;
-            while(object.parent && !object.userData.gameId) {
-                object = object.parent;
+            let obj = intersects[0].object;
+            while(obj.parent && !obj.userData.gameId) {
+                obj = obj.parent;
             }
-            if (object.userData && object.userData.gameId) {
+            if (obj.userData && obj.userData.gameId) {
                 hovered = true;
             }
         }
@@ -437,40 +489,108 @@ export default class ArcadeHub {
         if (hovered) {
             document.body.style.cursor = 'pointer';
         } else {
-            document.body.style.cursor = this.isDragging ? 'grabbing' : 'grab';
+            document.body.style.cursor = this.isDragging ? 'grabbing' : 'default';
         }
+    }
 
-        // Animations
-        const time = Date.now() * 0.001;
-        this.cabinets.forEach((cab, i) => {
-             cab.position.y = Math.sin(time + i) * 0.05; 
-        });
+    onMouseDown(event) {
+        if (!this.isActive) return;
+        this.isDragging = true;
+        this.previousMousePosition = { x: event.clientX, y: event.clientY };
+    }
 
-        if (this.teleporter) {
-             const ring = this.teleporter.children.find(c => c.geometry.type === 'TorusGeometry');
-             if(ring) {
-                 ring.position.y = 0.5 + Math.sin(time * 2) * 0.1;
-                 ring.rotation.x = Math.PI/2 + Math.sin(time) * 0.1;
-             }
-             if (this.label) {
-                 this.label.lookAt(this.camera.position);
-             }
+    onMouseMove(event) {
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        if (this.isDragging) {
+            const deltaX = event.clientX - this.previousMousePosition.x;
+            const deltaY = event.clientY - this.previousMousePosition.y;
+
+            this.camera.rotation.y -= deltaX * 0.003;
+            this.camera.rotation.x -= deltaY * 0.003;
+            this.camera.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, this.camera.rotation.x)); // Clamp Look Up/Down
+
+            this.previousMousePosition = { x: event.clientX, y: event.clientY };
         }
+    }
 
-        this.renderer.render(this.scene, this.camera);
+    onMouseUp() {
+        this.isDragging = false;
+    }
+
+    onTouchStart(event) {
+         if (event.touches.length === 1) {
+            this.isDragging = true;
+            this.previousMousePosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+         }
+    }
+
+    onTouchMove(event) {
+        if (this.isDragging && event.touches.length === 1) {
+            event.preventDefault();
+            const deltaX = event.touches[0].clientX - this.previousMousePosition.x;
+            const deltaY = event.touches[0].clientY - this.previousMousePosition.y;
+
+            this.camera.rotation.y -= deltaX * 0.005;
+            this.camera.rotation.x -= deltaY * 0.005;
+            this.camera.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, this.camera.rotation.x));
+
+            this.previousMousePosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+        }
+    }
+
+    onClick(event) {
+        if (!this.isActive || this.isDragging) return;
+        
+        // Raycast
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+
+        if (intersects.length > 0) {
+            const point = intersects[0].point;
+            let obj = intersects[0].object;
+
+            // Check if cabinet
+            while(obj.parent && !obj.userData.gameId) {
+                obj = obj.parent;
+            }
+
+            if (obj.userData && obj.userData.gameId) {
+                // If close enough, play. If far, walk to it.
+                const dist = this.player.position.distanceTo(obj.position);
+                if (dist < 4.0) {
+                    if (this.onGameSelect) this.onGameSelect(obj.userData.gameId);
+                } else {
+                    // Walk to a point in front of it
+                    const dir = new THREE.Vector3().subVectors(this.player.position, obj.position).normalize().multiplyScalar(2.0);
+                    this.navTarget = new THREE.Vector3().addVectors(obj.position, dir);
+                    this.navTarget.y = this.player.position.y;
+                }
+                return;
+            }
+
+            // If floor/wall, walk there
+            this.navTarget = point;
+            this.navTarget.y = this.player.position.y;
+        }
+    }
+
+    onResize() {
+        if (this.camera && this.renderer) {
+            this.camera.aspect = window.innerWidth / window.innerHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+        }
     }
 
     resume() {
         this.isActive = true;
-        this.container.style.display = 'block';
-        this.onResize();
-        // Regenerate cabinets to apply any style changes (if came from menu)
-        this.generateCabinets();
+        if(this.container) this.container.style.display = 'block';
     }
 
     pause() {
         this.isActive = false;
-        this.container.style.display = 'none';
-        document.body.style.cursor = 'default';
+        if(this.container) this.container.style.display = 'none';
     }
 }
