@@ -53,6 +53,9 @@ export default class SoundManager {
             case 'click':
                 this.playTone(800, 'sine', 0.1);
                 break;
+            case 'hover':
+                this.playTone(600, 'sine', 0.05);
+                break;
             case 'jump':
                 this.playTone(400, 'square', 0.1, true); // Slide up
                 break;
