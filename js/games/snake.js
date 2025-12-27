@@ -228,9 +228,11 @@ export default class SnakeGame {
             this.ctx.translate(dx, dy);
         }
 
-        // Snake Glow
-        this.ctx.shadowBlur = 10;
+        // --- Neon Styling ---
+        this.ctx.shadowBlur = 15;
         this.ctx.shadowColor = "#00ff00";
+        this.ctx.strokeStyle = "#00ff00";
+        this.ctx.lineWidth = 2;
 
         this.snake.forEach((segment, index) => {
             // Head is slightly brighter
@@ -240,7 +242,7 @@ export default class SnakeGame {
 
         // Food Pulse
         this.ctx.shadowColor = "#ff4500";
-        this.ctx.shadowBlur = 15 + Math.sin(this.foodPulse) * 5;
+        this.ctx.shadowBlur = 20 + Math.sin(this.foodPulse) * 10;
         this.ctx.fillStyle = "#ff4500";
         this.ctx.beginPath();
         this.ctx.arc(this.food.x * this.tileSize + this.tileSize/2, this.food.y * this.tileSize + this.tileSize/2, this.tileSize/2 - 2, 0, Math.PI * 2);

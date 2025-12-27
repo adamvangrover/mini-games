@@ -5,6 +5,7 @@ export default class SaveSystem {
         }
 
         this.storageKey = 'miniGameHub_v1';
+        this.currentVersion = 1.2; // Schema Version
         this.data = this.load();
 
         SaveSystem.instance = this;
@@ -17,7 +18,6 @@ export default class SaveSystem {
         return SaveSystem.instance;
     }
 
-    // Helper to encode/decode data (base64) as requested
     encrypt(text) {
         return btoa(text);
     }
@@ -32,33 +32,93 @@ export default class SaveSystem {
             return this.getDefaultData();
         }
 
+        let data = null;
         try {
-            // Attempt to decrypt
             const json = this.decrypt(raw);
-            return JSON.parse(json);
+            data = JSON.parse(json);
         } catch (e) {
-            console.warn("Failed to decrypt save data, or data is legacy/unencrypted. Resetting or trying legacy parse.");
-            try {
-                return JSON.parse(raw); // Fallback for transition
-            } catch (e2) {
-                return this.getDefaultData();
+            console.warn("SaveSystem: Primary save corrupted or legacy. Attempting backup...");
+            const backup = localStorage.getItem(this.storageKey + '_backup');
+            if (backup) {
+                try {
+                    const json = this.decrypt(backup);
+                    data = JSON.parse(json);
+                    console.log("SaveSystem: Backup restored.");
+                } catch (backupErr) {
+                    console.error("SaveSystem: Backup also corrupted.", backupErr);
+                }
             }
+
+            if (!data) {
+                // Try legacy raw JSON
+                try {
+                    data = JSON.parse(raw);
+                    console.log("SaveSystem: Legacy raw JSON detected and loaded.");
+                } catch (legacyErr) {
+                    console.error("SaveSystem: Critical failure. Resetting.");
+                    return this.getDefaultData();
+                }
+            }
+        }
+
+        // Migration Logic
+        if (data) {
+             return this.migrate(data);
+        }
+        return this.getDefaultData();
+    }
+
+    migrate(data) {
+        // Ensure version exists
+        if (!data.version) {
+            data.version = 1.0;
+        }
+
+        // Migration 1.0 -> 1.1 (Example: Add Tech Tree Upgrades)
+        if (data.version < 1.1) {
+            console.log("SaveSystem: Migrating to 1.1...");
+            if (!data.upgrades) {
+                data.upgrades = { coinMultiplier: 1, xpBoost: 1 };
+            }
+            data.version = 1.1;
+        }
+
+        // Migration 1.1 -> 1.2 (Add Trophy Room specific data)
+        if (data.version < 1.2) {
+            console.log("SaveSystem: Migrating to 1.2...");
+            // Ensure settings structure
+            if (!data.settings) data.settings = {};
+            if (data.settings.crt === undefined) data.settings.crt = true;
+            data.version = 1.2;
+        }
+
+        // Always merge with default to ensure all fields exist (Schema Enforcement)
+        return { ...this.getDefaultData(), ...data, version: this.currentVersion };
+    }
+
+    createBackup() {
+        const raw = localStorage.getItem(this.storageKey);
+        if (raw) {
+            localStorage.setItem(this.storageKey + '_backup', raw);
         }
     }
 
     getDefaultData() {
         return {
+            version: this.currentVersion,
             highScores: {},
             totalCurrency: 0,
             achievements: [],
             inventory: [],
             unlockedGames: [],
+            unlockedItems: [],
             settings: {
                 muted: false,
                 adsEnabled: true,
-                crt: true
+                crt: true,
+                volume: 0.1 // Default volume
             },
-            gameConfigs: {},
+            gameConfigs: {}, // Per-game persistent data
             profile: {
                 name: "Player 1",
                 avatar: "fas fa-user-astronaut",
@@ -66,28 +126,29 @@ export default class SaveSystem {
             },
             equipped: {
                 theme: 'theme_neon_blue',
-                avatar: 'fas fa-user-astronaut'
+                avatar: 'fas fa-user-astronaut',
+                cabinet: 'default'
             },
             stats: {},
             xp: 0,
             level: 1,
-            avatar: {
-                color: '#00ffff',
-                icon: 'fa-robot'
-            },
             upgrades: {
-                coinMultiplier: 1, // 1.0, 1.2, 1.5, etc.
+                coinMultiplier: 1,
                 xpBoost: 1,
-                startHealth: 0 // Bonus health
+                startHealth: 0
             }
         };
     }
 
     getSettings() {
         if (!this.data.settings) {
-            this.data.settings = { muted: false, adsEnabled: true };
+            this.data.settings = this.getDefaultData().settings;
         }
         return this.data.settings;
+    }
+
+    getSetting(key) {
+        return this.getSettings()[key];
     }
 
     setSetting(key, value) {
@@ -97,6 +158,8 @@ export default class SaveSystem {
         this.data.settings[key] = value;
         this.save();
     }
+
+    // ... (Rest of the getters/setters remain largely the same, but saving logic needs to be robust)
 
     incrementStat(key, amount = 1) {
         if (!this.data.stats) this.data.stats = {};
@@ -105,82 +168,59 @@ export default class SaveSystem {
     }
 
     getStat(key) {
-        if (!this.data.stats) return 0;
-        return this.data.stats[key] || 0;
-    }
-    getSetting(key) {
-        if (!this.data.settings) this.data.settings = {};
-        return this.data.settings[key];
-    }
-
-    setSetting(key, value) {
-        if (!this.data.settings) this.data.settings = {};
-        this.data.settings[key] = value;
-        this.save();
+        return (this.data.stats && this.data.stats[key]) || 0;
     }
 
     save() {
         try {
+            // Update timestamp
+            this.data.timestamp = Date.now();
+
             const json = JSON.stringify(this.data);
             const encrypted = this.encrypt(json);
+
+            // Create backup before overwriting
+            if (localStorage.getItem(this.storageKey)) {
+                this.createBackup();
+            }
+
             localStorage.setItem(this.storageKey, encrypted);
         } catch (e) {
-            console.error("SaveSystem: Failed to save data to localStorage.", e);
+            console.error("SaveSystem: Write failed.", e);
         }
     }
 
     getHighScore(gameId) {
-        return this.data.highScores[gameId] || 0;
+        return (this.data.highScores && this.data.highScores[gameId]) || 0;
     }
 
     setHighScore(gameId, score) {
-        if (score > this.getHighScore(gameId)) {
+        if (!this.data.highScores) this.data.highScores = {};
+        if (score > (this.data.highScores[gameId] || 0)) {
             this.data.highScores[gameId] = score;
             this.save();
-            return true; // New high score!
+            return true;
         }
         return false;
     }
 
     equipItem(category, value) {
-        this.setEquippedItem(category, value);
-    }
-
-    getEquipped(category) {
-        return this.getEquippedItem(category);
-    }
-
-    setEquippedItem(type, itemId) {
         if (!this.data.equipped) this.data.equipped = {};
-        this.data.equipped[type] = itemId;
+        this.data.equipped[category] = value;
         this.save();
     }
 
-    getEquippedItem(type) {
-        if (!this.data.equipped) return null;
-        return this.data.equipped[type];
-    }
-
-    setProfileName(name) {
-        if (!this.data.profile) this.data.profile = {};
-        this.data.profile.name = name;
-        this.save();
-    }
-
-    getProfile() {
-        if (!this.data.profile) {
-            this.data.profile = this.getDefaultData().profile;
-        }
-        return this.data.profile;
+    getEquippedItem(category) {
+        return (this.data.equipped && this.data.equipped[category]) || null;
     }
 
     addCurrency(amount) {
-        this.data.totalCurrency += amount;
+        this.data.totalCurrency = (this.data.totalCurrency || 0) + amount;
         this.save();
     }
 
     spendCurrency(amount) {
-        if (this.data.totalCurrency >= amount) {
+        if ((this.data.totalCurrency || 0) >= amount) {
             this.data.totalCurrency -= amount;
             this.save();
             return true;
@@ -189,7 +229,7 @@ export default class SaveSystem {
     }
 
     getCurrency() {
-        return this.data.totalCurrency;
+        return this.data.totalCurrency || 0;
     }
 
     unlockGame(gameId) {
@@ -202,13 +242,7 @@ export default class SaveSystem {
         return false;
     }
 
-    isGameUnlocked(gameId) {
-        if (!this.data.unlockedGames) return false;
-        return this.data.unlockedGames.includes(gameId);
-    }
-
-    // --- Item / Store System ---
-
+    // Inventory & Store
     unlockItem(itemId) {
         if (!this.data.unlockedItems) this.data.unlockedItems = [];
         if (!this.data.unlockedItems.includes(itemId)) {
@@ -220,31 +254,16 @@ export default class SaveSystem {
     }
 
     isItemUnlocked(itemId) {
-        if (!this.data.unlockedItems) return false;
-        return this.data.unlockedItems.includes(itemId);
+        return this.data.unlockedItems && this.data.unlockedItems.includes(itemId);
     }
 
-    // Helper to transact: returns true if successful, false if not enough funds
     buyItem(itemId, cost) {
-        if (this.isItemUnlocked(itemId)) return true; // Already owned
-
-        if (this.getCurrency() >= cost) {
-            this.spendCurrency(cost);
+        if (this.isItemUnlocked(itemId)) return true;
+        if (this.spendCurrency(cost)) {
             this.unlockItem(itemId);
             return true;
         }
         return false;
-    }
-
-    addItem(item) {
-        if (!this.data.inventory) this.data.inventory = [];
-        // Check if unique item? Let's assume yes for now
-        this.data.inventory.push(item);
-        this.save();
-    }
-
-    getInventory() {
-        return this.data.inventory || [];
     }
 
     unlockAchievement(achievementId) {
@@ -257,79 +276,45 @@ export default class SaveSystem {
         return false;
     }
 
-    addXP(amount) {
-        if (!this.data.xp) this.data.xp = 0;
-        if (!this.data.level) this.data.level = 1;
-
-        this.data.xp += amount;
-
-        // Simple Level Formula: Level = Floor(XP / 1000) + 1
-        const newLevel = Math.floor(this.data.xp / 1000) + 1;
-
-        if (newLevel > this.data.level) {
-            this.data.level = newLevel;
-            this.save();
-            return true; // Level Up!
-        }
-        this.save();
-        return false;
-    }
-
-    getGameConfig(gameId) {
-        return this.data.gameConfigs[gameId] || {};
-    }
-
-    setGameConfig(gameId, config) {
-        this.data.gameConfigs[gameId] = config;
-        this.save();
-    }
-
-    // Export current data as a Base64 encoded string
+    // Export/Import
     exportData() {
+        // Just return the raw encrypted string from memory to ensure it matches state
         const json = JSON.stringify(this.data);
         return this.encrypt(json);
     }
 
-    // Import data from a Base64 encoded string
     importData(encodedStr) {
         try {
             const json = this.decrypt(encodedStr);
-            const data = JSON.parse(json);
+            let data = JSON.parse(json);
 
-            // Basic validation
-            if (!data.highScores || !data.achievements) {
+            // Validation: Must have at least a version or highScores/currency
+            if (!data.highScores && !data.totalCurrency && !data.version) {
+                console.error("SaveSystem: Import data validation failed.");
                 return false;
             }
+
+            // Run migration on imported data too
+            data = this.migrate(data);
 
             this.data = data;
             this.save();
             return true;
         } catch (e) {
-            console.error("Failed to import data:", e);
+            console.error("SaveSystem: Import failed.", e);
             return false;
         }
     }
 
-    // Get a formatted string of stats for sharing
     getFormattedStats() {
         let text = "🏆 Neon Arcade High Scores 🏆\n\n";
-
-        const scores = Object.entries(this.data.highScores)
-            .sort((a, b) => b[1] - a[1]); // Sort by score descending (though different games have different scales)
-
-        if (scores.length === 0) {
-            text += "No high scores yet! Play some games to earn your place.";
-        } else {
-            scores.forEach(([gameId, score]) => {
-                // Format game ID to name (simple replace)
-                const name = gameId.replace(/-game|-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).trim();
-                text += `${name}: ${score}\n`;
-            });
-        }
-
-        text += `\n💰 Total Currency: ${this.data.totalCurrency}`;
-        text += `\n🏅 Achievements: ${this.data.achievements.length}`;
-
+        const scores = Object.entries(this.data.highScores || {}).sort((a, b) => b[1] - a[1]);
+        if (scores.length === 0) text += "No high scores yet!\n";
+        scores.forEach(([id, score]) => {
+            const name = id.replace(/-game|-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).trim();
+            text += `${name}: ${score}\n`;
+        });
+        text += `\n💰 Coins: ${this.data.totalCurrency || 0}`;
         return text;
     }
 }

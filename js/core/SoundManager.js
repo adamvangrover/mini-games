@@ -1,3 +1,5 @@
+import SaveSystem from './SaveSystem.js';
+
 export default class SoundManager {
     constructor() {
         if (SoundManager.instance) {
@@ -5,14 +7,20 @@ export default class SoundManager {
         }
 
         this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        this.muted = false;
+        this.saveSystem = SaveSystem.getInstance();
+
+        // Load settings
+        const settings = this.saveSystem.getSettings();
+        this.muted = settings.muted || false;
+        this.volume = settings.volume !== undefined ? settings.volume : 0.1;
+
         this.bgmOscillators = [];
         this.bgmGainNode = null;
 
         // BGM System
         this.bgmGainNode = this.audioCtx.createGain();
         this.bgmGainNode.connect(this.audioCtx.destination);
-        this.bgmGainNode.gain.value = 0.1; // Low volume by default
+        this.bgmGainNode.gain.value = this.muted ? 0 : this.volume;
 
         this.isPlayingBGM = false;
         this.rhythmTimeout = null;
@@ -29,49 +37,74 @@ export default class SoundManager {
 
     toggleMute() {
         this.muted = !this.muted;
+
+        // Persist
+        this.saveSystem.setSetting('muted', this.muted);
+
         if (this.muted) {
-            if (this.audioCtx.state === 'running') {
-                this.audioCtx.suspend();
-            }
+            this.bgmGainNode.gain.setTargetAtTime(0, this.audioCtx.currentTime, 0.1);
         } else {
             if (this.audioCtx.state === 'suspended') {
                 this.audioCtx.resume();
             }
+            this.bgmGainNode.gain.setTargetAtTime(this.volume, this.audioCtx.currentTime, 0.1);
         }
         return this.muted;
     }
 
+    setBGMVolume(val) {
+        // Clamp 0 to 1
+        if (val < 0) val = 0;
+        if (val > 1) val = 1;
+
+        this.volume = val;
+
+        // Persist
+        this.saveSystem.setSetting('volume', this.volume);
+
+        if (!this.muted) {
+            this.bgmGainNode.gain.setTargetAtTime(val, this.audioCtx.currentTime, 0.5);
+        }
+    }
+
+    getVolume() {
+        return this.volume;
+    }
+
     playSound(type) {
+        if (this.muted && type !== 'click') return; // Allow click if UI needs it? No, mute should be absolute mostly.
         if (this.muted) return;
 
-        // Resume context if it was suspended (browsers require user interaction)
         if (this.audioCtx.state === 'suspended') {
             this.audioCtx.resume();
         }
 
+        // SFX volume relative to master volume (slightly louder)
+        const sfxVol = Math.min(this.volume * 2, 1.0);
+
         switch (type) {
             case 'click':
-                this.playTone(800, 'sine', 0.1);
+                this.playTone(800, 'sine', 0.1, false, false, sfxVol);
                 break;
             case 'jump':
-                this.playTone(400, 'square', 0.1, true); // Slide up
+                this.playTone(400, 'square', 0.1, true, false, sfxVol);
                 break;
             case 'explosion':
-                this.playNoise(0.3);
+                this.playNoise(0.3, sfxVol);
                 break;
             case 'score':
-                this.playTone(1200, 'sine', 0.05);
+                this.playTone(1200, 'sine', 0.05, false, false, sfxVol);
                 break;
             case 'shoot':
-                this.playTone(600, 'sawtooth', 0.1, false, true); // Slide down
+                this.playTone(600, 'sawtooth', 0.1, false, true, sfxVol);
                 break;
             case 'gameover':
-                 this.playTone(150, 'sawtooth', 0.5, false, true);
+                 this.playTone(150, 'sawtooth', 0.5, false, true, sfxVol);
                  break;
         }
     }
 
-    playTone(freq, type, duration, slideUp = false, slideDown = false) {
+    playTone(freq, type, duration, slideUp = false, slideDown = false, vol = 0.1) {
         const osc = this.audioCtx.createOscillator();
         const gain = this.audioCtx.createGain();
 
@@ -85,8 +118,8 @@ export default class SoundManager {
             osc.frequency.exponentialRampToValueAtTime(freq / 2, this.audioCtx.currentTime + duration);
         }
 
-        gain.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + duration);
+        gain.gain.setValueAtTime(vol, this.audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + duration);
 
         osc.connect(gain);
         gain.connect(this.audioCtx.destination);
@@ -95,7 +128,7 @@ export default class SoundManager {
         osc.stop(this.audioCtx.currentTime + duration);
     }
 
-    playNoise(duration) {
+    playNoise(duration, vol = 0.1) {
         const bufferSize = this.audioCtx.sampleRate * duration;
         const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -108,8 +141,8 @@ export default class SoundManager {
         noise.buffer = buffer;
 
         const gain = this.audioCtx.createGain();
-        gain.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + duration);
+        gain.gain.setValueAtTime(vol, this.audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + duration);
 
         noise.connect(gain);
         gain.connect(this.audioCtx.destination);
@@ -118,43 +151,53 @@ export default class SoundManager {
     }
 
     startBGM() {
-        if (this.muted || this.isPlayingBGM) return;
+        if (this.isPlayingBGM) return;
         this.isPlayingBGM = true;
 
-        // Simple ambient drone loop
+        if (this.audioCtx.state === 'suspended') {
+            // Can't start if suspended without user gesture, but we prep nodes
+        }
+
         const osc1 = this.audioCtx.createOscillator();
         const osc2 = this.audioCtx.createOscillator();
 
         osc1.type = 'sine';
-        osc1.frequency.value = 110; // A2
+        osc1.frequency.value = 110;
         osc2.type = 'triangle';
-        osc2.frequency.value = 110.5; // Detuned A2
+        osc2.frequency.value = 110.5;
 
-        // Reuse the master bgmGainNode
         osc1.connect(this.bgmGainNode);
         osc2.connect(this.bgmGainNode);
 
-        osc1.start();
-        osc2.start();
-
-        this.bgmOscillators = [osc1, osc2];
-
-        // Add a simple rhythmic element
-        this.startRhythm();
+        try {
+            osc1.start();
+            osc2.start();
+            this.bgmOscillators = [osc1, osc2];
+            this.startRhythm();
+        } catch(e) {
+            console.warn("AudioContext not ready for BGM start.");
+        }
     }
 
     startRhythm() {
         if (!this.isPlayingBGM) return;
 
-        const now = this.audioCtx.currentTime;
+        // Only schedule if context is running to avoid stacking
+        if (this.audioCtx.state !== 'running') {
+            this.rhythmTimeout = setTimeout(() => this.startRhythm(), 1000);
+            return;
+        }
 
+        const now = this.audioCtx.currentTime;
         const kick = this.audioCtx.createOscillator();
         const kickGain = this.audioCtx.createGain();
 
         kick.frequency.setValueAtTime(150, now);
         kick.frequency.exponentialRampToValueAtTime(0.01, now + 0.5);
 
-        kickGain.gain.setValueAtTime(0.05, now);
+        // Rhythm volume is also relative to master BGM gain?
+        // No, BGM gain controls the mix bus. Kick connects to BGM Gain.
+        kickGain.gain.setValueAtTime(0.5, now); // Relative mix level
         kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
 
         kick.connect(kickGain);
@@ -163,7 +206,6 @@ export default class SoundManager {
         kick.start(now);
         kick.stop(now + 0.5);
 
-        // Loop the rhythm
         this.rhythmTimeout = setTimeout(() => this.startRhythm(), 2000);
     }
 
@@ -176,9 +218,5 @@ export default class SoundManager {
         }
         this.bgmOscillators = [];
         if (this.rhythmTimeout) clearTimeout(this.rhythmTimeout);
-    }
-
-    setBGMVolume(val) {
-        this.bgmGainNode.gain.setTargetAtTime(val, this.audioCtx.currentTime, 0.5);
     }
 }

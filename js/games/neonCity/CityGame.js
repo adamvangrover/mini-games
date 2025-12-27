@@ -152,10 +152,11 @@ export default class CityGame {
             return;
         }
 
-        if(this.activePuzzle || this.ui.shopOverlay.classList.contains('active')) return;
+        const isShopOpen = this.ui.shopOverlay && !this.ui.shopOverlay.classList.contains('hidden');
+        if(this.activePuzzle || isShopOpen) return;
 
         // Controls
-        if(!this.isChatting && !this.ui.shopOverlay.classList.contains('hidden') === false) { // Ensure shop is hidden
+        if(!this.isChatting && !isShopOpen) {
             const keys = this.inputManager.keys;
             const move = new THREE.Vector3(0, 0, 0);
 
