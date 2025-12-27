@@ -317,4 +317,40 @@ export default class SaveSystem {
         text += `\n💰 Coins: ${this.data.totalCurrency || 0}`;
         return text;
     }
+
+    getGameConfig(gameId) {
+        if (!this.data.gameConfigs) this.data.gameConfigs = {};
+        return this.data.gameConfigs[gameId] || {};
+    }
+
+    saveGameConfig(gameId, config) {
+        if (!this.data.gameConfigs) this.data.gameConfigs = {};
+        this.data.gameConfigs[gameId] = config;
+        this.save();
+    }
+
+    setGameConfig(gameId, config) {
+        this.saveGameConfig(gameId, config);
+    }
+
+    addXP(amount) {
+        this.data.xp = (this.data.xp || 0) + amount;
+        // Level up logic (simplified)
+        const nextLevelXP = this.data.level * 1000;
+        if (this.data.xp >= nextLevelXP) {
+             this.data.level++;
+             this.data.xp -= nextLevelXP; // Or keep accumulating, depending on design.
+             // Usually accumulative is better, but here simple rollover.
+             // Better: total XP. But for now let's just increment level.
+        }
+        this.save();
+    }
+
+    getLevel() {
+        return this.data.level || 1;
+    }
+
+    getXP() {
+        return this.data.xp || 0;
+    }
 }
