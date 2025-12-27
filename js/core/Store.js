@@ -195,6 +195,80 @@ export default class Store {
                 icon: 'fas fa-coins',
                 type: 'trophy_room',
                 value: 'gold'
+            },
+
+            // --- DECORATIONS (Trophy Room) ---
+            {
+                id: 'deco_stool',
+                name: 'Arcade Stool',
+                description: 'A classic stool for the room.',
+                cost: 100,
+                icon: 'fas fa-chair',
+                type: 'decoration',
+                value: 'stool'
+            },
+            {
+                id: 'deco_plant',
+                name: 'Neon Plant',
+                description: 'Synthetic flora.',
+                cost: 200,
+                icon: 'fas fa-seedling',
+                type: 'decoration',
+                value: 'plant'
+            },
+            {
+                id: 'deco_vending',
+                name: 'Vending Machine',
+                description: 'Refreshing snacks.',
+                cost: 500,
+                icon: 'fas fa-cookie-bite',
+                type: 'decoration',
+                value: 'vending'
+            },
+            {
+                id: 'deco_lamp',
+                name: 'Lava Lamp',
+                description: 'Groovy lighting.',
+                cost: 150,
+                icon: 'fas fa-lightbulb',
+                type: 'decoration',
+                value: 'lamp'
+            },
+            {
+                id: 'deco_rug',
+                name: 'Neon Rug',
+                description: 'Tie the room together.',
+                cost: 150,
+                icon: 'fas fa-dharmachakra',
+                type: 'decoration',
+                value: 'rug'
+            },
+            {
+                id: 'deco_hologram',
+                name: 'Holo Projector',
+                description: 'Futuristic display.',
+                cost: 400,
+                icon: 'fas fa-video',
+                type: 'decoration',
+                value: 'hologram'
+            },
+            {
+                id: 'deco_poster',
+                name: 'Retro Poster',
+                description: 'Vintage arcade art.',
+                cost: 50,
+                icon: 'fas fa-image',
+                type: 'decoration',
+                value: 'poster'
+            },
+            {
+                id: 'deco_mini_cab',
+                name: 'Mini Cabinet',
+                description: 'A tiny arcade machine.',
+                cost: 300,
+                icon: 'fas fa-gamepad',
+                type: 'decoration',
+                value: 'minicab'
             }
         ];
     }
@@ -226,6 +300,8 @@ export default class Store {
                 if (equippedVal) isEquipped = equippedVal === item.value;
             } else if (item.type === 'avatar') {
                 isEquipped = equippedVal === item.value;
+            } else if (item.type === 'decoration') {
+                isEquipped = isUnlocked; // Active if owned
             }
 
             const card = document.createElement('div');
@@ -239,7 +315,9 @@ export default class Store {
             let buttonHtml = '';
 
             if (isUnlocked) {
-                 if (isEquipped) {
+                 if (item.type === 'decoration') {
+                    buttonHtml = `<button class="w-full py-2 bg-green-600 text-white font-bold rounded cursor-default"><i class="fas fa-check"></i> Owned</button>`;
+                 } else if (isEquipped) {
                     buttonHtml = `<button class="w-full py-2 bg-green-600 text-white font-bold rounded cursor-default"><i class="fas fa-check"></i> Active</button>`;
                  } else {
                     buttonHtml = `<button class="equip-btn w-full py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded transition-colors" data-id="${item.id}">Equip</button>`;
@@ -266,7 +344,7 @@ export default class Store {
                 btn.addEventListener('click', (e) => {
                     this.buy(item, e);
                 });
-            } else if (isUnlocked && !isEquipped) {
+            } else if (isUnlocked && !isEquipped && item.type !== 'decoration') {
                 const btn = card.querySelector('.equip-btn');
                 if(btn) {
                     btn.addEventListener('click', () => {
