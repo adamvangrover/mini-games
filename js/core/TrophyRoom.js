@@ -24,6 +24,11 @@ export default class TrophyRoom {
     }
 
     init() {
+        if (!this.container) {
+            console.error("TrophyRoom: Container not provided.");
+            return;
+        }
+
         if (typeof THREE === 'undefined') {
             console.error("TrophyRoom: Three.js not loaded.");
             this.container.innerHTML = '<div class="text-white text-center p-10">Error: 3D Engine not loaded.</div>';

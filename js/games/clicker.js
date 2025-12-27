@@ -104,7 +104,7 @@ export default class ClickerGame {
     }
 
     shutdown() {
-        this.saveSystem.saveGameConfig('clicker-game', {
+        this.saveSystem.setGameConfig('clicker-game', {
             money: this.money,
             clickPower: this.clickPower,
             autoClickers: this.autoClickers,

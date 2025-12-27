@@ -446,5 +446,6 @@ export default class LifeSimGame {
     shutdown() {
         this.state.isPlaying = false;
         clearInterval(this.gameLoop);
+        this.container.innerHTML = '';
     }
 }

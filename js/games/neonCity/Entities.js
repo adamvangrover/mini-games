@@ -8,7 +8,11 @@ export class Player {
         this.scene.add(this.mesh);
 
         // Avatar Body
-        const geometry = new THREE.CapsuleGeometry(2, 6, 4, 8);
+        // Fallback for older Three.js versions without CapsuleGeometry
+        const geometry = (typeof THREE.CapsuleGeometry !== 'undefined')
+            ? new THREE.CapsuleGeometry(2, 6, 4, 8)
+            : new THREE.CylinderGeometry(2, 2, 6, 8);
+
         const material = new THREE.MeshStandardMaterial({
             color: 0x00ffff,
             emissive: 0x0088aa,

@@ -67,8 +67,7 @@ export default class SaveSystem {
             equipped: {
                 theme: 'theme_neon_blue',
                 avatar: 'fas fa-user-astronaut'
-            },
-            stats: {},
+            stats: {}
             xp: 0,
             level: 1,
             avatar: {
@@ -94,10 +93,6 @@ export default class SaveSystem {
         if (!this.data.settings) {
             this.data.settings = { muted: false, adsEnabled: true };
         }
-        this.data.settings[key] = value;
-        this.save();
-    }
-
     incrementStat(key, amount = 1) {
         if (!this.data.stats) this.data.stats = {};
         this.data.stats[key] = (this.data.stats[key] || 0) + amount;

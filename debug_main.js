@@ -191,7 +191,7 @@ async function transitionToState(newState, context = {}) {
         currentState = AppState.TRANSITIONING;
         hideOverlay();
         soundManager.setBGMVolume(0.1);
-        
+
         document.getElementById("menu").classList.remove("hidden");
         populateMenuGrid();
 
@@ -201,7 +201,7 @@ async function transitionToState(newState, context = {}) {
                 document.getElementById('menu-grid')?.classList.add('hidden');
                 document.getElementById('view-toggle-text').textContent = 'Grid View';
             } else {
-                 arcadeHub.pause(); 
+                 arcadeHub.pause();
                  document.getElementById('menu-grid')?.classList.remove('hidden');
                  document.getElementById('view-toggle-text').textContent = '3D View';
             }
@@ -531,7 +531,7 @@ function populateMenuGrid() {
     Object.entries(gameRegistry).forEach(([id, game]) => {
         const card = document.createElement('div');
         card.className = "bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden";
-        
+
         card.innerHTML = `
             <div class="absolute top-0 right-0 p-2 opacity-50 text-xs uppercase font-bold tracking-wider">${game.category || 'Game'}</div>
             <div class="flex flex-col items-center text-center gap-3 pt-4">
@@ -545,7 +545,7 @@ function populateMenuGrid() {
                 <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
             </div>
         `;
-        
+
         card.onclick = () => transitionToState(AppState.IN_GAME, { gameId: id });
         grid.appendChild(card);
     });

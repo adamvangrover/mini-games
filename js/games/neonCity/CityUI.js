@@ -13,6 +13,11 @@ export default class CityUI {
     }
 
     createHUD() {
+        // Create prompt overlay first
+        this.promptOverlay = document.createElement('div');
+        this.promptOverlay.className = 'absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-6 py-2 rounded-full border border-cyan-500 hidden font-bold text-sm tracking-wider animate-pulse z-20 pointer-events-none';
+        this.container.appendChild(this.promptOverlay);
+
         this.hud = document.createElement('div');
         this.hud.className = 'absolute top-4 left-4 pointer-events-none z-20 font-mono text-white';
         this.hud.innerHTML = `

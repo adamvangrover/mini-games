@@ -35,6 +35,7 @@ export default class MatterhornArcade {
         // We can attempt to inject code into the iframe to hook up the score?
         // Cross-origin might not apply since it's same domain.
         this.iframe.onload = () => {
+            if (!this.iframe || !this.iframe.contentWindow) return; // Safety check if destroyed
             const win = this.iframe.contentWindow;
             
             // Hook into "showMessage" or create a new hook for winning/scoring if possible.
