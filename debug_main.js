@@ -35,360 +35,79 @@ import HallOfFame from './games/hallOfFame.js';
 import AvatarStation from './games/avatarStation.js';
 import TechTree from './games/techTree.js';
 import DevConsole from './core/DevConsole.js';
-import PlaceholderGame from './games/PlaceholderGame.js';
+import SudokuGame from './games/sudoku.js';
+import ZenGardenGame from './games/zenGarden.js';
+import NeonGalagaGame from './games/neonGalaga.js';
 
-// Game Registry using Dynamic Imports
-// NOTE: 'module' property now holds an async function that returns the module.
+// Legacy Refactored to Classes
+import SnakeGame from './games/snake.js';
+import PongGame from './games/pong.js';
+import SpaceShooterGame from './games/space.js';
+import BreakoutGame from './games/breakout.js';
+import TetrisGame from './games/tetris.js';
+import MazeGame from './games/maze.js';
+import RunnerGame from './games/runner.js';
+import TypingGame from './games/typing.js';
+import ClickerGame from './games/clicker.js';
+import RPGGame from './games/rpg.js';
+import EclipseGame from './games/eclipse.js';
+import EclipsePuzzleGame from './games/eclipsePuzzle.js';
+import EclipseLogicPuzzleGame from './games/eclipseLogicPuzzle.js';
+import MatterhornGame from './games/matterhorn.js'; // Adapter
+import AlpineGame from './games/alpine.js';
+import MatterhornArcade from './games/matterhornArcade.js';
+import AetheriaClassic from './games/aetheriaClassic.js';
+import LifeSimGame from './games/lifeSim.js';
+
+// Game Registry
 const gameRegistry = {
-    // 3D Immersive
-    'alpine-game': {
-        name: 'Alpine Adventure',
-        description: 'Open World Exploration',
-        icon: 'fa-solid fa-mountain-sun',
-        category: '3D Immersive',
-        importFn: () => import('./games/alpine.js'),
-        wide: true
-    },
-    'neon-city-game': {
-        name: 'Neon City',
-        description: 'Open World RPG',
-        icon: 'fa-solid fa-city',
-        category: '3D Immersive',
-        importFn: () => import('./games/neonCity.js'),
-        wide: true
-    },
-    'aetheria-game': {
-        name: 'Aetheria',
-        description: 'Floating Isles Exploration',
-        icon: 'fa-solid fa-cloud',
-        category: '3D Immersive',
-        importFn: () => import('./games/aetheria/aetheria.js'),
-        wide: true
-    },
-    'aetheria-classic': {
-        name: 'Aetheria (Classic)',
-        description: 'Standalone Version',
-        icon: 'fa-solid fa-wind',
-        category: '3D Immersive',
-        importFn: () => import('./games/aetheriaClassic.js'),
-        wide: true
-    },
-    'matterhorn-game': {
-        name: 'Matterhorn Ascent',
-        description: '3D Alpine Adventure',
-        icon: 'fa-solid fa-mountain',
-        category: '3D Immersive',
-        importFn: () => import('./games/matterhorn.js'),
-        wide: true
-    },
-    'lumina-game': {
-        name: 'Lumina',
-        description: 'Purify the Glitch',
-        icon: 'fa-solid fa-cube',
-        category: '3D Immersive',
-        importFn: () => import('./games/lumina.js'),
-        wide: true
-    },
-    'prism-realms-game': {
-        name: 'Prism Realms',
-        description: 'Shadowfall FPS',
-        icon: 'fa-solid fa-ghost',
-        category: '3D Immersive',
-        importFn: () => import('./games/prismRealms.js'),
-        wide: true
-    },
+    'alpine-game': { name: 'Alpine Adventure', description: 'Open World Exploration', icon: 'fa-solid fa-mountain-sun', category: '3D Immersive', module: AlpineGame, wide: true },
+    'matterhorn-arcade': { name: 'Matterhorn Arcade', description: 'Retro Climbing Challenge', icon: 'fa-solid fa-person-hiking', category: 'Arcade Classics', module: MatterhornArcade, wide: true },
+    'tower-defense-game': { name: 'Tower Defense', description: 'Defend the Base', icon: 'fa-solid fa-chess-rook', category: 'New Games', module: TowerDefenseGame },
+    'stacker-game': { name: 'Physics Stacker', description: 'Balance Blocks', icon: 'fa-solid fa-cubes-stacked', category: 'New Games', module: PhysicsStackerGame },
+    'neon-city-game': { name: 'Neon City', description: 'Open World RPG', icon: 'fa-solid fa-city', category: '3D Immersive', module: NeonCityGame, wide: true },
+    'aetheria-game': { name: 'Aetheria', description: 'Floating Isles Exploration', icon: 'fa-solid fa-cloud', category: '3D Immersive', module: AetheriaGame, wide: true },
+    'aetheria-classic': { name: 'Aetheria (Classic)', description: 'Standalone Version', icon: 'fa-solid fa-wind', category: '3D Immersive', module: AetheriaClassic, wide: true },
+    'neon-2048': { name: 'Neon 2048', description: 'Merge the Grid', icon: 'fa-solid fa-border-all', category: 'New Games', module: Neon2048 },
+    'neon-flap': { name: 'Neon Flap', description: 'Flappy Clone', icon: 'fa-solid fa-dove', category: 'New Games', module: NeonFlap },
+    'neon-memory': { name: 'Neon Memory', description: 'Simon Says', icon: 'fa-solid fa-brain', category: 'New Games', module: NeonMemory },
+    'neon-golf': { name: 'Neon Golf', description: 'Mini Golf Challenge', icon: 'fa-solid fa-golf-ball-tee', category: 'Sports', module: NeonGolf },
+    'neon-hoops': { name: 'Neon Hoops', description: 'Arcade Basketball', icon: 'fa-solid fa-basketball', category: 'Sports', module: NeonHoops },
+    'neon-shooter': { name: 'Neon FPS', description: 'Cyber Defense', icon: 'fa-solid fa-gun', category: 'Action', module: NeonShooter },
+    'work-game': { name: 'The Grind 98', description: 'Life Simulator', icon: 'fa-solid fa-briefcase', category: 'Simulation', module: TheGrind98, wide: true },
+    'life-sim-game': { name: 'Neon Life', description: 'Live Your Best Life', icon: 'fa-solid fa-user-astronaut', category: 'Simulation', module: LifeSimGame, wide: true },
 
-    // New Games
-    'tower-defense-game': {
-        name: 'Tower Defense',
-        description: 'Defend the Base',
-        icon: 'fa-solid fa-chess-rook',
-        category: 'New Games',
-        importFn: () => import('./games/towerDefense.js')
-    },
-    'stacker-game': {
-        name: 'Physics Stacker',
-        description: 'Balance Blocks',
-        icon: 'fa-solid fa-cubes-stacked',
-        category: 'New Games',
-        importFn: () => import('./games/physicsStacker.js')
-    },
-    'neon-2048': {
-        name: 'Neon 2048',
-        description: 'Merge the Grid',
-        icon: 'fa-solid fa-border-all',
-        category: 'New Games',
-        importFn: () => import('./games/neon2048.js')
-    },
-    'neon-flap': {
-        name: 'Neon Flap',
-        description: 'Flappy Clone',
-        icon: 'fa-solid fa-dove',
-        category: 'New Games',
-        importFn: () => import('./games/neonFlap.js')
-    },
-    'neon-memory': {
-        name: 'Neon Memory',
-        description: 'Simon Says',
-        icon: 'fa-solid fa-brain',
-        category: 'New Games',
-        importFn: () => import('./games/neonMemory.js')
-    },
-    'neon-flow-game': {
-        name: 'Neon Flow',
-        description: 'Relax & Create',
-        icon: 'fa-solid fa-wind',
-        category: 'New Games',
-        importFn: () => import('./games/neonFlow.js'),
-        wide: true
-    },
-
-    // Sports
-    'neon-golf': {
-        name: 'Neon Golf',
-        description: 'Mini Golf Challenge',
-        icon: 'fa-solid fa-golf-ball-tee',
-        category: 'Sports',
-        importFn: () => import('./games/neonGolf.js')
-    },
-    'neon-hoops': {
-        name: 'Neon Hoops',
-        description: 'Arcade Basketball',
-        icon: 'fa-solid fa-basketball',
-        category: 'Sports',
-        importFn: () => import('./games/neonHoops.js')
-    },
-
-    // Action
-    'neon-shooter': {
-        name: 'Neon FPS',
-        description: 'Cyber Defense',
-        icon: 'fa-solid fa-gun',
-        category: 'Action',
-        importFn: () => import('./games/neonShooter.js')
-    },
-    'neon-jump': {
-        name: 'Neon Jump',
-        description: 'Jump to the Stars',
-        icon: 'fa-solid fa-arrow-up',
-        category: 'Action',
-        importFn: () => import('./games/neonJump.js')
-    },
-    'neon-slice': {
-        name: 'Neon Slice',
-        description: 'Slice the Shapes',
-        icon: 'fa-solid fa-scissors',
-        category: 'Action',
-        importFn: () => import('./games/neonSlice.js')
-    },
-    'neon-galaga-game': {
-        name: 'Neon Galaga',
-        description: 'Space Warfare',
-        icon: 'fa-solid fa-jet-fighter',
-        category: 'Action',
-        importFn: () => import('./games/neonGalaga.js')
-    },
-
-    // Simulation
-    'work-game': {
-        name: 'The Grind 98',
-        description: 'Life Simulator',
-        icon: 'fa-solid fa-briefcase',
-        category: 'Simulation',
-        importFn: () => import('./games/work.js'),
-        wide: true
-    },
-    'life-sim-game': {
-        name: 'Neon Life',
-        description: 'Live Your Best Life',
-        icon: 'fa-solid fa-user-astronaut',
-        category: 'Simulation',
-        importFn: () => import('./games/lifeSim.js'),
-        wide: true
-    },
-    'zen-garden-game': {
-        name: 'Zen Garden',
-        description: 'Relax & Create',
-        icon: 'fa-solid fa-spa',
-        category: 'Simulation',
-        importFn: () => import('./games/zenGarden.js'),
-        wide: true
-    },
-
-    // Arcade Classics
-    'matterhorn-arcade': {
-        name: 'Matterhorn Arcade',
-        description: 'Retro Climbing Challenge',
-        icon: 'fa-solid fa-person-hiking',
-        category: 'Arcade Classics',
-        importFn: () => import('./games/matterhornArcade.js'),
-        wide: true
-    },
-    'snake-game': {
-        name: 'Snake',
-        description: 'Eat & Grow',
-        icon: 'fa-solid fa-snake',
-        category: 'Arcade Classics',
-        importFn: () => import('./games/snake.js')
-    },
-    'pong-game': {
-        name: 'Pong',
-        description: 'Retro Tennis',
-        icon: 'fa-solid fa-table-tennis-paddle-ball',
-        category: 'Arcade Classics',
-        importFn: () => import('./games/pong.js')
-    },
-    'space-game': {
-        name: 'Space Shooter',
-        description: 'Defend the Galaxy',
-        icon: 'fa-solid fa-rocket',
-        category: 'Arcade Classics',
-        importFn: () => import('./games/space.js')
-    },
-    'breakout-game': {
-        name: 'Breakout',
-        description: 'Smash the Bricks',
-        icon: 'fa-solid fa-kaaba',
-        category: 'Arcade Classics',
-        importFn: () => import('./games/breakout.js')
-    },
-    'tetris-game': {
-        name: 'Tetris',
-        description: 'Stack the Blocks',
-        icon: 'fa-solid fa-shapes',
-        category: 'Arcade Classics',
-        importFn: () => import('./games/tetris.js')
-    },
-
-    // Quick Minigames
-    'maze-game': {
-        name: 'Maze',
-        description: 'Find the Path',
-        icon: 'fa-solid fa-dungeon',
-        category: 'Quick Minigames',
-        importFn: () => import('./games/maze.js')
-    },
-    'runner-game': {
-        name: 'Endless Runner',
-        description: 'Jump the Obstacles',
-        icon: 'fa-solid fa-person-running',
-        category: 'Quick Minigames',
-        importFn: () => import('./games/runner.js')
-    },
-    'typing-game': {
-        name: 'Speed Type',
-        description: 'Test Your WPM',
-        icon: 'fa-solid fa-keyboard',
-        category: 'Quick Minigames',
-        importFn: () => import('./games/typing.js')
-    },
-    'clicker-game': {
-        name: 'Clicker',
-        description: 'Exponential Growth',
-        icon: 'fa-solid fa-hand-pointer',
-        category: 'Quick Minigames',
-        importFn: () => import('./games/clicker.js')
-    },
-    'neon-stack': {
-        name: 'Neon Stack',
-        description: 'Stack the Blocks',
-        icon: 'fa-solid fa-layer-group',
-        category: 'Quick Minigames',
-        importFn: () => import('./games/neonStack.js')
-    },
-
-    // RPG & Logic
-    'rpg-game': {
-        name: 'RPG Battle',
-        description: 'Turn-Based Combat',
-        icon: 'fa-solid fa-khanda',
-        category: 'RPG & Logic',
-        importFn: () => import('./games/rpg.js')
-    },
-    'eclipse-game': {
-        name: 'Eclipse',
-        description: 'Strategy Board',
-        icon: 'fa-solid fa-sun',
-        category: 'RPG & Logic',
-        importFn: () => import('./games/eclipse.js')
-    },
-    'eclipse-puzzle-game': {
-        name: 'Eclipse Puzzle',
-        description: 'Pattern Matching',
-        icon: 'fa-solid fa-puzzle-piece',
-        category: 'RPG & Logic',
-        importFn: () => import('./games/eclipsePuzzle.js')
-    },
-    'eclipse-logic-puzzle-game': {
-        name: 'Logic Puzzle',
-        description: 'Deduction Grid',
-        icon: 'fa-solid fa-lightbulb',
-        category: 'RPG & Logic',
-        importFn: () => import('./games/eclipseLogicPuzzle.js')
-    },
-
-    // Logic Puzzles
-    'queens-game': {
-        name: 'Queens',
-        description: 'Place Queens',
-        icon: 'fa-solid fa-chess-queen',
-        category: 'Logic Puzzles',
-        importFn: () => import('./games/queens.js')
-    },
-    'neon-mines-game': {
-        name: 'Neon Mines',
-        description: 'Avoid Mines',
-        icon: 'fa-solid fa-bomb',
-        category: 'Logic Puzzles',
-        importFn: () => import('./games/neonMines.js')
-    },
-    'neon-picross-game': {
-        name: 'Neon Picross',
-        description: 'Picture Cross',
-        icon: 'fa-solid fa-pencil-alt',
-        category: 'Logic Puzzles',
-        importFn: () => import('./games/neonPicross.js')
-    },
-    'sudoku-game': {
-        name: 'Neon Sudoku',
-        description: 'Classic Number Puzzle',
-        icon: 'fa-solid fa-border-none',
-        category: 'Logic Puzzles',
-        importFn: () => import('./games/sudoku.js')
-    },
-
-    // System Modules (Treated as games for unified loading)
-    'trophy-room': {
-        name: 'Trophy Room',
-        description: 'Achievement Gallery',
-        icon: 'fa-solid fa-trophy',
-        category: 'System',
-        importFn: () => import('./core/TrophyRoom.js'),
-        wide: true
-    },
-    'hall-of-fame': {
-        name: 'Hall of Fame',
-        description: 'Global Stats & Records',
-        icon: 'fa-solid fa-list-ol',
-        category: 'System',
-        importFn: () => import('./games/hallOfFame.js'),
-        wide: true
-    },
-    'avatar-station': {
-        name: 'Avatar Station',
-        description: 'Customize Identity',
-        icon: 'fa-solid fa-user-gear',
-        category: 'System',
-        importFn: () => import('./games/avatarStation.js')
-    },
-    'tech-tree': {
-        name: 'Tech Tree',
-        description: 'System Upgrades',
-        icon: 'fa-solid fa-network-wired',
-        category: 'System',
-        importFn: () => import('./games/techTree.js'),
-        wide: true
-    },
+    // Legacy Refactored
+    'snake-game': { name: 'Snake', description: 'Eat & Grow', icon: 'fa-solid fa-snake', category: 'Arcade Classics', module: SnakeGame },
+    'pong-game': { name: 'Pong', description: 'Retro Tennis', icon: 'fa-solid fa-table-tennis-paddle-ball', category: 'Arcade Classics', module: PongGame },
+    'space-game': { name: 'Space Shooter', description: 'Defend the Galaxy', icon: 'fa-solid fa-rocket', category: 'Arcade Classics', module: SpaceShooterGame },
+    'breakout-game': { name: 'Breakout', description: 'Smash the Bricks', icon: 'fa-solid fa-kaaba', category: 'Arcade Classics', module: BreakoutGame },
+    'tetris-game': { name: 'Tetris', description: 'Stack the Blocks', icon: 'fa-solid fa-shapes', category: 'Arcade Classics', module: TetrisGame },
+    'maze-game': { name: 'Maze', description: 'Find the Path', icon: 'fa-solid fa-dungeon', category: 'Quick Minigames', module: MazeGame },
+    'runner-game': { name: 'Endless Runner', description: 'Jump the Obstacles', icon: 'fa-solid fa-person-running', category: 'Quick Minigames', module: RunnerGame },
+    'typing-game': { name: 'Speed Type', description: 'Test Your WPM', icon: 'fa-solid fa-keyboard', category: 'Quick Minigames', module: TypingGame },
+    'clicker-game': { name: 'Clicker', description: 'Exponential Growth', icon: 'fa-solid fa-hand-pointer', category: 'Quick Minigames', module: ClickerGame },
+    'rpg-game': { name: 'RPG Battle', description: 'Turn-Based Combat', icon: 'fa-solid fa-khanda', category: 'RPG & Logic', module: RPGGame },
+    'eclipse-game': { name: 'Eclipse', description: 'Strategy Board', icon: 'fa-solid fa-sun', category: 'RPG & Logic', module: EclipseGame },
+    'eclipse-puzzle-game': { name: 'Eclipse Puzzle', description: 'Pattern Matching', icon: 'fa-solid fa-puzzle-piece', category: 'RPG & Logic', module: EclipsePuzzleGame },
+    'eclipse-logic-puzzle-game': { name: 'Logic Puzzle', description: 'Deduction Grid', icon: 'fa-solid fa-lightbulb', category: 'RPG & Logic', module: EclipseLogicPuzzleGame },
+    'matterhorn-game': { name: 'Matterhorn Ascent', description: '3D Alpine Adventure', icon: 'fa-solid fa-mountain', category: '3D Immersive', module: MatterhornGame, wide: true },
+    'queens-game': { name: 'Queens', description: 'Place Queens', icon: 'fa-solid fa-chess-queen', category: 'Logic Puzzles', module: QueensGame },
+    'neon-mines-game': { name: 'Neon Mines', description: 'Avoid Mines', icon: 'fa-solid fa-bomb', category: 'Logic Puzzles', module: NeonMinesGame },
+    'neon-picross-game': { name: 'Neon Picross', description: 'Picture Cross', icon: 'fa-solid fa-pencil-alt', category: 'Logic Puzzles', module: NeonPicrossGame },
+    'neon-flow-game': { name: 'Neon Flow', description: 'Relax & Create', icon: 'fa-solid fa-wind', category: 'New Games', module: NeonFlow, wide: true },
+    'neon-jump': { name: 'Neon Jump', description: 'Jump to the Stars', icon: 'fa-solid fa-arrow-up', category: 'Action', module: NeonJump },
+    'neon-slice': { name: 'Neon Slice', description: 'Slice the Shapes', icon: 'fa-solid fa-scissors', category: 'Action', module: NeonSlice },
+    'neon-stack': { name: 'Neon Stack', description: 'Stack the Blocks', icon: 'fa-solid fa-layer-group', category: 'Quick Minigames', module: NeonStack },
+    'lumina-game': { name: 'Lumina', description: 'Purify the Glitch', icon: 'fa-solid fa-cube', category: '3D Immersive', module: Lumina, wide: true },
+    'prism-realms-game': { name: 'Prism Realms', description: 'Shadowfall FPS', icon: 'fa-solid fa-ghost', category: '3D Immersive', module: PrismRealms, wide: true },
+    'trophy-room': { name: 'Trophy Room', description: 'Achievement Gallery', icon: 'fa-solid fa-trophy', category: 'System', module: TrophyRoom, wide: true },
+    'hall-of-fame': { name: 'Hall of Fame', description: 'Global Stats & Records', icon: 'fa-solid fa-list-ol', category: 'System', module: HallOfFame, wide: true },
+    'avatar-station': { name: 'Avatar Station', description: 'Customize Identity', icon: 'fa-solid fa-user-gear', category: 'System', module: AvatarStation },
+    'tech-tree': { name: 'Tech Tree', description: 'System Upgrades', icon: 'fa-solid fa-network-wired', category: 'System', module: TechTree, wide: true },
+    'sudoku-game': { name: 'Neon Sudoku', description: 'Classic Number Puzzle', icon: 'fa-solid fa-border-none', category: 'Logic Puzzles', module: SudokuGame },
+    'zen-garden-game': { name: 'Zen Garden', description: 'Relax & Create', icon: 'fa-solid fa-spa', category: 'Simulation', module: ZenGardenGame, wide: true },
+    'neon-galaga-game': { name: 'Neon Galaga', description: 'Space Warfare', icon: 'fa-solid fa-jet-fighter', category: 'Action', module: NeonGalagaGame },
 };
 
 // State Machine
@@ -435,6 +154,11 @@ function mainLoop(timestamp) {
             break;
         case AppState.MENU:
             if (arcadeHub && is3DView) {
+                // ArcadeHub is updated by its own loop or Three.js if needed,
+                // but usually we might need to manually call update if it's not self-driven.
+                // Assuming ArcadeHub uses its own rAF or is static,
+                // but actually ArcadeHub class usually has an update(dt) method.
+                // Looking at the old main.js, it called arcadeHub.update(dt).
                 if (arcadeHub.update) arcadeHub.update(deltaTime);
             }
             break;
@@ -466,8 +190,8 @@ async function transitionToState(newState, context = {}) {
     if (newState === AppState.MENU) {
         currentState = AppState.TRANSITIONING;
         hideOverlay();
-        soundManager.setBGMVolume(soundManager.getVolume() || 0.1); // Restore preference or default
-        
+        soundManager.setBGMVolume(0.1);
+
         document.getElementById("menu").classList.remove("hidden");
         populateMenuGrid();
 
@@ -477,7 +201,7 @@ async function transitionToState(newState, context = {}) {
                 document.getElementById('menu-grid')?.classList.add('hidden');
                 document.getElementById('view-toggle-text').textContent = 'Grid View';
             } else {
-                 arcadeHub.pause(); 
+                 arcadeHub.pause();
                  document.getElementById('menu-grid')?.classList.remove('hidden');
                  document.getElementById('view-toggle-text').textContent = '3D View';
             }
@@ -494,8 +218,8 @@ async function transitionToState(newState, context = {}) {
 
         if (arcadeHub) arcadeHub.pause();
         document.getElementById("menu").classList.add("hidden");
-        document.querySelectorAll(".game-container").forEach(el => el.classList.add("hidden"));
 
+        // Create or reuse container
         let trContainer = document.getElementById('trophy-room-container');
         if (!trContainer) {
             trContainer = document.createElement('div');
@@ -503,39 +227,21 @@ async function transitionToState(newState, context = {}) {
             trContainer.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; z-index:15;";
             document.body.appendChild(trContainer);
         }
-        trContainer.innerHTML = '';
+        trContainer.innerHTML = ''; // Clear previous
         trContainer.style.display = 'block';
-        trContainer.classList.add('game-container');
-        trContainer.classList.remove('hidden');
 
-        // Dynamic Load for Trophy Room
-        try {
-            const module = await import('./core/TrophyRoom.js');
-            requestAnimationFrame(() => {
-                new module.default(trContainer, () => {
-                    trContainer.style.display = 'none';
-                    transitionToState(AppState.MENU);
-               });
-           });
-        } catch (err) {
-            console.error("Failed to load TrophyRoom:", err);
-            // Fallback
-            new PlaceholderGame().init(trContainer);
-        }
+        new TrophyRoom(trContainer, () => {
+             trContainer.style.display = 'none';
+             transitionToState(AppState.MENU);
+        });
 
         currentState = AppState.TROPHY_ROOM;
         return;
     }
 
     if (newState === AppState.IN_GAME) {
-        const { gameId } = context;
-
-        if (gameId === 'trophy-room') {
-            transitionToState(AppState.TROPHY_ROOM);
-            return;
-        }
-
         currentState = AppState.TRANSITIONING;
+        const { gameId } = context;
 
         if (arcadeHub) arcadeHub.pause();
         document.getElementById("menu").classList.add("hidden");
@@ -560,42 +266,37 @@ async function transitionToState(newState, context = {}) {
         soundManager.setBGMVolume(0.02);
 
         try {
-            let GameClass = null;
-
-            // DYNAMIC IMPORT LOGIC
-            if (gameInfo.importFn) {
-                const module = await gameInfo.importFn();
-                GameClass = module.default;
-            }
-
-            if (GameClass) {
-                currentGameInstance = new GameClass();
+            if (gameInfo.module) {
+                currentGameInstance = new gameInfo.module();
                 if (currentGameInstance.init) {
                     await currentGameInstance.init(container);
                 }
 
-                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'lumina-game', 'prism-realms-game', 'trophy-room', 'hall-of-fame', 'avatar-station', 'tech-tree', 'sudoku-game', 'zen-garden-game', 'neon-zip-game'];
+                // Init Mobile Controls if not Neon Flow (which handles own input) or other touch games
+                // For simplicity, we add D-pad to all games except explicit opt-outs or touch natives.
+                // Neon Flow is 'neon-flow-game'.
+                // Clicker is 'clicker-game'.
+                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'lumina-game', 'prism-realms-game', 'trophy-room', 'hall-of-fame', 'avatar-station', 'tech-tree'];
                 if (!noDpadGames.includes(gameId)) {
                     mobileControls = new MobileControls(container);
                 }
 
-            } else {
-                throw new Error("Game class could not be loaded.");
+            } else if (gameInfo.legacyId) {
+                const guessName = gameId.replace(/-([a-z])/g, (g) => g[1].toUpperCase()).replace('Game', '') + 'Game';
+                let globalObj = window[guessName];
+                if (gameId === 'matterhorn-game') globalObj = window.matterhornGame;
+
+                if (globalObj && globalObj.init) {
+                    currentGameInstance = globalObj;
+                    currentGameInstance.init();
+                } else {
+                     console.warn(`Legacy game object ${guessName} not found.`);
+                }
             }
         } catch (err) {
-            console.error(`Failed to initialize game ${gameId}:`, err);
-            // Instantiate Placeholder
-            currentGameInstance = new PlaceholderGame();
-            currentGameInstance.text = "MODULE NOT FOUND";
-            currentGameInstance.subText = `Could not load ${gameInfo.name}`;
-            await currentGameInstance.init(container);
-
-            // Allow exit from placeholder
-            const btn = document.createElement('button');
-            btn.textContent = "Return to Menu";
-            btn.className = "absolute top-4 right-4 px-4 py-2 bg-red-600 text-white rounded z-50 pointer-events-auto";
-            btn.onclick = () => transitionToState(AppState.MENU);
-            container.appendChild(btn);
+            console.error("Failed to initialize game:", err);
+            transitionToState(AppState.MENU);
+            return;
         }
 
         currentState = AppState.IN_GAME;
@@ -635,7 +336,7 @@ function showGameOver(score, onRetry) {
 
         currentState = AppState.PAUSED;
         showOverlay('GAME OVER', content);
-        updateHubStats();
+        updateHubStats(); // Update coin display
 
         // Bind buttons AFTER showing overlay
         const retryBtn = document.getElementById('overlay-retry-btn');
@@ -681,7 +382,7 @@ function togglePause() {
 
 function showSettingsOverlay() {
      const settings = saveSystem.getSettings();
-     const adsEnabled = settings.adsEnabled !== false;
+     const adsEnabled = settings.adsEnabled !== false; // Default true
 
      const content = `
         <div class="flex flex-col gap-4">
@@ -693,11 +394,6 @@ function showSettingsOverlay() {
                 </label>
             </div>
 
-            <div class="flex items-center justify-between bg-slate-800 p-3 rounded-lg border border-slate-700">
-                <span class="text-white font-bold">Master Volume</span>
-                <input type="range" id="settings-volume-slider" min="0" max="1" step="0.1" value="${soundManager.getVolume()}" class="w-24">
-            </div>
-
             <button id="copy-stats-btn" class="px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded flex items-center justify-center gap-2">
                 <i class="fas fa-share-alt"></i> Share High Scores (Copy)
             </button>
@@ -707,6 +403,15 @@ function showSettingsOverlay() {
             <div class="flex gap-2">
                  <button id="refresh-export-btn" class="flex-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded">Refresh Export</button>
                  <button id="copy-export-btn" class="flex-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded">Copy Data</button>
+            </div>
+
+            <hr class="border-slate-700 my-2">
+
+            <div class="flex items-center justify-between bg-slate-800 p-3 rounded">
+                <span class="text-white font-bold"><i class="fas fa-ad mr-2"></i> Show Ads</span>
+                <button id="toggle-ads-btn" class="px-4 py-1 rounded font-bold text-sm transition-colors ${adsManager.areAdsEnabled() ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}">
+                    ${adsManager.areAdsEnabled() ? 'ON' : 'OFF'}
+                </button>
             </div>
 
             <hr class="border-slate-700 my-2">
@@ -727,13 +432,9 @@ function showSettingsOverlay() {
     };
     updateExport();
 
+    // Bind Ad Toggle
     document.getElementById('settings-ads-toggle').addEventListener('change', (e) => {
         saveSystem.setSetting('adsEnabled', e.target.checked);
-        adsManager.toggleAds(e.target.checked);
-    });
-
-    document.getElementById('settings-volume-slider').addEventListener('input', (e) => {
-        soundManager.setBGMVolume(parseFloat(e.target.value));
     });
 
     document.getElementById('refresh-export-btn').onclick = updateExport;
@@ -743,6 +444,24 @@ function showSettingsOverlay() {
         document.execCommand('copy');
         document.getElementById('copy-export-btn').textContent = "Copied!";
         setTimeout(() => document.getElementById('copy-export-btn').textContent = "Copy Data", 2000);
+    };
+
+    const toggleAdsBtn = document.getElementById('toggle-ads-btn');
+    toggleAdsBtn.onclick = () => {
+        const currentlyEnabled = adsManager.areAdsEnabled();
+        const newState = !currentlyEnabled;
+        adsManager.toggleAds(newState);
+
+        // Update UI
+        toggleAdsBtn.textContent = newState ? 'ON' : 'OFF';
+        toggleAdsBtn.className = `px-4 py-1 rounded font-bold text-sm transition-colors ${newState ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`;
+
+        // Visual feedback
+        if(newState) {
+            alert('Ads enabled! Thank you for supporting us (virtually).');
+        } else {
+             alert('Ads disabled. Enjoy the uninterrupted experience!');
+        }
     };
 
     document.getElementById('copy-stats-btn').onclick = () => {
@@ -781,7 +500,7 @@ function showSettingsOverlay() {
 
 function updateHubStats() {
     const currency = saveSystem.getCurrency();
-    const ids = ['total-currency', 'total-currency-hud'];
+    const ids = ['total-currency', 'total-currency-hud']; // Update both
     ids.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = currency;
@@ -812,7 +531,7 @@ function populateMenuGrid() {
     Object.entries(gameRegistry).forEach(([id, game]) => {
         const card = document.createElement('div');
         card.className = "bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden";
-        
+
         card.innerHTML = `
             <div class="absolute top-0 right-0 p-2 opacity-50 text-xs uppercase font-bold tracking-wider">${game.category || 'Game'}</div>
             <div class="flex flex-col items-center text-center gap-3 pt-4">
@@ -826,23 +545,28 @@ function populateMenuGrid() {
                 <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
             </div>
         `;
-        
+
         card.onclick = () => transitionToState(AppState.IN_GAME, { gameId: id });
         grid.appendChild(card);
     });
 }
 
+// Store & Shop Logic
 function showShopOverlay() {
     if (!store) {
         store = new Store(saveSystem, 'store-items', ['store-currency']);
     }
+
+    // Update currency before showing
     document.getElementById('store-currency').textContent = saveSystem.getCurrency();
+
     store.render();
     document.getElementById('store-overlay').classList.remove('hidden');
 }
 
 function hideShopOverlay() {
     document.getElementById('store-overlay').classList.add('hidden');
+    // Also update hub stats in case coins were spent
     updateHubStats();
 }
 
@@ -850,72 +574,54 @@ document.addEventListener('DOMContentLoaded', () => {
     updateHubStats();
     populateMenuGrid();
 
+    // Initialize Store (lazy load on click usually, but init class)
     store = new Store(saveSystem, 'store-items', ['store-currency', 'total-currency', 'total-currency-hud']);
 
-    // Initialize Arcade Hub with WebGL Check
+    // Initialize Arcade Hub
     const hubContainer = document.getElementById('arcade-hub-container');
-    const hasWebGL = (() => { try { const canvas = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))); } catch (e) { return false; } })();
-
-    if (hubContainer && hasWebGL) {
+    if (hubContainer) {
         // Auto-switch to Grid View on Mobile
         if (window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent)) {
             is3DView = false;
         }
 
-        arcadeHub = new ArcadeHub(
-            hubContainer,
-            gameRegistry,
-            (gameId) => {
-                if (gameId === 'TROPHY_ROOM') {
-                    transitionToState(AppState.TROPHY_ROOM);
-                } else {
-                    transitionToState(AppState.IN_GAME, { gameId });
-                }
-            },
-            () => { // onFallback
-                console.warn("WebGL Fallback Triggered.");
-                is3DView = false;
-                if (arcadeHub) arcadeHub.isActive = false;
-
-                const toggleBtn = document.getElementById('view-toggle-btn');
-                if (toggleBtn) toggleBtn.style.display = 'none';
-
-                const menuGrid = document.getElementById('menu-grid');
-                if(menuGrid) menuGrid.classList.remove('hidden');
+        arcadeHub = new ArcadeHub(hubContainer, gameRegistry, (gameId) => {
+            if (gameId === 'TROPHY_ROOM') {
+                transitionToState(AppState.TROPHY_ROOM);
+            } else {
+                transitionToState(AppState.IN_GAME, { gameId });
             }
-        );
+        });
 
         document.getElementById("menu").classList.remove("hidden");
 
         if (is3DView) {
              const menuGrid = document.getElementById('menu-grid');
              if(menuGrid) menuGrid.classList.add('hidden');
-             // Wait a tick for Three.js
-             setTimeout(() => arcadeHub.resume(), 100);
+             arcadeHub.resume();
         } else {
-             if(arcadeHub) arcadeHub.pause();
+             arcadeHub.pause();
              const menuGrid = document.getElementById('menu-grid');
              if(menuGrid) menuGrid.classList.remove('hidden');
              const btnText = document.getElementById('view-toggle-text');
              if(btnText) btnText.textContent = '3D View';
         }
     } else {
-        console.warn("WebGL not supported or Container missing! Force Grid View.");
+        console.warn("Arcade Hub Container missing! Falling back to 2D Grid.");
         is3DView = false;
-        const toggleBtn = document.getElementById('view-toggle-btn');
-        if (toggleBtn) toggleBtn.style.display = 'none';
-
-        document.getElementById("menu").classList.remove("hidden");
         const menuGrid = document.getElementById('menu-grid');
         if(menuGrid) menuGrid.classList.remove('hidden');
     }
 
+    // Bind Buttons
     document.getElementById('view-toggle-btn')?.addEventListener('click', toggleView);
 
+    // Shop Buttons
     document.getElementById('shop-btn-menu')?.addEventListener('click', showShopOverlay);
     document.getElementById('shop-btn-hud')?.addEventListener('click', showShopOverlay);
     document.getElementById('store-close-btn')?.addEventListener('click', hideShopOverlay);
 
+    // Overlay Buttons
     document.getElementById('overlay-close-btn')?.addEventListener('click', () => {
         if (currentState === AppState.PAUSED) {
             togglePause();
@@ -928,40 +634,18 @@ document.addEventListener('DOMContentLoaded', () => {
         transitionToState(AppState.MENU);
     });
 
+    // Settings Buttons (HUD and Menu)
     const openSettings = () => showSettingsOverlay();
     document.getElementById('settings-btn')?.addEventListener('click', openSettings);
     document.getElementById('settings-btn-hud')?.addEventListener('click', openSettings);
 
+    // Trophy Room Button
     document.getElementById('trophy-btn-menu')?.addEventListener('click', () => {
         transitionToState(AppState.TROPHY_ROOM);
     });
 
-    const updateMuteIcon = () => {
-        const btn = document.getElementById('mute-btn-hud');
-        if (btn) {
-            btn.innerHTML = soundManager.muted ? '<i class="fas fa-volume-mute text-red-400"></i>' : '<i class="fas fa-volume-up"></i>';
-        }
-    };
-    updateMuteIcon();
 
-    document.getElementById('mute-btn-hud')?.addEventListener('click', () => {
-        soundManager.toggleMute();
-        updateMuteIcon();
-    });
-
-    const menuGrid = document.getElementById('menu-grid');
-    if (menuGrid) {
-        menuGrid.style.touchAction = 'pan-y';
-    }
-
-    setTimeout(() => {
-        const loader = document.getElementById('app-loader');
-        if (loader) {
-            loader.classList.add('opacity-0');
-            setTimeout(() => loader.remove(), 1000);
-        }
-    }, 1500);
-
+    // Global Key Listeners
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (currentState === AppState.IN_GAME || currentState === AppState.PAUSED) {
@@ -972,19 +656,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Bind Back Buttons
     document.body.addEventListener('click', (e) => {
         if (e.target.classList.contains('back-btn')) {
             transitionToState(AppState.MENU);
         }
     });
 
+    // Start Loop
     lastTime = performance.now();
     requestAnimationFrame(mainLoop);
 
     soundManager.startBGM();
 
+    // Init Dev Console
     new DevConsole();
 
+    // Init Global Effects
     if (saveSystem.getSetting('crt')) {
         const crt = document.createElement('div');
         crt.id = 'crt-overlay';
@@ -993,6 +681,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Expose for debugging
 window.miniGameHub = {
     transitionToState,
     soundManager,

@@ -29,11 +29,9 @@ export default class TrophyRoom {
         }
     }
 
-    init(container) {
-        if (container) this.container = container;
-
+    init() {
         if (!this.container) {
-            console.error("TrophyRoom: Container is null or undefined.");
+            console.error("TrophyRoom: Container not provided.");
             return;
         }
 

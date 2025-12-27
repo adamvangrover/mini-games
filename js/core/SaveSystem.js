@@ -152,7 +152,9 @@ export default class SaveSystem {
     }
 
     setSetting(key, value) {
-        if (!this.data.settings) this.data.settings = {};
+        if (!this.data.settings) {
+            this.data.settings = { muted: false, adsEnabled: true };
+        }
         this.data.settings[key] = value;
         this.save();
     }
