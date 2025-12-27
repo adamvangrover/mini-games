@@ -47,11 +47,12 @@ Due to the use of modern ES6 Modules (`import`/`export`), you cannot simply doub
 ### Game Library
 The arcade includes over 40 titles across various genres:
 
-*   **3D Immersive**: Neon City (Open World), Matterhorn (Climbing), Aetheria (Flying).
-*   **Action**: Neon Shooter (FPS), Neon Jump, Neon Slice.
-*   **Puzzle**: Sudoku, Minesweeper, Picross, Queens.
+*   **3D Immersive**: Neon City (Open World), Matterhorn (Climbing), Aetheria (Flying), Lumina (FPS), Prism Realms (FPS).
+*   **Action**: Neon Shooter (FPS), Neon Jump, Neon Slice, Neon Galaga.
+*   **Puzzle**: Sudoku, Minesweeper, Picross, Queens, Neon Flow, 2048.
 *   **Arcade Classics**: Snake, Pong, Tetris, Breakout, Space Shooter (Remastered).
 *   **Simulation**: The Grind 98, Life Sim, Zen Garden.
+*   **Sports**: Neon Golf, Neon Hoops.
 
 ## 🛠 Architecture
 
