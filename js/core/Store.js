@@ -341,8 +341,8 @@ export default class Store {
 
             if (!isUnlocked && canAfford) {
                 const btn = card.querySelector('.buy-btn');
-                btn.addEventListener('click', () => {
-                    this.buy(item);
+                btn.addEventListener('click', (e) => {
+                    this.buy(item, e);
                 });
             } else if (isUnlocked && !isEquipped && item.type !== 'decoration') {
                 const btn = card.querySelector('.equip-btn');
@@ -381,18 +381,26 @@ export default class Store {
         }
     }
 
-    buy(item) {
+    buy(item, event) {
         try {
             if (this.saveSystem.buyItem(item.id, item.cost)) {
                 this.render();
 
-                // Visual feedback
+                // Visual feedback: Particles
                 const particleSystem = ParticleSystem.getInstance();
                 if (particleSystem) {
-                    particleSystem.emit(window.innerWidth / 2, window.innerHeight / 2, '#fbbf24', 30);
+                    // Spawn at button center
+                    const rect = event.target.getBoundingClientRect();
+                    const x = rect.left + rect.width / 2;
+                    const y = rect.top + rect.height / 2;
+                    particleSystem.emit(x, y, '#fbbf24', 30);
                 }
 
+                // Sound
                 SoundManager.getInstance().playSound('score');
+
+                // Toast Notification
+                this.showToast(`Purchased ${item.name}!`);
 
             } else {
                 alert("Not enough coins!");
@@ -400,6 +408,14 @@ export default class Store {
         } catch (e) {
             console.error("Store: Transaction failed", e);
         }
+    }
+
+    showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-full shadow-lg font-bold z-[100] animate-bounce';
+        toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ${message}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
     }
 
     updateCurrencyDisplays() {
