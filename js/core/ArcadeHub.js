@@ -27,7 +27,7 @@ export default class ArcadeHub {
         this.player = {
             position: new THREE.Vector3(0, 1.6, 12), // Start at entrance
             velocity: new THREE.Vector3(),
-            speed: 6.0,
+            speed: 10.0, // IMPROVED: Faster movement
             radius: 0.5,
             height: 1.6,
             rotation: { x: 0, y: 0 }
@@ -82,13 +82,16 @@ export default class ArcadeHub {
             }
 
             // --- Lighting ---
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Increased ambient
+            // IMPROVED: Adjusted ambient and added more specific lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
             this.scene.add(ambientLight);
 
             // Main Overhead Lights
-            this.createCeilingLight(0, 8, 0, colors.light, 1.5, 25);
-            this.createCeilingLight(0, 8, -10, colors.light, 1.5, 25);
-            this.createCeilingLight(0, 8, 10, colors.light, 1.5, 25);
+            this.createCeilingLight(0, 9, 0, colors.light, 2.0, 40);
+            this.createCeilingLight(0, 9, -15, colors.light, 2.0, 40);
+            this.createCeilingLight(0, 9, 15, colors.light, 2.0, 40);
+            this.createCeilingLight(0, 9, -30, colors.light, 2.0, 40); // Back
+            this.createCeilingLight(0, 9, 30, colors.light, 2.0, 40);  // Front
 
             // --- Environment ---
             this.createRoom(colors);
@@ -137,10 +140,11 @@ export default class ArcadeHub {
     createRoom(colors) {
         // Floor
         const floorGeo = new THREE.PlaneGeometry(60, 80);
+        // IMPROVED: More reflective floor
         const floorMat = new THREE.MeshStandardMaterial({
             color: 0x111111,
-            roughness: 0.1,
-            metalness: 0.5,
+            roughness: 0.05,
+            metalness: 0.8,
             side: THREE.FrontSide
         });
         const floor = new THREE.Mesh(floorGeo, floorMat);
@@ -273,7 +277,8 @@ export default class ArcadeHub {
         mesh.position.set(x, y, z);
 
         // Add Light for sign
-        const light = new THREE.PointLight(ctx.shadowColor, 0.8, 15);
+        // IMPROVED: Brighter neon lights
+        const light = new THREE.PointLight(ctx.shadowColor, 2.0, 30);
         light.position.set(x, y - 1, z);
         this.scene.add(light);
 
@@ -287,6 +292,13 @@ export default class ArcadeHub {
         this.navMarker.rotation.x = -Math.PI / 2;
         this.navMarker.visible = false;
         this.scene.add(this.navMarker);
+
+        // IMPROVED: Inner pulse circle
+        const innerGeo = new THREE.CircleGeometry(0.2, 32);
+        const innerMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
+        this.navInner = new THREE.Mesh(innerGeo, innerMat);
+        this.navInner.position.z = 0.01; // Slightly above ring
+        this.navMarker.add(this.navInner);
     }
 
     createTeleporter() {
@@ -447,6 +459,10 @@ export default class ArcadeHub {
                 this.navMarker.visible = true;
                 this.navMarker.position.set(this.navTarget.x, 0.1, this.navTarget.z);
                 this.navMarker.rotation.z += dt * 2; // Spin effect
+
+                // IMPROVED: Pulse effect
+                const scale = 1 + Math.sin(Date.now() * 0.01) * 0.2;
+                this.navMarker.scale.set(scale, scale, scale);
             }
 
             const dir = new THREE.Vector3().subVectors(this.navTarget, this.player.position);
