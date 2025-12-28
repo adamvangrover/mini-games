@@ -1,10 +1,10 @@
-
 import SaveSystem from './SaveSystem.js';
 import { AchievementRegistry } from './AchievementRegistry.js';
+import InputManager from './InputManager.js';
 
 /**
  * Renders a 3D Trophy Room scene using Three.js.
- * Displays acquired trophies and allows the player to walk around.
+ * Displays acquired trophies with inspection capabilities and hybrid navigation.
  */
 export default class TrophyRoom {
     /**
@@ -15,344 +15,553 @@ export default class TrophyRoom {
         this.container = container;
         this.onBack = onBack;
         this.saveSystem = SaveSystem.getInstance();
+        this.inputManager = InputManager.getInstance();
 
+        // Core Three.js
         this.scene = null;
         this.camera = null;
         this.renderer = null;
-        this.isActive = true;
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
+        
+        // State
+        this.isActive = true;
         this.interactables = [];
+        this.colliders = [];
 
-        // Navigation
-        this.position = new THREE.Vector3(0, 1.6, 8);
-        this.targetPosition = new THREE.Vector3(0, 1.6, 8);
-        this.yaw = 0;
-        this.pitch = 0;
-        this.keys = { w: false, a: false, s: false, d: false, arrowup: false, arrowleft: false, arrowdown: false, arrowright: false };
-        this.isMoving = false;
+        // Navigation State
+        this.player = {
+            position: new THREE.Vector3(0, 1.6, 8),
+            speed: 6.0,
+            rotation: { x: 0, y: 0 }
+        };
+        this.navTarget = null;
+        this.navMarker = null;
+
+        // Camera / Input State
         this.isDragging = false;
         this.previousMousePosition = { x: 0, y: 0 };
-        this.moveSpeed = 4.0;
-        this.dragSensitivity = 0.002;
+        this.focusedTrophy = null; // When inspecting a specific item
+        this.cameraTargetPos = new THREE.Vector3();
 
         if (this.container) {
-            this.init(this.container);
+            this.init();
         }
     }
 
-    init(container) {
-        if (container) this.container = container;
-
+    init() {
         if (!this.container) {
-            console.error("TrophyRoom: Container is null or undefined.");
-            return;
-        }
-
-        if (typeof THREE === 'undefined') {
-            console.error("TrophyRoom: Three.js not loaded.");
-            this.container.innerHTML = '<div class="text-white text-center p-10">Error: 3D Engine not loaded.</div>';
+            console.error("TrophyRoom: Container not provided.");
             return;
         }
 
         try {
-            // Scene Setup
+            // --- Scene Setup ---
+            const themeStyle = this.saveSystem.getEquippedItem('trophy_room') || 'default';
+            const themeConfig = this.getThemeColors(themeStyle);
+
             this.scene = new THREE.Scene();
-            this.scene.background = new THREE.Color(0x050510);
-            this.scene.fog = new THREE.FogExp2(0x050510, 0.03);
+            this.scene.background = new THREE.Color(themeConfig.fog);
+            this.scene.fog = new THREE.FogExp2(themeConfig.fog, 0.02);
 
-            // Camera
+            // --- Camera ---
             this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-            this.updateCameraRotation();
+            this.camera.position.copy(this.player.position);
 
-            // Renderer
+            // --- Renderer ---
             this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             this.renderer.setSize(window.innerWidth, window.innerHeight);
             this.renderer.shadowMap.enabled = true;
             this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-            // Clear container
             this.container.innerHTML = '';
             this.container.appendChild(this.renderer.domElement);
 
-            // Add Interaction Overlay
-            this.overlay = document.createElement('div');
-            this.overlay.className = "absolute bottom-10 left-1/2 transform -translate-x-1/2 bg-black/80 border border-cyan-500 text-white p-4 rounded-lg hidden pointer-events-none text-center font-mono";
-            this.container.appendChild(this.overlay);
+            // --- UI Overlays ---
+            this.createUI();
+
+            // --- Lighting ---
+            this.createLighting(themeConfig);
+
+            // --- Environment & Content ---
+            this.createRoom(themeConfig);
+            this.renderTrophies();
+            this.createNavMarker();
+
+            // --- Event Listeners ---
+            window.addEventListener('resize', this.onResize.bind(this));
+            
+            // Input Listeners
+            this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this));
+            window.addEventListener('mousemove', this.onMouseMove.bind(this));
+            window.addEventListener('mouseup', this.onMouseUp.bind(this));
+            this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
+
+            // Touch
+            this.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
+            window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
+            window.addEventListener('touchend', this.onMouseUp.bind(this));
+
+            // Start Loop
+            this.animate();
 
         } catch (e) {
-            console.error("TrophyRoom: Failed to initialize WebGL.", e);
-            if(this.container) this.container.innerHTML = '<div class="text-white text-center p-10">Error: Your browser does not support WebGL.</div>';
+            console.error("TrophyRoom: Initialization Failed.", e);
             this.isActive = false;
-            return;
         }
-
-        // Lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-        this.scene.add(ambientLight);
-
-        const spotLight = new THREE.SpotLight(0xffaa00, 2);
-        spotLight.position.set(0, 15, 0);
-        spotLight.castShadow = true;
-        this.scene.add(spotLight);
-
-        // Environment
-        this.createEnvironment();
-
-        // Render Content
-        this.renderTrophies();
-
-        // Listeners
-        window.addEventListener('resize', this.onResize.bind(this));
-
-        // Input
-        this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this));
-        window.addEventListener('mousemove', this.onMouseMove.bind(this));
-        window.addEventListener('mouseup', this.onMouseUp.bind(this));
-        this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
-
-        window.addEventListener('keydown', this.onKeyDown.bind(this));
-        window.addEventListener('keyup', this.onKeyUp.bind(this));
-
-        // Touch
-        this.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
-        window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
-        window.addEventListener('touchend', this.onMouseUp.bind(this));
-
-        // Add "Back" button overlay if not present
-        if (!document.getElementById('trophy-back-btn') && this.container) {
-            const btn = document.createElement('button');
-            btn.id = 'trophy-back-btn';
-            btn.innerHTML = '<i class="fas fa-arrow-left"></i> Return to Hub';
-            btn.className = 'absolute top-6 left-6 glass-panel px-6 py-3 rounded-full text-white hover:text-cyan-400 z-50 font-bold uppercase tracking-wider transition-all border border-white/10 hover:border-cyan-500 shadow-lg pointer-events-auto';
-            btn.onclick = () => this.exit();
-            this.container.appendChild(btn);
-        }
-
-        this.animate();
     }
 
-    createEnvironment() {
-        const theme = this.saveSystem.getEquippedItem('trophy_room') || 'default';
+    createUI() {
+        // 1. Hover Overlay (Simple)
+        this.hoverOverlay = document.createElement('div');
+        this.hoverOverlay.className = "absolute bottom-10 left-1/2 transform -translate-x-1/2 bg-black/80 border border-cyan-500 text-white p-4 rounded-lg hidden pointer-events-none text-center font-mono z-40 transition-opacity duration-200";
+        this.container.appendChild(this.hoverOverlay);
 
-        let floorColor = 0x111111;
-        let gridColor = 0x00ffff;
-        let fogColor = 0x050510;
-        let ambientIntensity = 0.3;
+        // 2. Detail View Overlay (Complex)
+        this.detailOverlay = document.createElement('div');
+        this.detailOverlay.id = 'trophy-detail-overlay';
+        this.detailOverlay.className = "fixed inset-0 bg-black/90 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300";
+        this.detailOverlay.innerHTML = `
+            <div class="relative max-w-lg w-full p-8 bg-slate-900 border-2 border-yellow-500 rounded-xl shadow-[0_0_50px_rgba(234,179,8,0.3)] transform scale-95 transition-transform duration-300" id="detail-card">
+                <button class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl close-btn"><i class="fas fa-times"></i></button>
+                <h2 id="td-title" class="text-3xl font-bold text-yellow-400 mb-2 font-mono uppercase tracking-widest text-center"></h2>
+                <div class="h-1 w-full bg-gradient-to-r from-transparent via-yellow-500 to-transparent mb-6"></div>
+                <div id="td-content" class="text-gray-300 space-y-4"></div>
+                <div class="mt-8 text-center text-xs text-gray-500 uppercase tracking-widest">Click anywhere to close</div>
+            </div>
+        `;
+        
+        // Close logic
+        const closeAction = (e) => {
+            e.stopPropagation();
+            this.clearFocus();
+        };
+        this.detailOverlay.querySelector('.close-btn').onclick = closeAction;
+        this.detailOverlay.onclick = closeAction; 
+        this.container.appendChild(this.detailOverlay);
 
-        if (theme === 'cyber') {
-            floorColor = 0x000000;
-            gridColor = 0xff00ff;
-            fogColor = 0x000020;
-        } else if (theme === 'gold') {
-            floorColor = 0x221100;
-            gridColor = 0xffd700;
-            fogColor = 0x221100;
-            ambientIntensity = 0.5;
-        } else if (theme === 'nature') {
-            floorColor = 0x001100;
-            gridColor = 0x00ff00;
-            fogColor = 0x001100;
-        }
+        // 3. Back Button
+        const btn = document.createElement('button');
+        btn.id = 'trophy-back-btn';
+        btn.innerHTML = '<i class="fas fa-arrow-left mr-2"></i> HUB';
+        btn.className = 'absolute top-6 left-6 glass-panel px-6 py-3 rounded-full text-white hover:text-cyan-400 z-40 font-bold uppercase tracking-wider transition-all border border-white/10 hover:border-cyan-500 shadow-lg';
+        btn.onclick = () => this.exit();
+        this.container.appendChild(btn);
+    }
 
-        // Apply Fog
-        this.scene.fog = new THREE.FogExp2(fogColor, 0.03);
-        this.scene.background = new THREE.Color(fogColor);
+    getThemeColors(style) {
+        const styles = {
+            default: { floor: 0x111111, wall: 0x111122, grid: 0x00ffff, fog: 0x050510, metal: 0.8 },
+            neon:    { floor: 0x000000, wall: 0x000022, grid: 0xff00ff, fog: 0x000020, metal: 0.9 },
+            gold:    { floor: 0x221100, wall: 0x332200, grid: 0xffd700, fog: 0x221100, metal: 0.95 },
+            nature:  { floor: 0x001100, wall: 0x002200, grid: 0x00ff00, fog: 0x001100, metal: 0.5 }
+        };
+        return styles[style] || styles.default;
+    }
 
-        // Adjust Ambient Light if needed (assuming it's the first child or search for it)
-        const ambient = this.scene.children.find(c => c.isAmbientLight);
-        if (ambient) ambient.intensity = ambientIntensity;
+    createLighting(theme) {
+        // Base Ambient
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        this.scene.add(ambientLight);
 
+        // Dramatic Spotlight (Shadows)
+        const spotLight = new THREE.SpotLight(0xffaa00, 2.0);
+        spotLight.position.set(0, 20, 0);
+        spotLight.castShadow = true;
+        spotLight.angle = Math.PI / 4;
+        spotLight.penumbra = 0.5;
+        this.scene.add(spotLight);
+
+        // Theme Accents
+        const leftLight = new THREE.PointLight(theme.grid, 1.5, 40);
+        leftLight.position.set(-15, 8, -5);
+        this.scene.add(leftLight);
+
+        const rightLight = new THREE.PointLight(theme.grid, 1.5, 40);
+        rightLight.position.set(15, 8, -5);
+        this.scene.add(rightLight);
+    }
+
+    createRoom(theme) {
         // Floor
-        const geometry = new THREE.PlaneGeometry(100, 100);
-        const material = new THREE.MeshStandardMaterial({
-            color: floorColor,
-            roughness: 0.1,
-            metalness: 0.8
+        const floorGeo = new THREE.PlaneGeometry(60, 60);
+        const floorMat = new THREE.MeshStandardMaterial({ 
+            color: theme.floor, 
+            roughness: 0.2, 
+            metalness: theme.metal 
         });
-        const floor = new THREE.Mesh(geometry, material);
+        const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
         this.scene.add(floor);
-        this.floor = floor;
+        this.floor = floor; // Reference for clicking
 
-        const gridHelper = new THREE.GridHelper(100, 50, gridColor, 0x222222);
+        // Grid
+        const gridHelper = new THREE.GridHelper(60, 30, theme.grid, 0x222222);
+        gridHelper.position.y = 0.01;
         this.scene.add(gridHelper);
+
+        // Walls
+        const wallMat = new THREE.MeshStandardMaterial({ color: theme.wall, side: THREE.BackSide, roughness: 0.8 });
+        const roomBox = new THREE.Mesh(new THREE.BoxGeometry(60, 25, 60), wallMat);
+        roomBox.position.y = 12.5;
+        this.scene.add(roomBox);
     }
 
     renderTrophies() {
-        const unlocked = this.saveSystem.data.achievements || [];
-        const trophies = Object.values(AchievementRegistry); // All potential trophies
+        const unlockedIds = this.saveSystem.data.achievements || [];
+        const trophies = Object.values(AchievementRegistry);
 
-        // Arrange in aisles/rows
-        const cols = 6;
-        const spacingX = 3;
-        const spacingZ = 3;
-
+        const shelfHeight = 1.0;
+        
         trophies.forEach((achievement, i) => {
-            const isUnlocked = unlocked.includes(achievement.id);
+            const isUnlocked = unlockedIds.includes(achievement.id);
 
-            const row = Math.floor(i / cols);
-            const col = i % cols;
+            // Layout: Central Aisle
+            const isLeft = i % 2 === 0;
+            const sideMult = isLeft ? -1 : 1;
+            const xPos = sideMult * 8; 
+            const zPos = -15 + (Math.floor(i / 2) * 5);
 
-            const x = (col - (cols - 1) / 2) * spacingX;
-            const z = -row * spacingZ;
+            // Shelf
+            const shelf = new THREE.Mesh(
+                new THREE.BoxGeometry(3, 0.2, 3),
+                new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.7 })
+            );
+            shelf.position.set(xPos, shelfHeight, zPos);
+            shelf.receiveShadow = true;
+            this.scene.add(shelf);
 
-            // Pedestal
-            const pedGeo = new THREE.CylinderGeometry(0.6, 0.8, 1.2, 8);
-            const pedMat = new THREE.MeshStandardMaterial({
-                color: 0x222222,
-                emissive: 0x111111,
-                roughness: 0.5,
-                metalness: 0.8
-            });
-            const ped = new THREE.Mesh(pedGeo, pedMat);
-            ped.position.set(x, 0.6, z);
-            ped.castShadow = true;
-            ped.receiveShadow = true;
-            this.scene.add(ped);
+            // Neon Edge
+            const edge = new THREE.Mesh(
+                new THREE.BoxGeometry(3.1, 0.05, 3.1),
+                new THREE.MeshBasicMaterial({ color: isUnlocked ? 0x00ffff : 0x330000 })
+            );
+            edge.position.set(xPos, shelfHeight - 0.1, zPos);
+            this.scene.add(edge);
 
-            // Trophy Model
-            let trophyColor = 0x444444; // Locked grey
+            // Determine Material
+            let trophyColor = 0x333333;
             let emissive = 0x000000;
-
             if (isUnlocked) {
-                if (achievement.xp >= 500) { trophyColor = 0xffd700; emissive = 0xaa6600; } // Gold
-                else if (achievement.xp >= 200) { trophyColor = 0xc0c0c0; emissive = 0x444444; } // Silver
-                else { trophyColor = 0xcd7f32; emissive = 0x442200; } // Bronze
+                if (achievement.xp >= 500) { trophyColor = 0xffd700; emissive = 0x664400; } // Gold
+                else if (achievement.xp >= 200) { trophyColor = 0xc0c0c0; emissive = 0x222222; } // Silver
+                else { trophyColor = 0xcd7f32; emissive = 0x221100; } // Bronze
             }
 
             const cupGroup = new THREE.Group();
-            cupGroup.position.set(x, 1.4, z);
+            cupGroup.position.set(xPos, shelfHeight + 0.1, zPos);
 
-            const baseGeo = new THREE.BoxGeometry(0.5, 0.1, 0.5);
-            const baseMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-            const base = new THREE.Mesh(baseGeo, baseMat);
-            cupGroup.add(base);
-
-            let cupGeo;
-            if (THREE.CapsuleGeometry) {
-                 cupGeo = new THREE.CapsuleGeometry(0.3, 0.6, 4, 8);
-            } else {
-                 cupGeo = new THREE.CylinderGeometry(0.3, 0.1, 0.6, 16);
-            }
-
-            const cupMat = new THREE.MeshStandardMaterial({
-                color: trophyColor,
-                metalness: 0.9,
+            const mat = new THREE.MeshStandardMaterial({ 
+                color: trophyColor, 
+                metalness: 0.9, 
                 roughness: 0.2,
                 emissive: emissive,
-                emissiveIntensity: 0.2
+                emissiveIntensity: 0.4
             });
-            const cup = new THREE.Mesh(cupGeo, cupMat);
-            cup.position.y = 0.4;
-            cupGroup.add(cup);
 
-            if (!isUnlocked) {
-                const lockGeo = new THREE.BoxGeometry(0.4, 0.6, 0.1);
-                const lockMat = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, transparent: true, opacity: 0.3 });
+            // --- Trophy Construction ---
+            // Base
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 0.2, 8), mat);
+            base.position.y = 0.1;
+            cupGroup.add(base);
+
+            // Cup Body
+            if (isUnlocked) {
+                const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.5, 8), mat);
+                stem.position.y = 0.45;
+                cupGroup.add(stem);
+
+                const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.2, 0.6, 16, 1, true), mat);
+                bowl.position.y = 1.0;
+                cupGroup.add(bowl);
+                
+                // Add Glow if Legendary
+                if (achievement.xp >= 500) {
+                     const light = new THREE.PointLight(trophyColor, 1.0, 4);
+                     light.position.y = 1.5;
+                     cupGroup.add(light);
+                }
+            } else {
+                // Locked Hologram
+                const lockGeo = new THREE.BoxGeometry(0.6, 0.8, 0.6);
+                const lockMat = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, transparent: true, opacity: 0.15 });
                 const lock = new THREE.Mesh(lockGeo, lockMat);
                 lock.position.y = 0.5;
                 cupGroup.add(lock);
-            } else {
-                // Glow point
-                const light = new THREE.PointLight(trophyColor, 0.5, 3);
-                light.position.y = 0.5;
-                cupGroup.add(light);
             }
 
+            // UserData for Raycasting
+            cupGroup.userData = { isTrophy: true, id: achievement.id, unlocked: isUnlocked, data: achievement };
+            // Propagate userData to children for easy click detection
+            cupGroup.traverse(c => { c.userData = cupGroup.userData; });
+            
             this.scene.add(cupGroup);
-            cupGroup.userData = { id: achievement.id, unlocked: isUnlocked, data: achievement };
             this.interactables.push(cupGroup);
         });
     }
 
-    // --- Input Handling ---
+    createNavMarker() {
+        this.navMarker = new THREE.Group();
+        
+        const ring = new THREE.Mesh(
+            new THREE.RingGeometry(0.3, 0.4, 32),
+            new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.8, side: THREE.DoubleSide })
+        );
+        ring.rotation.x = -Math.PI / 2;
+        this.navMarker.add(ring);
 
-    onKeyDown(e) {
-        const key = e.key.toLowerCase();
-        if (this.keys.hasOwnProperty(key)) this.keys[key] = true;
-        if (this.keys.hasOwnProperty('arrow' + e.key.toLowerCase().replace('arrow',''))) this.keys['arrow' + e.key.toLowerCase().replace('arrow','')] = true;
+        const inner = new THREE.Mesh(
+            new THREE.CircleGeometry(0.2, 32),
+            new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.4, side: THREE.DoubleSide })
+        );
+        inner.rotation.x = -Math.PI / 2;
+        inner.position.y = 0.01;
+        this.navMarker.add(inner);
+
+        this.navMarker.visible = false;
+        this.scene.add(this.navMarker);
     }
 
-    onKeyUp(e) {
-        const key = e.key.toLowerCase();
-        if (this.keys.hasOwnProperty(key)) this.keys[key] = false;
-        if (this.keys.hasOwnProperty('arrow' + e.key.toLowerCase().replace('arrow',''))) this.keys['arrow' + e.key.toLowerCase().replace('arrow','')] = false;
+    // --- Interaction ---
+
+    focusTrophy(trophyGroup) {
+        this.focusedTrophy = trophyGroup;
+        this.navTarget = null; // Stop walking
+
+        // Calculate Ideal Camera Position
+        // Look at the trophy from slightly above and in front (relative to aisle)
+        const tPos = trophyGroup.position.clone();
+        // Determine side of aisle based on X
+        const xOffset = tPos.x > 0 ? -3 : 3; // Stand 3 units toward center
+        
+        this.cameraTargetPos.set(tPos.x + xOffset, tPos.y + 1.0, tPos.z);
+
+        // Populate UI
+        const data = trophyGroup.userData.data;
+        const statusHtml = trophyGroup.userData.unlocked 
+            ? `<span class="text-green-400 font-bold">UNLOCKED</span>` 
+            : `<span class="text-red-500 font-bold">LOCKED</span>`;
+
+        document.getElementById('td-title').textContent = data.title;
+        document.getElementById('td-content').innerHTML = `
+            <div class="bg-black/40 p-4 rounded border border-white/10 italic text-gray-400 mb-4">"${data.description}"</div>
+            <div class="grid grid-cols-2 gap-4 text-sm font-mono">
+                <div>STATUS:</div> <div class="text-right">${statusHtml}</div>
+                <div>XP VALUE:</div> <div class="text-right text-yellow-400">${data.xp}</div>
+                <div>RARITY:</div> <div class="text-right text-cyan-300">${data.xp >= 500 ? 'LEGENDARY' : (data.xp >= 200 ? 'RARE' : 'COMMON')}</div>
+            </div>
+        `;
+
+        // Show Overlay
+        this.detailOverlay.classList.remove('opacity-0', 'pointer-events-none');
+        this.detailOverlay.querySelector('#detail-card').classList.remove('scale-95');
+        this.detailOverlay.querySelector('#detail-card').classList.add('scale-100');
+        
+        if (this.hoverOverlay) this.hoverOverlay.classList.add('opacity-0');
     }
+
+    clearFocus() {
+        this.focusedTrophy = null;
+        
+        // Hide Overlay
+        this.detailOverlay.classList.add('opacity-0', 'pointer-events-none');
+        this.detailOverlay.querySelector('#detail-card').classList.add('scale-95');
+        this.detailOverlay.querySelector('#detail-card').classList.remove('scale-100');
+
+        if (this.hoverOverlay) this.hoverOverlay.classList.remove('opacity-0');
+    }
+
+    // --- Main Loop ---
+
+    animate() {
+        if (!this.isActive) return;
+        requestAnimationFrame(this.animate.bind(this));
+
+        const dt = 0.016;
+
+        if (this.focusedTrophy) {
+            // [Focus Mode] Smoothly move camera to inspect trophy
+            this.camera.position.lerp(this.cameraTargetPos, 0.05);
+            
+            // Look exactly at trophy
+            const lookTarget = this.focusedTrophy.position.clone().add(new THREE.Vector3(0, 0.5, 0));
+            this.camera.lookAt(lookTarget);
+
+            // Spin the trophy
+            this.focusedTrophy.rotation.y += 0.01;
+
+        } else {
+            // [Navigation Mode]
+            this.handleMovement(dt);
+
+            // Camera Follows Player (Smooth Lerp)
+            // Camera acts as "Head" (Player pos + Height)
+            const targetCamPos = this.player.position.clone();
+            targetCamPos.y = 1.6; 
+            
+            // Check interaction hover
+            this.checkHover();
+
+            this.camera.position.lerp(targetCamPos, 0.1);
+            this.camera.rotation.y = this.player.rotation.y;
+            // Prevent gimbal lock on simple camera
+            this.camera.rotation.x = 0;
+            this.camera.rotation.z = 0;
+        }
+
+        // Ambient Animation (Float)
+        this.interactables.forEach(obj => {
+            if (obj !== this.focusedTrophy) {
+                obj.position.y = 1.1 + Math.sin(Date.now() * 0.002 + obj.position.x) * 0.05;
+                obj.rotation.y += 0.005;
+            }
+        });
+
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    handleMovement(dt) {
+        // 
+        // This hybrid system uses both WASD inputs and click-targets.
+
+        const velocity = new THREE.Vector3();
+        const moveSpeed = this.player.speed * (this.inputManager.isKeyDown('ShiftLeft') ? 1.5 : 1.0) * dt;
+
+        // WASD Input relative to Camera Rotation
+        if (this.inputManager.isKeyDown('KeyW') || this.inputManager.isKeyDown('ArrowUp')) velocity.z -= 1;
+        if (this.inputManager.isKeyDown('KeyS') || this.inputManager.isKeyDown('ArrowDown')) velocity.z += 1;
+        // Strafe
+        if (this.inputManager.isKeyDown('KeyA') || this.inputManager.isKeyDown('ArrowLeft')) velocity.x -= 1;
+        if (this.inputManager.isKeyDown('KeyD') || this.inputManager.isKeyDown('ArrowRight')) velocity.x += 1;
+
+        if (velocity.length() > 0) {
+            this.navTarget = null; // Manual override
+            velocity.normalize().multiplyScalar(moveSpeed);
+            const euler = new THREE.Euler(0, this.player.rotation.y, 0, 'YXZ');
+            velocity.applyEuler(euler);
+        }
+
+        // Click-to-Move Logic
+        if (this.navTarget) {
+            this.navMarker.visible = true;
+            this.navMarker.position.set(this.navTarget.x, 0.05, this.navTarget.z);
+            
+            // Pulse Effect
+            const s = 1 + Math.sin(Date.now() * 0.01) * 0.2;
+            this.navMarker.scale.set(s,s,s);
+
+            const dir = new THREE.Vector3().subVectors(this.navTarget, this.player.position);
+            dir.y = 0;
+            const dist = dir.length();
+
+            if (dist < 0.2) {
+                this.navTarget = null;
+            } else {
+                dir.normalize().multiplyScalar(Math.min(moveSpeed, dist));
+                velocity.add(dir);
+            }
+        } else {
+            if (this.navMarker) this.navMarker.visible = false;
+        }
+
+        // Apply Movement & Collision Bounds
+        const nextPos = this.player.position.clone().add(velocity);
+        if (Math.abs(nextPos.x) < 28 && Math.abs(nextPos.z) < 28) {
+            this.player.position.copy(nextPos);
+        }
+    }
+
+    checkHover() {
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+        
+        let found = null;
+        if (intersects.length > 0) {
+            // Traverse up scene graph  
+            // to find the root trophy group with userData
+            let obj = intersects[0].object;
+            while(obj.parent && (!obj.userData || !obj.userData.isTrophy)) {
+                obj = obj.parent;
+            }
+            if (obj && obj.userData && obj.userData.isTrophy) {
+                found = obj.userData;
+            }
+        }
+
+        if (found) {
+            this.hoverOverlay.classList.remove('hidden', 'opacity-0');
+            this.hoverOverlay.innerHTML = `<div class="font-bold text-cyan-300 text-lg">${found.data.title}</div><div class="text-xs text-gray-400">Click to Inspect</div>`;
+            this.container.style.cursor = 'pointer';
+        } else {
+            this.hoverOverlay.classList.add('opacity-0');
+            this.container.style.cursor = this.isDragging ? 'grabbing' : 'default';
+        }
+    }
+
+    // --- Input Handlers ---
 
     onMouseDown(e) {
-        if (!this.isActive) return;
+        if (this.focusedTrophy) return;
         this.isDragging = true;
         this.previousMousePosition = { x: e.clientX, y: e.clientY };
-    }
-
-    onMouseUp() {
-        this.isDragging = false;
     }
 
     onMouseMove(e) {
         this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
-        if (this.isDragging) {
-            const dx = e.clientX - this.previousMousePosition.x;
-            const dy = e.clientY - this.previousMousePosition.y;
-            this.yaw -= dx * this.dragSensitivity;
-            this.pitch -= dy * this.dragSensitivity;
-            this.pitch = Math.max(-Math.PI/3, Math.min(Math.PI/3, this.pitch));
-            this.updateCameraRotation();
+        if (this.isDragging && !this.focusedTrophy) {
+            const deltaX = e.clientX - this.previousMousePosition.x;
+            this.player.rotation.y -= deltaX * 0.004;
             this.previousMousePosition = { x: e.clientX, y: e.clientY };
         }
     }
 
+    onMouseUp() {
+        this.isDragging = false;
+    }
+
+    onClick(e) {
+        if (this.isDragging || this.focusedTrophy) return;
+
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+
+        if (intersects.length > 0) {
+            let obj = intersects[0].object;
+            
+            // 1. Check Trophy Click
+            let trophyCandidate = obj;
+            while(trophyCandidate.parent && (!trophyCandidate.userData || !trophyCandidate.userData.isTrophy)) {
+                trophyCandidate = trophyCandidate.parent;
+            }
+            if (trophyCandidate && trophyCandidate.userData && trophyCandidate.userData.isTrophy) {
+                this.focusTrophy(trophyCandidate);
+                return;
+            }
+
+            // 2. Check Floor Click (Movement)
+            if (obj === this.floor || (obj.geometry && obj.geometry.type === 'PlaneGeometry')) {
+                const p = intersects[0].point;
+                this.navTarget = new THREE.Vector3(p.x, 1.6, p.z);
+            }
+        }
+    }
+
     onTouchStart(e) {
-        if (!this.isActive || e.touches.length !== 1) return;
-        this.isDragging = true;
-        this.previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        if (e.touches.length === 1) {
+            this.isDragging = true;
+            this.previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
     }
 
     onTouchMove(e) {
         if (this.isDragging && e.touches.length === 1) {
             e.preventDefault();
-            const dx = e.touches[0].clientX - this.previousMousePosition.x;
-            const dy = e.touches[0].clientY - this.previousMousePosition.y;
-            this.yaw -= dx * this.dragSensitivity * 2;
-            this.pitch -= dy * this.dragSensitivity * 2;
-            this.pitch = Math.max(-Math.PI/3, Math.min(Math.PI/3, this.pitch));
-            this.updateCameraRotation();
+            const deltaX = e.touches[0].clientX - this.previousMousePosition.x;
+            this.player.rotation.y -= deltaX * 0.005;
             this.previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        }
-    }
-
-    updateCameraRotation() {
-        if (!this.camera) return;
-        this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
-    }
-
-    onClick(e) {
-        if (this.isDragging) return;
-        this.raycaster.setFromCamera(this.mouse, this.camera);
-        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
-
-        if (intersects.length > 0) {
-            // Check for interactables
-            let target = intersects[0].object;
-            while(target.parent && (!target.userData || !target.userData.id)) {
-                target = target.parent;
-                if (!target) break;
-            }
-            if (target && target.userData && target.userData.id) {
-                // Already handled by hover overlay, maybe click to view full detail?
-                return;
-            }
-
-            // Click to Move
-            if (intersects[0].object === this.floor) {
-                const p = intersects[0].point;
-                this.targetPosition.set(p.x, 1.6, p.z);
-                this.isMoving = true;
-            }
         }
     }
 
@@ -363,103 +572,16 @@ export default class TrophyRoom {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    updateMovement(dt) {
-         // WASD Input
-        const forward = (this.keys.w || this.keys.arrowup) ? 1 : (this.keys.s || this.keys.arrowdown) ? -1 : 0;
-        const strafe = (this.keys.a || this.keys.arrowleft) ? 1 : (this.keys.d || this.keys.arrowright) ? -1 : 0;
-
-        if (forward !== 0 || strafe !== 0) {
-            this.isMoving = false;
-            const dir = new THREE.Vector3();
-            this.camera.getWorldDirection(dir);
-            dir.y = 0; dir.normalize();
-
-            const right = new THREE.Vector3(-dir.z, 0, dir.x);
-
-            const moveVec = new THREE.Vector3();
-            moveVec.addScaledVector(dir, forward);
-            moveVec.addScaledVector(right, strafe);
-            moveVec.normalize();
-
-            this.position.addScaledVector(moveVec, this.moveSpeed * dt);
-        } else if (this.isMoving) {
-            const dist = this.position.distanceTo(this.targetPosition);
-            if (dist < 0.1) {
-                this.position.copy(this.targetPosition);
-                this.isMoving = false;
-            } else {
-                const dir = new THREE.Vector3().subVectors(this.targetPosition, this.position).normalize();
-                this.position.addScaledVector(dir, this.moveSpeed * dt);
-            }
-        }
-
-        // Clamp
-        this.position.x = Math.max(-50, Math.min(50, this.position.x));
-        this.position.z = Math.max(-50, Math.min(50, this.position.z));
-        this.camera.position.copy(this.position);
-    }
-
-    animate() {
-        if (!this.isActive) return;
-        requestAnimationFrame(this.animate.bind(this));
-
-        const dt = 0.016;
-        this.updateMovement(dt);
-
-        // Raycast for Hover
-        this.raycaster.setFromCamera(this.mouse, this.camera);
-        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
-
-        let hovered = null;
-        if (intersects.length > 0) {
-            let target = intersects[0].object;
-            while(target.parent && (!target.userData || !target.userData.id)) {
-                target = target.parent;
-                if (!target) break;
-            }
-            if (target && target.userData && target.userData.id) {
-                hovered = target.userData;
-                target.rotation.y += 0.05;
-            }
-        }
-
-        // Update Overlay
-        if (hovered && this.overlay) {
-            this.overlay.classList.remove('hidden');
-            const data = hovered.data;
-            const status = hovered.unlocked ? `<span class="text-green-400">UNLOCKED</span>` : `<span class="text-red-500">LOCKED</span>`;
-            this.overlay.innerHTML = `
-                <div class="text-lg font-bold text-cyan-300">${data.title}</div>
-                <div class="text-xs text-gray-300 mb-2">${data.description}</div>
-                <div class="text-xs font-bold">${status}</div>
-                <div class="text-xs text-yellow-500 mt-1">+${data.xp} XP</div>
-            `;
-        } else if (this.overlay) {
-            this.overlay.classList.add('hidden');
-        }
-
-        // Idle Animation
-        this.interactables.forEach(obj => {
-            if (obj.userData !== hovered) {
-                obj.rotation.y += 0.01;
-            }
-            obj.position.y = 1.4 + Math.sin(Date.now() * 0.002 + obj.position.x) * 0.1;
-        });
-
-        this.renderer.render(this.scene, this.camera);
-    }
-
     exit() {
         this.isActive = false;
-        const btn = document.getElementById('trophy-back-btn');
-        if (btn) btn.remove();
-        if (this.overlay) this.overlay.remove();
-
+        // Clean DOM
+        if (document.getElementById('trophy-back-btn')) document.getElementById('trophy-back-btn').remove();
+        if (this.hoverOverlay) this.hoverOverlay.remove();
+        if (this.detailOverlay) this.detailOverlay.remove();
+        
+        // Clean Listeners
         window.removeEventListener('resize', this.onResize.bind(this));
-        window.removeEventListener('mousemove', this.onMouseMove.bind(this));
-        window.removeEventListener('keydown', this.onKeyDown.bind(this));
-        window.removeEventListener('keyup', this.onKeyUp.bind(this));
-
+        
         if (this.onBack) this.onBack();
     }
 }

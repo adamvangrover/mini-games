@@ -1,4 +1,3 @@
-
 import SoundManager from './SoundManager.js';
 import ParticleSystem from './ParticleSystem.js';
 
@@ -67,29 +66,29 @@ export default class Store {
 
             // --- TROPHY ROOM STYLES ---
             {
-                id: 'trophy_theme_default',
-                name: 'Classic Vault',
-                description: 'Standard trophy room.',
+                id: 'trophy_room_default',
+                name: 'Classic Museum',
+                description: 'The standard exhibition hall.',
                 cost: 0,
-                icon: 'fas fa-door-closed',
+                icon: 'fas fa-columns',
                 type: 'trophy_room',
                 value: 'default'
             },
             {
-                id: 'trophy_theme_cyber',
-                name: 'Cyber Void',
-                description: 'Floating in the digital ether.',
+                id: 'trophy_room_neon',
+                name: 'Neon Grid',
+                description: 'Cyberpunk aesthetic for your wins.',
                 cost: 250,
-                icon: 'fas fa-network-wired',
+                icon: 'fas fa-border-all',
                 type: 'trophy_room',
-                value: 'cyber'
+                value: 'neon'
             },
             {
-                id: 'trophy_theme_gold',
-                name: 'Golden Hall',
-                description: 'A room fit for a king.',
-                cost: 500,
-                icon: 'fas fa-gem',
+                id: 'trophy_room_gold',
+                name: 'Vault of Gold',
+                description: 'Luxurious gold plating everywhere.',
+                cost: 1000,
+                icon: 'fas fa-coins',
                 type: 'trophy_room',
                 value: 'gold'
             },
@@ -204,6 +203,80 @@ export default class Store {
                 icon: 'fas fa-dragon',
                 type: 'avatar',
                 value: 'fas fa-dragon'
+            },
+
+            // --- DECORATIONS (Trophy Room) ---
+            {
+                id: 'deco_stool',
+                name: 'Arcade Stool',
+                description: 'A classic stool for the room.',
+                cost: 100,
+                icon: 'fas fa-chair',
+                type: 'decoration',
+                value: 'stool'
+            },
+            {
+                id: 'deco_plant',
+                name: 'Neon Plant',
+                description: 'Synthetic flora.',
+                cost: 200,
+                icon: 'fas fa-seedling',
+                type: 'decoration',
+                value: 'plant'
+            },
+            {
+                id: 'deco_vending',
+                name: 'Vending Machine',
+                description: 'Refreshing snacks.',
+                cost: 500,
+                icon: 'fas fa-cookie-bite',
+                type: 'decoration',
+                value: 'vending'
+            },
+            {
+                id: 'deco_lamp',
+                name: 'Lava Lamp',
+                description: 'Groovy lighting.',
+                cost: 150,
+                icon: 'fas fa-lightbulb',
+                type: 'decoration',
+                value: 'lamp'
+            },
+            {
+                id: 'deco_rug',
+                name: 'Neon Rug',
+                description: 'Tie the room together.',
+                cost: 150,
+                icon: 'fas fa-dharmachakra',
+                type: 'decoration',
+                value: 'rug'
+            },
+            {
+                id: 'deco_hologram',
+                name: 'Holo Projector',
+                description: 'Futuristic display.',
+                cost: 400,
+                icon: 'fas fa-video',
+                type: 'decoration',
+                value: 'hologram'
+            },
+            {
+                id: 'deco_poster',
+                name: 'Retro Poster',
+                description: 'Vintage arcade art.',
+                cost: 50,
+                icon: 'fas fa-image',
+                type: 'decoration',
+                value: 'poster'
+            },
+            {
+                id: 'deco_mini_cab',
+                name: 'Mini Cabinet',
+                description: 'A tiny arcade machine.',
+                cost: 300,
+                icon: 'fas fa-gamepad',
+                type: 'decoration',
+                value: 'minicab'
             }
         ];
     }
@@ -223,17 +296,23 @@ export default class Store {
             const equippedVal = this.saveSystem.getEquippedItem(item.type);
 
             if (item.type === 'theme' || item.type === 'cabinet' || item.type === 'trophy_room') {
-                isEquipped = equippedVal === item.value;
-                // Default handling
-                if (item.cost === 0 && !equippedVal) isEquipped = true;
-                if (item.id === 'theme_neon_blue' && (equippedVal === 'blue')) isEquipped = true;
-                if (item.id === 'cabinet_default' && (equippedVal === 'default')) isEquipped = true;
-                if (item.id === 'trophy_theme_default' && (equippedVal === 'default')) isEquipped = true;
-
                 // Strict equality if val exists
-                if (equippedVal) isEquipped = equippedVal === item.value;
+                isEquipped = equippedVal === item.value;
+                
+                // Fallback: if undefined, check if this is the default item
+                if (equippedVal === undefined && item.cost === 0) isEquipped = true;
+                
+                // Special robustness checks for default IDs
+                if (item.id === 'theme_neon_blue' && (equippedVal === 'blue' || !equippedVal)) isEquipped = true;
+                if (item.id === 'cabinet_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
+                if (item.id === 'trophy_room_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
+
             } else if (item.type === 'avatar') {
                 isEquipped = equippedVal === item.value;
+                // Default avatar check
+                if (item.id === 'avatar_astronaut' && !equippedVal) isEquipped = true;
+            } else if (item.type === 'decoration') {
+                isEquipped = isUnlocked; // Active if owned
             }
 
             const card = document.createElement('div');
@@ -247,7 +326,9 @@ export default class Store {
             let buttonHtml = '';
 
             if (isUnlocked) {
-                 if (isEquipped) {
+                 if (item.type === 'decoration') {
+                    buttonHtml = `<button class="w-full py-2 bg-green-600 text-white font-bold rounded cursor-default"><i class="fas fa-check"></i> Owned</button>`;
+                 } else if (isEquipped) {
                     buttonHtml = `<button class="w-full py-2 bg-green-600 text-white font-bold rounded cursor-default"><i class="fas fa-check"></i> Active</button>`;
                  } else {
                     buttonHtml = `<button class="equip-btn w-full py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded transition-colors" data-id="${item.id}">Equip</button>`;
@@ -255,7 +336,7 @@ export default class Store {
             } else {
                  buttonHtml = `<button class="buy-btn w-full py-2 font-bold rounded transition-all ${canAfford ? 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}" data-id="${item.id}">
                              ${item.cost} <i class="fas fa-coins text-yellow-400"></i>
-                           </button>`;
+                            </button>`;
             }
 
             card.innerHTML = `
@@ -271,10 +352,10 @@ export default class Store {
 
             if (!isUnlocked && canAfford) {
                 const btn = card.querySelector('.buy-btn');
-                btn.addEventListener('click', () => {
-                    this.buy(item);
+                btn.addEventListener('click', (e) => {
+                    this.buy(item, e);
                 });
-            } else if (isUnlocked && !isEquipped) {
+            } else if (isUnlocked && !isEquipped && item.type !== 'decoration') {
                 const btn = card.querySelector('.equip-btn');
                 if(btn) {
                     btn.addEventListener('click', () => {
@@ -291,38 +372,52 @@ export default class Store {
 
     equip(item) {
         try {
+            // General Save Trigger
             if (['theme', 'cabinet', 'trophy_room', 'avatar'].includes(item.type)) {
                 this.saveSystem.equipItem(item.type, item.value);
-                if (item.type === 'avatar') {
-                    const profile = this.saveSystem.getProfile();
-                    if (profile) {
-                        profile.avatar = item.value;
-                        this.saveSystem.save();
-                    }
-                }
-                if (item.type === 'theme') {
-                    // Force refresh or callback to apply theme to Grid View/Body
-                    document.body.className = `theme-${item.value}`; // Simple hook
-                }
             }
+
+            // Specific Side Effects
+            if (item.type === 'avatar') {
+                // Update Player Profile Object
+                const profile = this.saveSystem.getProfile();
+                if (profile) {
+                    profile.avatar = item.value;
+                    this.saveSystem.save();
+                }
+            } 
+            
+            if (item.type === 'theme') {
+                // Update CSS Hook immediately
+                document.body.className = `theme-${item.value}`;
+            }
+
             this.render();
         } catch (e) {
             console.error("Store: Failed to equip item", e);
         }
     }
 
-    buy(item) {
+    buy(item, event) {
         try {
             if (this.saveSystem.buyItem(item.id, item.cost)) {
                 this.render();
 
-                // Visual feedback
+                // Visual feedback: Particles
                 const particleSystem = ParticleSystem.getInstance();
                 if (particleSystem) {
-                    particleSystem.emit(window.innerWidth / 2, window.innerHeight / 2, '#fbbf24', 30);
+                    // Spawn particles at the click location (button center)
+                    const rect = event.target.getBoundingClientRect();
+                    const x = rect.left + rect.width / 2;
+                    const y = rect.top + rect.height / 2;
+                    particleSystem.emit(x, y, '#fbbf24', 30);
                 }
 
+                // Sound
                 SoundManager.getInstance().playSound('score');
+
+                // Toast Notification
+                this.showToast(`Purchased ${item.name}!`);
 
             } else {
                 alert("Not enough coins!");
@@ -330,6 +425,14 @@ export default class Store {
         } catch (e) {
             console.error("Store: Transaction failed", e);
         }
+    }
+
+    showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-full shadow-lg font-bold z-[100] animate-bounce';
+        toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ${message}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
     }
 
     updateCurrencyDisplays() {
