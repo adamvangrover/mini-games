@@ -1,4 +1,3 @@
-
 import SoundManager from './SoundManager.js';
 import ParticleSystem from './ParticleSystem.js';
 
@@ -18,7 +17,7 @@ export default class Store {
 
         // Define Items
         this.items = [
-            // --- THEMES ---
+            // --- UI THEMES ---
             {
                 id: 'theme_neon_blue',
                 name: 'Neon Blue',
@@ -63,6 +62,44 @@ export default class Store {
                 icon: 'fas fa-fire',
                 type: 'theme',
                 value: 'red'
+            },
+
+            // --- TROPHY ROOM STYLES ---
+            {
+                id: 'trophy_room_default',
+                name: 'Classic Museum',
+                description: 'The standard exhibition hall.',
+                cost: 0,
+                icon: 'fas fa-columns',
+                type: 'trophy_room',
+                value: 'default'
+            },
+            {
+                id: 'trophy_room_neon',
+                name: 'Neon Grid',
+                description: 'Cyberpunk aesthetic for your wins.',
+                cost: 250,
+                icon: 'fas fa-border-all',
+                type: 'trophy_room',
+                value: 'neon'
+            },
+            {
+                id: 'trophy_room_gold',
+                name: 'Vault of Gold',
+                description: 'Luxurious gold plating everywhere.',
+                cost: 1000,
+                icon: 'fas fa-coins',
+                type: 'trophy_room',
+                value: 'gold'
+            },
+            {
+                id: 'trophy_theme_nature',
+                name: 'Zen Garden',
+                description: 'Peaceful organic vibes.',
+                cost: 350,
+                icon: 'fas fa-leaf',
+                type: 'trophy_room',
+                value: 'nature'
             },
 
             // --- CABINET STYLES ---
@@ -168,35 +205,6 @@ export default class Store {
                 value: 'fas fa-dragon'
             },
 
-            // --- TROPHY ROOM STYLES ---
-            {
-                id: 'trophy_room_default',
-                name: 'Classic Museum',
-                description: 'The standard exhibition hall.',
-                cost: 0,
-                icon: 'fas fa-columns',
-                type: 'trophy_room',
-                value: 'default'
-            },
-            {
-                id: 'trophy_room_neon',
-                name: 'Neon Grid',
-                description: 'Cyberpunk aesthetic for your wins.',
-                cost: 250,
-                icon: 'fas fa-border-all',
-                type: 'trophy_room',
-                value: 'neon'
-            },
-            {
-                id: 'trophy_room_gold',
-                name: 'Vault of Gold',
-                description: 'Luxurious gold plating everywhere.',
-                cost: 1000,
-                icon: 'fas fa-coins',
-                type: 'trophy_room',
-                value: 'gold'
-            },
-
             // --- DECORATIONS (Trophy Room) ---
             {
                 id: 'deco_stool',
@@ -288,18 +296,21 @@ export default class Store {
             const equippedVal = this.saveSystem.getEquippedItem(item.type);
 
             if (item.type === 'theme' || item.type === 'cabinet' || item.type === 'trophy_room') {
-                isEquipped = equippedVal === item.value; // Store value for theme/cabinet
-                // Fallback: if undefined, check if default
+                // Strict equality if val exists
+                isEquipped = equippedVal === item.value;
+                
+                // Fallback: if undefined, check if this is the default item
                 if (equippedVal === undefined && item.cost === 0) isEquipped = true;
-                // Special check for theme_neon_blue and default
+                
+                // Special robustness checks for default IDs
                 if (item.id === 'theme_neon_blue' && (equippedVal === 'blue' || !equippedVal)) isEquipped = true;
                 if (item.id === 'cabinet_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
                 if (item.id === 'trophy_room_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
 
-                // Strict check override
-                if (equippedVal) isEquipped = equippedVal === item.value;
             } else if (item.type === 'avatar') {
                 isEquipped = equippedVal === item.value;
+                // Default avatar check
+                if (item.id === 'avatar_astronaut' && !equippedVal) isEquipped = true;
             } else if (item.type === 'decoration') {
                 isEquipped = isUnlocked; // Active if owned
             }
@@ -325,7 +336,7 @@ export default class Store {
             } else {
                  buttonHtml = `<button class="buy-btn w-full py-2 font-bold rounded transition-all ${canAfford ? 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}" data-id="${item.id}">
                              ${item.cost} <i class="fas fa-coins text-yellow-400"></i>
-                           </button>`;
+                            </button>`;
             }
 
             card.innerHTML = `
@@ -361,20 +372,26 @@ export default class Store {
 
     equip(item) {
         try {
-            if (item.type === 'theme') {
-                this.saveSystem.equipItem('theme', item.value);
-            } else if (item.type === 'avatar') {
-                this.saveSystem.equipItem('avatar', item.value);
+            // General Save Trigger
+            if (['theme', 'cabinet', 'trophy_room', 'avatar'].includes(item.type)) {
+                this.saveSystem.equipItem(item.type, item.value);
+            }
+
+            // Specific Side Effects
+            if (item.type === 'avatar') {
+                // Update Player Profile Object
                 const profile = this.saveSystem.getProfile();
                 if (profile) {
                     profile.avatar = item.value;
                     this.saveSystem.save();
                 }
-            } else if (item.type === 'cabinet') {
-                this.saveSystem.equipItem('cabinet', item.value);
-            } else if (item.type === 'trophy_room') {
-                this.saveSystem.equipItem('trophy_room', item.value);
+            } 
+            
+            if (item.type === 'theme') {
+                // Update CSS Hook immediately
+                document.body.className = `theme-${item.value}`;
             }
+
             this.render();
         } catch (e) {
             console.error("Store: Failed to equip item", e);
@@ -389,7 +406,7 @@ export default class Store {
                 // Visual feedback: Particles
                 const particleSystem = ParticleSystem.getInstance();
                 if (particleSystem) {
-                    // Spawn at button center
+                    // Spawn particles at the click location (button center)
                     const rect = event.target.getBoundingClientRect();
                     const x = rect.left + rect.width / 2;
                     const y = rect.top + rect.height / 2;
