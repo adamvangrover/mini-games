@@ -578,6 +578,43 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('settings-btn')?.addEventListener('click', openSettings);
     document.getElementById('settings-btn-hud')?.addEventListener('click', openSettings);
 
+    const showGuide = () => {
+        const content = `
+            <div class="guide-section">
+                <h3>🎮 How to Play</h3>
+                <p class="text-slate-300 text-sm mb-2">Explore the Neon Arcade by dragging to look around and clicking on game cabinets. In Grid View, simply click a card to play.</p>
+                <p class="text-slate-300 text-sm">Earn <strong>Coins</strong> and <strong>XP</strong> by playing games. Higher scores mean bigger rewards!</p>
+            </div>
+            <div class="guide-section">
+                <h3>🏆 Trophies & Achievements</h3>
+                <p class="text-slate-300 text-sm mb-2">Visit the <strong>Trophy Room</strong> to see your collection. Trophies are awarded for specific milestones in each game.</p>
+                <p class="text-slate-300 text-sm">Click on a trophy in the room to view detailed stats and lore.</p>
+            </div>
+            <div class="guide-section">
+                <h3>🛍️ The Store</h3>
+                <p class="text-slate-300 text-sm mb-2">Spend your coins on cosmetic upgrades like new <strong>Avatars</strong>, <strong>Themes</strong>, and <strong>Cabinet Styles</strong>.</p>
+                <p class="text-slate-300 text-sm">Unlock the <strong>Tech Tree</strong> to purchase permanent boosts like Coin Multipliers.</p>
+            </div>
+            <div class="text-center mt-6">
+                 <button id="close-guide-btn" class="px-6 py-2 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold rounded">Got it!</button>
+            </div>
+        `;
+        showOverlay('GAME GUIDE', content);
+        document.getElementById('close-guide-btn').onclick = () => hideOverlay();
+    };
+
+    // Add Guide Button to HUD
+    const hud = document.getElementById('hub-hud');
+    if (hud) {
+        const guideBtn = document.createElement('button');
+        guideBtn.id = 'guide-btn-hud';
+        guideBtn.className = 'glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition';
+        guideBtn.title = 'Game Guide';
+        guideBtn.innerHTML = '<i class="fas fa-question-circle"></i>';
+        guideBtn.onclick = showGuide;
+        hud.insertBefore(guideBtn, hud.firstChild);
+    }
+
     const updateMuteIcon = () => {
         const btn = document.getElementById('mute-btn-hud');
         if(btn) btn.innerHTML = soundManager.muted ? '<i class="fas fa-volume-mute text-red-400"></i>' : '<i class="fas fa-volume-up"></i>';
