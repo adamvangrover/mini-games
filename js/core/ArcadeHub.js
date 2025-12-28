@@ -18,7 +18,7 @@ export default class ArcadeHub {
 
         // Environment Arrays
         this.cabinets = [];
-        this.colliders = []; // Array of Box3 for collision
+        this.colliders = []; 
         this.walls = [];
         
         // State
@@ -46,6 +46,14 @@ export default class ArcadeHub {
         this.navTarget = null;
         this.navMarker = null;
 
+        // Mobile Joystick State
+        this.joystick = { 
+            active: false, 
+            origin: {x:0, y:0}, 
+            current: {x:0, y:0}, 
+            id: null 
+        };
+
         this.init();
     }
 
@@ -55,7 +63,7 @@ export default class ArcadeHub {
             const saveSystem = SaveSystem.getInstance();
             const theme = saveSystem.getEquippedItem('theme') || 'blue';
 
-            // Theme Colors (Merged Logic)
+            // Theme Colors
             const themeColors = {
                 blue: { bg: 0x050510, fog: 0x050510, grid: 0x00ffff, light: 0x0088ff },
                 pink: { bg: 0x100505, fog: 0x100505, grid: 0xff00ff, light: 0xff0088 },
@@ -84,11 +92,12 @@ export default class ArcadeHub {
             if (this.container) {
                 this.container.innerHTML = '';
                 this.container.appendChild(this.renderer.domElement);
+                this.createVirtualJoystick(); // Add Mobile Controls
             } else {
                 return;
             }
 
-            // --- Lighting (Branch 2 - Better Lighting) ---
+            // --- Lighting ---
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
             this.scene.add(ambientLight);
 
@@ -100,22 +109,23 @@ export default class ArcadeHub {
 
             // --- Environment & Layout ---
             this.createRoom(colors);
-            this.organizeLayout(); // Uses Branch 2 logic with Branch 1 cabinets
+            this.organizeLayout();
             this.createTeleporter();
             this.createNavMarker();
 
             // --- Event Listeners ---
             window.addEventListener('resize', this.onResize.bind(this));
 
-            // Mouse / Touch
+            // Mouse
             this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this));
             window.addEventListener('mousemove', this.onMouseMove.bind(this));
             window.addEventListener('mouseup', this.onMouseUp.bind(this));
             this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
 
+            // Touch (Delegated)
             this.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
             window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
-            window.addEventListener('touchend', this.onMouseUp.bind(this));
+            window.addEventListener('touchend', this.onTouchEnd.bind(this));
 
             // Start Loop
             this.animate();
@@ -126,7 +136,83 @@ export default class ArcadeHub {
         }
     }
 
-    // --- Environment Creation (Merged) ---
+    // --- UI: Virtual Joystick ---
+
+    createVirtualJoystick() {
+        this.joystickEl = document.createElement('div');
+        this.joystickEl.id = 'hub-joystick';
+        this.joystickEl.style.cssText = `
+            position: absolute;
+            bottom: 50px;
+            left: 50px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: none;
+            z-index: 20;
+            touch-action: none;
+        `;
+
+        this.knobEl = document.createElement('div');
+        this.knobEl.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 255, 255, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            pointer-events: none;
+        `;
+        
+        this.joystickEl.appendChild(this.knobEl);
+        this.container.appendChild(this.joystickEl);
+
+        // Show on touch devices
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+            this.joystickEl.style.display = 'block';
+        }
+
+        // Joystick-specific touch listeners
+        this.joystickEl.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation(); // Don't bubble to camera drag
+            const touch = e.changedTouches[0];
+            this.joystick.id = touch.identifier;
+            this.joystick.active = true;
+            this.joystick.origin = { x: touch.clientX, y: touch.clientY };
+            this.joystick.current = { x: touch.clientX, y: touch.clientY };
+            this.updateJoystickVisual();
+        }, { passive: false });
+    }
+
+    updateJoystickVisual() {
+        if (!this.joystick.active) {
+            this.knobEl.style.transform = `translate(-50%, -50%)`;
+            return;
+        }
+        const dx = this.joystick.current.x - this.joystick.origin.x;
+        const dy = this.joystick.current.y - this.joystick.origin.y;
+        
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const maxDist = 35; 
+        
+        let visualX = dx;
+        let visualY = dy;
+
+        if (dist > maxDist) {
+            visualX = (dx / dist) * maxDist;
+            visualY = (dy / dist) * maxDist;
+        }
+
+        this.knobEl.style.transform = `translate(calc(-50% + ${visualX}px), calc(-50% + ${visualY}px))`;
+    }
+
+    // --- 3D Environment ---
 
     createCeilingLight(x, y, z, color, intensity, distance) {
         const light = new THREE.PointLight(color, intensity, distance);
@@ -142,7 +228,7 @@ export default class ArcadeHub {
     }
 
     createRoom(colors) {
-        // Floor (Reflective - Branch 2)
+        // Floor
         const floorGeo = new THREE.PlaneGeometry(60, 80);
         const floorMat = new THREE.MeshStandardMaterial({
             color: 0x111111,
@@ -154,9 +240,9 @@ export default class ArcadeHub {
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
         this.scene.add(floor);
-        this.floor = floor; // Reference for click-to-move
+        this.floor = floor; // Reference
 
-        // Grid on floor (Visual style)
+        // Grid on floor
         const gridHelper = new THREE.GridHelper(60, 30, colors.grid, 0x222222);
         gridHelper.position.y = 0.02;
         this.scene.add(gridHelper);
@@ -169,9 +255,8 @@ export default class ArcadeHub {
         ceil.position.y = 10;
         this.scene.add(ceil);
 
-        // Walls (Collision Enabled)
+        // Walls
         const wallMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
-
         const createWall = (w, h, d, x, y, z) => {
             const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
             mesh.position.set(x, y, z);
@@ -189,8 +274,6 @@ export default class ArcadeHub {
         const box = new THREE.Box3().setFromObject(mesh);
         this.colliders.push(box);
     }
-
-    // --- Layout Logic ---
 
     organizeLayout() {
         const categories = {};
@@ -212,11 +295,9 @@ export default class ArcadeHub {
             this.createNeonSign(cat, 0, 7, currentZ);
 
             let rowZ = currentZ;
-            
             games.forEach((game, i) => {
                 const isLeft = i % 2 === 0;
                 const offsetZ = Math.floor(i / 2) * cabinetSpacing;
-                // Place cabinets on left (-X) and right (+X) facing inwards
                 if (isLeft) {
                     this.createCabinet(-6, 0, rowZ - offsetZ, Math.PI / 2, game.id, game);
                 } else {
@@ -235,7 +316,6 @@ export default class ArcadeHub {
         ctx.fillStyle = 'rgba(0,0,0,0)';
         ctx.fillRect(0, 0, 512, 128);
 
-        // Neon Glow Style
         ctx.font = 'bold 60px Arial';
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
@@ -260,42 +340,31 @@ export default class ArcadeHub {
         group.position.set(x, y, z);
         group.rotation.y = rotation;
 
-        // Fetch Equipped Style (Branch 1 Feature)
         const saveSystem = SaveSystem.getInstance();
         const cabinetStyle = saveSystem.getEquippedItem('cabinet') || 'default';
 
         let bodyColor = 0x222222;
-        let metalness = 0.5;
-        let roughness = 0.5;
+        if (cabinetStyle === 'wood') bodyColor = 0x5c4033;
+        else if (cabinetStyle === 'carbon') bodyColor = 0x111111;
+        else if (cabinetStyle === 'gold') bodyColor = 0xffd700;
 
-        if (cabinetStyle === 'wood') { bodyColor = 0x5c4033; metalness = 0.1; roughness = 0.8; }
-        else if (cabinetStyle === 'carbon') { bodyColor = 0x111111; metalness = 0.9; roughness = 0.2; }
-        else if (cabinetStyle === 'gold') { bodyColor = 0xffd700; metalness = 1.0; roughness = 0.1; }
-
-        // Cabinet Body
         const bodyGeo = new THREE.BoxGeometry(1.2, 2.2, 1.0);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: roughness, metalness: metalness });
+        const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.5 });
         const body = new THREE.Mesh(bodyGeo, bodyMat);
         body.position.y = 1.1;
         body.castShadow = true;
         body.receiveShadow = true;
         group.add(body);
 
-        // Screen & Neon (Branch 2 Logic integrated)
-        const neonColor = this.getNeonColor(id);
         const screenGeo = new THREE.PlaneGeometry(0.9, 0.7);
         const canvas = document.createElement('canvas');
         canvas.width = 256; canvas.height = 192;
         const ctx = canvas.getContext('2d');
-        
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, 256, 192);
-        ctx.fillStyle = neonColor;
-        ctx.font = 'bold 24px Arial';
-        ctx.textAlign = 'center';
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 256, 192);
+        ctx.fillStyle = this.getNeonColor(id);
+        ctx.font = 'bold 24px Arial'; ctx.textAlign = 'center';
         ctx.fillText(gameInfo.name, 128, 100);
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4;
         ctx.strokeRect(10, 10, 236, 172);
 
         const screenMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas) });
@@ -303,13 +372,11 @@ export default class ArcadeHub {
         screen.position.set(0, 1.5, 0.51);
         group.add(screen);
 
-        // Marquee (Glowing)
-        const marqMat = new THREE.MeshStandardMaterial({ color: neonColor, emissive: neonColor, emissiveIntensity: 0.6 });
+        const marqMat = new THREE.MeshStandardMaterial({ color: this.getNeonColor(id), emissive: this.getNeonColor(id), emissiveIntensity: 0.6 });
         const marq = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.3, 1.0), marqMat);
         marq.position.set(0, 2.35, 0);
         group.add(marq);
 
-        // Detailed Control Panel (Branch 1 Feature)
         const panel = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.5), new THREE.MeshStandardMaterial({ color: 0x111111 }));
         panel.position.set(0, 1.1, 0.6);
         panel.rotation.x = 0.2;
@@ -330,20 +397,16 @@ export default class ArcadeHub {
         const group = new THREE.Group();
         group.position.set(0, 0, -35); // Back of room
 
-        // Base
         const pad = new THREE.Mesh(
             new THREE.CylinderGeometry(2, 2, 0.1, 32),
             new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xffaa00, emissiveIntensity: 0.5 })
         );
         group.add(pad);
 
-        // Floating Text
         const canvas = document.createElement('canvas');
         canvas.width = 256; canvas.height = 64;
         const ctx = canvas.getContext('2d');
-        ctx.font = 'bold 30px Arial';
-        ctx.fillStyle = '#ffaa00';
-        ctx.textAlign = 'center';
+        ctx.font = 'bold 30px Arial'; ctx.fillStyle = '#ffaa00'; ctx.textAlign = 'center';
         ctx.fillText("TROPHY ROOM", 128, 40);
         
         const label = new THREE.Mesh(
@@ -356,7 +419,7 @@ export default class ArcadeHub {
         group.userData = { isTeleporter: true, target: 'TROPHY_ROOM' };
         this.scene.add(group);
         this.addCollider(pad);
-        this.teleporterTrigger = group; // Trigger reference
+        this.teleporterTrigger = group;
     }
 
     createNavMarker() {
@@ -367,7 +430,6 @@ export default class ArcadeHub {
         this.navMarker.visible = false;
         this.scene.add(this.navMarker);
 
-        // Inner pulse circle
         const innerGeo = new THREE.CircleGeometry(0.2, 32);
         const innerMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
         const navInner = new THREE.Mesh(innerGeo, innerMat);
@@ -377,9 +439,7 @@ export default class ArcadeHub {
 
     getNeonColor(id) {
         let hash = 0;
-        for (let i = 0; i < id.length; i++) {
-            hash = id.charCodeAt(i) + ((hash << 5) - hash);
-        }
+        for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
         const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
         return '#' + '00000'.substring(0, 6 - c.length) + c;
     }
@@ -389,16 +449,14 @@ export default class ArcadeHub {
     update(dt) {
         if (!this.isActive || !this.scene) return;
 
-        // 1. Handle Input & Movement
-        this.handleMovement(dt);
-
-        // 2. Check Interactions (Hover)
-        this.checkInteractions();
-
-        // 3. Render (If not handled externally)
+        // Render
         if (this.renderer && this.camera) {
             this.renderer.render(this.scene, this.camera);
         }
+
+        // Logic
+        this.handleMovement(dt);
+        this.checkInteractions();
     }
 
     animate() {
@@ -410,18 +468,33 @@ export default class ArcadeHub {
     }
 
     handleMovement(dt) {
-        // --- FPS Movement (WASD) ---
+        // 
+        // This function merges keyboard input with mobile joystick input.
+
         const velocity = new THREE.Vector3();
         const isSprinting = this.inputManager.isKeyDown('ShiftLeft');
         const moveSpeed = this.player.speed * (isSprinting ? 1.5 : 1.0) * dt;
 
+        // 1. Keyboard Input
         if (this.inputManager.isKeyDown('KeyW') || this.inputManager.isKeyDown('ArrowUp')) velocity.z -= 1;
         if (this.inputManager.isKeyDown('KeyS') || this.inputManager.isKeyDown('ArrowDown')) velocity.z += 1;
         if (this.inputManager.isKeyDown('KeyA') || this.inputManager.isKeyDown('ArrowLeft')) velocity.x -= 1;
         if (this.inputManager.isKeyDown('KeyD') || this.inputManager.isKeyDown('ArrowRight')) velocity.x += 1;
 
+        // 2. Joystick Input
+        if (this.joystick.active) {
+            const dx = this.joystick.current.x - this.joystick.origin.x;
+            const dy = this.joystick.current.y - this.joystick.origin.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist > 10) { // Deadzone
+                velocity.x += dx / 50; 
+                velocity.z += dy / 50;
+            }
+        }
+
         if (velocity.length() > 0) {
-            velocity.normalize().multiplyScalar(moveSpeed);
+            if (velocity.length() > 1 && !this.joystick.active) velocity.normalize(); // Normalize keyboard, keep analog for joystick
+            velocity.multiplyScalar(moveSpeed);
             
             // Move relative to Camera Yaw (Y-rotation)
             const euler = new THREE.Euler(0, this.yaw, 0, 'YXZ');
@@ -430,7 +503,7 @@ export default class ArcadeHub {
             this.navTarget = null; // Manual input overrides click-move
         }
 
-        // --- Click-to-Move Logic ---
+        // 3. Click-to-Move Logic
         if (this.navTarget) {
             this.navMarker.visible = true;
             this.navMarker.position.set(this.navTarget.x, 0.1, this.navTarget.z);
@@ -451,12 +524,12 @@ export default class ArcadeHub {
             this.navMarker.visible = false;
         }
 
-        // --- Collision Detection ---
+        // --- Collision & Apply ---
         const nextPos = this.player.position.clone().add(velocity);
         let collided = false;
 
         // Room Bounds
-        if (Math.abs(nextPos.x) > 28 || Math.abs(nextPos.z) > 38) collided = true;
+        if (Math.abs(nextPos.x) > 28 || Math.abs(nextPos.z) > 42) collided = true;
 
         // Object Colliders
         const playerBox = new THREE.Box3().setFromCenterAndSize(nextPos, new THREE.Vector3(1, 2, 1));
@@ -470,14 +543,12 @@ export default class ArcadeHub {
         if (!collided) {
             this.player.position.copy(nextPos);
         } else {
-            // Stop auto-walk on collision
             this.navTarget = null;
         }
 
-        // --- Camera Sync ---
         this.camera.position.set(this.player.position.x, this.player.height, this.player.position.z);
         
-        // Trigger Check (Teleporter)
+        // Trigger Check
         if (this.teleporterTrigger) {
             if (this.player.position.distanceTo(this.teleporterTrigger.position) < 2.5) {
                 if (this.onGameSelect) this.onGameSelect('TROPHY_ROOM');
@@ -492,7 +563,6 @@ export default class ArcadeHub {
         let hovered = false;
         if (intersects.length > 0) {
             let obj = intersects[0].object;
-            // Traverse up to find Game/Teleporter Group
             while(obj.parent && !obj.userData.gameId && !obj.userData.isTeleporter) {
                 obj = obj.parent;
             }
@@ -500,11 +570,10 @@ export default class ArcadeHub {
                 hovered = true;
             }
         }
-        
         document.body.style.cursor = hovered ? 'pointer' : (this.isDragging ? 'grabbing' : 'default');
     }
 
-    // --- Input Handlers ---
+    // --- Inputs ---
 
     onMouseDown(event) {
         if (!this.isActive) return;
@@ -513,19 +582,15 @@ export default class ArcadeHub {
     }
 
     onMouseMove(e) {
-        // Update Mouse Normalized Device Coordinates for Raycaster
         this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
-        // Mouse Look (Drag)
         if (this.isDragging) {
             const dx = e.clientX - this.previousMousePosition.x;
             const dy = e.clientY - this.previousMousePosition.y;
 
             this.yaw -= dx * this.dragSensitivity;
             this.pitch -= dy * this.dragSensitivity;
-
-            // Clamp vertical look
             this.pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, this.pitch));
 
             this.updateCameraRotation();
@@ -538,7 +603,8 @@ export default class ArcadeHub {
     }
 
     onClick(event) {
-        if (!this.isActive || this.isDragging) return; // Prevent click after drag
+        if (!this.isActive || this.isDragging) return;
+        if (this.joystick.active) return; // Prevent click interference
 
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
@@ -547,7 +613,6 @@ export default class ArcadeHub {
             const point = intersects[0].point;
             let obj = intersects[0].object;
 
-            // 1. Check for Cabinet/Teleporter Click
             let interactiveObj = obj;
             while(interactiveObj.parent && !interactiveObj.userData.gameId && !interactiveObj.userData.isTeleporter) {
                 interactiveObj = interactiveObj.parent;
@@ -555,13 +620,10 @@ export default class ArcadeHub {
 
             if (interactiveObj.userData && (interactiveObj.userData.gameId || interactiveObj.userData.isTeleporter)) {
                 const dist = this.player.position.distanceTo(interactiveObj.position);
-                
-                // If close, interact immediately
                 if (dist < 4.0) {
                     const targetId = interactiveObj.userData.gameId || 'TROPHY_ROOM';
                     if (this.onGameSelect) this.onGameSelect(targetId);
                 } else {
-                    // If far, walk towards it
                     const dir = new THREE.Vector3().subVectors(this.player.position, interactiveObj.position).normalize().multiplyScalar(2.0);
                     this.navTarget = new THREE.Vector3().addVectors(interactiveObj.position, dir);
                     this.navTarget.y = this.player.position.y;
@@ -569,39 +631,67 @@ export default class ArcadeHub {
                 return;
             }
 
-            // 2. Click-to-Move (Floor)
-            // Just move to the clicked point
             this.navTarget = point;
             this.navTarget.y = this.player.position.y;
         }
     }
 
-    // Touch Support
-    onTouchStart(e) {
-        if (!this.isActive || e.touches.length !== 1) return;
+    // Touch Handling (Smart Delegation)
+    onTouchStart(event) {
+        // 1. Check Joystick
+        let touchingJoystick = false;
+        for(let i=0; i<event.changedTouches.length; i++) {
+             const t = event.changedTouches[i];
+             const el = document.elementFromPoint(t.clientX, t.clientY);
+             if(this.joystickEl && (el === this.joystickEl || this.joystickEl.contains(el))) {
+                 touchingJoystick = true;
+             }
+        }
+        if (touchingJoystick) return; // Handled by joystick listener
+
+        // 2. Camera Look
+        if (!this.isActive || event.touches.length !== 1) return;
         this.isDragging = true;
-        this.previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        this.previousMousePosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
     }
 
-    onTouchMove(e) {
-        if (this.isDragging && e.touches.length === 1) {
-            e.preventDefault();
-            const dx = e.touches[0].clientX - this.previousMousePosition.x;
-            const dy = e.touches[0].clientY - this.previousMousePosition.y;
+    onTouchMove(event) {
+        // Joystick update handled in its own state check via handleMovement or its own listener
+        if (this.joystick.active) {
+             for(let i=0; i<event.changedTouches.length; i++) {
+                 if (event.changedTouches[i].identifier === this.joystick.id) {
+                     this.joystick.current = { x: event.changedTouches[i].clientX, y: event.changedTouches[i].clientY };
+                     this.updateJoystickVisual();
+                 }
+             }
+        }
+
+        if (this.isDragging && event.touches.length === 1 && !this.joystick.active) {
+            event.preventDefault();
+            const dx = event.touches[0].clientX - this.previousMousePosition.x;
+            const dy = event.touches[0].clientY - this.previousMousePosition.y;
             
-            // Slightly higher sensitivity for touch
             this.yaw -= dx * this.dragSensitivity * 1.5;
             this.pitch -= dy * this.dragSensitivity * 1.5;
             this.pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, this.pitch));
             
             this.updateCameraRotation();
-            this.previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            this.previousMousePosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
         }
+    }
+
+    onTouchEnd(event) {
+         for(let i=0; i<event.changedTouches.length; i++) {
+             if (event.changedTouches[i].identifier === this.joystick.id) {
+                 this.joystick.active = false;
+                 this.updateJoystickVisual();
+             }
+         }
+         this.isDragging = false;
     }
 
     updateCameraRotation() {
         if (!this.camera) return;
-        // Apply rotation to camera. YXZ order prevents gimbal lock for FPS controls
         this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
     }
 
@@ -615,6 +705,9 @@ export default class ArcadeHub {
     resume() {
         this.isActive = true;
         if(this.container) this.container.style.display = 'block';
+        if(this.joystickEl && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+            this.joystickEl.style.display = 'block';
+        }
         this.onResize();
         this.clock.start();
         this.animate();
@@ -623,6 +716,7 @@ export default class ArcadeHub {
     pause() {
         this.isActive = false;
         if(this.container) this.container.style.display = 'none';
+        if(this.joystickEl) this.joystickEl.style.display = 'none';
         this.clock.stop();
     }
 }
