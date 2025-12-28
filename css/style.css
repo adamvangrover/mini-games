@@ -331,3 +331,39 @@ canvas {
     background: var(--primary-neon);
     box-shadow: 0 0 10px var(--primary-neon);
 }
+
+/* --- UI Themes --- */
+.theme-blue {
+    --primary-neon: #00ffff;
+    --secondary-neon: #d946ef;
+    --primary-glow: 0 0 10px #0ff, 0 0 20px #0ff;
+    --secondary-glow: 0 0 10px #d946ef, 0 0 20px #d946ef;
+}
+
+.theme-pink {
+    --primary-neon: #ff00ff;
+    --secondary-neon: #00ffff;
+    --primary-glow: 0 0 10px #f0f, 0 0 20px #f0f;
+    --secondary-glow: 0 0 10px #0ff, 0 0 20px #0ff;
+}
+
+.theme-gold {
+    --primary-neon: #ffd700;
+    --secondary-neon: #ffffff;
+    --primary-glow: 0 0 10px #ffd700, 0 0 20px #ffd700;
+    --secondary-glow: 0 0 10px #fff, 0 0 20px #fff;
+}
+
+.theme-green {
+    --primary-neon: #00ff41;
+    --secondary-neon: #008f11;
+    --primary-glow: 0 0 10px #00ff41, 0 0 20px #00ff41;
+    --secondary-glow: 0 0 10px #008f11, 0 0 20px #008f11;
+}
+
+.theme-red {
+    --primary-neon: #ff0000;
+    --secondary-neon: #ff4500;
+    --primary-glow: 0 0 10px #f00, 0 0 20px #f00;
+    --secondary-glow: 0 0 10px #ff4500, 0 0 20px #ff4500;
+}

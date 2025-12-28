@@ -18,7 +18,7 @@ export default class Store {
 
         // Define Items
         this.items = [
-            // --- THEMES ---
+            // --- UI THEMES ---
             {
                 id: 'theme_neon_blue',
                 name: 'Neon Blue',
@@ -63,6 +63,44 @@ export default class Store {
                 icon: 'fas fa-fire',
                 type: 'theme',
                 value: 'red'
+            },
+
+            // --- TROPHY ROOM STYLES ---
+            {
+                id: 'trophy_theme_default',
+                name: 'Classic Vault',
+                description: 'Standard trophy room.',
+                cost: 0,
+                icon: 'fas fa-door-closed',
+                type: 'trophy_room',
+                value: 'default'
+            },
+            {
+                id: 'trophy_theme_cyber',
+                name: 'Cyber Void',
+                description: 'Floating in the digital ether.',
+                cost: 250,
+                icon: 'fas fa-network-wired',
+                type: 'trophy_room',
+                value: 'cyber'
+            },
+            {
+                id: 'trophy_theme_gold',
+                name: 'Golden Hall',
+                description: 'A room fit for a king.',
+                cost: 500,
+                icon: 'fas fa-gem',
+                type: 'trophy_room',
+                value: 'gold'
+            },
+            {
+                id: 'trophy_theme_nature',
+                name: 'Zen Garden',
+                description: 'Peaceful organic vibes.',
+                cost: 350,
+                icon: 'fas fa-leaf',
+                type: 'trophy_room',
+                value: 'nature'
             },
 
             // --- CABINET STYLES ---
@@ -184,15 +222,15 @@ export default class Store {
             let isEquipped = false;
             const equippedVal = this.saveSystem.getEquippedItem(item.type);
 
-            if (item.type === 'theme' || item.type === 'cabinet') {
-                isEquipped = equippedVal === item.value; // Store value for theme/cabinet
-                // Fallback: if undefined, check if default
-                if (equippedVal === undefined && item.cost === 0) isEquipped = true;
-                // Special check for theme_neon_blue and default
-                if (item.id === 'theme_neon_blue' && (equippedVal === 'blue' || !equippedVal)) isEquipped = true;
-                if (item.id === 'cabinet_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
+            if (item.type === 'theme' || item.type === 'cabinet' || item.type === 'trophy_room') {
+                isEquipped = equippedVal === item.value;
+                // Default handling
+                if (item.cost === 0 && !equippedVal) isEquipped = true;
+                if (item.id === 'theme_neon_blue' && (equippedVal === 'blue')) isEquipped = true;
+                if (item.id === 'cabinet_default' && (equippedVal === 'default')) isEquipped = true;
+                if (item.id === 'trophy_theme_default' && (equippedVal === 'default')) isEquipped = true;
 
-                // Strict check override
+                // Strict equality if val exists
                 if (equippedVal) isEquipped = equippedVal === item.value;
             } else if (item.type === 'avatar') {
                 isEquipped = equippedVal === item.value;
@@ -253,20 +291,19 @@ export default class Store {
 
     equip(item) {
         try {
-            if (item.type === 'theme') {
-                this.saveSystem.equipItem('theme', item.value);
-                // In a full app, we'd emit an event. Here we might just reload or re-render store.
-                // Theme changes usually require a reload or a class toggle on body.
-                // For now, we update store UI.
-            } else if (item.type === 'avatar') {
-                this.saveSystem.equipItem('avatar', item.value);
-                const profile = this.saveSystem.getProfile();
-                if (profile) {
-                    profile.avatar = item.value;
-                    this.saveSystem.save();
+            if (['theme', 'cabinet', 'trophy_room', 'avatar'].includes(item.type)) {
+                this.saveSystem.equipItem(item.type, item.value);
+                if (item.type === 'avatar') {
+                    const profile = this.saveSystem.getProfile();
+                    if (profile) {
+                        profile.avatar = item.value;
+                        this.saveSystem.save();
+                    }
                 }
-            } else if (item.type === 'cabinet') {
-                this.saveSystem.equipItem('cabinet', item.value);
+                if (item.type === 'theme') {
+                    // Force refresh or callback to apply theme to Grid View/Body
+                    document.body.className = `theme-${item.value}`; // Simple hook
+                }
             }
             this.render();
         } catch (e) {
@@ -282,8 +319,6 @@ export default class Store {
                 // Visual feedback
                 const particleSystem = ParticleSystem.getInstance();
                 if (particleSystem) {
-                    // Try to spawn particles at screen center since we don't have click event coord easily here
-                    // Ideally we pass event to buy(), but for now center burst is fine
                     particleSystem.emit(window.innerWidth / 2, window.innerHeight / 2, '#fbbf24', 30);
                 }
 

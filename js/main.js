@@ -331,6 +331,13 @@ const gameRegistry = {
         category: 'Logic Puzzles',
         importFn: () => import('./games/sudoku.js')
     },
+    'neon-zip-game': {
+        name: 'Neon Zip',
+        description: 'Connect the Dots',
+        icon: 'fa-solid fa-bolt',
+        category: 'Logic Puzzles',
+        importFn: () => import('./games/neonZip.js')
+    },
 
     // System Modules (Treated as games for unified loading)
     'trophy-room': {
@@ -782,26 +789,40 @@ function populateMenuGrid() {
     if(!grid) return;
     grid.innerHTML = '';
 
+    const categories = {};
     Object.entries(gameRegistry).forEach(([id, game]) => {
-        const card = document.createElement('div');
-        card.className = "bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden";
-        
-        card.innerHTML = `
-            <div class="absolute top-0 right-0 p-2 opacity-50 text-xs uppercase font-bold tracking-wider">${game.category || 'Game'}</div>
-            <div class="flex flex-col items-center text-center gap-3 pt-4">
-                <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-cyan-400 transition-colors shadow-lg shadow-fuchsia-500/20 group-hover:shadow-cyan-500/20">
-                    <i class="${game.icon || 'fas fa-gamepad'}"></i>
+        const cat = game.category || 'Other';
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push({ id, ...game });
+    });
+
+    Object.entries(categories).forEach(([catName, games]) => {
+        const header = document.createElement('h2');
+        header.className = "col-span-full text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-cyan-400 mt-6 mb-2 border-b border-slate-700 pb-2";
+        header.textContent = catName;
+        grid.appendChild(header);
+
+        games.forEach(game => {
+            const card = document.createElement('div');
+            card.className = "bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden";
+
+            card.innerHTML = `
+                <div class="absolute top-0 right-0 p-2 opacity-50 text-xs uppercase font-bold tracking-wider">${game.category || 'Game'}</div>
+                <div class="flex flex-col items-center text-center gap-3 pt-4">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-cyan-400 transition-colors shadow-lg shadow-fuchsia-500/20 group-hover:shadow-cyan-500/20">
+                        <i class="${game.icon || 'fas fa-gamepad'}"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">${game.name}</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">${game.description}</p>
                 </div>
-                <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">${game.name}</h3>
-                <p class="text-sm text-slate-400 line-clamp-2">${game.description}</p>
-            </div>
-            <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
-                <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
-            </div>
-        `;
-        
-        card.onclick = () => transitionToState(AppState.IN_GAME, { gameId: id });
-        grid.appendChild(card);
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            `;
+
+            card.onclick = () => transitionToState(AppState.IN_GAME, { gameId: game.id });
+            grid.appendChild(card);
+        });
     });
 }
 
@@ -820,6 +841,12 @@ function hideShopOverlay() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Apply Saved Theme
+    const savedTheme = saveSystem.getEquippedItem('theme');
+    if (savedTheme) {
+        document.body.className = `theme-${savedTheme}`;
+    }
+
     updateHubStats();
     populateMenuGrid();
 
