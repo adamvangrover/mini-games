@@ -30,7 +30,7 @@ export default class TrophyRoom {
         // Navigation
         this.player = {
             position: new THREE.Vector3(0, 1.6, 6),
-            speed: 4.0,
+            speed: 8.0, // IMPROVED: Faster movement
             rotation: { x: 0, y: 0 }
         };
         this.isDragging = false;
@@ -75,12 +75,19 @@ export default class TrophyRoom {
             this.container.appendChild(this.overlay);
 
             // Lights
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Increased ambient
+            // IMPROVED: Better base lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
             this.scene.add(ambientLight);
 
-            const spotLight = new THREE.SpotLight(0xffaa00, 2.5); // Increased spot
-            spotLight.position.set(0, 15, 0);
+            const hemiLight = new THREE.HemisphereLight(0x444488, 0x000000, 0.6);
+            this.scene.add(hemiLight);
+
+            // Stronger spot for drama
+            const spotLight = new THREE.SpotLight(0xffaa00, 3.0);
+            spotLight.position.set(0, 20, 0);
             spotLight.castShadow = true;
+            spotLight.angle = Math.PI / 4;
+            spotLight.penumbra = 0.5;
             this.scene.add(spotLight);
 
             this.createLights();
@@ -122,17 +129,18 @@ export default class TrophyRoom {
     }
 
     createLights() {
-        const blueLight = new THREE.PointLight(0x00ffff, 1.2, 25);
-        blueLight.position.set(-10, 5, -5);
+        // IMPROVED: Brighter colored accent lights
+        const blueLight = new THREE.PointLight(0x00ffff, 2.0, 40);
+        blueLight.position.set(-15, 8, -5);
         this.scene.add(blueLight);
 
-        const pinkLight = new THREE.PointLight(0xff00ff, 1.2, 25);
-        pinkLight.position.set(10, 5, -5);
+        const pinkLight = new THREE.PointLight(0xff00ff, 2.0, 40);
+        pinkLight.position.set(15, 8, -5);
         this.scene.add(pinkLight);
 
-        // Add more fill lights
-        const fillLight = new THREE.PointLight(0xffffff, 0.5, 30);
-        fillLight.position.set(0, 8, 10);
+        // Fill lights
+        const fillLight = new THREE.PointLight(0xffffff, 0.8, 50);
+        fillLight.position.set(0, 10, 15);
         this.scene.add(fillLight);
     }
 
@@ -143,6 +151,13 @@ export default class TrophyRoom {
         this.navMarker.rotation.x = -Math.PI / 2;
         this.navMarker.visible = false;
         this.scene.add(this.navMarker);
+
+        // IMPROVED: Inner pulse
+        const innerGeo = new THREE.CircleGeometry(0.2, 32);
+        const innerMat = new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
+        this.navInner = new THREE.Mesh(innerGeo, innerMat);
+        this.navInner.position.z = 0.01;
+        this.navMarker.add(this.navInner);
     }
 
     createRoom() {
@@ -422,6 +437,10 @@ export default class TrophyRoom {
                 this.navMarker.visible = true;
                 this.navMarker.position.set(this.navTarget.x, 0.1, this.navTarget.z);
                 this.navMarker.rotation.z += dt * 2;
+
+                // IMPROVED: Pulse
+                const scale = 1 + Math.sin(Date.now() * 0.01) * 0.2;
+                this.navMarker.scale.set(scale, scale, scale);
              }
 
              const dir = new THREE.Vector3().subVectors(this.navTarget, this.player.position);
