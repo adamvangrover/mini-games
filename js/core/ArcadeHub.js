@@ -25,7 +25,7 @@ export default class ArcadeHub {
         // Navigation State
         this.inputManager = InputManager.getInstance();
         this.player = {
-            position: new THREE.Vector3(0, 1.6, 12), // Start at entrance
+            position: new THREE.Vector3(0, 1.6, 15), // Start at entrance
             velocity: new THREE.Vector3(),
             speed: 6.0,
             radius: 0.5,
@@ -35,9 +35,8 @@ export default class ArcadeHub {
 
         this.isDragging = false;
         this.previousMousePosition = { x: 0, y: 0 };
-
-        // Target for click-to-move
         this.navTarget = null;
+        this.joystick = { active: false, origin: {x:0, y:0}, current: {x:0, y:0}, id: null };
 
         this.init();
     }
@@ -69,13 +68,14 @@ export default class ArcadeHub {
             // --- Renderer Setup ---
             this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             this.renderer.setSize(window.innerWidth, window.innerHeight);
-            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap pixel ratio for performance
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             this.renderer.shadowMap.enabled = true;
             this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
             if (this.container) {
                 this.container.innerHTML = '';
                 this.container.appendChild(this.renderer.domElement);
+                this.createVirtualJoystick(); // Add Joystick UI
             } else {
                 return;
             }
@@ -103,20 +103,90 @@ export default class ArcadeHub {
             window.addEventListener('mouseup', this.onMouseUp.bind(this));
             this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
 
-            // Touch Events
+            // Touch Events (Delegated to Joystick if touched there, else Camera)
             this.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
             window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
-            window.addEventListener('touchend', this.onMouseUp.bind(this));
-
-            // We don't use requestAnimationFrame loop here explicitly if main.js calls update()
-            // But we need a render call. We'll use animate() internally to handle render if main.js doesn't.
-            // Wait, main.js calls update(dt). It does NOT call draw/render.
-            // So we must render in update().
+            window.addEventListener('touchend', this.onTouchEnd.bind(this));
 
         } catch (e) {
             console.error("ArcadeHub: WebGL Initialization Failed.", e);
             if (this.onFallback) this.onFallback();
         }
+    }
+
+    createVirtualJoystick() {
+        this.joystickEl = document.createElement('div');
+        this.joystickEl.id = 'hub-joystick';
+        this.joystickEl.style.cssText = `
+            position: absolute;
+            bottom: 50px;
+            left: 50px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: none; /* Hidden on desktop by default */
+            z-index: 20;
+            touch-action: none;
+        `;
+
+        this.knobEl = document.createElement('div');
+        this.knobEl.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 255, 255, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            pointer-events: none;
+        `;
+
+        this.joystickEl.appendChild(this.knobEl);
+        this.container.appendChild(this.joystickEl);
+
+        // Show on touch devices
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+            this.joystickEl.style.display = 'block';
+        }
+
+        // Joystick Events
+        this.joystickEl.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.changedTouches[0];
+            this.joystick.id = touch.identifier;
+            this.joystick.active = true;
+            this.joystick.origin = { x: touch.clientX, y: touch.clientY };
+            this.joystick.current = { x: touch.clientX, y: touch.clientY };
+            this.updateJoystickVisual();
+        }, { passive: false });
+
+        // Move/End handled globally
+    }
+
+    updateJoystickVisual() {
+        if (!this.joystick.active) {
+            this.knobEl.style.transform = `translate(-50%, -50%)`;
+            return;
+        }
+        const dx = this.joystick.current.x - this.joystick.origin.x;
+        const dy = this.joystick.current.y - this.joystick.origin.y;
+
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const maxDist = 35; // Radius
+
+        let visualX = dx;
+        let visualY = dy;
+
+        if (dist > maxDist) {
+            visualX = (dx / dist) * maxDist;
+            visualY = (dy / dist) * maxDist;
+        }
+
+        this.knobEl.style.transform = `translate(calc(-50% + ${visualX}px), calc(-50% + ${visualY}px))`;
     }
 
     createCeilingLight(x, y, z, color, intensity, distance) {
@@ -134,11 +204,44 @@ export default class ArcadeHub {
 
     createRoom(colors) {
         // Floor
-        const floorGeo = new THREE.PlaneGeometry(60, 80);
+        const floorGeo = new THREE.PlaneGeometry(60, 100);
+
+        // Vintage Arcade Carpet Texture Procedural
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#110011';
+        ctx.fillRect(0,0,512,512);
+
+        // Random shapes
+        for(let i=0; i<50; i++) {
+            ctx.fillStyle = `hsl(${Math.random()*360}, 70%, 50%)`;
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.arc(Math.random()*512, Math.random()*512, Math.random()*50 + 10, 0, Math.PI*2);
+            ctx.fill();
+        }
+        // Grid overlay
+        ctx.strokeStyle = '#ffffff';
+        ctx.globalAlpha = 0.1;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for(let i=0; i<=512; i+=64) {
+            ctx.moveTo(i, 0); ctx.lineTo(i, 512);
+            ctx.moveTo(0, i); ctx.lineTo(512, i);
+        }
+        ctx.stroke();
+
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(6, 10);
+
         const floorMat = new THREE.MeshStandardMaterial({
-            color: 0x111111,
-            roughness: 0.1,
-            metalness: 0.5,
+            map: tex,
+            roughness: 0.6,
+            metalness: 0.2,
             side: THREE.FrontSide
         });
         const floor = new THREE.Mesh(floorGeo, floorMat);
@@ -147,13 +250,8 @@ export default class ArcadeHub {
         floor.receiveShadow = true;
         this.scene.add(floor);
 
-        // Grid on floor
-        const gridHelper = new THREE.GridHelper(60, 30, colors.grid, 0x222222);
-        gridHelper.position.y = 0.02;
-        this.scene.add(gridHelper);
-
         // Ceiling
-        const ceilGeo = new THREE.PlaneGeometry(60, 80);
+        const ceilGeo = new THREE.PlaneGeometry(60, 100);
         const ceilMat = new THREE.MeshStandardMaterial({
             color: 0x050505,
             emissive: 0x050505,
@@ -169,24 +267,24 @@ export default class ArcadeHub {
 
         // Back Wall
         const backWall = new THREE.Mesh(new THREE.BoxGeometry(60, 10, 1), wallMat);
-        backWall.position.set(0, 5, -40);
+        backWall.position.set(0, 5, -50);
         this.scene.add(backWall);
         this.addCollider(backWall);
 
         // Front Wall (Behind player start)
         const frontWall = new THREE.Mesh(new THREE.BoxGeometry(60, 10, 1), wallMat);
-        frontWall.position.set(0, 5, 40);
+        frontWall.position.set(0, 5, 50);
         this.scene.add(frontWall);
         this.addCollider(frontWall);
 
         // Left Wall
-        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 80), wallMat);
+        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 100), wallMat);
         leftWall.position.set(-30, 5, 0);
         this.scene.add(leftWall);
         this.addCollider(leftWall);
 
         // Right Wall
-        const rightWall = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 80), wallMat);
+        const rightWall = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 100), wallMat);
         rightWall.position.set(30, 5, 0);
         this.scene.add(rightWall);
         this.addCollider(rightWall);
@@ -210,35 +308,30 @@ export default class ArcadeHub {
         const catNames = Object.keys(categories).sort();
 
         // Layout Config
-        let currentZ = 5;
-        const aisleSpacing = 12;
-        const cabinetSpacing = 2.5;
-        const rowWidth = 20;
+        let currentZ = 10;
+        const aisleSpacing = 16; // Wider aisles
+        const cabinetSpacing = 3.0; // Space between machines
 
         catNames.forEach((cat, index) => {
             const games = categories[cat];
 
-            // Create Aisle Sign
-            this.createNeonSign(cat, 0, 7, currentZ);
+            // Create Aisle Sign (Hanging from ceiling)
+            this.createNeonSign(cat, 0, 7, currentZ - 2);
 
-            // Left Row (facing Right/Center)
-            // Right Row (facing Left/Center)
+            // Floor Marker (Text on floor)
+            this.createFloorMarker(cat, 0, 0.05, currentZ);
 
-            let leftX = -4;
-            let rightX = 4;
-            let rowZ = currentZ;
+            // Left Row (x=-6) and Right Row (x=6)
 
             games.forEach((game, i) => {
                 const isLeft = i % 2 === 0;
-                // If many games, we might need multiple rows or extend Z
-                // We'll just stack them along Z for this aisle
-
                 const offsetZ = Math.floor(i / 2) * cabinetSpacing;
+                const zPos = currentZ - offsetZ - 2; // Start a bit behind the sign
 
                 if (isLeft) {
-                    this.createCabinet(-6, 0, rowZ - offsetZ, Math.PI / 2, game.id, game);
+                    this.createCabinet(-6, 0, zPos, Math.PI / 2, game.id, game);
                 } else {
-                    this.createCabinet(6, 0, rowZ - offsetZ, -Math.PI / 2, game.id, game);
+                    this.createCabinet(6, 0, zPos, -Math.PI / 2, game.id, game);
                 }
             });
 
@@ -251,15 +344,13 @@ export default class ArcadeHub {
         canvas.width = 512;
         canvas.height = 128;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = 'rgba(0,0,0,0)'; // Transparent
+        ctx.fillStyle = 'rgba(0,0,0,0)';
         ctx.fillRect(0, 0, 512, 128);
 
         ctx.font = 'bold 60px "Press Start 2P", Arial';
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-
-        // Glow effect
         ctx.shadowColor = '#00ffff';
         ctx.shadowBlur = 20;
         ctx.fillText(text.toUpperCase(), 256, 64);
@@ -269,18 +360,34 @@ export default class ArcadeHub {
         const geo = new THREE.PlaneGeometry(10, 2.5);
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.set(x, y, z);
+        mesh.rotation.y = Math.PI; // Face entrance
+        this.scene.add(mesh);
+    }
 
-        // Billboard behavior? Or fixed. Fixed is better for aisles.
-        // Actually, rotate 180 to face entrance
-        // mesh.rotation.y = Math.PI; // If text is backwards
-        // Canvas text is usually readable from front Z+ looking at Z-.
+    createFloorMarker(text, x, y, z) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        ctx.font = 'bold 40px Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = 0.5;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text.toUpperCase(), 256, 64);
 
+        const tex = new THREE.CanvasTexture(canvas);
+        const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.5, side: THREE.FrontSide });
+        const geo = new THREE.PlaneGeometry(8, 2);
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(x, y, z);
+        mesh.rotation.x = -Math.PI/2;
         this.scene.add(mesh);
     }
 
     createTeleporter() {
         const group = new THREE.Group();
-        group.position.set(0, 0, -35); // Back of room
+        group.position.set(0, 0, -45); // Back of room
 
         // Base
         const padGeo = new THREE.CylinderGeometry(2, 2, 0.1, 32);
@@ -289,7 +396,15 @@ export default class ArcadeHub {
         group.add(pad);
 
         // Particles
-        // (Simplified for this file)
+        const partGeo = new THREE.BufferGeometry();
+        const count = 50;
+        const pos = new Float32Array(count * 3);
+        for(let i=0; i<count*3; i++) pos[i] = (Math.random()-0.5)*3;
+        partGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        const partMat = new THREE.PointsMaterial({ color: 0xffaa00, size: 0.1 });
+        const parts = new THREE.Points(partGeo, partMat);
+        parts.position.y = 1;
+        group.add(parts);
 
         // Label
         const canvas = document.createElement('canvas');
@@ -305,21 +420,16 @@ export default class ArcadeHub {
             new THREE.PlaneGeometry(3, 0.75),
             new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide })
         );
-        label.position.set(0, 2, 0);
+        label.position.set(0, 2.5, 0);
         group.add(label);
 
         group.userData = { isTeleporter: true, target: 'TROPHY_ROOM' };
         this.scene.add(group);
-        this.addCollider(pad); // Collide with base to stop? Or trigger?
 
-        // Teleporter Trigger Zone
-        const triggerGeo = new THREE.BoxGeometry(3, 3, 3);
-        const triggerMat = new THREE.MeshBasicMaterial({ visible: false });
-        const trigger = new THREE.Mesh(triggerGeo, triggerMat);
-        trigger.position.set(0, 1.5, -35);
-        trigger.userData = { isTrigger: true, target: 'TROPHY_ROOM' };
+        // Trigger
+        const trigger = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshBasicMaterial({ visible: false }));
+        trigger.position.set(0, 1.5, -45);
         this.scene.add(trigger);
-        // We'll check distance in update() for triggers
         this.teleporterTrigger = trigger;
     }
 
@@ -333,7 +443,6 @@ export default class ArcadeHub {
         const cabinetStyle = saveSystem.getEquippedItem('cabinet') || 'default';
 
         let bodyColor = 0x333333;
-
         if (cabinetStyle === 'wood') bodyColor = 0x5c4033;
         else if (cabinetStyle === 'carbon') bodyColor = 0x111111;
         else if (cabinetStyle === 'gold') bodyColor = 0xffd700;
@@ -354,7 +463,6 @@ export default class ArcadeHub {
         canvas.height = 192;
         const ctx = canvas.getContext('2d');
         
-        // Simple screen art
         ctx.fillStyle = '#000';
         ctx.fillRect(0,0,256,192);
         ctx.fillStyle = this.getNeonColor(id);
@@ -395,12 +503,10 @@ export default class ArcadeHub {
     update(dt) {
         if (!this.isActive || !this.scene) return;
 
-        // Render
         if (this.renderer && this.camera) {
             this.renderer.render(this.scene, this.camera);
         }
 
-        // Movement Logic
         this.handleMovement(dt);
         this.checkInteractions();
     }
@@ -415,19 +521,29 @@ export default class ArcadeHub {
         if (this.inputManager.isKeyDown('KeyA') || this.inputManager.isKeyDown('ArrowLeft')) velocity.x -= 1;
         if (this.inputManager.isKeyDown('KeyD') || this.inputManager.isKeyDown('ArrowRight')) velocity.x += 1;
 
+        // Joystick
+        if (this.joystick.active) {
+            const dx = this.joystick.current.x - this.joystick.origin.x;
+            const dy = this.joystick.current.y - this.joystick.origin.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist > 10) { // Deadzone
+                velocity.x += dx / 50; // Sensitivity
+                velocity.z += dy / 50;
+            }
+        }
+
         // Normalize and Apply Camera Rotation
         if (velocity.length() > 0) {
-            velocity.normalize().multiplyScalar(moveSpeed);
+            if (velocity.length() > 1) velocity.normalize();
+            velocity.multiplyScalar(moveSpeed);
 
-            // Transform direction based on camera Y rotation
             const euler = new THREE.Euler(0, this.camera.rotation.y, 0, 'YXZ');
             velocity.applyEuler(euler);
 
-            // Clear nav target if manual move
             this.navTarget = null;
         }
 
-        // Click-to-Move Logic
+        // Click-to-Move
         if (this.navTarget) {
             const dir = new THREE.Vector3().subVectors(this.navTarget, this.player.position);
             dir.y = 0;
@@ -440,14 +556,13 @@ export default class ArcadeHub {
             }
         }
 
-        // Collision Detection (Simple)
         const nextPos = this.player.position.clone().add(velocity);
 
+        // Collisions
         let collided = false;
         // Check bounds
-        if (Math.abs(nextPos.x) > 28 || Math.abs(nextPos.z) > 38) collided = true; // Walls
+        if (Math.abs(nextPos.x) > 28 || Math.abs(nextPos.z) > 48) collided = true;
 
-        // Check objects
         const playerBox = new THREE.Box3().setFromCenterAndSize(nextPos, new THREE.Vector3(1, 2, 1));
         for (let box of this.colliders) {
             if (box.intersectsBox(playerBox)) {
@@ -461,17 +576,15 @@ export default class ArcadeHub {
             this.camera.position.set(this.player.position.x, this.player.height, this.player.position.z);
         }
 
-        // Check Teleporter
         if (this.teleporterTrigger) {
             const dist = this.player.position.distanceTo(this.teleporterTrigger.position);
-            if (dist < 2.0) {
+            if (dist < 2.5) {
                 if (this.onGameSelect) this.onGameSelect('TROPHY_ROOM');
             }
         }
     }
 
     checkInteractions() {
-        // Hover Raycast
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
@@ -509,7 +622,7 @@ export default class ArcadeHub {
 
             this.camera.rotation.y -= deltaX * 0.003;
             this.camera.rotation.x -= deltaY * 0.003;
-            this.camera.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, this.camera.rotation.x)); // Clamp Look Up/Down
+            this.camera.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, this.camera.rotation.x));
 
             this.previousMousePosition = { x: event.clientX, y: event.clientY };
         }
@@ -520,6 +633,19 @@ export default class ArcadeHub {
     }
 
     onTouchStart(event) {
+        // Check if touching Joystick
+        let touchingJoystick = false;
+        for(let i=0; i<event.changedTouches.length; i++) {
+             const t = event.changedTouches[i];
+             const el = document.elementFromPoint(t.clientX, t.clientY);
+             if(this.joystickEl && (el === this.joystickEl || this.joystickEl.contains(el))) {
+                 touchingJoystick = true;
+             }
+        }
+
+        if (touchingJoystick) return;
+
+        // Camera Look
          if (event.touches.length === 1) {
             this.isDragging = true;
             this.previousMousePosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
@@ -527,7 +653,17 @@ export default class ArcadeHub {
     }
 
     onTouchMove(event) {
-        if (this.isDragging && event.touches.length === 1) {
+        if (this.joystick.active) {
+            // Update joystick
+             for(let i=0; i<event.changedTouches.length; i++) {
+                 if (event.changedTouches[i].identifier === this.joystick.id) {
+                     this.joystick.current = { x: event.changedTouches[i].clientX, y: event.changedTouches[i].clientY };
+                     this.updateJoystickVisual();
+                 }
+             }
+        }
+
+        if (this.isDragging && event.touches.length === 1 && !this.joystick.active) {
             event.preventDefault();
             const deltaX = event.touches[0].clientX - this.previousMousePosition.x;
             const deltaY = event.touches[0].clientY - this.previousMousePosition.y;
@@ -540,10 +676,20 @@ export default class ArcadeHub {
         }
     }
 
+    onTouchEnd(event) {
+         for(let i=0; i<event.changedTouches.length; i++) {
+             if (event.changedTouches[i].identifier === this.joystick.id) {
+                 this.joystick.active = false;
+                 this.updateJoystickVisual();
+             }
+         }
+         this.isDragging = false;
+    }
+
     onClick(event) {
         if (!this.isActive || this.isDragging) return;
-        
-        // Raycast
+        if (this.joystick.active) return; // Don't click if using joystick
+
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
@@ -551,18 +697,15 @@ export default class ArcadeHub {
             const point = intersects[0].point;
             let obj = intersects[0].object;
 
-            // Check if cabinet
             while(obj.parent && !obj.userData.gameId) {
                 obj = obj.parent;
             }
 
             if (obj.userData && obj.userData.gameId) {
-                // If close enough, play. If far, walk to it.
                 const dist = this.player.position.distanceTo(obj.position);
                 if (dist < 4.0) {
                     if (this.onGameSelect) this.onGameSelect(obj.userData.gameId);
                 } else {
-                    // Walk to a point in front of it
                     const dir = new THREE.Vector3().subVectors(this.player.position, obj.position).normalize().multiplyScalar(2.0);
                     this.navTarget = new THREE.Vector3().addVectors(obj.position, dir);
                     this.navTarget.y = this.player.position.y;
@@ -570,7 +713,6 @@ export default class ArcadeHub {
                 return;
             }
 
-            // If floor/wall, walk there
             this.navTarget = point;
             this.navTarget.y = this.player.position.y;
         }
@@ -587,10 +729,12 @@ export default class ArcadeHub {
     resume() {
         this.isActive = true;
         if(this.container) this.container.style.display = 'block';
+        if(this.joystickEl && ('ontouchstart' in window)) this.joystickEl.style.display = 'block';
     }
 
     pause() {
         this.isActive = false;
         if(this.container) this.container.style.display = 'none';
+        if(this.joystickEl) this.joystickEl.style.display = 'none';
     }
 }

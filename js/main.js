@@ -37,7 +37,6 @@ import DevConsole from './core/DevConsole.js';
 import PlaceholderGame from './games/PlaceholderGame.js';
 
 // Game Registry using Dynamic Imports
-// NOTE: 'module' property now holds an async function that returns the module.
 const gameRegistry = {
     // 3D Immersive
     'alpine-game': {
@@ -356,7 +355,7 @@ const gameRegistry = {
         importFn: () => import('./games/sudoku.js')
     },
 
-    // System Modules (Treated as games for unified loading)
+    // System Modules
     'trophy-room': {
         name: 'Trophy Room',
         description: 'Achievement Gallery',
@@ -465,7 +464,7 @@ async function transitionToState(newState, context = {}) {
     if (newState === AppState.MENU) {
         currentState = AppState.TRANSITIONING;
         hideOverlay();
-        soundManager.setBGMVolume(soundManager.getVolume() || 0.1); // Restore preference or default
+        soundManager.setBGMVolume(soundManager.getVolume() || 0.1);
         
         document.getElementById("menu").classList.remove("hidden");
         populateMenuGrid();
@@ -495,48 +494,27 @@ async function transitionToState(newState, context = {}) {
         document.getElementById("menu").classList.add("hidden");
         document.querySelectorAll(".game-container").forEach(el => el.classList.add("hidden"));
 
-        let trContainer = document.getElementById('trophy-room-container');
+        let trContainer = document.getElementById('trophy-room');
         if (!trContainer) {
             trContainer = document.createElement('div');
-            trContainer.id = 'trophy-room-container';
+            trContainer.id = 'trophy-room';
+            trContainer.className = 'game-container';
             trContainer.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; z-index:15;";
             document.body.appendChild(trContainer);
         }
         trContainer.innerHTML = '';
-        trContainer.style.display = 'block';
-
-        // IMPORTANT: The verification script looks for an element with ID 'trophy-room' to check visibility.
-        // Since Trophy Room is a special state, we must ensure it matches the verification expectation
-        // or update the verification script. Here we alias the ID for the session.
-        // However, 'trophy-room' is the gameId, so the container ID should ideally match.
-        // The previous logic used 'trophy-room-container', but verification checks 'trophy-room'.
-        // Let's create a wrapper or just use the expected ID if possible, but 'trophy-room' might be reserved in registry.
-        // We will add the ID dynamically to satisfy the check if it doesn't conflict.
-        if (trContainer.id !== 'trophy-room') {
-            // We can't easily change ID if we rely on it elsewhere, but we can add a dummy element or
-            // simply ensure the check passes.
-            // Better approach: Assign the ID 'trophy-room' to this container if it doesn't exist.
-            // But let's check if 'trophy-room' is already taken.
-            const existing = document.getElementById('trophy-room');
-            if (existing && existing !== trContainer) existing.remove();
-            trContainer.id = 'trophy-room';
-        }
-
-        trContainer.classList.add('game-container');
         trContainer.classList.remove('hidden');
 
-        // Dynamic Load for Trophy Room
         try {
             const module = await import('./core/TrophyRoom.js');
             requestAnimationFrame(() => {
                 new module.default(trContainer, () => {
-                    trContainer.style.display = 'none';
+                    trContainer.classList.add('hidden');
                     transitionToState(AppState.MENU);
                });
            });
         } catch (err) {
             console.error("Failed to load TrophyRoom:", err);
-            // Fallback
             new PlaceholderGame().init(trContainer);
         }
 
@@ -578,8 +556,6 @@ async function transitionToState(newState, context = {}) {
 
         try {
             let GameClass = null;
-
-            // DYNAMIC IMPORT LOGIC
             if (gameInfo.importFn) {
                 const module = await gameInfo.importFn();
                 GameClass = module.default;
@@ -601,13 +577,11 @@ async function transitionToState(newState, context = {}) {
             }
         } catch (err) {
             console.error(`Failed to initialize game ${gameId}:`, err);
-            // Instantiate Placeholder
             currentGameInstance = new PlaceholderGame();
             currentGameInstance.text = "MODULE NOT FOUND";
             currentGameInstance.subText = `Could not load ${gameInfo.name}`;
             await currentGameInstance.init(container);
 
-            // Allow exit from placeholder
             const btn = document.createElement('button');
             btn.textContent = "Return to Menu";
             btn.className = "absolute top-4 right-4 px-4 py-2 bg-red-600 text-white rounded z-50 pointer-events-auto";
@@ -633,22 +607,16 @@ function showGameOver(score, onRetry) {
     gameOverCount++;
 
     const runGameOverLogic = () => {
-        // Apply Tech Tree Multiplier
         let multiplier = saveSystem.data.upgrades?.coinMultiplier || 1;
 
-        // Daily Challenge Bonus (Double Coins)
         const currentGameId = Object.keys(gameRegistry).find(key => gameRegistry[key].module && currentGameInstance instanceof gameRegistry[key].module);
         const isDaily = currentGameId === dailyChallengeGameId;
 
-        if (isDaily) {
-             multiplier *= 2;
-        }
+        if (isDaily) multiplier *= 2;
 
         const coinsEarned = Math.floor((score / 10) * multiplier);
 
-        if(coinsEarned > 0) {
-            saveSystem.addCurrency(coinsEarned);
-        }
+        if(coinsEarned > 0) saveSystem.addCurrency(coinsEarned);
 
         const content = `
             <p class="mb-4 text-xl">Final Score: <span class="text-yellow-400 font-bold">${score}</span></p>
@@ -664,7 +632,6 @@ function showGameOver(score, onRetry) {
         showOverlay('GAME OVER', content);
         updateHubStats();
 
-        // Bind buttons AFTER showing overlay
         const retryBtn = document.getElementById('overlay-retry-btn');
         const menuBtn = document.getElementById('overlay-menu-btn');
 
@@ -675,11 +642,8 @@ function showGameOver(score, onRetry) {
         };
 
         if (menuBtn) menuBtn.onclick = () => {
-             // 30% Chance to show ad on exit
             if (Math.random() < 0.3) {
-                adsManager.showAd(() => {
-                    transitionToState(AppState.MENU);
-                });
+                adsManager.showAd(() => transitionToState(AppState.MENU));
             } else {
                 transitionToState(AppState.MENU);
             }
@@ -842,31 +806,6 @@ function populateMenuGrid() {
         dailyChallengeGameId = keys[Math.floor(Math.random() * keys.length)];
     }
 
-    Object.entries(gameRegistry).forEach(([id, game]) => {
-        const isDaily = id === dailyChallengeGameId;
-        const card = document.createElement('div');
-
-        let borderClass = isDaily ? "border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)]" : "border-slate-700";
-        card.className = `bg-slate-800/80 backdrop-blur rounded-xl p-4 border ${borderClass} hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden`;
-        
-        card.innerHTML = `
-            ${isDaily ? '<div class="absolute top-0 left-0 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 z-10">DAILY CHALLENGE</div>' : ''}
-            <div class="absolute top-0 right-0 p-2 opacity-50 text-xs uppercase font-bold tracking-wider">${game.category || 'Game'}</div>
-            <div class="flex flex-col items-center text-center gap-3 pt-4">
-                <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-cyan-400 transition-colors shadow-lg shadow-fuchsia-500/20 group-hover:shadow-cyan-500/20">
-                    <i class="${game.icon || 'fas fa-gamepad'}"></i>
-                </div>
-                <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">${game.name}</h3>
-                <p class="text-sm text-slate-400 line-clamp-2">${game.description}</p>
-            </div>
-            <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
-                <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
-            </div>
-        `;
-        
-        card.onmouseenter = () => soundManager.playSound('hover');
-        card.onclick = () => transitionToState(AppState.IN_GAME, { gameId: id });
-        grid.appendChild(card);
     const theme = saveSystem.getEquippedItem('theme') || 'blue';
     const themeColors = {
         blue: { border: 'hover:border-fuchsia-500', icon: 'text-fuchsia-400', shadow: 'shadow-fuchsia-500/20', gradient: 'from-fuchsia-500 to-cyan-500' },
@@ -888,15 +827,20 @@ function populateMenuGrid() {
     Object.keys(categories).sort().forEach(cat => {
         // Category Header
         const header = document.createElement('div');
-        header.className = "col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2";
+        header.className = "col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2 flex items-center";
         header.innerHTML = `<i class="fas fa-layer-group mr-2 text-slate-400"></i> ${cat.toUpperCase()}`;
         grid.appendChild(header);
 
         categories[cat].forEach(game => {
+            const isDaily = game.id === dailyChallengeGameId;
             const card = document.createElement('div');
-            card.className = `bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 ${t.border} transition-all hover:scale-105 cursor-pointer group relative overflow-hidden`;
+
+            let borderClass = isDaily ? "border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)]" : `border-slate-700 ${t.border}`;
+
+            card.className = `bg-slate-800/80 backdrop-blur rounded-xl p-4 border ${borderClass} transition-all hover:scale-105 cursor-pointer group relative overflow-hidden`;
 
             card.innerHTML = `
+                ${isDaily ? '<div class="absolute top-0 left-0 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 z-10">DAILY CHALLENGE</div>' : ''}
                 <div class="flex flex-col items-center text-center gap-3 pt-2">
                     <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl ${t.icon} group-hover:text-white transition-colors shadow-lg ${t.shadow}">
                         <i class="${game.icon || 'fas fa-gamepad'}"></i>
@@ -909,6 +853,7 @@ function populateMenuGrid() {
                 </div>
             `;
 
+            card.onmouseenter = () => soundManager.playSound('hover');
             card.onclick = () => transitionToState(AppState.IN_GAME, { gameId: game.id });
             grid.appendChild(card);
         });
@@ -1018,15 +963,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mute Button Logic
     const muteBtn = document.getElementById('mute-btn-hud');
     const updateMuteIcon = () => {
-        if(soundManager.muted) {
-            muteBtn.innerHTML = '<i class="fas fa-volume-mute text-red-400"></i>';
-        } else {
-             muteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+        if (muteBtn) {
+            muteBtn.innerHTML = soundManager.muted ? '<i class="fas fa-volume-mute text-red-400"></i>' : '<i class="fas fa-volume-up"></i>';
         }
     };
     // Sync initial state
     if (saveSystem.getSettings().muted) {
-        soundManager.toggleMute(); // Defaults to false, so toggle makes true
+        soundManager.toggleMute();
         updateMuteIcon();
     }
 
@@ -1038,22 +981,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Trophy Room Button
     document.getElementById('trophy-btn-menu')?.addEventListener('click', () => {
         transitionToState(AppState.TROPHY_ROOM);
-    });
-
-    const updateMuteIcon = () => {
-        const btn = document.getElementById('mute-btn-hud');
-        if (btn) {
-            btn.innerHTML = soundManager.muted ? '<i class="fas fa-volume-mute text-red-400"></i>' : '<i class="fas fa-volume-up"></i>';
-        }
-    };
-    updateMuteIcon();
-
-    document.getElementById('mute-btn-hud')?.addEventListener('click', () => {
-        soundManager.toggleMute();
-        updateMuteIcon();
     });
 
     const menuGrid = document.getElementById('menu-grid');
@@ -1108,5 +1037,5 @@ window.miniGameHub = {
     gameRegistry,
     goBack: () => transitionToState(AppState.MENU),
     getCurrentGame: () => currentGameInstance,
-    gameRegistry // Exposed for testing/debugging
+    gameRegistry
 };

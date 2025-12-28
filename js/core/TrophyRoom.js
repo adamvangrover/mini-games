@@ -36,6 +36,7 @@ export default class TrophyRoom {
         this.isDragging = false;
         this.previousMousePosition = { x: 0, y: 0 };
         this.navTarget = null;
+        this.joystick = { active: false, origin: {x:0, y:0}, current: {x:0, y:0}, id: null };
 
         if (this.container) {
             this.init(this.container);
@@ -67,6 +68,7 @@ export default class TrophyRoom {
             // Clear container
             this.container.innerHTML = '';
             this.container.appendChild(this.renderer.domElement);
+            this.createVirtualJoystick();
 
             // Add Interaction Overlay
             this.overlay = document.createElement('div');
@@ -99,14 +101,14 @@ export default class TrophyRoom {
 
             this.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
             window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
-            window.addEventListener('touchend', this.onMouseUp.bind(this));
+            window.addEventListener('touchend', this.onTouchEnd.bind(this));
 
 
             // Add "Back" button overlay
             const btn = document.createElement('button');
             btn.id = 'trophy-back-btn';
             btn.innerHTML = '<i class="fas fa-arrow-left"></i> Return to Hub';
-            btn.className = 'absolute top-6 left-6 glass-panel px-6 py-3 rounded-full text-white hover:text-cyan-400 z-50 font-bold uppercase tracking-wider transition-all border border-white/10 hover:border-cyan-500 shadow-lg';
+            btn.className = 'absolute top-6 left-6 glass-panel px-6 py-3 rounded-full text-white hover:text-cyan-400 z-50 font-bold uppercase tracking-wider transition-all border border-white/10 hover:border-cyan-500 shadow-lg pointer-events-auto';
             btn.onclick = () => this.exit();
             this.container.appendChild(btn);
 
@@ -117,6 +119,77 @@ export default class TrophyRoom {
             if(this.container) this.container.innerHTML = '<div class="text-white text-center p-10">Error: WebGL not supported.</div>';
             this.isActive = false;
         }
+    }
+
+    createVirtualJoystick() {
+        this.joystickEl = document.createElement('div');
+        this.joystickEl.id = 'trophy-joystick';
+        this.joystickEl.style.cssText = `
+            position: absolute;
+            bottom: 50px;
+            left: 50px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: none;
+            z-index: 20;
+            touch-action: none;
+        `;
+
+        this.knobEl = document.createElement('div');
+        this.knobEl.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 255, 255, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            pointer-events: none;
+        `;
+
+        this.joystickEl.appendChild(this.knobEl);
+        this.container.appendChild(this.joystickEl);
+
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+            this.joystickEl.style.display = 'block';
+        }
+
+        this.joystickEl.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.changedTouches[0];
+            this.joystick.id = touch.identifier;
+            this.joystick.active = true;
+            this.joystick.origin = { x: touch.clientX, y: touch.clientY };
+            this.joystick.current = { x: touch.clientX, y: touch.clientY };
+            this.updateJoystickVisual();
+        }, { passive: false });
+    }
+
+    updateJoystickVisual() {
+        if (!this.joystick.active) {
+            this.knobEl.style.transform = `translate(-50%, -50%)`;
+            return;
+        }
+        const dx = this.joystick.current.x - this.joystick.origin.x;
+        const dy = this.joystick.current.y - this.joystick.origin.y;
+
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const maxDist = 35;
+
+        let visualX = dx;
+        let visualY = dy;
+
+        if (dist > maxDist) {
+            visualX = (dx / dist) * maxDist;
+            visualY = (dy / dist) * maxDist;
+        }
+
+        this.knobEl.style.transform = `translate(calc(-50% + ${visualX}px), calc(-50% + ${visualY}px))`;
     }
 
     createLights() {
@@ -179,7 +252,6 @@ export default class TrophyRoom {
         const unlocked = this.saveSystem.data.achievements || [];
         const trophies = Object.values(AchievementRegistry);
 
-        // Arrange in rows
         const startZ = -10;
         const spacingX = 4;
         const spacingZ = 4;
@@ -210,7 +282,7 @@ export default class TrophyRoom {
             this.addCollider(ped);
 
             // Trophy Model
-            let trophyColor = 0x444444; // Locked grey
+            let trophyColor = 0x444444;
             let emissive = 0x000000;
 
             if (isUnlocked) {
@@ -222,13 +294,11 @@ export default class TrophyRoom {
             const cupGroup = new THREE.Group();
             cupGroup.position.set(x, 1.4, z);
 
-            // Base
             const baseGeo = new THREE.BoxGeometry(0.5, 0.1, 0.5);
             const baseMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
             const base = new THREE.Mesh(baseGeo, baseMat);
             cupGroup.add(base);
 
-            // Cup Body
             let cupGeo;
             if (THREE.CapsuleGeometry) {
                  cupGeo = new THREE.CapsuleGeometry(0.3, 0.6, 4, 8);
@@ -248,7 +318,6 @@ export default class TrophyRoom {
             cupGroup.add(cup);
 
             if (!isUnlocked) {
-                // Lock Hologram
                 const lockGeo = new THREE.BoxGeometry(0.4, 0.6, 0.1);
                 const lockMat = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, transparent: true, opacity: 0.3 });
                 const lock = new THREE.Mesh(lockGeo, lockMat);
@@ -257,8 +326,6 @@ export default class TrophyRoom {
             }
 
             this.scene.add(cupGroup);
-
-            // Store reference for interaction
             cupGroup.userData = { id: achievement.id, unlocked: isUnlocked, data: achievement };
             this.interactables.push(cupGroup);
         });
@@ -272,10 +339,7 @@ export default class TrophyRoom {
 
         if (this.isDragging) {
              const deltaX = event.clientX - this.previousMousePosition.x;
-             const deltaY = event.clientY - this.previousMousePosition.y;
-
              this.player.rotation.y -= deltaX * 0.003;
-
              this.previousMousePosition = { x: event.clientX, y: event.clientY };
         }
     }
@@ -290,6 +354,16 @@ export default class TrophyRoom {
     }
 
     onTouchStart(event) {
+        let touchingJoystick = false;
+        for(let i=0; i<event.changedTouches.length; i++) {
+             const t = event.changedTouches[i];
+             const el = document.elementFromPoint(t.clientX, t.clientY);
+             if(this.joystickEl && (el === this.joystickEl || this.joystickEl.contains(el))) {
+                 touchingJoystick = true;
+             }
+        }
+        if (touchingJoystick) return;
+
         if(event.touches.length === 1) {
              this.isDragging = true;
              this.previousMousePosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
@@ -297,25 +371,40 @@ export default class TrophyRoom {
     }
 
     onTouchMove(event) {
-        if(this.isDragging && event.touches.length === 1) {
+        if (this.joystick.active) {
+             for(let i=0; i<event.changedTouches.length; i++) {
+                 if (event.changedTouches[i].identifier === this.joystick.id) {
+                     this.joystick.current = { x: event.changedTouches[i].clientX, y: event.changedTouches[i].clientY };
+                     this.updateJoystickVisual();
+                 }
+             }
+        }
+
+        if(this.isDragging && event.touches.length === 1 && !this.joystick.active) {
              const deltaX = event.touches[0].clientX - this.previousMousePosition.x;
              this.player.rotation.y -= deltaX * 0.005;
              this.previousMousePosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
         }
     }
 
-    onClick(event) {
-        if(this.isDragging) return;
+    onTouchEnd(event) {
+        for(let i=0; i<event.changedTouches.length; i++) {
+             if (event.changedTouches[i].identifier === this.joystick.id) {
+                 this.joystick.active = false;
+                 this.updateJoystickVisual();
+             }
+         }
+         this.isDragging = false;
+    }
 
-        // Raycast
-        if (!this.camera) return;
+    onClick(event) {
+        if(this.isDragging || this.joystick.active) return;
+
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
         if (intersects.length > 0) {
             const point = intersects[0].point;
-
-            // Walk to point
             this.navTarget = point;
             this.navTarget.y = this.player.position.y;
         }
@@ -334,14 +423,11 @@ export default class TrophyRoom {
 
         const dt = 0.016; // Approx
 
-        // Handle Movement
         this.handleMovement(dt);
 
-        // Camera Follow
         this.camera.position.copy(this.player.position);
         this.camera.rotation.y = this.player.rotation.y;
 
-        // Raycast for Hover
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
@@ -354,11 +440,10 @@ export default class TrophyRoom {
             }
             if (target && target.userData && target.userData.id) {
                 hovered = target.userData;
-                target.rotation.y += 0.05; // Spin faster
+                target.rotation.y += 0.05;
             }
         }
 
-        // Update Overlay
         if (hovered && this.overlay) {
             this.overlay.classList.remove('hidden');
             const data = hovered.data;
@@ -373,7 +458,6 @@ export default class TrophyRoom {
             this.overlay.classList.add('hidden');
         }
 
-        // Idle Animation
         this.interactables.forEach(obj => {
             obj.rotation.y += 0.01;
             obj.position.y = 1.4 + Math.sin(Date.now() * 0.002 + obj.position.x) * 0.1;
@@ -392,8 +476,20 @@ export default class TrophyRoom {
          if (this.inputManager.isKeyDown('KeyA') || this.inputManager.isKeyDown('ArrowLeft')) velocity.x -= 1;
          if (this.inputManager.isKeyDown('KeyD') || this.inputManager.isKeyDown('ArrowRight')) velocity.x += 1;
 
+         // Joystick
+         if (this.joystick.active) {
+            const dx = this.joystick.current.x - this.joystick.origin.x;
+            const dy = this.joystick.current.y - this.joystick.origin.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist > 10) {
+                velocity.x += dx / 50;
+                velocity.z += dy / 50;
+            }
+         }
+
          if (velocity.length() > 0) {
-             velocity.normalize().multiplyScalar(moveSpeed);
+             if (velocity.length() > 1) velocity.normalize();
+             velocity.multiplyScalar(moveSpeed);
              const euler = new THREE.Euler(0, this.player.rotation.y, 0, 'YXZ');
              velocity.applyEuler(euler);
              this.navTarget = null;
@@ -412,7 +508,6 @@ export default class TrophyRoom {
 
          const nextPos = this.player.position.clone().add(velocity);
 
-         // Bounds Check
          if(Math.abs(nextPos.x) < 18 && Math.abs(nextPos.z) < 18) {
               this.player.position.copy(nextPos);
          }
@@ -420,15 +515,15 @@ export default class TrophyRoom {
 
     exit() {
         this.isActive = false;
-        // Cleanup DOM
+
         const btn = document.getElementById('trophy-back-btn');
         if (btn) btn.remove();
         if (this.overlay) this.overlay.remove();
+        if (this.joystickEl) this.joystickEl.remove();
 
         window.removeEventListener('resize', this.onResize.bind(this));
         window.removeEventListener('mousemove', this.onMouseMove.bind(this));
 
-        // Callback
         if (this.onBack) this.onBack();
     }
 }
