@@ -403,6 +403,11 @@ export default class Store {
             if (this.saveSystem.buyItem(item.id, item.cost)) {
                 this.render();
 
+                // Force Update HUD
+                if (typeof updateHubStats === 'function') {
+                     updateHubStats();
+                }
+
                 // Visual feedback: Particles
                 const particleSystem = ParticleSystem.getInstance();
                 if (particleSystem) {

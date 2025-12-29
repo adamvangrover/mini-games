@@ -291,10 +291,28 @@ export default class TetrisGame {
         // Neon Glow Global
         this.ctx.shadowBlur = 10;
 
+        this.drawGrid(); // Add Grid
         this.drawBoard();
         this.drawPiece();
 
         this.ctx.restore();
+    }
+
+    drawGrid() {
+        this.ctx.strokeStyle = "rgba(0, 255, 255, 0.1)"; // Faint cyan
+        this.ctx.lineWidth = 0.05;
+        this.ctx.shadowBlur = 0; // No glow for grid
+
+        this.ctx.beginPath();
+        for (let c = 0; c <= this.cols; c++) {
+            this.ctx.moveTo(c, 0);
+            this.ctx.lineTo(c, this.rows);
+        }
+        for (let r = 0; r <= this.rows; r++) {
+            this.ctx.moveTo(0, r);
+            this.ctx.lineTo(this.cols, r);
+        }
+        this.ctx.stroke();
     }
 
     drawBoard() {
@@ -304,10 +322,11 @@ export default class TetrisGame {
                     const color = this.colors[value - 1];
                     this.ctx.fillStyle = color;
                     this.ctx.shadowColor = color; // Glow matches block
+                    this.ctx.shadowBlur = 15;
 
                     this.ctx.fillRect(x, y, 1, 1);
                     this.ctx.lineWidth = 0.05;
-                    this.ctx.strokeStyle = 'rgba(255,255,255,0.5)'; // Brighter stroke
+                    this.ctx.strokeStyle = 'rgba(255,255,255,0.8)'; // Brighter stroke
                     this.ctx.strokeRect(x, y, 1, 1);
 
                     // Highlight
@@ -324,6 +343,7 @@ export default class TetrisGame {
         const color = this.currentPiece.color;
         this.ctx.fillStyle = color;
         this.ctx.shadowColor = color;
+        this.ctx.shadowBlur = 20;
 
         this.currentPiece.shape.forEach((row, y) => {
             row.forEach((value, x) => {
@@ -331,9 +351,12 @@ export default class TetrisGame {
                     const px = this.currentPiece.x + x;
                     const py = this.currentPiece.y + y;
 
+                    // Ghost Position Check
+                    // (Simplified: just draw active piece vividly)
+
                     this.ctx.fillRect(px, py, 1, 1);
                     this.ctx.lineWidth = 0.05;
-                    this.ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                    this.ctx.strokeStyle = 'rgba(255,255,255,0.8)';
                     this.ctx.strokeRect(px, py, 1, 1);
 
                      // Highlight

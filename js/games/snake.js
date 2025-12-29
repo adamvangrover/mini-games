@@ -229,27 +229,57 @@ export default class SnakeGame {
         }
 
         // --- Neon Styling ---
-        this.ctx.shadowBlur = 15;
+        // Enhanced Neon Effect with layers for extra glow
+
+        // 1. Grid (Subtle background)
+        this.ctx.strokeStyle = "#002200";
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        for (let x = 0; x <= this.canvas.width; x += this.tileSize) {
+            this.ctx.moveTo(x, 0);
+            this.ctx.lineTo(x, this.canvas.height);
+        }
+        for (let y = 0; y <= this.canvas.height; y += this.tileSize) {
+            this.ctx.moveTo(0, y);
+            this.ctx.lineTo(this.canvas.width, y);
+        }
+        this.ctx.stroke();
+
+        // 2. Snake Body
+        this.ctx.shadowBlur = 20;
         this.ctx.shadowColor = "#00ff00";
         this.ctx.strokeStyle = "#00ff00";
         this.ctx.lineWidth = 2;
 
         this.snake.forEach((segment, index) => {
-            // Head is slightly brighter
-            this.ctx.fillStyle = index === 0 ? "#ccffcc" : "#00ff00";
-            this.ctx.fillRect(segment.x * this.tileSize, segment.y * this.tileSize, this.tileSize - 2, this.tileSize - 2);
+            // Head is slightly brighter and white-ish
+            this.ctx.fillStyle = index === 0 ? "#ccffcc" : "#39ff14"; // Neon Green
+
+            // Draw segment with rounded effect
+            const px = segment.x * this.tileSize + 1;
+            const py = segment.y * this.tileSize + 1;
+            const size = this.tileSize - 2;
+
+            this.ctx.fillRect(px, py, size, size);
+            this.ctx.strokeRect(px, py, size, size);
         });
 
-        // Food Pulse
-        this.ctx.shadowColor = "#ff4500";
-        this.ctx.shadowBlur = 20 + Math.sin(this.foodPulse) * 10;
-        this.ctx.fillStyle = "#ff4500";
+        // 3. Food Pulse
+        const glow = 20 + Math.sin(this.foodPulse) * 10;
+        this.ctx.shadowColor = "#ff0055"; // Pink/Red Neon
+        this.ctx.shadowBlur = glow;
+        this.ctx.fillStyle = "#ff0055";
+
+        const cx = this.food.x * this.tileSize + this.tileSize/2;
+        const cy = this.food.y * this.tileSize + this.tileSize/2;
+        const r = (this.tileSize/2 - 2) * (1 + Math.sin(this.foodPulse * 2) * 0.1);
+
         this.ctx.beginPath();
-        this.ctx.arc(this.food.x * this.tileSize + this.tileSize/2, this.food.y * this.tileSize + this.tileSize/2, this.tileSize/2 - 2, 0, Math.PI * 2);
+        this.ctx.arc(cx, cy, r, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // Reset Shadow
-        this.ctx.shadowBlur = 0;
+        // Reset Shadow for particles
+        this.ctx.shadowBlur = 10;
 
         // Draw Particles
         this.particleSystem.draw(this.ctx);

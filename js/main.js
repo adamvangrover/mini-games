@@ -111,6 +111,12 @@ function mainLoop(timestamp) {
                 if (currentGameInstance.draw) currentGameInstance.draw();
             }
             break;
+        case AppState.PAUSED:
+            // Keep drawing the game so it doesn't disappear, but do NOT update state
+            if (currentGameInstance && currentGameInstance.draw) {
+                currentGameInstance.draw();
+            }
+            break;
         case AppState.MENU:
             if (arcadeHub && is3DView) {
                 if (arcadeHub.update) arcadeHub.update(deltaTime);
@@ -618,13 +624,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('trophy-btn-menu')?.addEventListener('click', () => transitionToState(AppState.TROPHY_ROOM));
 
     // Swipe Support for Menu
-    const menuGrid = document.getElementById('menu'); 
+    const menuGrid = document.getElementById('menu-grid');
     let touchStartX = 0;
     if (menuGrid) {
         menuGrid.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
         menuGrid.addEventListener('touchend', e => {
             const touchEndX = e.changedTouches[0].screenX;
-            if (touchStartX - touchEndX > 50) { /* Swiped Left Logic Placeholder */ }
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 50) {
+                 // Simple scroll support if needed, or trigger category switch
+                 // For now, let's just allow native scrolling but prevent default if it's horizontal
+                 // Actually, native scrolling is better for grid.
+                 // But let's add logic to switch "3D View" to "Grid View" on swipe up if on mobile landing
+            }
         }, {passive: true});
     }
 
