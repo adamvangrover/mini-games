@@ -1,57 +1,64 @@
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
+import time
 
-def verify_hub():
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        # Emulate desktop size
-        context = browser.new_context(viewport={'width': 1280, 'height': 720})
-        page = context.new_page()
+def verify_hub(page):
+    # Capture console logs
+    page.on("console", lambda msg: print(f"BROWSER LOG: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"BROWSER ERROR: {err}"))
 
-        print("Navigating to Hub...")
-        page.goto("http://localhost:8000/index.html")
+    print("Navigating to hub...")
+    page.goto("http://localhost:8000")
 
-        # Wait for loading
-        page.wait_for_timeout(3000)
+    print("Waiting for loader...")
+    loader = page.locator("#app-loader")
+    expect(loader).to_be_hidden(timeout=10000)
 
-        # Check if Canvas is present
-        print("Checking for canvas...")
-        canvas = page.locator("canvas")
-        if canvas.count() > 0:
-            print("Canvas found.")
-            page.screenshot(path="verification/hub_3d.png")
-        else:
-            print("Canvas NOT found!")
-            # Maybe it fell back to grid?
-            page.screenshot(path="verification/hub_failed.png")
+    print("Checking Grid View...")
+    # Force Grid View if not already
+    menu_grid = page.locator("#menu-grid")
 
-        # Test switching to Grid View
-        print("Switching to Grid View...")
-        toggle_btn = page.locator("#view-toggle-btn")
-        if toggle_btn.is_visible():
-            toggle_btn.click()
-            page.wait_for_timeout(1000)
-            page.screenshot(path="verification/hub_grid.png")
+    # Check if we need to toggle
+    # If menu-grid is hidden (display: none or class hidden), toggle.
+    if not menu_grid.is_visible():
+        print("Menu grid hidden, toggling view...")
+        page.locator("#view-toggle-btn").click()
+        expect(menu_grid).to_be_visible()
 
-            # Verify Categories
-            headers = page.locator("#menu-grid h2")
-            count = headers.count()
-            print(f"Found {count} category headers.")
-            if count > 0:
-                print("Categories verified.")
-            else:
-                print("No category headers found!")
-        else:
-            print("Toggle button not visible.")
+    # Launch Snake (Classic Game)
+    print("Launching Snake...")
+    # Find Snake card
+    # Use exact text match to be sure
+    snake_card = page.locator("div.cursor-pointer", has=page.locator("h3", has_text="Snake")).first
 
-        # Test Trophy Room
-        print("Testing Trophy Room transition...")
-        # Reload to reset state easily or switch back?
-        # Let's use evaluate to force transition if button hard to click in 3D
-        page.evaluate("window.miniGameHub.transitionToState('TROPHY_ROOM')")
-        page.wait_for_timeout(3000)
-        page.screenshot(path="verification/trophy_room.png")
+    # Scroll into view just in case
+    snake_card.scroll_into_view_if_needed()
+    snake_card.click()
 
-        browser.close()
+    # Wait for game container
+    print("Waiting for #snake-game to be visible...")
+    expect(page.locator("#snake-game")).to_be_visible(timeout=5000)
+
+    # Check for Neon Canvas
+    canvas = page.locator("#snakeCanvas")
+    expect(canvas).to_be_visible()
+
+    page.screenshot(path="verification/snake_game.png")
+    print("Screenshot saved: snake_game.png")
+
+    # Exit Game
+    page.locator("#snake-game .back-btn").click()
+    expect(page.locator("#snake-game")).to_be_hidden()
+
+    print("Verification Complete.")
 
 if __name__ == "__main__":
-    verify_hub()
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        try:
+            verify_hub(page)
+        except Exception as e:
+            print(f"Error: {e}")
+            page.screenshot(path="verification/error.png")
+        finally:
+            browser.close()

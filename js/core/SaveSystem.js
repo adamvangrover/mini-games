@@ -96,6 +96,20 @@ export default class SaveSystem {
         return { ...this.getDefaultData(), ...data, version: this.currentVersion };
     }
 
+    /**
+     * Explicit check for save data integrity.
+     * Can be called on load to verify crucial fields.
+     */
+    verifyIntegrity() {
+        if (!this.data || typeof this.data !== 'object') {
+             console.error("SaveSystem: Integrity Check Failed. resetting.");
+             this.data = this.getDefaultData();
+             this.save();
+             return false;
+        }
+        return true;
+    }
+
     createBackup() {
         const raw = localStorage.getItem(this.storageKey);
         if (raw) {

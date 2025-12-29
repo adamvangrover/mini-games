@@ -210,16 +210,27 @@ export default class PongGame {
         this.ctx.fillStyle = "#d946ef"; // Fuchsia-500
         this.ctx.shadowBlur = 20;
         this.ctx.shadowColor = "#d946ef";
+
+        // Add stroke for extra definition
+        this.ctx.strokeStyle = "#ffffff";
+        this.ctx.lineWidth = 1;
+
         this.ctx.fillRect(this.player1.x, this.player1.y, this.paddleWidth, this.paddleHeight);
+        this.ctx.strokeRect(this.player1.x, this.player1.y, this.paddleWidth, this.paddleHeight);
+
         this.ctx.fillRect(this.player2.x, this.player2.y, this.paddleWidth, this.paddleHeight);
+        this.ctx.strokeRect(this.player2.x, this.player2.y, this.paddleWidth, this.paddleHeight);
 
         // Ball (Neon)
         this.ctx.shadowBlur = 20;
         this.ctx.shadowColor = "#22d3ee";
         this.ctx.fillStyle = "#22d3ee"; // Cyan-400
+        this.ctx.strokeStyle = "#ffffff";
+
         this.ctx.beginPath();
         this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
         this.ctx.fill();
+        this.ctx.stroke();
         this.ctx.closePath();
 
         // Net (Neon)
