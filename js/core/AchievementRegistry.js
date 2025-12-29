@@ -63,6 +63,30 @@ export const AchievementRegistry = {
         icon: 'fa-gamepad',
         xp: 50,
         gameId: 'global'
+    },
+    'clicker-millionaire': {
+        id: 'clicker-millionaire',
+        title: 'Tycoon',
+        description: 'Earn $1,000,000 in Neon Idle',
+        icon: 'fa-money-bill-wave',
+        xp: 500,
+        gameId: 'clicker-game'
+    },
+    'runner-coins-50': {
+        id: 'runner-coins-50',
+        title: 'Scavenger',
+        description: 'Collect 50 coins in one run',
+        icon: 'fa-coins',
+        xp: 200,
+        gameId: 'runner-game'
+    },
+    'runner-score-1000': {
+        id: 'runner-score-1000',
+        title: 'Marathon',
+        description: 'Run 1000m in Neon Runner',
+        icon: 'fa-person-running',
+        xp: 300,
+        gameId: 'runner-game'
     }
 };
 

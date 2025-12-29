@@ -2,11 +2,12 @@ import SaveSystem from './SaveSystem.js';
 import InputManager from './InputManager.js';
 
 export default class ArcadeHub {
-    constructor(container, gameRegistry, onGameSelect, onFallback) {
+    constructor(container, gameRegistry, onGameSelect, onFallback, dailyChallengeGameId) {
         this.container = container;
         this.gameRegistry = gameRegistry;
         this.onGameSelect = onGameSelect;
         this.onFallback = onFallback;
+        this.dailyChallengeGameId = dailyChallengeGameId;
 
         // Core Three.js components
         this.scene = null;
@@ -38,6 +39,9 @@ export default class ArcadeHub {
 
         // Target for click-to-move
         this.navTarget = null;
+
+        // Particles
+        this.particles = [];
 
         this.init();
     }
@@ -93,6 +97,7 @@ export default class ArcadeHub {
             this.createRoom(colors);
             this.organizeLayout();
             this.createTeleporter();
+            this.createDustParticles(colors.grid);
 
             // --- Event Listeners ---
             window.addEventListener('resize', this.onResize.bind(this));
@@ -117,6 +122,33 @@ export default class ArcadeHub {
             console.error("ArcadeHub: WebGL Initialization Failed.", e);
             if (this.onFallback) this.onFallback();
         }
+    }
+
+    createDustParticles(color) {
+        const particleCount = 200;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const sizes = new Float32Array(particleCount);
+
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 60; // X
+            positions[i * 3 + 1] = Math.random() * 10; // Y
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 80; // Z
+            sizes[i] = Math.random() * 0.1;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+        const material = new THREE.PointsMaterial({
+            color: color,
+            size: 0.1,
+            transparent: true,
+            opacity: 0.6
+        });
+
+        this.dustSystem = new THREE.Points(geometry, material);
+        this.scene.add(this.dustSystem);
     }
 
     createCeilingLight(x, y, z, color, intensity, distance) {
@@ -251,10 +283,13 @@ export default class ArcadeHub {
         canvas.width = 512;
         canvas.height = 128;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = 'rgba(0,0,0,0)'; // Transparent
-        ctx.fillRect(0, 0, 512, 128);
 
-        ctx.font = 'bold 60px "Press Start 2P", Arial';
+        // Border
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(10, 10, 492, 108);
+
+        ctx.font = 'bold 50px "Press Start 2P", Arial';
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -287,9 +322,6 @@ export default class ArcadeHub {
         const padMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xffaa00, emissiveIntensity: 0.5 });
         const pad = new THREE.Mesh(padGeo, padMat);
         group.add(pad);
-
-        // Particles
-        // (Simplified for this file)
 
         // Label
         const canvas = document.createElement('canvas');
@@ -328,6 +360,8 @@ export default class ArcadeHub {
         group.position.set(x, y, z);
         group.rotation.y = rotation;
 
+        const isDaily = id === this.dailyChallengeGameId;
+
         // Fetch Equipped Style
         const saveSystem = SaveSystem.getInstance();
         const cabinetStyle = saveSystem.getEquippedItem('cabinet') || 'default';
@@ -362,6 +396,12 @@ export default class ArcadeHub {
         ctx.textAlign = 'center';
         ctx.fillText(gameInfo.name, 128, 100);
 
+        if (isDaily) {
+             ctx.font = 'bold 16px Arial';
+             ctx.fillStyle = '#ffff00';
+             ctx.fillText("DAILY CHALLENGE", 128, 140);
+        }
+
         const tex = new THREE.CanvasTexture(canvas);
         const screenMat = new THREE.MeshBasicMaterial({ map: tex });
         const screen = new THREE.Mesh(screenGeo, screenMat);
@@ -379,6 +419,26 @@ export default class ArcadeHub {
         this.scene.add(group);
         this.addCollider(body);
         this.cabinets.push(group);
+
+        // Daily Challenge Glow
+        if (isDaily) {
+            const glowGeo = new THREE.BoxGeometry(1.3, 2.3, 1.1);
+            const glowMat = new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.2, side: THREE.BackSide, blending: THREE.AdditiveBlending });
+            const glow = new THREE.Mesh(glowGeo, glowMat);
+            glow.position.y = 1.1;
+            group.add(glow);
+
+            // Floating star
+            const starGeo = new THREE.SphereGeometry(0.2, 8, 8);
+            const starMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+            const star = new THREE.Mesh(starGeo, starMat);
+            star.position.set(0, 3, 0);
+            group.add(star);
+
+            // Animation for star handled in update manually or by tween
+            group.userData.hasStar = true;
+            group.userData.star = star;
+        }
     }
 
     getNeonColor(id) {
@@ -403,6 +463,19 @@ export default class ArcadeHub {
         // Movement Logic
         this.handleMovement(dt);
         this.checkInteractions();
+
+        // Animate Daily Stars
+        this.cabinets.forEach(cab => {
+            if (cab.userData.hasStar && cab.userData.star) {
+                cab.userData.star.rotation.y += dt;
+                cab.userData.star.position.y = 3 + Math.sin(Date.now() * 0.005) * 0.2;
+            }
+        });
+
+        // Animate Dust
+        if (this.dustSystem) {
+             this.dustSystem.rotation.y += dt * 0.05;
+        }
     }
 
     handleMovement(dt) {

@@ -5,7 +5,7 @@ export default class SaveSystem {
         }
 
         this.storageKey = 'miniGameHub_v1';
-        this.currentVersion = 1.2; // Schema Version
+        this.currentVersion = 1.3; // Schema Version
         this.data = this.load();
 
         SaveSystem.instance = this;
@@ -92,6 +92,15 @@ export default class SaveSystem {
             data.version = 1.2;
         }
 
+        // Migration 1.2 -> 1.3 (Add Daily Challenge)
+        if (data.version < 1.3) {
+            console.log("SaveSystem: Migrating to 1.3...");
+            if (!data.dailyChallenge) {
+                data.dailyChallenge = null;
+            }
+            data.version = 1.3;
+        }
+
         // Always merge with default to ensure all fields exist (Schema Enforcement)
         return { ...this.getDefaultData(), ...data, version: this.currentVersion };
     }
@@ -127,7 +136,8 @@ export default class SaveSystem {
             equipped: {
                 theme: 'theme_neon_blue',
                 avatar: 'fas fa-user-astronaut',
-                cabinet: 'default'
+                cabinet: 'default',
+                trophy_room: 'default'
             },
             stats: {},
             xp: 0,
@@ -136,7 +146,8 @@ export default class SaveSystem {
                 coinMultiplier: 1,
                 xpBoost: 1,
                 startHealth: 0
-            }
+            },
+            dailyChallenge: null // { gameId: string, date: string }
         };
     }
 
@@ -145,6 +156,17 @@ export default class SaveSystem {
             this.data.settings = this.getDefaultData().settings;
         }
         return this.data.settings;
+    }
+
+    getGameConfig(gameId) {
+        if (!this.data.gameConfigs) this.data.gameConfigs = {};
+        return this.data.gameConfigs[gameId] || {};
+    }
+
+    setGameConfig(gameId, config) {
+        if (!this.data.gameConfigs) this.data.gameConfigs = {};
+        this.data.gameConfigs[gameId] = config;
+        this.save();
     }
 
     getSetting(key) {
@@ -156,6 +178,19 @@ export default class SaveSystem {
             this.data.settings = { muted: false, adsEnabled: true };
         }
         this.data.settings[key] = value;
+        this.save();
+    }
+
+    // --- Daily Challenge ---
+    getDailyChallenge() {
+        return this.data.dailyChallenge;
+    }
+
+    setDailyChallenge(gameId) {
+        this.data.dailyChallenge = {
+            gameId: gameId,
+            date: new Date().toDateString()
+        };
         this.save();
     }
 
@@ -212,6 +247,10 @@ export default class SaveSystem {
 
     getEquippedItem(category) {
         return (this.data.equipped && this.data.equipped[category]) || null;
+    }
+
+    getProfile() {
+        return this.data.profile || this.getDefaultData().profile;
     }
 
     addCurrency(amount) {

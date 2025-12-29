@@ -2,6 +2,7 @@
 import SaveSystem from './SaveSystem.js';
 import { AchievementRegistry } from './AchievementRegistry.js';
 import InputManager from './InputManager.js';
+import SoundManager from './SoundManager.js';
 
 /**
  * Renders a 3D Trophy Room scene using Three.js.
@@ -313,11 +314,21 @@ export default class TrophyRoom {
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
         if (intersects.length > 0) {
-            const point = intersects[0].point;
+            let obj = intersects[0].object;
+            // Bubble up to group
+            while(obj.parent && !obj.userData.id) {
+                obj = obj.parent;
+            }
 
-            // Walk to point
-            this.navTarget = point;
-            this.navTarget.y = this.player.position.y;
+            if (obj.userData && obj.userData.id) {
+                 SoundManager.getInstance().playSound('click');
+                 // Maybe trigger a detail view here? For now just sound.
+            } else {
+                 const point = intersects[0].point;
+                 // Walk to point
+                 this.navTarget = point;
+                 this.navTarget.y = this.player.position.y;
+            }
         }
     }
 

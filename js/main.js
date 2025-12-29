@@ -820,8 +820,18 @@ function populateMenuGrid() {
 
     // Pick Daily Challenge if not set
     if (!dailyChallengeGameId) {
-        const keys = Object.keys(gameRegistry);
-        dailyChallengeGameId = keys[Math.floor(Math.random() * keys.length)];
+        // Try to load from SaveSystem
+        const savedChallenge = saveSystem.getDailyChallenge();
+        const today = new Date().toDateString();
+
+        if (savedChallenge && savedChallenge.date === today && gameRegistry[savedChallenge.gameId]) {
+             dailyChallengeGameId = savedChallenge.gameId;
+        } else {
+             // Generate new
+             const keys = Object.keys(gameRegistry).filter(k => gameRegistry[k].category !== 'System');
+             dailyChallengeGameId = keys[Math.floor(Math.random() * keys.length)];
+             saveSystem.setDailyChallenge(dailyChallengeGameId);
+        }
     }
 
     Object.entries(gameRegistry).forEach(([id, game]) => {
@@ -848,7 +858,8 @@ function populateMenuGrid() {
         
         card.onmouseenter = () => soundManager.playSound('hover');
         card.onclick = () => transitionToState(AppState.IN_GAME, { gameId: id });
-        grid.appendChild(card);
+    });
+
     const theme = saveSystem.getEquippedItem('theme') || 'blue';
     const themeColors = {
         blue: { border: 'hover:border-fuchsia-500', icon: 'text-fuchsia-400', shadow: 'shadow-fuchsia-500/20', gradient: 'from-fuchsia-500 to-cyan-500' },
@@ -947,7 +958,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const menuGrid = document.getElementById('menu-grid');
                 if(menuGrid) menuGrid.classList.remove('hidden');
-            }
+            },
+            dailyChallengeGameId // Pass Daily Challenge ID
         );
 
         document.getElementById("menu").classList.remove("hidden");
@@ -1000,6 +1012,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mute Button Logic
     const muteBtn = document.getElementById('mute-btn-hud');
     const updateMuteIcon = () => {
+        if (!muteBtn) return;
         if(soundManager.muted) {
             muteBtn.innerHTML = '<i class="fas fa-volume-mute text-red-400"></i>';
         } else {
@@ -1007,10 +1020,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     // Sync initial state
-    if (saveSystem.getSettings().muted) {
-        soundManager.toggleMute(); // Defaults to false, so toggle makes true
-        updateMuteIcon();
+    if (saveSystem.getSettings().muted && !soundManager.muted) {
+        soundManager.toggleMute();
     }
+    updateMuteIcon();
 
     if (muteBtn) {
         muteBtn.addEventListener('click', () => {
@@ -1023,19 +1036,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Trophy Room Button
     document.getElementById('trophy-btn-menu')?.addEventListener('click', () => {
         transitionToState(AppState.TROPHY_ROOM);
-    });
-
-    const updateMuteIcon = () => {
-        const btn = document.getElementById('mute-btn-hud');
-        if (btn) {
-            btn.innerHTML = soundManager.muted ? '<i class="fas fa-volume-mute text-red-400"></i>' : '<i class="fas fa-volume-up"></i>';
-        }
-    };
-    updateMuteIcon();
-
-    document.getElementById('mute-btn-hud')?.addEventListener('click', () => {
-        soundManager.toggleMute();
-        updateMuteIcon();
     });
 
     const menuGrid = document.getElementById('menu-grid');
