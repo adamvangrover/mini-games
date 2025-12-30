@@ -404,7 +404,9 @@ export default class Store {
                 this.render();
 
                 // Force Update HUD
-                if (typeof updateHubStats === 'function') {
+                if (typeof window.updateHubStats === 'function') {
+                     window.updateHubStats();
+                } else if (typeof updateHubStats === 'function') {
                      updateHubStats();
                 }
 

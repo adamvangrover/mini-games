@@ -473,13 +473,17 @@ function showSettingsOverlay() {
     };
 }
 
-function updateHubStats() {
+window.updateHubStats = function updateHubStats() {
     const currency = saveSystem.getCurrency();
     const ids = ['total-currency', 'total-currency-hud'];
     ids.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = currency;
     });
+}
+
+function updateHubStats() {
+    window.updateHubStats();
 }
 
 function toggleView() {
