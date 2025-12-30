@@ -7,6 +7,7 @@ import ArcadeHub from './core/ArcadeHub.js';
 import Store from './core/Store.js';
 import MobileControls from './core/MobileControls.js';
 import AdsManager from './core/AdsManager.js';
+import BossMode from './core/BossMode.js';
 import DevConsole from './core/DevConsole.js';
 import PlaceholderGame from './games/PlaceholderGame.js';
 
@@ -657,8 +658,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 1500);
 
+    // Boss Mode Logic
+    const bossMode = new BossMode();
+
     document.addEventListener('keydown', (e) => {
+        // Toggle Boss Mode with Alt+B
+        if (e.altKey && (e.key === 'b' || e.key === 'B')) {
+            bossMode.toggle();
+
+            // Logic to sync with Game Loop State
+            if (bossMode.isActive) {
+                if (currentState === AppState.IN_GAME) {
+                    // Force Pause in Main Loop
+                    currentState = AppState.PAUSED;
+                    // Note: BossMode handles its own UI, so we just set state to stop updates
+                }
+            }
+            return;
+        }
+
         if (e.key === 'Escape') {
+            // If Boss Mode is active, Escape exits it
+            if (bossMode.isActive) {
+                bossMode.toggle(false);
+                return;
+            }
+
             const globalOverlay = document.getElementById('global-overlay');
             const storeOverlay = document.getElementById('store-overlay');
 
