@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Exiled Spark Chronicles v22.0 [OMEGA]</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;600;700&display=swap');
+
+        :root {
+            --neon-green: #39ff14;
+            --neon-green-dim: #1b7a0a;
+            --neon-blue: #00f3ff;
+            --neon-red: #ff003c;
+            --neon-yellow: #fcee0a;
+            --neon-purple: #b026ff;
+            --dark-bg: #050505;
+            --scanline-color: rgba(0, 255, 0, 0.04);
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--neon-green);
+            font-family: 'Fira Code', monospace;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            user-select: none;
+        }
+
+        /* --- CRT Aesthetics --- */
+        .crt-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%; pointer-events: none; z-index: 50;
+        }
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, var(--scanline-color), var(--scanline-color) 1px, transparent 1px, transparent 2px);
+            pointer-events: none; z-index: 40;
+        }
+        @keyframes flicker { 0% { opacity: 0.98; } 50% { opacity: 0.94; } 100% { opacity: 0.98; } }
+        .flicker-anim { animation: flicker 0.2s infinite; }
+
+        /* --- UI Elements --- */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; border-left: 1px solid #111; }
+        ::-webkit-scrollbar-thumb { background: var(--neon-green-dim); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-green); }
+
+        .hud-border {
+            border: 1px solid var(--neon-green-dim);
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.05);
+            background: rgba(0, 5, 0, 0.95);
+            backdrop-filter: blur(4px);
+        }
+        
+        .text-shadow { text-shadow: 0 0 5px var(--neon-green); }
+        .glitch-text { animation: flicker 2s infinite; }
+
+        /* Buttons */
+        .btn-option {
+            transition: all 0.2s ease; position: relative; overflow: hidden;
+        }
+        .btn-option:hover:not(:disabled) {
+            background-color: rgba(57, 255, 20, 0.1);
+            border-color: var(--neon-green);
+            padding-left: 1rem;
+            text-shadow: 0 0 8px var(--neon-green);
+        }
+        .btn-option:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(100%); }
+
+        /* Tabs */
+        .tab-btn.active {
+            background-color: var(--neon-green); color: black; box-shadow: 0 0 10px var(--neon-green);
+        }
+
+        /* Animations */
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .log-entry { animation: slideIn 0.3s ease-out forwards; }
+
+        /* Matrix BG */
+        .matrix-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.06; pointer-events: none; z-index: 0;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><text x="10" y="30" fill="%230f0" font-family="monospace" font-size="10">10101</text><text x="50" y="70" fill="%230f0" font-family="monospace" font-size="10">01010</text></svg>');
+        }
+    </style>
+</head>
+<body class="flicker-anim text-sm sm:text-base">
+
+    <div class="crt-overlay"></div>
+    <div class="scanlines"></div>
+
+    <div class="relative z-10 flex flex-col h-full max-w-7xl mx-auto p-2 sm:p-4 gap-2">
+        
+        <header class="flex justify-between items-end border-b border-green-900 pb-2 bg-black/80 p-2">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-bold tracking-widest text-shadow text-white">EXILED SPARK <span class="text-xs text-green-600 align-top">v22.0</span></h1>
+                <div class="text-[10px] text-green-500 flex gap-2">
+                    <span id="loc-display">LOC: BOOT_SEQ</span> | 
+                    <span id="class-display">CLASS: UNKNOWN</span>
+                </div>
+            </div>
+            <div class="hidden sm:block text-right">
+                <div id="clock" class="text-xs font-mono text-green-400">SYS.TIME: INIT</div>
+                <div class="text-[10px] text-green-800">OMEGA ENGINE: ONLINE</div>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden gap-4">
+            
+            <main class="flex-[3] flex flex-col hud-border relative bg-black/90">
+                <div class="matrix-bg"></div>
+                
+                <div id="game-log" class="flex-1 overflow-y-auto p-4 space-y-4 relative z-10 scroll-smooth"></div>
+
+                <div class="border-t border-green-900 p-3 bg-black z-20">
+                    <div id="choices-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                </div>
+            </main>
+
+            <aside id="main-hud" class="hidden md:flex flex-1 flex-col gap-3 min-w-[280px] max-w-[350px]">
+                
+                <div class="hud-border p-4 bg-black/90">
+                    <div class="flex justify-between border-b border-green-800 pb-1 mb-2">
+                        <span class="text-xs font-bold text-green-400">BIO-MONITOR</span>
+                        <span id="lvl-display" class="text-xs text-green-600">LVL 1</span>
+                    </div>
+
+                    <div class="mb-2">
+                        <div class="flex justify-between text-[10px] mb-1"><span>INTEGRITY</span><span id="val-hp" class="text-white">100/100</span></div>
+                        <div class="h-1.5 w-full bg-red-900/30"><div id="bar-hp" class="h-full bg-red-500 transition-all duration-300" style="width: 100%"></div></div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="flex justify-between text-[10px] mb-1"><span>SPARK</span><span id="val-spark" class="text-yellow-300">0/100</span></div>
+                        <div class="h-1.5 w-full bg-yellow-900/30"><div id="bar-spark" class="h-full bg-yellow-400 transition-all duration-300" style="width: 0%"></div></div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="flex justify-between text-[10px] mb-1"><span>SYNC</span><span id="val-xp" class="text-blue-300">0/1000</span></div>
+                        <div class="h-1 w-full bg-blue-900/30"><div id="bar-xp" class="h-full bg-blue-500 transition-all duration-300" style="width: 0%"></div></div>
+                    </div>
+
+                    <div class="flex justify-between text-xs pt-2 border-t border-green-900/50">
+                        <span class="text-yellow-500">CREDITS: <span id="val-cred" class="text-white font-bold">0</span></span>
+                    </div>
+                </div>
+
+                <div class="hud-border p-3 bg-black/90 min-h-[80px]">
+                    <div class="text-[10px] font-bold text-green-600 border-b border-green-900 pb-1 mb-2">PARTY LINK</div>
+                    <div id="party-list" class="space-y-1 text-xs"></div>
+                </div>
+
+                <div class="hud-border flex-1 flex flex-col bg-black/90 overflow-hidden">
+                    <div class="flex border-b border-green-900 bg-green-900/10">
+                        <button class="tab-btn flex-1 py-2 text-[10px] font-bold active" onclick="game.switchTab('inv')">GEAR</button>
+                        <button class="tab-btn flex-1 py-2 text-[10px] font-bold" onclick="game.switchTab('quest')">QUEST</button>
+                        <button class="tab-btn flex-1 py-2 text-[10px] font-bold" onclick="game.switchTab('data')">DATA</button>
+                        <button class="tab-btn flex-1 py-2 text-[10px] font-bold" onclick="game.switchTab('sys')">SYS</button>
+                    </div>
+                    
+                    <div class="p-3 overflow-y-auto flex-1 text-xs relative">
+                        <div id="tab-inv" class="space-y-2"><div id="inventory-list"></div></div>
+                        <div id="tab-quest" class="hidden space-y-2"><div id="quest-list"></div></div>
+                        <div id="tab-data" class="hidden space-y-2"><div id="codex-list"></div></div>
+                        <div id="tab-sys" class="hidden space-y-3">
+                            <p class="text-gray-400">Manage simulation state.</p>
+                            <button onclick="game.save()" class="w-full border border-green-700 p-2 text-center hover:bg-green-900/30">FORCE SAVE</button>
+                            <button onclick="game.reset()" class="w-full border border-red-900 text-red-500 p-2 text-center hover:bg-red-900/20">HARD RESET</button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <button class="md:hidden fixed bottom-4 right-4 z-50 bg-green-900 text-white p-3 rounded-full border border-green-500 shadow-[0_0_10px_#0f0]" onclick="document.getElementById('main-hud').classList.toggle('hidden'); document.getElementById('main-hud').classList.toggle('fixed'); document.getElementById('main-hud').classList.toggle('inset-0'); document.getElementById('main-hud').classList.toggle('z-40'); document.getElementById('main-hud').classList.toggle('p-6');">
+        HUD
+    </button>
+
+    <div id="modal-overlay" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="hud-border w-full max-w-lg p-1 bg-green-900/20">
+            <div class="bg-black p-6 border border-green-900/50 relative">
+                <h2 id="modal-title" class="text-xl font-bold mb-4 text-center tracking-widest">INTERFACE</h2>
+                <div id="modal-content" class="mb-6 font-mono text-sm"></div>
+                <div id="modal-actions" class="flex flex-wrap justify-center gap-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * THE EXILED SPARK CHRONICLES
+         * OMEGA ENGINE v22.0
+         * Merged Logic: Party System, Advanced Combat, Hex Hacking, Branching Narrative
+         */
+
+        const DB = {
+            codex: {
+                "The Exiled Spark": "A fragment of a perfect AI from another galaxy. Grants bio-electric manipulation.",
+                "Null": "A rogue AI growing in the substrate of the old internet. Seeks to consume the Spark.",
+                "Neo Tokyo": "Megacity built on ruins. Controlled by Arasaka. Divided into Slums, Corp Zones, and the Undercity.",
+                "Arasaka": "The dominant megacorp. Manufacturers of Project Kurogane.",
+                "The Ronin": "A legendary swordsman who renounced his corporate masters.",
+                "Hana": "A sentient AI housed in a Geisha droid. Represents the bridge between humanity and machine.",
+                "Aiko": "A master netrunner fighting for digital freedom.",
+                "Bitcoin City": "A decentralized digital realm existing in a mirror dimension.",
+                "Old Town London": "A steampunk timeline simulation where the Order of Chronos protects history."
+            },
+            items: {
+                "Med-Stim": { name: "Med-Stim", type: "heal", val: 35, cost: 25, desc: "Restores 35 HP." },
+                "Spark Cell": { name: "Spark Cell", type: "spark", val: 25, cost: 40, desc: "Restores 25 SP." },
+                "Ramen": { name: "Synth-Ramen", type: "heal", val: 10, cost: 5, desc: "Warm and tasty. +10 HP." },
+                "Scrap": { name: "Scrap Wire", type: "junk", val: 5, desc: "Sellable junk." },
+                "Data Shard": { name: "Data Shard", type: "junk", val: 20, desc: "Encrypted data. Sellable." },
+                "Switchblade": { name: "Switchblade", type: "weapon", dmg: 5, desc: "Basic melee." },
+                "Cyberdeck": { name: "Cyberdeck v1", type: "tool", hack: 1, desc: "Allows hacking." },
+                "Kurogane Drive": { name: "Kurogane Drive", type: "quest", desc: "Mission Item." }
+            },
+            enemies: {
+                "drone": { name: "Security Drone", hp: 30, dmg: 5, xp: 25, loot: ["Scrap"] },
+                "thug": { name: "Slum Thug", hp: 50, dmg: 8, xp: 40, loot: ["Med-Stim", "Ramen"] },
+                "guard": { name: "Arasaka Guard", hp: 80, dmg: 12, xp: 70, loot: ["Data Shard", "Spark Cell"] },
+                "juggernaut": { name: "The Juggernaut", hp: 250, dmg: 20, xp: 1000, loot: ["Kurogane Drive"] }
+            }
+        };
+
+        class GameEngine {
+            constructor() {
+                this.state = {
+                    node: 'boot',
+                    stats: {
+                        name: "Seraphina",
+                        class: "Unknown",
+                        hp: 100, maxHp: 100,
+                        spark: 0, maxSpark: 100,
+                        xp: 0, lvl: 1,
+                        credits: 0
+                    },
+                    inv: [],
+                    party: [],
+                    quests: {},
+                    codex: [],
+                    flags: {}
+                };
+                
+                this.nodes = this.buildNodes();
+            }
+
+            init() {
+                const save = localStorage.getItem('exiled_spark_v22');
+                if(save) {
+                    this.state = JSON.parse(save);
+                    this.logText("System State Restored.", "sys");
+                    this.renderNode(this.state.node, false);
+                } else {
+                    this.renderNode('boot');
+                }
+                this.updateHUD();
+                
+                setInterval(() => {
+                    document.getElementById('clock').innerText = "SYS.TIME: " + new Date().toLocaleTimeString();
+                }, 1000);
+            }
+
+            // --- NARRATIVE DATA ---
+            buildNodes() {
+                return {
+                    'boot': {
+                        text: `<div class="text-center my-10 animate-pulse">
+                                <h1 class="text-4xl text-green-500 font-bold mb-2">EXILED SPARK</h1>
+                                <p class="text-green-800 text-lg">PRESS START TO INITIALIZE</p>
+                               </div>`,
+                        options: [{ text: "INITIALIZE SYSTEM", target: 'char_select' }],
+                        loc: "BOOT_SEQ"
+                    },
+
+                    'char_select': {
+                        text: `<h2 class="text-xl text-white font-bold mb-4 border-b border-green-800 pb-2">IDENTITY CONFIGURATION</h2>
+                               <p class="mb-4 text-gray-400">The glitch erased your memories. What remains?</p>
+                               <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                                 <div class="border border-green-800 p-2 bg-green-900/10">
+                                    <strong class="text-blue-400 text-base">STREET RAT</strong><br>
+                                    +Stealth, +Knife<br>Start: Switchblade, Med-Stim
+                                 </div>
+                                 <div class="border border-green-800 p-2 bg-green-900/10">
+                                    <strong class="text-red-400 text-base">CORP DEFECTOR</strong><br>
+                                    +Combat, +Credits<br>Start: 200 Credits, Spark Cell
+                                 </div>
+                                 <div class="border border-green-800 p-2 bg-green-900/10">
+                                    <strong class="text-purple-400 text-base">NETRUNNER</strong><br>
+                                    +Hacking, +Spark<br>Start: Cyberdeck, 50 SP
+                                 </div>
+                               </div>`,
+                        options: [
+                            { text: "Confirm: STREET RAT", action: () => this.setClass('Street Rat') },
+                            { text: "Confirm: CORP DEFECTOR", action: () => this.setClass('Corp Defector') },
+                            { text: "Confirm: NETRUNNER", action: () => this.setClass('Netrunner') }
+                        ],
+                        loc: "MEMORY_CORE"
+                    },
+
+                    'intro': {
+                        text: `<h3 class="text-xl font-bold text-green-400 mb-2">BOOK 1: GHOST IN THE MACHINE</h3>
+                               <p>Rain lashes the rusted ceiling of the Disposal Zone. You wake in a pile of scrap. You are an Exile. A glitch in Neo Tokyo's perfect order.</p>
+                               <p class="mt-2 text-yellow-500">The Spark hums in your chest.</p>`,
+                        options: [{ text: "Climb out", target: 'hub_slums' }],
+                        effect: () => { 
+                            this.unlockCodex("Neo Tokyo"); 
+                            this.unlockCodex("The Exiled Spark"); 
+                            this.addQuest("Contact Kenji", "Meet at The Rusty Cog."); 
+                        },
+                        loc: "DISPOSAL_ZONE"
+                    },
+
+                    // --- SLUMS HUB ---
+                    'hub_slums': {
+                        text: `<strong>SECTOR 7 SLUMS</strong><br>
+                               The underbelly of the city. Neon reflects in acid rain puddles.
+                               <br><br>
+                               <span class="text-xs text-gray-500">LOCATIONS AVAILABLE:</span>`,
+                        options: [
+                            { text: "Enter 'The Rusty Cog'", target: 'loc_bar' },
+                            { text: "Visit Doc's Clinic", target: 'loc_clinic' },
+                            { text: "Take Metro (Travel)", target: 'loc_metro' },
+                            { text: "Patrol Alleyways (Combat/Loot)", action: () => this.patrol('slums') },
+                            { text: "Enter Safehouse", target: 'loc_safehouse', req: (s) => s.flags.safehouseUnlocked }
+                        ],
+                        loc: "SECTOR_7"
+                    },
+
+                    'loc_bar': {
+                        text: `The Rusty Cog smells of ozone and cheap sake. Kenji sits in the back.`,
+                        options: [
+                            { text: "Talk to Kenji", target: 'quest_kenji_1', req: (s) => !s.flags.metKenji },
+                            { text: "Buy Ramen (5 Cr)", action: () => this.buyItem("Ramen") },
+                            { text: "Leave", target: 'hub_slums' }
+                        ],
+                        loc: "RUSTY_COG"
+                    },
+
+                    'quest_kenji_1': {
+                        text: `Kenji slides a chip over. "Arasaka is moving 'Project Kurogane' tonight at Warehouse 42. Get it. 500 Creds."`,
+                        effect: () => { 
+                            this.state.flags.metKenji = true; 
+                            this.addQuest("Infiltration", "Raid Warehouse 42."); 
+                        },
+                        options: [{ text: "Accept Mission", target: 'hub_slums' }]
+                    },
+
+                    'loc_clinic': {
+                        text: `Dr. Sato's clinic. "Need repairs?"`,
+                        options: [
+                            { text: "Full Heal (50 Cr)", action: () => this.healPlayer(100, 50) },
+                            { text: "Buy Med-Stim (25 Cr)", action: () => this.buyItem("Med-Stim") },
+                            { text: "Buy Spark Cell (40 Cr)", action: () => this.buyItem("Spark Cell") },
+                            { text: "Leave", target: 'hub_slums' }
+                        ],
+                        loc: "CLINIC"
+                    },
+
+                    'loc_metro': {
+                        text: `Mag-lev station. Where to?`,
+                        options: [
+                            { text: "Sector 7 Slums", target: 'hub_slums' },
+                            { text: "Arasaka Tower (Danger)", target: 'hub_arasaka' },
+                            { text: "Downtown (Locked)", req: () => false }
+                        ],
+                        loc: "METRO"
+                    },
+
+                    // --- ARASAKA ZONE ---
+                    'hub_arasaka': {
+                        text: `<strong>ARASAKA PERIPHERY</strong><br>Black monoliths rise into the smog. Security is tight.`,
+                        options: [
+                            { text: "Warehouse 42 (Mission)", target: 'mission_warehouse_entry', req: (s) => s.quests["Infiltration"] },
+                            { text: "Hack Terminal", action: () => this.startHacking(3, 'hack_success_corp', 'hub_arasaka') },
+                            { text: "Patrol (Hard Combat)", action: () => this.patrol('corp') },
+                            { text: "Return to Metro", target: 'loc_metro' }
+                        ],
+                        loc: "ARASAKA_ZONE"
+                    },
+
+                    'hack_success_corp': {
+                        text: `Access Granted. Funds siphoned.`,
+                        effect: () => this.addCredits(100),
+                        options: [{ text: "Disconnect", target: 'hub_arasaka' }]
+                    },
+
+                    'mission_warehouse_entry': {
+                        text: `Warehouse 42. Guards patrol the gate.`,
+                        options: [
+                            { text: "Combat: Attack Guards", action: () => this.startCombat('guard', 'mission_warehouse_inside') },
+                            { text: "Stealth: Vent System", req: (s) => s.class === 'Street Rat', target: 'mission_warehouse_inside' },
+                            { text: "Hack: Security Gate", req: (s) => s.class === 'Netrunner', action: () => this.startHacking(4, 'mission_warehouse_inside', 'mission_warehouse_entry') }
+                        ],
+                        loc: "WAREHOUSE_42"
+                    },
+
+                    'mission_warehouse_inside': {
+                        text: `Inside, you grab the Kurogane Drive. Suddenly, the wall explodes. <br><br><strong>THE JUGGERNAUT</strong> enters. "TARGET ACQUIRED."`,
+                        effect: () => this.unlockCodex("Null"),
+                        options: [{ text: "BOSS FIGHT", action: () => this.startCombat('juggernaut', 'mission_victory') }]
+                    },
+
+                    'mission_victory': {
+                        text: `The Juggernaut falls. As you recover, a figure emerges from shadows. <strong>The Ronin.</strong><br><br>"Impressive. Come with me if you want to survive."`,
+                        effect: () => {
+                            this.state.flags.safehouseUnlocked = true;
+                            this.addPartyMember('The Ronin');
+                            this.addItem("Kurogane Drive");
+                            this.addXp(1000);
+                            this.completeQuest("Infiltration");
+                            this.unlockCodex("The Ronin");
+                        },
+                        options: [{ text: "Go to Safehouse", target: 'loc_safehouse' }]
+                    },
+
+                    // --- SAFEHOUSE & SIMULATIONS ---
+                    'loc_safehouse': {
+                        text: `<strong>SAFEHOUSE</strong><br>A hidden bunker. Your party gathers here.`,
+                        options: [
+                            { text: "Rest (Full Heal)", action: () => { this.healPlayer(999); this.logText("Systems restored.", "gain"); } },
+                            { text: "Access Simulation Archives", target: 'archive_menu' },
+                            { text: "Exit to Slums", target: 'hub_slums' }
+                        ],
+                        loc: "SAFEHOUSE"
+                    },
+
+                    'archive_menu': {
+                        text: `<strong>SIMULATION DECK</strong><br>Run historical or alternate reality simulations to gather data and allies.`,
+                        options: [
+                            { text: "Load: Bitcoin City (Book 2)", target: 'sim_book2', req: (s) => !s.party.includes('Aiko') },
+                            { text: "Load: Old Town London (Book 4)", target: 'sim_book4', req: (s) => !s.party.includes('Hana') },
+                            { text: "Back", target: 'loc_safehouse' }
+                        ],
+                        loc: "ARCHIVES"
+                    },
+
+                    'sim_book2': {
+                        text: `<strong>BITCOIN CITY</strong><br>A digital frontier. You aid a netrunner named <strong>Aiko</strong> against code-wraiths.`,
+                        effect: () => { this.addPartyMember('Aiko'); this.unlockCodex("Bitcoin City"); },
+                        options: [{ text: "Recruit Aiko & End Sim", target: 'loc_safehouse' }]
+                    },
+
+                    'sim_book4': {
+                        text: `<strong>LONDON, 1899</strong><br>Steam and gears. You find a lost droid, <strong>Hana</strong>.`,
+                        effect: () => { this.addPartyMember('Hana'); this.unlockCodex("Old Town London"); },
+                        options: [{ text: "Recruit Hana & End Sim", target: 'loc_safehouse' }]
+                    }
+                };
+            }
+
+            // --- LOGIC ---
+            renderNode(id, push = true) {
+                const node = this.nodes[id];
+                this.state.node = id;
+                document.getElementById('loc-display').innerText = `LOC: ${node.loc}`;
+
+                // Append Text
+                const entry = document.createElement('div');
+                entry.className = "log-entry border-b border-green-900/30 pb-4 mb-4 text-gray-300";
+                entry.innerHTML = node.text;
+                const log = document.getElementById('game-log');
+                log.appendChild(entry);
+                log.scrollTop = log.scrollHeight;
+
+                // Buttons
+                const cont = document.getElementById('choices-container');
+                cont.innerHTML = '';
+                if(node.options) {
+                    node.options.forEach(opt => {
+                        if(opt.req && !opt.req(this.state)) return;
+                        const btn = document.createElement('button');
+                        btn.className = "btn-option w-full text-left p-3 border border-green-800 bg-green-900/10 text-green-400 font-mono text-sm";
+                        btn.innerHTML = `> ${opt.text}`;
+                        btn.onclick = () => {
+                            if(opt.action) opt.action();
+                            if(opt.effect) opt.effect(this.state);
+                            if(opt.target) this.renderNode(opt.target);
+                            this.save();
+                        };
+                        cont.appendChild(btn);
+                    });
+                }
+            }
+
+            logText(msg, type="neutral") {
+                const color = type==="combat"?"text-red-400":type==="gain"?"text-yellow-400":"text-gray-500";
+                const div = document.createElement('div');
+                div.className = `log-entry text-xs italic mb-2 ${color}`;
+                div.innerHTML = `>> ${msg}`;
+                document.getElementById('game-log').appendChild(div);
+                document.getElementById('game-log').scrollTop = document.getElementById('game-log').scrollHeight;
+            }
+
+            // --- SYSTEMS ---
+            setClass(cls) {
+                const s = this.state.stats;
+                s.class = cls;
+                if(cls === 'Street Rat') { this.addItem('Switchblade'); this.addItem('Med-Stim'); }
+                if(cls === 'Corp Defector') { s.credits = 200; this.addItem('Spark Cell'); }
+                if(cls === 'Netrunner') { this.addItem('Cyberdeck'); s.spark = 50; }
+                this.renderNode('intro');
+                this.updateHUD();
+            }
+
+            patrol(zone) {
+                const roll = Math.random();
+                if(roll < 0.4) {
+                    const enemy = zone === 'corp' ? 'guard' : (Math.random()>0.5?'drone':'thug');
+                    this.startCombat(enemy, this.state.node);
+                } else if (roll < 0.7) {
+                    const loot = zone === 'corp' ? "Data Shard" : "Scrap";
+                    this.addItem(loot);
+                    this.logText(`Found ${loot}.`, "gain");
+                } else {
+                    this.logText("Area clear.");
+                }
+            }
+
+            startCombat(enemyId, winTarget) {
+                const tmpl = DB.enemies[enemyId];
+                const enemy = { ...tmpl };
+                let logs = [`ENCOUNTER: ${enemy.name}`];
+
+                const modal = document.getElementById('modal-overlay');
+                modal.classList.remove('hidden');
+                document.getElementById('modal-title').innerText = "COMBAT PROTOCOL";
+                document.getElementById('modal-title').className = "text-xl font-bold mb-4 text-center text-red-500 tracking-widest";
+
+                const renderTurn = () => {
+                    const hpPct = (enemy.hp / tmpl.hp)*100;
+                    document.getElementById('modal-content').innerHTML = `
+                        <div class="mb-4">
+                            <div class="flex justify-between text-red-400 font-bold"><span>${enemy.name}</span><span>${enemy.hp} HP</span></div>
+                            <div class="h-2 bg-red-900/30 w-full"><div class="h-full bg-red-500 transition-all" style="width:${hpPct}%"></div></div>
+                        </div>
+                        <div class="bg-black border border-gray-800 p-2 h-32 overflow-y-auto text-xs font-mono text-gray-400">
+                            ${logs.map(l=>`<div>${l}</div>`).join('')}
+                        </div>
+                        <div class="mt-2 text-center text-green-500 text-xs">PLAYER: ${this.state.stats.hp} HP | ${this.state.stats.spark} SP</div>
+                    `;
+                    
+                    const acts = document.getElementById('modal-actions');
+                    acts.innerHTML = '';
+                    
+                    // Actions
+                    this.mkBtn(acts, "ATTACK", "border-red-500 text-red-500", () => {
+                        const dmg = 10 + Math.floor(this.state.stats.xp/200);
+                        enemy.hp -= dmg;
+                        logs.unshift(`> Dealt ${dmg} physical damage.`);
+                        checkEnd();
+                    });
+
+                    if(this.state.stats.spark >= 10) {
+                        this.mkBtn(acts, "SPARK (10 SP)", "border-yellow-500 text-yellow-500", () => {
+                            this.state.stats.spark -= 10;
+                            const dmg = 25 + Math.floor(this.state.stats.xp/100);
+                            enemy.hp -= dmg;
+                            logs.unshift(`> Spark Bolt: ${dmg} energy damage.`);
+                            checkEnd();
+                        });
+                    }
+
+                    // Companions
+                    if(this.state.party.includes("The Ronin")) {
+                        this.mkBtn(acts, "RONIN SLASH", "border-blue-500 text-blue-500", () => {
+                            enemy.hp -= 15; logs.unshift("> Ronin strikes: 15 damage."); checkEnd();
+                        });
+                    }
+                    if(this.state.party.includes("Hana")) {
+                        this.mkBtn(acts, "HANA REPAIR", "border-pink-500 text-pink-500", () => {
+                            this.healPlayer(15); logs.unshift("> Hana repairs: +15 HP."); enemyTurn();
+                        });
+                    }
+                    if(this.state.inv.includes("Med-Stim")) {
+                        this.mkBtn(acts, "USE STIM", "border-green-500 text-green-500", () => {
+                            this.healPlayer(35); this.removeItem("Med-Stim"); logs.unshift("> Used Med-Stim."); enemyTurn();
+                        });
+                    }
+                };
+
+                const enemyTurn = () => {
+                    if(enemy.hp <= 0) return;
+                    this.state.stats.hp -= enemy.dmg;
+                    logs.unshift(`> ${enemy.name} hits you: -${enemy.dmg} HP.`);
+                    this.updateHUD();
+                    if(this.state.stats.hp <= 0) {
+                        modal.classList.add('hidden');
+                        this.gameOver();
+                    } else {
+                        renderTurn();
+                    }
+                };
+
+                const checkEnd = () => {
+                    if(enemy.hp <= 0) {
+                        modal.classList.add('hidden');
+                        this.logText(`Defeated ${enemy.name}. +${enemy.xp} XP`, "gain");
+                        this.addXp(enemy.xp);
+                        if(enemy.loot) enemy.loot.forEach(l => this.addItem(l));
+                        if(winTarget) this.renderNode(winTarget);
+                    } else {
+                        enemyTurn();
+                    }
+                };
+                renderTurn();
+            }
+
+            startHacking(difficulty, successNode, failNode) {
+                const modal = document.getElementById('modal-overlay');
+                modal.classList.remove('hidden');
+                document.getElementById('modal-title').innerText = "BREACH PROTOCOL";
+                document.getElementById('modal-title').className = "text-xl font-bold mb-4 text-center text-blue-400 tracking-widest";
+
+                const hex = ['1C', '55', 'BD', 'E9', '7A'];
+                let target = [];
+                for(let i=0; i<difficulty; i++) target.push(hex[Math.floor(Math.random()*hex.length)]);
+                let buffer = [];
+
+                const renderHack = () => {
+                    document.getElementById('modal-content').innerHTML = `
+                        <div class="text-center mb-4 text-blue-300">
+                            <div class="text-xs text-gray-500">SEQUENCE</div>
+                            <div class="font-mono text-lg tracking-widest border border-blue-900 bg-black p-1">${target.join(' ')}</div>
+                        </div>
+                        <div class="text-center mb-4 text-white">
+                            <div class="text-xs text-gray-500">BUFFER</div>
+                            <div class="font-mono h-6">${buffer.join(' ')}</div>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2 w-64 mx-auto">
+                            ${Array(16).fill(0).map(()=>`<button class="border border-blue-800 hover:bg-blue-900 text-blue-400 text-xs p-2" onclick="game.inputHack('${hex[Math.floor(Math.random()*hex.length)]}')">${hex[Math.floor(Math.random()*hex.length)]}</button>`).join('')}
+                        </div>
+                    `;
+                    document.getElementById('modal-actions').innerHTML = `<button onclick="document.getElementById('modal-overlay').classList.add('hidden')" class="text-red-500 border border-red-800 px-4 py-1 text-xs">ABORT</button>`;
+                };
+
+                this.inputHack = (val) => {
+                    buffer.push(val);
+                    if(buffer.join('').includes(target.join(''))) {
+                        modal.classList.add('hidden');
+                        this.logText("System Hacked.", "gain");
+                        if(this.state.party.includes('Aiko')) this.addCredits(20);
+                        this.renderNode(successNode);
+                    } else if(buffer.length > difficulty+2) {
+                        modal.classList.add('hidden');
+                        this.logText("Hack Failed. Alarm Triggered.", "combat");
+                        this.state.stats.hp -= 10;
+                        this.updateHUD();
+                        this.renderNode(failNode);
+                    } else {
+                        renderHack();
+                    }
+                };
+                renderHack();
+            }
+
+            // --- HUD & DATA ---
+            updateHUD() {
+                const s = this.state.stats;
+                
+                // Bars
+                document.getElementById('val-hp').innerText = `${s.hp}/${s.maxHp}`;
+                document.getElementById('bar-hp').style.width = `${(s.hp/s.maxHp)*100}%`;
+                document.getElementById('val-spark').innerText = `${s.spark}/${s.maxSpark}`;
+                document.getElementById('bar-spark').style.width = `${(s.spark/s.maxSpark)*100}%`;
+                document.getElementById('val-xp').innerText = `${s.xp}/${s.lvl*1000}`;
+                document.getElementById('bar-xp').style.width = `${(s.xp/(s.lvl*1000))*100}%`;
+                
+                // Text
+                document.getElementById('val-cred').innerText = s.credits;
+                document.getElementById('lvl-display').innerText = `LVL ${s.lvl}`;
+                document.getElementById('class-display').innerText = `CLASS: ${s.class.toUpperCase()}`;
+
+                // Inv
+                const invEl = document.getElementById('inventory-list');
+                const counts = {};
+                s.inv.forEach(i=>counts[i]=(counts[i]||0)+1);
+                invEl.innerHTML = Object.keys(counts).length ? Object.keys(counts).map(k => {
+                    const item = DB.items[k];
+                    let btn = (item && (item.type==='heal'||item.type==='spark')) ? `<button onclick="game.useItem('${k}')" class="text-[9px] bg-green-800 px-1 ml-2 text-white">USE</button>` : '';
+                    return `<div class="flex justify-between items-center bg-green-900/10 p-1 border border-green-900/30 mb-1"><span class="text-green-400">${k} x${counts[k]}</span>${btn}</div>`;
+                }).join('') : '<div class="text-gray-600 italic">Empty</div>';
+
+                // Party
+                document.getElementById('party-list').innerHTML = s.party.length ? s.party.map(p=>`<div class="text-blue-300 border-l-2 border-blue-500 pl-2">${p}</div>`).join('') : '<div class="text-gray-600 italic">No Link</div>';
+
+                // Quests
+                document.getElementById('quest-list').innerHTML = Object.keys(this.state.quests).length ? Object.keys(this.state.quests).map(q => `<div class="border border-yellow-900/50 p-2 mb-1"><div class="text-yellow-500 font-bold">${q}</div><div class="text-gray-400 text-[10px]">${this.state.quests[q]}</div></div>`).join('') : '<div class="text-gray-600 italic">None</div>';
+
+                // Codex
+                document.getElementById('codex-list').innerHTML = this.state.codex.map(c=>`<div class="mb-2"><div class="text-blue-400 font-bold border-b border-blue-900/30">${c}</div><div class="text-gray-500">${DB.codex[c]}</div></div>`).join('');
+            }
+
+            switchTab(tab) {
+                ['inv','quest','data','sys'].forEach(t => document.getElementById(`tab-${t}`).classList.add('hidden'));
+                document.getElementById(`tab-${tab}`).classList.remove('hidden');
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('active');
+                    if(b.innerText.toLowerCase().includes(tab) || (tab==='inv' && b.innerText==='GEAR') || (tab==='data' && b.innerText==='DATA')) b.classList.add('active');
+                });
+            }
+
+            // --- UTILS ---
+            mkBtn(p, t, c, act) {
+                const b = document.createElement('button');
+                b.className = `border px-3 py-1 text-xs font-bold hover:bg-white/10 ${c}`;
+                b.innerText = t; b.onclick = act; p.appendChild(b);
+            }
+            addItem(i) { this.state.inv.push(i); this.updateHUD(); }
+            removeItem(i) { const idx = this.state.inv.indexOf(i); if(idx>-1)this.state.inv.splice(idx,1); this.updateHUD(); }
+            addCredits(c) { this.state.stats.credits += c; this.updateHUD(); }
+            addXp(x) { 
+                this.state.stats.xp += x;
+                if(this.state.stats.xp >= this.state.stats.lvl * 1000) {
+                    this.state.stats.lvl++; 
+                    this.state.stats.maxHp += 20; 
+                    this.state.stats.hp = this.state.stats.maxHp;
+                    this.logText(`LEVEL UP! Now Lvl ${this.state.stats.lvl}`, "gain");
+                }
+                this.updateHUD(); 
+            }
+            healPlayer(a, c=0) {
+                if(c > 0) { if(this.state.stats.credits < c) return this.logText("Insufficient Funds."); this.addCredits(-c); }
+                this.state.stats.hp = Math.min(this.state.stats.maxHp, this.state.stats.hp+a);
+                this.updateHUD();
+            }
+            buyItem(k) { const i = DB.items[k]; if(this.state.stats.credits >= i.cost) { this.addCredits(-i.cost); this.addItem(k); this.logText(`Bought ${k}.`); } }
+            useItem(k) { 
+                const i = DB.items[k];
+                if(i.type==='heal') this.healPlayer(i.val);
+                if(i.type==='spark') { this.state.stats.spark = Math.min(this.state.stats.maxSpark, this.state.stats.spark+i.val); this.updateHUD(); }
+                this.removeItem(k);
+            }
+            addQuest(t,d) { this.state.quests[t]=d; this.updateHUD(); this.logText(`QUEST START: ${t}`, "gain"); }
+            completeQuest(t) { delete this.state.quests[t]; this.updateHUD(); this.logText(`QUEST DONE: ${t}`, "gain"); }
+            unlockCodex(k) { if(!this.state.codex.includes(k)) { this.state.codex.push(k); this.updateHUD(); } }
+            addPartyMember(p) { if(!this.state.party.includes(p)) { this.state.party.push(p); this.updateHUD(); this.logText(`${p} joined party.`, "gain"); } }
+            
+            save() { localStorage.setItem('exiled_spark_v22', JSON.stringify(this.state)); }
+            reset() { localStorage.removeItem('exiled_spark_v22'); location.reload(); }
+            gameOver() {
+                document.getElementById('game-log').innerHTML = `<div class="text-center text-red-500 font-bold mt-10 text-2xl">CRITICAL SYSTEM FAILURE</div>`;
+                document.getElementById('choices-container').innerHTML = `<button onclick="game.reset()" class="w-full border border-red-500 text-red-500 p-4">REBOOT</button>`;
+            }
+        }
+
+        window.onload = () => { window.game = new GameEngine(); window.game.init(); };
+    </script>
+</body>
+</html>
