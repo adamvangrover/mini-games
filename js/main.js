@@ -631,6 +631,17 @@ document.addEventListener('DOMContentLoaded', () => {
         updateMuteIcon();
     });
 
+    // Boss Mode Button
+    document.getElementById('boss-btn-hud')?.addEventListener('click', () => {
+        const bossMode = BossMode.instance;
+        if (bossMode) {
+             bossMode.toggle();
+             if (bossMode.isActive && currentState === AppState.IN_GAME) {
+                currentState = AppState.PAUSED;
+             }
+        }
+    });
+
     document.getElementById('trophy-btn-menu')?.addEventListener('click', () => transitionToState(AppState.TROPHY_ROOM));
 
     // Swipe Support for Menu
