@@ -346,4 +346,57 @@ export default class AdsManager {
 
         this.tickerContent.textContent = text;
     }
+
+    // --- Popup System (Immersive Ads) ---
+    createPopup(title, content, bgColor = "bg-slate-800") {
+        const popup = document.createElement('div');
+        const x = Math.random() * (window.innerWidth - 300);
+        const y = Math.random() * (window.innerHeight - 200);
+
+        popup.className = `fixed z-[200] w-80 rounded-lg shadow-2xl border border-white/20 overflow-hidden flex flex-col animate-bounce`;
+        popup.style.left = `${x}px`;
+        popup.style.top = `${y}px`;
+
+        popup.innerHTML = `
+            <div class="h-8 ${bgColor} border-b border-white/10 flex items-center justify-between px-3 cursor-move">
+                <span class="text-white font-bold text-xs truncate">${title}</span>
+                <button class="text-white/50 hover:text-white transition-colors close-btn">&times;</button>
+            </div>
+            <div class="bg-black/90 p-4 text-white text-sm">
+                ${content}
+            </div>
+        `;
+
+        document.body.appendChild(popup);
+
+        // Basic Drag Logic
+        const header = popup.querySelector('div');
+        let isDragging = false;
+        let startX, startY, initialLeft, initialTop;
+
+        header.onmousedown = (e) => {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            initialLeft = popup.offsetLeft;
+            initialTop = popup.offsetTop;
+            popup.style.zIndex = 201; // Bring to front
+        };
+
+        window.onmousemove = (e) => {
+            if (!isDragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            popup.style.left = `${initialLeft + dx}px`;
+            popup.style.top = `${initialTop + dy}px`;
+        };
+
+        window.onmouseup = () => { isDragging = false; };
+
+        // Close Logic
+        popup.querySelector('.close-btn').onclick = () => popup.remove();
+
+        // Auto-remove after time
+        setTimeout(() => popup.remove(), 10000);
+    }
 }
