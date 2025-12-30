@@ -173,6 +173,18 @@ export default class SaveSystem {
         this.save();
     }
 
+    getProfile() {
+        if (!this.data.profile) {
+            this.data.profile = this.getDefaultData().profile;
+        }
+        return this.data.profile;
+    }
+
+    setProfile(profileData) {
+        this.data.profile = { ...this.getProfile(), ...profileData };
+        this.save();
+    }
+
     // ... (Rest of the getters/setters remain largely the same, but saving logic needs to be robust)
 
     incrementStat(key, amount = 1) {
