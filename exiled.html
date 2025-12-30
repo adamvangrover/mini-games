@@ -3,170 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Exiled Spark Chronicles v22.0 [OMEGA]</title>
+    <title>Exiled Spark: Omega Ascension v31.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neon-green': '#39ff14',
+                        'neon-green-dim': '#1b7a0a',
+                        'neon-blue': '#00f3ff',
+                        'neon-pink': '#ff0099',
+                        'neon-red': '#ff003c',
+                        'neon-yellow': '#fcee0a',
+                        'neon-purple': '#b026ff',
+                        'void': '#050505',
+                        'panel': '#0a0f0a'
+                    },
+                    fontFamily: {
+                        'mono': ['"Fira Code"', 'monospace', 'ui-monospace', 'SFMono-Regular']
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'glitch': 'glitch 1s linear infinite',
+                    },
+                    keyframes: {
+                        glitch: {
+                            '2%, 64%': { transform: 'translate(2px,0) skew(0deg)' },
+                            '4%, 60%': { transform: 'translate(-2px,0) skew(0deg)' },
+                            '62%': { transform: 'translate(0,0) skew(5deg)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;600;700&display=swap');
 
-        :root {
-            --neon-green: #39ff14;
-            --neon-green-dim: #1b7a0a;
-            --neon-blue: #00f3ff;
-            --neon-red: #ff003c;
-            --neon-yellow: #fcee0a;
-            --neon-purple: #b026ff;
-            --dark-bg: #050505;
-            --scanline-color: rgba(0, 255, 0, 0.04);
-        }
-
         body {
-            background-color: var(--dark-bg);
-            color: var(--neon-green);
+            background-color: #000;
+            color: #39ff14;
             font-family: 'Fira Code', monospace;
             overflow: hidden;
             height: 100vh;
             width: 100vw;
-            user-select: none;
         }
 
-        /* --- CRT Aesthetics --- */
-        .crt-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 2px, 3px 100%; pointer-events: none; z-index: 50;
-        }
+        /* --- CRT FX --- */
         .scanlines {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: repeating-linear-gradient(0deg, var(--scanline-color), var(--scanline-color) 1px, transparent 1px, transparent 2px);
-            pointer-events: none; z-index: 40;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+            position: absolute; inset: 0; z-index: 50;
         }
-        @keyframes flicker { 0% { opacity: 0.98; } 50% { opacity: 0.94; } 100% { opacity: 0.98; } }
-        .flicker-anim { animation: flicker 0.2s infinite; }
+        .flicker { animation: flicker 0.15s infinite; pointer-events: none; opacity: 0.05; background: white; position: absolute; inset: 0; z-index: 51; }
+        @keyframes flicker { 0% { opacity: 0.02; } 50% { opacity: 0.05; } 100% { opacity: 0.02; } }
 
-        /* --- UI Elements --- */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #000; border-left: 1px solid #111; }
-        ::-webkit-scrollbar-thumb { background: var(--neon-green-dim); }
-        ::-webkit-scrollbar-thumb:hover { background: var(--neon-green); }
-
-        .hud-border {
-            border: 1px solid var(--neon-green-dim);
-            box-shadow: 0 0 15px rgba(57, 255, 20, 0.05);
-            background: rgba(0, 5, 0, 0.95);
+        /* --- UI Components --- */
+        .hud-panel {
+            background: rgba(5, 10, 5, 0.95);
+            border: 1px solid #1b7a0a;
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.05);
             backdrop-filter: blur(4px);
         }
         
-        .text-shadow { text-shadow: 0 0 5px var(--neon-green); }
-        .glitch-text { animation: flicker 2s infinite; }
-
-        /* Buttons */
-        .btn-option {
-            transition: all 0.2s ease; position: relative; overflow: hidden;
+        .btn-interact {
+            position: relative;
+            background: rgba(0, 20, 0, 0.6);
+            border-left: 2px solid #1b7a0a;
+            transition: all 0.2s;
+            text-align: left;
+            overflow: hidden;
         }
-        .btn-option:hover:not(:disabled) {
-            background-color: rgba(57, 255, 20, 0.1);
-            border-color: var(--neon-green);
-            padding-left: 1rem;
-            text-shadow: 0 0 8px var(--neon-green);
+        .btn-interact:hover:not(:disabled) {
+            background: rgba(57, 255, 20, 0.1);
+            border-left-color: #39ff14;
+            padding-left: 1.5rem;
+            text-shadow: 0 0 8px #39ff14;
         }
-        .btn-option:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(100%); }
+        .btn-interact:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
 
-        /* Tabs */
-        .tab-btn.active {
-            background-color: var(--neon-green); color: black; box-shadow: 0 0 10px var(--neon-green);
-        }
+        .typewriter p { animation: typeIn 0.3s ease-out forwards; opacity: 0; }
+        @keyframes typeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Animations */
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .log-entry { animation: slideIn 0.3s ease-out forwards; }
+        /* --- Visualizer Scenes (CSS Art) --- */
+        .scene-container { perspective: 1000px; overflow: hidden; position: relative; }
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
 
-        /* Matrix BG */
-        .matrix-bg {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.06; pointer-events: none; z-index: 0;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><text x="10" y="30" fill="%230f0" font-family="monospace" font-size="10">10101</text><text x="50" y="70" fill="%230f0" font-family="monospace" font-size="10">01010</text></svg>');
-        }
+        /* Grid Map */
+        .map-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+        .map-node { aspect-ratio: 1; border: 1px solid #1b7a0a; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; transition: 0.2s; }
+        .map-node:hover { background: #1b7a0a; color: black; }
+        .map-node.active { background: #39ff14; color: black; font-weight: bold; box-shadow: 0 0 10px #39ff14; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #020202; }
+        ::-webkit-scrollbar-thumb { background: #1b7a0a; }
     </style>
 </head>
-<body class="flicker-anim text-sm sm:text-base">
+<body class="flex flex-col text-sm md:text-base">
 
-    <div class="crt-overlay"></div>
     <div class="scanlines"></div>
+    <div class="flicker"></div>
 
-    <div class="relative z-10 flex flex-col h-full max-w-7xl mx-auto p-2 sm:p-4 gap-2">
+    <div class="relative z-10 flex flex-col h-full max-w-[1600px] mx-auto p-2 gap-2">
         
-        <header class="flex justify-between items-end border-b border-green-900 pb-2 bg-black/80 p-2">
+        <!-- Header -->
+        <header class="hud-panel p-2 flex justify-between items-end shrink-0">
             <div>
-                <h1 class="text-2xl sm:text-3xl font-bold tracking-widest text-shadow text-white">EXILED SPARK <span class="text-xs text-green-600 align-top">v22.0</span></h1>
-                <div class="text-[10px] text-green-500 flex gap-2">
-                    <span id="loc-display">LOC: BOOT_SEQ</span> | 
-                    <span id="class-display">CLASS: UNKNOWN</span>
-                </div>
+                <h1 class="text-2xl md:text-4xl font-bold tracking-widest text-neon-green drop-shadow-[0_0_5px_rgba(57,255,20,0.8)]">EXILED SPARK <span class="text-xs text-neon-yellow align-top">OMEGA v31.0</span></h1>
+                <div class="text-xs text-neon-green-dim">ASCENSION ENGINE ONLINE <span class="mx-2">|</span> <span id="ui-location">LOC: BOOT_SEQUENCE</span></div>
             </div>
-            <div class="hidden sm:block text-right">
-                <div id="clock" class="text-xs font-mono text-green-400">SYS.TIME: INIT</div>
-                <div class="text-[10px] text-green-800">OMEGA ENGINE: ONLINE</div>
+            <div class="text-right font-mono text-xs hidden sm:block">
+                <div id="ui-time">CYCLE: 0</div>
+                <div class="text-neon-blue">NET_STATUS: SECURE</div>
             </div>
         </header>
 
-        <div class="flex flex-1 overflow-hidden gap-4">
+        <!-- Game Layout -->
+        <div class="flex flex-1 overflow-hidden gap-2 flex-col md:flex-row">
             
-            <main class="flex-[3] flex flex-col hud-border relative bg-black/90">
-                <div class="matrix-bg"></div>
+            <!-- LEFT: Visuals & Narrative -->
+            <main class="flex-[3] flex flex-col gap-2 min-h-0">
                 
-                <div id="game-log" class="flex-1 overflow-y-auto p-4 space-y-4 relative z-10 scroll-smooth"></div>
+                <!-- Scene Visualizer -->
+                <div id="scene-display" class="hud-panel h-48 md:h-64 w-full relative bg-black scene-container border-b-2 border-neon-green-dim flex items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 flex items-center justify-center opacity-20">
+                        <pre class="text-[8px] leading-[8px] text-neon-green">SYSTEM STANDBY...</pre>
+                    </div>
+                </div>
 
-                <div class="border-t border-green-900 p-3 bg-black z-20">
-                    <div id="choices-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                <!-- Text Log -->
+                <div id="game-log" class="hud-panel flex-1 overflow-y-auto p-4 space-y-3 font-mono bg-opacity-90 bg-panel scroll-smooth"></div>
+
+                <!-- Input/Action Area -->
+                <div class="hud-panel p-2 shrink-0 bg-black">
+                    <div id="action-container" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
                 </div>
             </main>
 
-            <aside id="main-hud" class="hidden md:flex flex-1 flex-col gap-3 min-w-[280px] max-w-[350px]">
+            <!-- RIGHT: Systems & Stats -->
+            <aside class="flex-[2] flex flex-col gap-2 min-w-[300px] min-h-0">
                 
-                <div class="hud-border p-4 bg-black/90">
-                    <div class="flex justify-between border-b border-green-800 pb-1 mb-2">
-                        <span class="text-xs font-bold text-green-400">BIO-MONITOR</span>
-                        <span id="lvl-display" class="text-xs text-green-600">LVL 1</span>
+                <!-- Vitals -->
+                <div class="hud-panel p-3 grid grid-cols-2 gap-4 bg-panel">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1"><span>INTEGRITY</span> <span id="val-hp" class="text-neon-red">100/100</span></div>
+                        <div class="h-2 bg-red-900/30 w-full"><div id="bar-hp" class="h-full bg-neon-red transition-all" style="width: 100%"></div></div>
                     </div>
-
-                    <div class="mb-2">
-                        <div class="flex justify-between text-[10px] mb-1"><span>INTEGRITY</span><span id="val-hp" class="text-white">100/100</span></div>
-                        <div class="h-1.5 w-full bg-red-900/30"><div id="bar-hp" class="h-full bg-red-500 transition-all duration-300" style="width: 100%"></div></div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1"><span>SPARK</span> <span id="val-sp" class="text-neon-yellow">50/50</span></div>
+                        <div class="h-2 bg-yellow-900/30 w-full"><div id="bar-sp" class="h-full bg-neon-yellow transition-all" style="width: 100%"></div></div>
                     </div>
-                    <div class="mb-2">
-                        <div class="flex justify-between text-[10px] mb-1"><span>SPARK</span><span id="val-spark" class="text-yellow-300">0/100</span></div>
-                        <div class="h-1.5 w-full bg-yellow-900/30"><div id="bar-spark" class="h-full bg-yellow-400 transition-all duration-300" style="width: 0%"></div></div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="flex justify-between text-[10px] mb-1"><span>SYNC</span><span id="val-xp" class="text-blue-300">0/1000</span></div>
-                        <div class="h-1 w-full bg-blue-900/30"><div id="bar-xp" class="h-full bg-blue-500 transition-all duration-300" style="width: 0%"></div></div>
-                    </div>
-
-                    <div class="flex justify-between text-xs pt-2 border-t border-green-900/50">
-                        <span class="text-yellow-500">CREDITS: <span id="val-cred" class="text-white font-bold">0</span></span>
+                    <div class="col-span-2 flex justify-between text-xs mt-1 border-t border-neon-green-dim pt-2">
+                        <div class="text-neon-yellow">CREDITS: <span id="val-cr" class="text-white font-bold">0</span></div>
+                        <div class="text-neon-blue">XP: <span id="val-xp" class="text-white font-bold">0</span></div>
+                        <div class="text-neon-purple">LVL: <span id="val-lvl" class="text-white font-bold">1</span></div>
                     </div>
                 </div>
 
-                <div class="hud-border p-3 bg-black/90 min-h-[80px]">
-                    <div class="text-[10px] font-bold text-green-600 border-b border-green-900 pb-1 mb-2">PARTY LINK</div>
-                    <div id="party-list" class="space-y-1 text-xs"></div>
+                <!-- Party Panel (New v31 Feature) -->
+                <div id="party-panel" class="hud-panel p-2 bg-panel min-h-[60px]">
+                    <div class="text-[10px] font-bold text-neon-green border-b border-neon-green-dim mb-2">ACTIVE PARTY LINK</div>
+                    <div id="party-list" class="flex flex-wrap gap-2 text-xs">
+                        <span class="text-gray-500 italic">No companions synced.</span>
+                    </div>
                 </div>
 
-                <div class="hud-border flex-1 flex flex-col bg-black/90 overflow-hidden">
-                    <div class="flex border-b border-green-900 bg-green-900/10">
-                        <button class="tab-btn flex-1 py-2 text-[10px] font-bold active" onclick="game.switchTab('inv')">GEAR</button>
-                        <button class="tab-btn flex-1 py-2 text-[10px] font-bold" onclick="game.switchTab('quest')">QUEST</button>
-                        <button class="tab-btn flex-1 py-2 text-[10px] font-bold" onclick="game.switchTab('data')">DATA</button>
-                        <button class="tab-btn flex-1 py-2 text-[10px] font-bold" onclick="game.switchTab('sys')">SYS</button>
+                <!-- Tabs & Content -->
+                <div class="hud-panel flex-1 flex flex-col overflow-hidden bg-panel">
+                    <div class="flex border-b border-neon-green-dim">
+                        <button onclick="UI.tab('inv')" class="tab-btn flex-1 py-2 text-xs hover:bg-neon-green hover:text-black transition-colors active-tab" data-tab="inv">GEAR</button>
+                        <button onclick="UI.tab('map')" class="tab-btn flex-1 py-2 text-xs hover:bg-neon-green hover:text-black transition-colors" data-tab="map">MAP</button>
+                        <button onclick="UI.tab('quest')" class="tab-btn flex-1 py-2 text-xs hover:bg-neon-green hover:text-black transition-colors" data-tab="quest">JOBS</button>
+                        <button onclick="UI.tab('sys')" class="tab-btn flex-1 py-2 text-xs hover:bg-neon-green hover:text-black transition-colors" data-tab="sys">SYS</button>
                     </div>
-                    
-                    <div class="p-3 overflow-y-auto flex-1 text-xs relative">
-                        <div id="tab-inv" class="space-y-2"><div id="inventory-list"></div></div>
-                        <div id="tab-quest" class="hidden space-y-2"><div id="quest-list"></div></div>
-                        <div id="tab-data" class="hidden space-y-2"><div id="codex-list"></div></div>
-                        <div id="tab-sys" class="hidden space-y-3">
-                            <p class="text-gray-400">Manage simulation state.</p>
-                            <button onclick="game.save()" class="w-full border border-green-700 p-2 text-center hover:bg-green-900/30">FORCE SAVE</button>
-                            <button onclick="game.reset()" class="w-full border border-red-900 text-red-500 p-2 text-center hover:bg-red-900/20">HARD RESET</button>
+
+                    <div class="p-3 flex-1 overflow-y-auto relative">
+                        <!-- Inventory -->
+                        <div id="tab-inv" class="space-y-4">
+                            <div class="grid grid-cols-2 gap-2 text-xs mb-4 border-b border-neon-green-dim pb-4">
+                                <div id="slot-wep" class="border border-neon-green-dim p-2 text-center opacity-70 hover:opacity-100 cursor-pointer" onclick="Game.unequip('weapon')">WEAPON: <span class="text-white block">Fists</span></div>
+                                <div id="slot-arm" class="border border-neon-green-dim p-2 text-center opacity-70 hover:opacity-100 cursor-pointer" onclick="Game.unequip('armor')">ARMOR: <span class="text-white block">None</span></div>
+                                <div id="slot-imp" class="border border-neon-green-dim p-2 text-center opacity-70 hover:opacity-100 cursor-pointer" onclick="Game.unequip('implant')">IMPLANT: <span class="text-white block">Basic Chip</span></div>
+                                <div id="slot-dek" class="border border-neon-green-dim p-2 text-center opacity-70 hover:opacity-100 cursor-pointer" onclick="Game.unequip('deck')">DECK: <span class="text-white block">None</span></div>
+                            </div>
+                            <h4 class="text-xs font-bold text-neon-green">BACKPACK</h4>
+                            <div id="inv-list" class="space-y-1 text-xs"></div>
+                        </div>
+
+                        <!-- Map -->
+                        <div id="tab-map" class="hidden h-full flex flex-col">
+                            <div class="text-center text-xs text-neon-green mb-2">NEO-TOKYO SECTOR 7</div>
+                            <div class="map-grid flex-1" id="map-container"></div>
+                            <div class="mt-2 text-xs text-gray-400 h-8 border-t border-neon-green-dim pt-1 flex justify-between">
+                                <span>SELECT NODE</span>
+                                <span id="map-danger" class="text-neon-red"></span>
+                            </div>
+                        </div>
+
+                        <!-- Jobs -->
+                        <div id="tab-quest" class="hidden space-y-3">
+                            <div class="border-b border-neon-green-dim pb-2">
+                                <h4 class="text-xs font-bold text-neon-yellow mb-2">MAIN DIRECTIVE</h4>
+                                <div id="main-quest" class="text-xs text-gray-300">Initialize System.</div>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold mb-2">CONTRACTS</h4>
+                                <div id="contract-list" class="space-y-2"></div>
+                            </div>
+                        </div>
+
+                        <!-- System -->
+                        <div id="tab-sys" class="hidden space-y-2">
+                            <div class="text-xs mb-4">
+                                <p>STR: <span id="stat-str" class="text-white">1</span></p>
+                                <p>AGI: <span id="stat-agi" class="text-white">1</span></p>
+                                <p>TEC: <span id="stat-tec" class="text-white">1</span></p>
+                                <p class="text-gray-500 mt-2 text-[10px]">Points avail: <span id="stat-pts">0</span></p>
+                                <div id="lvl-btns" class="hidden flex gap-2 mt-1">
+                                    <button onclick="Game.levelUp('str')" class="text-[10px] border px-1 border-neon-green">+STR</button>
+                                    <button onclick="Game.levelUp('agi')" class="text-[10px] border px-1 border-neon-green">+AGI</button>
+                                    <button onclick="Game.levelUp('tec')" class="text-[10px] border px-1 border-neon-green">+TEC</button>
+                                </div>
+                            </div>
+                            <button onclick="Engine.save()" class="w-full border border-neon-blue text-neon-blue p-2 text-xs hover:bg-neon-blue/10">FORCE SAVE</button>
+                            <button onclick="Engine.hardReset()" class="w-full border border-neon-red text-neon-red p-2 text-xs hover:bg-neon-red/10">HARD RESET</button>
                         </div>
                     </div>
                 </div>
@@ -174,579 +239,681 @@
         </div>
     </div>
 
-    <button class="md:hidden fixed bottom-4 right-4 z-50 bg-green-900 text-white p-3 rounded-full border border-green-500 shadow-[0_0_10px_#0f0]" onclick="document.getElementById('main-hud').classList.toggle('hidden'); document.getElementById('main-hud').classList.toggle('fixed'); document.getElementById('main-hud').classList.toggle('inset-0'); document.getElementById('main-hud').classList.toggle('z-40'); document.getElementById('main-hud').classList.toggle('p-6');">
-        HUD
-    </button>
-
-    <div id="modal-overlay" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="hud-border w-full max-w-lg p-1 bg-green-900/20">
-            <div class="bg-black p-6 border border-green-900/50 relative">
-                <h2 id="modal-title" class="text-xl font-bold mb-4 text-center tracking-widest">INTERFACE</h2>
-                <div id="modal-content" class="mb-6 font-mono text-sm"></div>
-                <div id="modal-actions" class="flex flex-wrap justify-center gap-2"></div>
-            </div>
+    <!-- Modals -->
+    <div id="modal-overlay" class="hidden fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
+        <div class="hud-panel w-full max-w-lg p-4 bg-black relative border-neon-blue">
+            <h2 id="modal-title" class="text-xl font-bold mb-4 text-center border-b border-gray-800 pb-2 tracking-widest text-neon-blue">SYSTEM</h2>
+            <div id="modal-content" class="min-h-[200px] flex flex-col justify-center items-center"></div>
         </div>
     </div>
 
     <script>
-        /**
-         * THE EXILED SPARK CHRONICLES
-         * OMEGA ENGINE v22.0
-         * Merged Logic: Party System, Advanced Combat, Hex Hacking, Branching Narrative
-         */
-
+        /* --- CORE DATABASE --- */
         const DB = {
-            codex: {
-                "The Exiled Spark": "A fragment of a perfect AI from another galaxy. Grants bio-electric manipulation.",
-                "Null": "A rogue AI growing in the substrate of the old internet. Seeks to consume the Spark.",
-                "Neo Tokyo": "Megacity built on ruins. Controlled by Arasaka. Divided into Slums, Corp Zones, and the Undercity.",
-                "Arasaka": "The dominant megacorp. Manufacturers of Project Kurogane.",
-                "The Ronin": "A legendary swordsman who renounced his corporate masters.",
-                "Hana": "A sentient AI housed in a Geisha droid. Represents the bridge between humanity and machine.",
-                "Aiko": "A master netrunner fighting for digital freedom.",
-                "Bitcoin City": "A decentralized digital realm existing in a mirror dimension.",
-                "Old Town London": "A steampunk timeline simulation where the Order of Chronos protects history."
-            },
             items: {
-                "Med-Stim": { name: "Med-Stim", type: "heal", val: 35, cost: 25, desc: "Restores 35 HP." },
-                "Spark Cell": { name: "Spark Cell", type: "spark", val: 25, cost: 40, desc: "Restores 25 SP." },
-                "Ramen": { name: "Synth-Ramen", type: "heal", val: 10, cost: 5, desc: "Warm and tasty. +10 HP." },
-                "Scrap": { name: "Scrap Wire", type: "junk", val: 5, desc: "Sellable junk." },
-                "Data Shard": { name: "Data Shard", type: "junk", val: 20, desc: "Encrypted data. Sellable." },
-                "Switchblade": { name: "Switchblade", type: "weapon", dmg: 5, desc: "Basic melee." },
-                "Cyberdeck": { name: "Cyberdeck v1", type: "tool", hack: 1, desc: "Allows hacking." },
-                "Kurogane Drive": { name: "Kurogane Drive", type: "quest", desc: "Mission Item." }
+                "med_stim": { name: "Med-Stim", type: "use", val: 30, cost: 50, effect: (s) => { s.hp = Math.min(s.maxHp, s.hp + 30); return "Integrity Restored +30"; } },
+                "spark_cell": { name: "Spark Cell", type: "use", val: 25, cost: 80, effect: (s) => { s.sp = Math.min(s.maxSp, s.sp + 25); return "Energy Recharged +25"; } },
+                "scrap": { name: "Scrap Tech", type: "junk", val: 10, cost: 0 },
+                "data_chip": { name: "Encrypted Data", type: "junk", val: 100, cost: 0 },
+                "drive": { name: "Kurogane Drive", type: "quest", val: 0, cost: 0 },
+                
+                "knife": { name: "Mono-Knife", type: "weapon", slot: "weapon", dmg: 5, cost: 100 },
+                "katana": { name: "Ronin Katana", type: "weapon", slot: "weapon", dmg: 18, cost: 1500 },
+                "pistol": { name: "Type-14 Pistol", type: "weapon", slot: "weapon", dmg: 12, cost: 350 },
+                "deck_v1": { name: "Script-Kiddie v1", type: "deck", slot: "deck", pwr: 1, cost: 150 },
+                "vest": { name: "Ballistic Vest", type: "armor", slot: "armor", def: 3, cost: 200 }
             },
             enemies: {
-                "drone": { name: "Security Drone", hp: 30, dmg: 5, xp: 25, loot: ["Scrap"] },
-                "thug": { name: "Slum Thug", hp: 50, dmg: 8, xp: 40, loot: ["Med-Stim", "Ramen"] },
-                "guard": { name: "Arasaka Guard", hp: 80, dmg: 12, xp: 70, loot: ["Data Shard", "Spark Cell"] },
-                "juggernaut": { name: "The Juggernaut", hp: 250, dmg: 20, xp: 1000, loot: ["Kurogane Drive"] }
+                "rat": { name: "Cyber-Rat", hp: 20, maxHp: 20, dmg: 4, xp: 10, cr: 5, visual: "rat" },
+                "thug": { name: "Street Thug", hp: 45, maxHp: 45, dmg: 8, xp: 25, cr: 15, visual: "punk" },
+                "drone": { name: "Sec-Drone", hp: 30, maxHp: 30, dmg: 12, xp: 30, cr: 20, visual: "drone" },
+                "guard": { name: "Arasaka Guard", hp: 80, maxHp: 80, dmg: 15, xp: 80, cr: 100, visual: "soldier" },
+                "juggernaut": { name: "The Juggernaut", hp: 200, maxHp: 200, dmg: 25, xp: 1000, cr: 500, visual: "mech" }
+            },
+            locations: {
+                "slums": { name: "Sector 7 Slums", danger: 1, desc: "Rain-slicked alleyways.", visual: "city_rain" },
+                "market": { name: "Neon Market", danger: 0, desc: "Crowded stalls and noise.", visual: "market" },
+                "corpo": { name: "Arasaka Plaza", danger: 3, desc: "Clean, cold, and deadly.", visual: "plaza" },
+                "net": { name: "The Deep Net", danger: 2, desc: "A void of data.", visual: "net" },
+                "safehouse": { name: "The Bunker", danger: 0, desc: "Your secure base of operations.", visual: "bunker" },
+                "london": { name: "Old Town London", danger: 2, desc: "Simulated steampunk reality.", visual: "gears" },
+                "metro": { name: "Metro Station", danger: 1, desc: "Transit hub.", visual: "train" }
             }
         };
 
-        class GameEngine {
-            constructor() {
-                this.state = {
-                    node: 'boot',
-                    stats: {
-                        name: "Seraphina",
-                        class: "Unknown",
-                        hp: 100, maxHp: 100,
-                        spark: 0, maxSpark: 100,
-                        xp: 0, lvl: 1,
-                        credits: 0
-                    },
-                    inv: [],
-                    party: [],
-                    quests: {},
-                    codex: [],
-                    flags: {}
-                };
-                
-                this.nodes = this.buildNodes();
-            }
-
-            init() {
-                const save = localStorage.getItem('exiled_spark_v22');
-                if(save) {
-                    this.state = JSON.parse(save);
-                    this.logText("System State Restored.", "sys");
-                    this.renderNode(this.state.node, false);
-                } else {
-                    this.renderNode('boot');
+        /* --- VISUAL ENGINE (CSS ART) --- */
+        const Visuals = {
+            get: (type) => {
+                const base = "w-full h-full relative flex items-center justify-center overflow-hidden";
+                switch(type) {
+                    case 'city_rain':
+                        return `<div class="${base} bg-gray-900"><div class="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-black to-transparent z-10"></div><div class="flex items-end justify-center gap-1 opacity-50 h-full w-full"><div class="w-10 h-32 bg-green-900"></div><div class="w-14 h-48 bg-green-800"></div><div class="w-20 h-56 bg-green-900 z-0"></div></div><div class="rain absolute inset-0 z-20 pointer-events-none opacity-50">${'<i></i>'.repeat(20)}</div></div>`;
+                    case 'market':
+                         return `<div class="${base} bg-black"><div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-yellow-900/20 via-black to-black"></div><div class="text-yellow-400 font-bold text-4xl animate-pulse tracking-widest border-2 border-yellow-500 p-4 rounded glow">OPEN</div></div>`;
+                    case 'net':
+                        return `<div class="${base} bg-black"><div class="absolute inset-0 bg-[linear-gradient(rgba(0,255,0,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,0,0.1)_1px,transparent_1px)] bg-[size:40px_40px] [transform:perspective(500px)_rotateX(60deg)] origin-bottom animate-[pulse_4s_infinite]"></div><div class="text-neon-pink font-mono text-6xl font-bold z-10">DATA_VOID</div></div>`;
+                    case 'bunker':
+                        return `<div class="${base} bg-gray-900"><div class="border-4 border-gray-700 w-3/4 h-3/4 flex items-center justify-center bg-black"><div class="text-green-500 font-mono text-xs">SAFEHOUSE<br>SECURE</div></div></div>`;
+                    case 'gears':
+                        return `<div class="${base} bg-[#1a1005]"><div class="w-32 h-32 border-4 border-[#8b5a2b] rounded-full flex items-center justify-center animate-spin"><div class="w-4 h-full bg-[#8b5a2b]"></div><div class="h-4 w-full bg-[#8b5a2b]"></div></div><div class="absolute top-10 right-20 w-16 h-16 border-4 border-[#cd7f32] rounded-full animate-spin direction-reverse"></div></div>`;
+                    case 'combat':
+                        return `<div class="${base} bg-red-900/10"><div class="w-full h-px bg-red-500 absolute top-1/2 animate-ping"></div><div class="w-px h-full bg-red-500 absolute left-1/2 animate-ping"></div><div class="border-2 border-red-500 w-32 h-32 absolute animate-spin"></div></div>`;
+                    case 'mech':
+                         return `<div class="${base}"><div class="w-40 h-56 bg-gray-800 border-4 border-yellow-600 relative flex flex-col items-center shadow-2xl"><div class="w-full h-10 bg-black flex items-center justify-center gap-4"><div class="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div></div><div class="mt-4 w-24 h-24 border-2 border-yellow-500 grid grid-cols-2 gap-1 p-1"><div class="bg-gray-600"></div><div class="bg-gray-600"></div><div class="bg-gray-600"></div><div class="bg-gray-600"></div></div></div></div>`;
+                    default: 
+                        return `<div class="${base} text-neon-green text-xs font-mono"><pre>[ NO_SIGNAL ]</pre></div>`;
                 }
-                this.updateHUD();
+            }
+        };
+
+        /* --- GAME ENGINE --- */
+        const State = {
+            player: {
+                hp: 100, maxHp: 100,
+                sp: 50, maxSp: 50,
+                xp: 0, level: 1,
+                credits: 100,
+                stats: { str: 1, agi: 1, tec: 1, pts: 0 },
+                location: 'slums',
+                inventory: [],
+                equipment: { weapon: null, armor: null, implant: null, deck: null },
+                party: [], // 'Ronin', 'Hana', 'Aiko'
+                quests: [],
+                flags: { introDone: false, metKenji: false }
+            },
+            currentNode: null
+        };
+
+        const Engine = {
+            init: () => {
+                const saved = localStorage.getItem('exiled_spark_v31');
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        Object.assign(State.player, parsed.player);
+                        Engine.goto(parsed.currentNode || 'hub');
+                    } catch(e) { Engine.goto('boot'); }
+                } else {
+                    Engine.goto('boot');
+                }
+                UI.update();
+                Procedural.generateContracts();
+            },
+
+            save: () => {
+                localStorage.setItem('exiled_spark_v31', JSON.stringify({
+                    player: State.player,
+                    currentNode: State.currentNode
+                }));
+                Engine.log("GAME SAVED.", "text-blue-400");
+            },
+
+            hardReset: () => {
+                if(confirm("Wipe all progress?")) {
+                    localStorage.removeItem('exiled_spark_v31');
+                    location.reload();
+                }
+            },
+
+            goto: (nodeId) => {
+                State.currentNode = nodeId;
+                const node = Nodes[nodeId];
+                if (!node) return;
+
+                // Visual Update
+                const locData = DB.locations[State.player.location];
+                document.getElementById('scene-display').innerHTML = Visuals.get(node.visual || (locData ? locData.visual : 'default'));
+                document.getElementById('ui-location').innerText = `LOC: ${nodeId.toUpperCase()}`;
+
+                // Text Logic
+                let text = typeof node.text === 'function' ? node.text() : node.text;
+                Engine.log(text);
+
+                // Options
+                const container = document.getElementById('action-container');
+                container.innerHTML = '';
                 
-                setInterval(() => {
-                    document.getElementById('clock').innerText = "SYS.TIME: " + new Date().toLocaleTimeString();
-                }, 1000);
-            }
-
-            // --- NARRATIVE DATA ---
-            buildNodes() {
-                return {
-                    'boot': {
-                        text: `<div class="text-center my-10 animate-pulse">
-                                <h1 class="text-4xl text-green-500 font-bold mb-2">EXILED SPARK</h1>
-                                <p class="text-green-800 text-lg">PRESS START TO INITIALIZE</p>
-                               </div>`,
-                        options: [{ text: "INITIALIZE SYSTEM", target: 'char_select' }],
-                        loc: "BOOT_SEQ"
-                    },
-
-                    'char_select': {
-                        text: `<h2 class="text-xl text-white font-bold mb-4 border-b border-green-800 pb-2">IDENTITY CONFIGURATION</h2>
-                               <p class="mb-4 text-gray-400">The glitch erased your memories. What remains?</p>
-                               <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-                                 <div class="border border-green-800 p-2 bg-green-900/10">
-                                    <strong class="text-blue-400 text-base">STREET RAT</strong><br>
-                                    +Stealth, +Knife<br>Start: Switchblade, Med-Stim
-                                 </div>
-                                 <div class="border border-green-800 p-2 bg-green-900/10">
-                                    <strong class="text-red-400 text-base">CORP DEFECTOR</strong><br>
-                                    +Combat, +Credits<br>Start: 200 Credits, Spark Cell
-                                 </div>
-                                 <div class="border border-green-800 p-2 bg-green-900/10">
-                                    <strong class="text-purple-400 text-base">NETRUNNER</strong><br>
-                                    +Hacking, +Spark<br>Start: Cyberdeck, 50 SP
-                                 </div>
-                               </div>`,
-                        options: [
-                            { text: "Confirm: STREET RAT", action: () => this.setClass('Street Rat') },
-                            { text: "Confirm: CORP DEFECTOR", action: () => this.setClass('Corp Defector') },
-                            { text: "Confirm: NETRUNNER", action: () => this.setClass('Netrunner') }
-                        ],
-                        loc: "MEMORY_CORE"
-                    },
-
-                    'intro': {
-                        text: `<h3 class="text-xl font-bold text-green-400 mb-2">BOOK 1: GHOST IN THE MACHINE</h3>
-                               <p>Rain lashes the rusted ceiling of the Disposal Zone. You wake in a pile of scrap. You are an Exile. A glitch in Neo Tokyo's perfect order.</p>
-                               <p class="mt-2 text-yellow-500">The Spark hums in your chest.</p>`,
-                        options: [{ text: "Climb out", target: 'hub_slums' }],
-                        effect: () => { 
-                            this.unlockCodex("Neo Tokyo"); 
-                            this.unlockCodex("The Exiled Spark"); 
-                            this.addQuest("Contact Kenji", "Meet at The Rusty Cog."); 
-                        },
-                        loc: "DISPOSAL_ZONE"
-                    },
-
-                    // --- SLUMS HUB ---
-                    'hub_slums': {
-                        text: `<strong>SECTOR 7 SLUMS</strong><br>
-                               The underbelly of the city. Neon reflects in acid rain puddles.
-                               <br><br>
-                               <span class="text-xs text-gray-500">LOCATIONS AVAILABLE:</span>`,
-                        options: [
-                            { text: "Enter 'The Rusty Cog'", target: 'loc_bar' },
-                            { text: "Visit Doc's Clinic", target: 'loc_clinic' },
-                            { text: "Take Metro (Travel)", target: 'loc_metro' },
-                            { text: "Patrol Alleyways (Combat/Loot)", action: () => this.patrol('slums') },
-                            { text: "Enter Safehouse", target: 'loc_safehouse', req: (s) => s.flags.safehouseUnlocked }
-                        ],
-                        loc: "SECTOR_7"
-                    },
-
-                    'loc_bar': {
-                        text: `The Rusty Cog smells of ozone and cheap sake. Kenji sits in the back.`,
-                        options: [
-                            { text: "Talk to Kenji", target: 'quest_kenji_1', req: (s) => !s.flags.metKenji },
-                            { text: "Buy Ramen (5 Cr)", action: () => this.buyItem("Ramen") },
-                            { text: "Leave", target: 'hub_slums' }
-                        ],
-                        loc: "RUSTY_COG"
-                    },
-
-                    'quest_kenji_1': {
-                        text: `Kenji slides a chip over. "Arasaka is moving 'Project Kurogane' tonight at Warehouse 42. Get it. 500 Creds."`,
-                        effect: () => { 
-                            this.state.flags.metKenji = true; 
-                            this.addQuest("Infiltration", "Raid Warehouse 42."); 
-                        },
-                        options: [{ text: "Accept Mission", target: 'hub_slums' }]
-                    },
-
-                    'loc_clinic': {
-                        text: `Dr. Sato's clinic. "Need repairs?"`,
-                        options: [
-                            { text: "Full Heal (50 Cr)", action: () => this.healPlayer(100, 50) },
-                            { text: "Buy Med-Stim (25 Cr)", action: () => this.buyItem("Med-Stim") },
-                            { text: "Buy Spark Cell (40 Cr)", action: () => this.buyItem("Spark Cell") },
-                            { text: "Leave", target: 'hub_slums' }
-                        ],
-                        loc: "CLINIC"
-                    },
-
-                    'loc_metro': {
-                        text: `Mag-lev station. Where to?`,
-                        options: [
-                            { text: "Sector 7 Slums", target: 'hub_slums' },
-                            { text: "Arasaka Tower (Danger)", target: 'hub_arasaka' },
-                            { text: "Downtown (Locked)", req: () => false }
-                        ],
-                        loc: "METRO"
-                    },
-
-                    // --- ARASAKA ZONE ---
-                    'hub_arasaka': {
-                        text: `<strong>ARASAKA PERIPHERY</strong><br>Black monoliths rise into the smog. Security is tight.`,
-                        options: [
-                            { text: "Warehouse 42 (Mission)", target: 'mission_warehouse_entry', req: (s) => s.quests["Infiltration"] },
-                            { text: "Hack Terminal", action: () => this.startHacking(3, 'hack_success_corp', 'hub_arasaka') },
-                            { text: "Patrol (Hard Combat)", action: () => this.patrol('corp') },
-                            { text: "Return to Metro", target: 'loc_metro' }
-                        ],
-                        loc: "ARASAKA_ZONE"
-                    },
-
-                    'hack_success_corp': {
-                        text: `Access Granted. Funds siphoned.`,
-                        effect: () => this.addCredits(100),
-                        options: [{ text: "Disconnect", target: 'hub_arasaka' }]
-                    },
-
-                    'mission_warehouse_entry': {
-                        text: `Warehouse 42. Guards patrol the gate.`,
-                        options: [
-                            { text: "Combat: Attack Guards", action: () => this.startCombat('guard', 'mission_warehouse_inside') },
-                            { text: "Stealth: Vent System", req: (s) => s.class === 'Street Rat', target: 'mission_warehouse_inside' },
-                            { text: "Hack: Security Gate", req: (s) => s.class === 'Netrunner', action: () => this.startHacking(4, 'mission_warehouse_inside', 'mission_warehouse_entry') }
-                        ],
-                        loc: "WAREHOUSE_42"
-                    },
-
-                    'mission_warehouse_inside': {
-                        text: `Inside, you grab the Kurogane Drive. Suddenly, the wall explodes. <br><br><strong>THE JUGGERNAUT</strong> enters. "TARGET ACQUIRED."`,
-                        effect: () => this.unlockCodex("Null"),
-                        options: [{ text: "BOSS FIGHT", action: () => this.startCombat('juggernaut', 'mission_victory') }]
-                    },
-
-                    'mission_victory': {
-                        text: `The Juggernaut falls. As you recover, a figure emerges from shadows. <strong>The Ronin.</strong><br><br>"Impressive. Come with me if you want to survive."`,
-                        effect: () => {
-                            this.state.flags.safehouseUnlocked = true;
-                            this.addPartyMember('The Ronin');
-                            this.addItem("Kurogane Drive");
-                            this.addXp(1000);
-                            this.completeQuest("Infiltration");
-                            this.unlockCodex("The Ronin");
-                        },
-                        options: [{ text: "Go to Safehouse", target: 'loc_safehouse' }]
-                    },
-
-                    // --- SAFEHOUSE & SIMULATIONS ---
-                    'loc_safehouse': {
-                        text: `<strong>SAFEHOUSE</strong><br>A hidden bunker. Your party gathers here.`,
-                        options: [
-                            { text: "Rest (Full Heal)", action: () => { this.healPlayer(999); this.logText("Systems restored.", "gain"); } },
-                            { text: "Access Simulation Archives", target: 'archive_menu' },
-                            { text: "Exit to Slums", target: 'hub_slums' }
-                        ],
-                        loc: "SAFEHOUSE"
-                    },
-
-                    'archive_menu': {
-                        text: `<strong>SIMULATION DECK</strong><br>Run historical or alternate reality simulations to gather data and allies.`,
-                        options: [
-                            { text: "Load: Bitcoin City (Book 2)", target: 'sim_book2', req: (s) => !s.party.includes('Aiko') },
-                            { text: "Load: Old Town London (Book 4)", target: 'sim_book4', req: (s) => !s.party.includes('Hana') },
-                            { text: "Back", target: 'loc_safehouse' }
-                        ],
-                        loc: "ARCHIVES"
-                    },
-
-                    'sim_book2': {
-                        text: `<strong>BITCOIN CITY</strong><br>A digital frontier. You aid a netrunner named <strong>Aiko</strong> against code-wraiths.`,
-                        effect: () => { this.addPartyMember('Aiko'); this.unlockCodex("Bitcoin City"); },
-                        options: [{ text: "Recruit Aiko & End Sim", target: 'loc_safehouse' }]
-                    },
-
-                    'sim_book4': {
-                        text: `<strong>LONDON, 1899</strong><br>Steam and gears. You find a lost droid, <strong>Hana</strong>.`,
-                        effect: () => { this.addPartyMember('Hana'); this.unlockCodex("Old Town London"); },
-                        options: [{ text: "Recruit Hana & End Sim", target: 'loc_safehouse' }]
-                    }
-                };
-            }
-
-            // --- LOGIC ---
-            renderNode(id, push = true) {
-                const node = this.nodes[id];
-                this.state.node = id;
-                document.getElementById('loc-display').innerText = `LOC: ${node.loc}`;
-
-                // Append Text
-                const entry = document.createElement('div');
-                entry.className = "log-entry border-b border-green-900/30 pb-4 mb-4 text-gray-300";
-                entry.innerHTML = node.text;
-                const log = document.getElementById('game-log');
-                log.appendChild(entry);
-                log.scrollTop = log.scrollHeight;
-
-                // Buttons
-                const cont = document.getElementById('choices-container');
-                cont.innerHTML = '';
-                if(node.options) {
+                if (node.options) {
                     node.options.forEach(opt => {
-                        if(opt.req && !opt.req(this.state)) return;
+                        if (opt.req && !opt.req(State.player)) return;
+                        
                         const btn = document.createElement('button');
-                        btn.className = "btn-option w-full text-left p-3 border border-green-800 bg-green-900/10 text-green-400 font-mono text-sm";
-                        btn.innerHTML = `> ${opt.text}`;
+                        btn.className = "btn-interact w-full p-3 font-mono text-sm text-neon-green hover:text-white";
+                        btn.innerHTML = `<span class="mr-2">></span> ${opt.text}`;
                         btn.onclick = () => {
-                            if(opt.action) opt.action();
-                            if(opt.effect) opt.effect(this.state);
-                            if(opt.target) this.renderNode(opt.target);
-                            this.save();
+                            if (opt.cost && State.player.credits < opt.cost) {
+                                Engine.log("Insufficient Funds.", "text-red-500");
+                                return;
+                            }
+                            if (opt.cost) Game.modCredits(-opt.cost);
+                            if (opt.action) opt.action();
+                            if (opt.next) Engine.goto(opt.next);
+                            Engine.save();
                         };
-                        cont.appendChild(btn);
+                        container.appendChild(btn);
                     });
                 }
-            }
+            },
 
-            logText(msg, type="neutral") {
-                const color = type==="combat"?"text-red-400":type==="gain"?"text-yellow-400":"text-gray-500";
+            log: (msg, color = "text-gray-300") => {
+                const log = document.getElementById('game-log');
                 const div = document.createElement('div');
-                div.className = `log-entry text-xs italic mb-2 ${color}`;
-                div.innerHTML = `>> ${msg}`;
-                document.getElementById('game-log').appendChild(div);
-                document.getElementById('game-log').scrollTop = document.getElementById('game-log').scrollHeight;
+                div.className = `typewriter border-b border-gray-800 pb-2 ${color}`;
+                div.innerHTML = `<p>${msg}</p>`;
+                log.appendChild(div);
+                log.scrollTop = log.scrollHeight;
+                while (log.children.length > 30) log.removeChild(log.firstChild);
             }
+        };
 
-            // --- SYSTEMS ---
-            setClass(cls) {
-                const s = this.state.stats;
-                s.class = cls;
-                if(cls === 'Street Rat') { this.addItem('Switchblade'); this.addItem('Med-Stim'); }
-                if(cls === 'Corp Defector') { s.credits = 200; this.addItem('Spark Cell'); }
-                if(cls === 'Netrunner') { this.addItem('Cyberdeck'); s.spark = 50; }
-                this.renderNode('intro');
-                this.updateHUD();
-            }
+        /* --- GAMEPLAY LOGIC --- */
+        const Game = {
+            modHp: (amt) => {
+                const p = State.player;
+                p.hp = Math.max(0, Math.min(p.maxHp, p.hp + amt));
+                UI.update();
+                if (amt < 0) document.body.classList.add('shake');
+                setTimeout(()=>document.body.classList.remove('shake'), 500);
+                if (p.hp <= 0) Engine.goto('death');
+            },
+            
+            modSp: (amt) => {
+                State.player.sp = Math.max(0, Math.min(State.player.maxSp, State.player.sp + amt));
+                UI.update();
+            },
 
-            patrol(zone) {
-                const roll = Math.random();
-                if(roll < 0.4) {
-                    const enemy = zone === 'corp' ? 'guard' : (Math.random()>0.5?'drone':'thug');
-                    this.startCombat(enemy, this.state.node);
-                } else if (roll < 0.7) {
-                    const loot = zone === 'corp' ? "Data Shard" : "Scrap";
-                    this.addItem(loot);
-                    this.logText(`Found ${loot}.`, "gain");
+            modCredits: (amt) => {
+                State.player.credits += amt;
+                Engine.log(amt > 0 ? `Credits: +${amt}` : `Credits: ${amt}`, amt > 0 ? "text-yellow-400" : "text-red-400");
+                UI.update();
+            },
+
+            modXp: (amt) => {
+                State.player.xp += amt;
+                if (State.player.xp >= State.player.level * 100) {
+                    State.player.xp -= State.player.level * 100;
+                    State.player.level++;
+                    State.player.stats.pts++;
+                    State.player.maxHp += 10;
+                    State.player.hp = State.player.maxHp;
+                    Engine.log(`LEVEL UP! Now Level ${State.player.level}`, "text-neon-pink font-bold");
+                }
+                UI.update();
+            },
+
+            addItem: (id) => {
+                State.player.inventory.push(id);
+                Engine.log(`Acquired: ${DB.items[id].name}`, "text-green-400");
+                UI.update();
+            },
+
+            equip: (itemId) => {
+                const item = DB.items[itemId];
+                if (!item.slot) return;
+                const old = State.player.equipment[item.slot];
+                if (old) State.player.inventory.push(old);
+                const idx = State.player.inventory.indexOf(itemId);
+                if(idx > -1) State.player.inventory.splice(idx, 1);
+                State.player.equipment[item.slot] = itemId;
+                Engine.log(`Equipped: ${item.name}`);
+                UI.update();
+            },
+
+            unequip: (slot) => {
+                const item = State.player.equipment[slot];
+                if (item) {
+                    State.player.equipment[slot] = null;
+                    State.player.inventory.push(item);
+                    Engine.log(`Unequipped: ${DB.items[item].name}`);
+                    UI.update();
+                }
+            },
+
+            levelUp: (stat) => {
+                if (State.player.stats.pts > 0) {
+                    State.player.stats[stat]++;
+                    State.player.stats.pts--;
+                    UI.update();
+                }
+            },
+
+            travel: (locId) => {
+                State.player.location = locId;
+                Engine.log(`Traveling to ${DB.locations[locId].name}...`);
+                if (Math.random() < (DB.locations[locId].danger * 0.25)) {
+                    Combat.start(Procedural.randomEnemy(locId));
                 } else {
-                    this.logText("Area clear.");
+                    if (locId === 'safehouse') Engine.goto('safehouse_hub');
+                    else Engine.goto('hub');
+                }
+            },
+
+            addParty: (name) => {
+                if (!State.player.party.includes(name)) {
+                    State.player.party.push(name);
+                    Engine.log(`${name} joined the party!`, "text-neon-blue font-bold");
+                    UI.update();
                 }
             }
+        };
 
-            startCombat(enemyId, winTarget) {
-                const tmpl = DB.enemies[enemyId];
-                const enemy = { ...tmpl };
-                let logs = [`ENCOUNTER: ${enemy.name}`];
+        /* --- COMBAT SYSTEM (V31 OMEGA) --- */
+        const Combat = {
+            enemy: null,
+            turn: 0,
+            
+            start: (enemyObj) => {
+                Combat.enemy = JSON.parse(JSON.stringify(enemyObj));
+                Combat.turn = 1;
+                document.getElementById('scene-display').innerHTML = Visuals.get(enemyObj.visual);
+                Engine.log(`WARNING: Hostile Detected - ${Combat.enemy.name}`, "text-red-500 font-bold");
+                State.currentNode = 'combat';
+                Combat.renderMenu();
+            },
 
-                const modal = document.getElementById('modal-overlay');
-                modal.classList.remove('hidden');
-                document.getElementById('modal-title').innerText = "COMBAT PROTOCOL";
-                document.getElementById('modal-title').className = "text-xl font-bold mb-4 text-center text-red-500 tracking-widest";
-
-                const renderTurn = () => {
-                    const hpPct = (enemy.hp / tmpl.hp)*100;
-                    document.getElementById('modal-content').innerHTML = `
-                        <div class="mb-4">
-                            <div class="flex justify-between text-red-400 font-bold"><span>${enemy.name}</span><span>${enemy.hp} HP</span></div>
-                            <div class="h-2 bg-red-900/30 w-full"><div class="h-full bg-red-500 transition-all" style="width:${hpPct}%"></div></div>
-                        </div>
-                        <div class="bg-black border border-gray-800 p-2 h-32 overflow-y-auto text-xs font-mono text-gray-400">
-                            ${logs.map(l=>`<div>${l}</div>`).join('')}
-                        </div>
-                        <div class="mt-2 text-center text-green-500 text-xs">PLAYER: ${this.state.stats.hp} HP | ${this.state.stats.spark} SP</div>
-                    `;
-                    
-                    const acts = document.getElementById('modal-actions');
-                    acts.innerHTML = '';
-                    
-                    // Actions
-                    this.mkBtn(acts, "ATTACK", "border-red-500 text-red-500", () => {
-                        const dmg = 10 + Math.floor(this.state.stats.xp/200);
-                        enemy.hp -= dmg;
-                        logs.unshift(`> Dealt ${dmg} physical damage.`);
-                        checkEnd();
-                    });
-
-                    if(this.state.stats.spark >= 10) {
-                        this.mkBtn(acts, "SPARK (10 SP)", "border-yellow-500 text-yellow-500", () => {
-                            this.state.stats.spark -= 10;
-                            const dmg = 25 + Math.floor(this.state.stats.xp/100);
-                            enemy.hp -= dmg;
-                            logs.unshift(`> Spark Bolt: ${dmg} energy damage.`);
-                            checkEnd();
-                        });
-                    }
-
-                    // Companions
-                    if(this.state.party.includes("The Ronin")) {
-                        this.mkBtn(acts, "RONIN SLASH", "border-blue-500 text-blue-500", () => {
-                            enemy.hp -= 15; logs.unshift("> Ronin strikes: 15 damage."); checkEnd();
-                        });
-                    }
-                    if(this.state.party.includes("Hana")) {
-                        this.mkBtn(acts, "HANA REPAIR", "border-pink-500 text-pink-500", () => {
-                            this.healPlayer(15); logs.unshift("> Hana repairs: +15 HP."); enemyTurn();
-                        });
-                    }
-                    if(this.state.inv.includes("Med-Stim")) {
-                        this.mkBtn(acts, "USE STIM", "border-green-500 text-green-500", () => {
-                            this.healPlayer(35); this.removeItem("Med-Stim"); logs.unshift("> Used Med-Stim."); enemyTurn();
-                        });
-                    }
+            renderMenu: () => {
+                const container = document.getElementById('action-container');
+                container.innerHTML = '';
+                const addBtn = (txt, fn, color="text-white") => {
+                    const btn = document.createElement('button');
+                    btn.className = `btn-interact p-3 w-full border border-gray-700 hover:bg-red-900/20 ${color}`;
+                    btn.innerHTML = txt;
+                    btn.onclick = fn;
+                    container.appendChild(btn);
                 };
 
-                const enemyTurn = () => {
-                    if(enemy.hp <= 0) return;
-                    this.state.stats.hp -= enemy.dmg;
-                    logs.unshift(`> ${enemy.name} hits you: -${enemy.dmg} HP.`);
-                    this.updateHUD();
-                    if(this.state.stats.hp <= 0) {
-                        modal.classList.add('hidden');
-                        this.gameOver();
+                Engine.log(`TURN ${Combat.turn} | Enemy: ${Combat.enemy.hp}/${Combat.enemy.maxHp}`, "text-gray-500");
+
+                // Basic Actions
+                const wep = State.player.equipment.weapon ? DB.items[State.player.equipment.weapon] : { name: "Fists", dmg: 2 };
+                const dmg = Math.floor(wep.dmg + (State.player.stats.str * 1.5));
+                addBtn(`Attack (${wep.name})`, () => Combat.playerAct('attack', dmg), "text-red-400");
+                
+                if (State.player.sp >= 10) {
+                    const sparkDmg = 20 + (State.player.stats.tec * 5);
+                    addBtn(`Spark Blast (10 SP)`, () => Combat.playerAct('spark', sparkDmg), "text-yellow-400");
+                }
+
+                // Party Actions
+                if (State.player.party.includes('The Ronin')) {
+                    addBtn(`Ronin: Slash`, () => Combat.playerAct('ronin', 15), "text-neon-blue");
+                }
+                if (State.player.party.includes('Hana')) {
+                    addBtn(`Hana: Repair`, () => Combat.playerAct('hana', 15), "text-neon-pink");
+                }
+
+                // Items
+                if (State.player.inventory.includes('med_stim')) {
+                    addBtn(`Use Med-Stim`, () => Combat.playerAct('heal'));
+                }
+
+                addBtn(`Flee`, () => {
+                    if (Math.random() + (State.player.stats.agi * 0.1) > 0.5) {
+                        Engine.log("Escaped!");
+                        Engine.goto('hub');
                     } else {
-                        renderTurn();
+                        Engine.log("Escape Failed!", "text-red-500");
+                        Combat.enemyAct();
                     }
-                };
+                });
+            },
 
-                const checkEnd = () => {
-                    if(enemy.hp <= 0) {
-                        modal.classList.add('hidden');
-                        this.logText(`Defeated ${enemy.name}. +${enemy.xp} XP`, "gain");
-                        this.addXp(enemy.xp);
-                        if(enemy.loot) enemy.loot.forEach(l => this.addItem(l));
-                        if(winTarget) this.renderNode(winTarget);
-                    } else {
-                        enemyTurn();
-                    }
-                };
-                renderTurn();
+            playerAct: (type, val) => {
+                if (type === 'attack') {
+                    Combat.enemy.hp -= val;
+                    Engine.log(`Hit for ${val} dmg!`, "text-neon-green");
+                } else if (type === 'spark') {
+                    Game.modSp(-10);
+                    Combat.enemy.hp -= val;
+                    Engine.log(`Spark surge: ${val} dmg!`, "text-yellow-300");
+                } else if (type === 'ronin') {
+                    Combat.enemy.hp -= val;
+                    Engine.log(`Ronin strikes: ${val} dmg!`, "text-neon-blue");
+                } else if (type === 'hana') {
+                    Game.modHp(val);
+                    Engine.log(`Hana repairs: +${val} HP.`, "text-neon-pink");
+                    // Support action consumes turn
+                } else if (type === 'heal') {
+                    const idx = State.player.inventory.indexOf('med_stim');
+                    State.player.inventory.splice(idx, 1);
+                    Game.modHp(30);
+                    Engine.log("Used Med-Stim.");
+                }
+
+                if (Combat.enemy.hp <= 0) Combat.win();
+                else setTimeout(Combat.enemyAct, 800);
+            },
+
+            enemyAct: () => {
+                const dodgeChance = State.player.stats.agi * 0.05;
+                if (Math.random() > dodgeChance) {
+                    const armId = State.player.equipment.armor;
+                    const armor = armId ? DB.items[armId].def : 0;
+                    const dmg = Math.max(1, Combat.enemy.dmg - armor);
+                    Engine.log(`${Combat.enemy.name} hits you: ${dmg} dmg!`, "text-red-500");
+                    Game.modHp(-dmg);
+                } else {
+                    Engine.log("You dodged the attack!", "text-blue-300");
+                }
+                Combat.turn++;
+                if (State.player.hp > 0) Combat.renderMenu();
+            },
+
+            win: () => {
+                Engine.log(`TARGET ELIMINATED.`, "text-neon-green font-bold");
+                Game.modXp(Combat.enemy.xp);
+                Game.modCredits(Combat.enemy.cr);
+                setTimeout(() => {
+                     // Special check for boss
+                    if (Combat.enemy.name === "The Juggernaut") Engine.goto('mission_victory');
+                    else Engine.goto('hub');
+                }, 1500);
             }
+        };
 
-            startHacking(difficulty, successNode, failNode) {
+        /* --- HACKING MINIGAME (Breach Protocol) --- */
+        const Hacking = {
+            start: (difficulty, onSuccess) => {
                 const modal = document.getElementById('modal-overlay');
-                modal.classList.remove('hidden');
                 document.getElementById('modal-title').innerText = "BREACH PROTOCOL";
-                document.getElementById('modal-title').className = "text-xl font-bold mb-4 text-center text-blue-400 tracking-widest";
+                modal.classList.remove('hidden');
 
                 const hex = ['1C', '55', 'BD', 'E9', '7A'];
                 let target = [];
-                for(let i=0; i<difficulty; i++) target.push(hex[Math.floor(Math.random()*hex.length)]);
+                for(let i=0; i<difficulty+2; i++) target.push(hex[Math.floor(Math.random()*hex.length)]);
                 let buffer = [];
 
-                const renderHack = () => {
-                    document.getElementById('modal-content').innerHTML = `
-                        <div class="text-center mb-4 text-blue-300">
-                            <div class="text-xs text-gray-500">SEQUENCE</div>
-                            <div class="font-mono text-lg tracking-widest border border-blue-900 bg-black p-1">${target.join(' ')}</div>
+                const render = () => {
+                    const content = document.getElementById('modal-content');
+                    content.innerHTML = `
+                        <div class="text-center mb-4">
+                            <div class="text-xs text-gray-500">REQUIRED SEQUENCE</div>
+                            <div class="font-mono text-lg text-neon-blue tracking-widest border border-neon-blue p-2 bg-black">${target.join(' ')}</div>
                         </div>
-                        <div class="text-center mb-4 text-white">
+                        <div class="text-center mb-4">
                             <div class="text-xs text-gray-500">BUFFER</div>
-                            <div class="font-mono h-6">${buffer.join(' ')}</div>
+                            <div class="font-mono h-6 text-white">${buffer.join(' ')}</div>
                         </div>
                         <div class="grid grid-cols-4 gap-2 w-64 mx-auto">
-                            ${Array(16).fill(0).map(()=>`<button class="border border-blue-800 hover:bg-blue-900 text-blue-400 text-xs p-2" onclick="game.inputHack('${hex[Math.floor(Math.random()*hex.length)]}')">${hex[Math.floor(Math.random()*hex.length)]}</button>`).join('')}
+                            ${Array(16).fill(0).map(() => {
+                                const val = hex[Math.floor(Math.random()*hex.length)];
+                                return `<button class="border border-green-800 hover:bg-green-900 text-neon-green text-xs p-2 font-mono" onclick="Hacking.input('${val}', ${difficulty}, '${onSuccess}')">${val}</button>`;
+                            }).join('')}
                         </div>
+                        <button onclick="document.getElementById('modal-overlay').classList.add('hidden')" class="mt-4 text-red-500 text-xs border border-red-900 px-4 py-1">ABORT</button>
                     `;
-                    document.getElementById('modal-actions').innerHTML = `<button onclick="document.getElementById('modal-overlay').classList.add('hidden')" class="text-red-500 border border-red-800 px-4 py-1 text-xs">ABORT</button>`;
                 };
 
-                this.inputHack = (val) => {
+                Hacking.input = (val, diff, cbName) => {
                     buffer.push(val);
-                    if(buffer.join('').includes(target.join(''))) {
-                        modal.classList.add('hidden');
-                        this.logText("System Hacked.", "gain");
-                        if(this.state.party.includes('Aiko')) this.addCredits(20);
-                        this.renderNode(successNode);
-                    } else if(buffer.length > difficulty+2) {
-                        modal.classList.add('hidden');
-                        this.logText("Hack Failed. Alarm Triggered.", "combat");
-                        this.state.stats.hp -= 10;
-                        this.updateHUD();
-                        this.renderNode(failNode);
+                    const tStr = target.join('');
+                    const bStr = buffer.join('');
+                    
+                    if(bStr.includes(tStr)) {
+                        document.getElementById('modal-overlay').classList.add('hidden');
+                        Engine.log("SYSTEM BREACHED.", "text-neon-blue");
+                        if(State.player.party.includes('Aiko')) Game.modCredits(50);
+                        if (window[cbName]) window[cbName](); 
+                        else Game.modCredits(100 * diff);
+                    } else if (buffer.length > target.length + 2) {
+                        document.getElementById('modal-overlay').classList.add('hidden');
+                        Engine.log("BREACH FAILED. ALARM TRIGGERED.", "text-neon-red");
+                        Game.modHp(-10);
                     } else {
-                        renderHack();
+                        render();
                     }
                 };
-                renderHack();
+                render();
             }
+        };
 
-            // --- HUD & DATA ---
-            updateHUD() {
-                const s = this.state.stats;
+        /* --- UI CONTROLLER --- */
+        const UI = {
+            tab: (id) => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('text-black', 'bg-neon-green'));
+                document.querySelector(`button[data-tab="${id}"]`).classList.add('text-black', 'bg-neon-green');
                 
-                // Bars
-                document.getElementById('val-hp').innerText = `${s.hp}/${s.maxHp}`;
-                document.getElementById('bar-hp').style.width = `${(s.hp/s.maxHp)*100}%`;
-                document.getElementById('val-spark').innerText = `${s.spark}/${s.maxSpark}`;
-                document.getElementById('bar-spark').style.width = `${(s.spark/s.maxSpark)*100}%`;
-                document.getElementById('val-xp').innerText = `${s.xp}/${s.lvl*1000}`;
-                document.getElementById('bar-xp').style.width = `${(s.xp/(s.lvl*1000))*100}%`;
-                
-                // Text
-                document.getElementById('val-cred').innerText = s.credits;
-                document.getElementById('lvl-display').innerText = `LVL ${s.lvl}`;
-                document.getElementById('class-display').innerText = `CLASS: ${s.class.toUpperCase()}`;
+                ['inv', 'map', 'quest', 'sys'].forEach(t => document.getElementById(`tab-${t}`).classList.add('hidden'));
+                document.getElementById(`tab-${id}`).classList.remove('hidden');
 
-                // Inv
-                const invEl = document.getElementById('inventory-list');
+                if (id === 'map') UI.renderMap();
+            },
+
+            update: () => {
+                const p = State.player;
+                // Vitals
+                document.getElementById('val-hp').innerText = `${Math.floor(p.hp)}/${p.maxHp}`;
+                document.getElementById('bar-hp').style.width = `${(p.hp/p.maxHp)*100}%`;
+                document.getElementById('val-sp').innerText = `${Math.floor(p.sp)}/${p.maxSp}`;
+                document.getElementById('bar-sp').style.width = `${(p.sp/p.maxSp)*100}%`;
+                document.getElementById('val-cr').innerText = p.credits;
+                document.getElementById('val-xp').innerText = p.xp;
+                document.getElementById('val-lvl').innerText = p.level;
+
+                document.getElementById('stat-str').innerText = p.stats.str;
+                document.getElementById('stat-agi').innerText = p.stats.agi;
+                document.getElementById('stat-tec').innerText = p.stats.tec;
+                document.getElementById('stat-pts').innerText = p.stats.pts;
+
+                if (p.stats.pts > 0) document.getElementById('lvl-btns').classList.remove('hidden');
+                else document.getElementById('lvl-btns').classList.add('hidden');
+
+                // Slots
+                document.getElementById('slot-wep').innerHTML = `WEAPON:<br><span class="text-neon-green">${p.equipment.weapon ? DB.items[p.equipment.weapon].name : 'Fists'}</span>`;
+                document.getElementById('slot-arm').innerHTML = `ARMOR:<br><span class="text-neon-green">${p.equipment.armor ? DB.items[p.equipment.armor].name : 'None'}</span>`;
+
+                // Inventory
+                const invList = document.getElementById('inv-list');
+                invList.innerHTML = '';
                 const counts = {};
-                s.inv.forEach(i=>counts[i]=(counts[i]||0)+1);
-                invEl.innerHTML = Object.keys(counts).length ? Object.keys(counts).map(k => {
-                    const item = DB.items[k];
-                    let btn = (item && (item.type==='heal'||item.type==='spark')) ? `<button onclick="game.useItem('${k}')" class="text-[9px] bg-green-800 px-1 ml-2 text-white">USE</button>` : '';
-                    return `<div class="flex justify-between items-center bg-green-900/10 p-1 border border-green-900/30 mb-1"><span class="text-green-400">${k} x${counts[k]}</span>${btn}</div>`;
-                }).join('') : '<div class="text-gray-600 italic">Empty</div>';
+                p.inventory.forEach(i => counts[i] = (counts[i] || 0) + 1);
+                for (let [id, count] of Object.entries(counts)) {
+                    const item = DB.items[id] || {name:id};
+                    const div = document.createElement('div');
+                    div.className = "flex justify-between items-center border border-gray-800 p-1 bg-gray-900";
+                    let actions = '';
+                    if (item.type === 'use') actions += `<button onclick="Game.consume('${id}')" class="text-xs text-neon-green px-1 border border-neon-green ml-1">USE</button>`;
+                    if (['weapon','armor','deck'].includes(item.type)) actions += `<button onclick="Game.equip('${id}')" class="text-xs text-neon-blue px-1 border border-neon-blue ml-1">EQP</button>`;
+                    div.innerHTML = `<span>${item.name} x${count}</span> <div>${actions}</div>`;
+                    invList.appendChild(div);
+                }
 
                 // Party
-                document.getElementById('party-list').innerHTML = s.party.length ? s.party.map(p=>`<div class="text-blue-300 border-l-2 border-blue-500 pl-2">${p}</div>`).join('') : '<div class="text-gray-600 italic">No Link</div>';
+                const partyEl = document.getElementById('party-list');
+                partyEl.innerHTML = p.party.length 
+                    ? p.party.map(n => `<span class="bg-blue-900/30 text-neon-blue px-2 py-1 border border-blue-800">${n}</span>`).join('') 
+                    : '<span class="text-gray-500 italic">No companions synced.</span>';
 
-                // Quests
-                document.getElementById('quest-list').innerHTML = Object.keys(this.state.quests).length ? Object.keys(this.state.quests).map(q => `<div class="border border-yellow-900/50 p-2 mb-1"><div class="text-yellow-500 font-bold">${q}</div><div class="text-gray-400 text-[10px]">${this.state.quests[q]}</div></div>`).join('') : '<div class="text-gray-600 italic">None</div>';
-
-                // Codex
-                document.getElementById('codex-list').innerHTML = this.state.codex.map(c=>`<div class="mb-2"><div class="text-blue-400 font-bold border-b border-blue-900/30">${c}</div><div class="text-gray-500">${DB.codex[c]}</div></div>`).join('');
-            }
-
-            switchTab(tab) {
-                ['inv','quest','data','sys'].forEach(t => document.getElementById(`tab-${t}`).classList.add('hidden'));
-                document.getElementById(`tab-${tab}`).classList.remove('hidden');
-                document.querySelectorAll('.tab-btn').forEach(b => {
-                    b.classList.remove('active');
-                    if(b.innerText.toLowerCase().includes(tab) || (tab==='inv' && b.innerText==='GEAR') || (tab==='data' && b.innerText==='DATA')) b.classList.add('active');
+                // Contracts
+                const list = document.getElementById('contract-list');
+                list.innerHTML = '';
+                Procedural.contracts.forEach(q => {
+                    const div = document.createElement('div');
+                    div.className = "p-2 border border-green-900 bg-black text-xs flex justify-between";
+                    if (q.complete) div.innerHTML = `<span class="text-gray-500 line-through">${q.desc}</span> <button onclick="UI.claimReward('${q.id}')" class="text-neon-yellow animate-pulse">CLAIM ${q.reward}cr</button>`;
+                    else {
+                        const active = State.player.quests.find(x => x.id === q.id);
+                        if (active) div.innerHTML = `<span class="text-neon-blue">${q.desc} (${active.progress||0}/${active.target||1})</span> <span class="text-gray-500">ACTIVE</span>`;
+                        else div.innerHTML = `<span>${q.desc}</span> <button onclick="UI.acceptContract('${q.id}')" class="text-neon-green hover:underline">ACCEPT</button>`;
+                    }
+                    list.appendChild(div);
                 });
-            }
+            },
 
-            // --- UTILS ---
-            mkBtn(p, t, c, act) {
-                const b = document.createElement('button');
-                b.className = `border px-3 py-1 text-xs font-bold hover:bg-white/10 ${c}`;
-                b.innerText = t; b.onclick = act; p.appendChild(b);
-            }
-            addItem(i) { this.state.inv.push(i); this.updateHUD(); }
-            removeItem(i) { const idx = this.state.inv.indexOf(i); if(idx>-1)this.state.inv.splice(idx,1); this.updateHUD(); }
-            addCredits(c) { this.state.stats.credits += c; this.updateHUD(); }
-            addXp(x) { 
-                this.state.stats.xp += x;
-                if(this.state.stats.xp >= this.state.stats.lvl * 1000) {
-                    this.state.stats.lvl++; 
-                    this.state.stats.maxHp += 20; 
-                    this.state.stats.hp = this.state.stats.maxHp;
-                    this.logText(`LEVEL UP! Now Lvl ${this.state.stats.lvl}`, "gain");
+            renderMap: () => {
+                const grid = document.getElementById('map-container');
+                grid.innerHTML = '';
+                // 4x4 Grid - Integrated Safehouse and London
+                const worldMap = [
+                    'safehouse', 'slums', 'market', 'metro',
+                    'london', 'slums', 'net', 'corpo',
+                    'wastes', 'wastes', 'net', 'corpo',
+                    'wastes', 'wastes', 'wastes', 'wastes'
+                ];
+                worldMap.forEach((loc, idx) => {
+                    const div = document.createElement('div');
+                    const isCurrent = (State.player.location === loc);
+                    const isUnlocked = loc !== 'london' || State.player.party.includes('Hana'); // Unlock Logic example
+                    
+                    div.className = `map-node ${isCurrent ? 'active' : ''} ${!isUnlocked ? 'opacity-30' : ''}`;
+                    div.innerHTML = loc.substring(0,2).toUpperCase();
+                    if (loc === State.player.location) div.innerHTML = 'YOU';
+                    
+                    div.onmouseenter = () => document.getElementById('map-danger').innerText = `Danger: ${DB.locations[loc].danger}/5`;
+                    div.onclick = () => { if(isUnlocked && !['combat'].includes(State.currentNode)) Game.travel(loc); };
+                    grid.appendChild(div);
+                });
+            },
+
+            acceptContract: (id) => {
+                const q = Procedural.contracts.find(x => x.id === id);
+                if (q) { State.player.quests.push(q); Engine.log(`Contract Accepted.`); UI.update(); }
+            },
+            claimReward: (id) => {
+                const qIdx = State.player.quests.findIndex(x => x.id === id);
+                const pIdx = Procedural.contracts.findIndex(x => x.id === id);
+                if (qIdx > -1) {
+                    Game.modCredits(State.player.quests[qIdx].reward);
+                    State.player.quests.splice(qIdx, 1);
+                    Procedural.contracts.splice(pIdx, 1);
+                    Engine.log("Contract Complete.");
+                    UI.update();
                 }
-                this.updateHUD(); 
             }
-            healPlayer(a, c=0) {
-                if(c > 0) { if(this.state.stats.credits < c) return this.logText("Insufficient Funds."); this.addCredits(-c); }
-                this.state.stats.hp = Math.min(this.state.stats.maxHp, this.state.stats.hp+a);
-                this.updateHUD();
-            }
-            buyItem(k) { const i = DB.items[k]; if(this.state.stats.credits >= i.cost) { this.addCredits(-i.cost); this.addItem(k); this.logText(`Bought ${k}.`); } }
-            useItem(k) { 
-                const i = DB.items[k];
-                if(i.type==='heal') this.healPlayer(i.val);
-                if(i.type==='spark') { this.state.stats.spark = Math.min(this.state.stats.maxSpark, this.state.stats.spark+i.val); this.updateHUD(); }
-                this.removeItem(k);
-            }
-            addQuest(t,d) { this.state.quests[t]=d; this.updateHUD(); this.logText(`QUEST START: ${t}`, "gain"); }
-            completeQuest(t) { delete this.state.quests[t]; this.updateHUD(); this.logText(`QUEST DONE: ${t}`, "gain"); }
-            unlockCodex(k) { if(!this.state.codex.includes(k)) { this.state.codex.push(k); this.updateHUD(); } }
-            addPartyMember(p) { if(!this.state.party.includes(p)) { this.state.party.push(p); this.updateHUD(); this.logText(`${p} joined party.`, "gain"); } }
-            
-            save() { localStorage.setItem('exiled_spark_v22', JSON.stringify(this.state)); }
-            reset() { localStorage.removeItem('exiled_spark_v22'); location.reload(); }
-            gameOver() {
-                document.getElementById('game-log').innerHTML = `<div class="text-center text-red-500 font-bold mt-10 text-2xl">CRITICAL SYSTEM FAILURE</div>`;
-                document.getElementById('choices-container').innerHTML = `<button onclick="game.reset()" class="w-full border border-red-500 text-red-500 p-4">REBOOT</button>`;
-            }
-        }
+        };
 
-        window.onload = () => { window.game = new GameEngine(); window.game.init(); };
+        const Procedural = {
+            contracts: [],
+            generateContracts: () => {
+                Procedural.contracts = [];
+                const types = ['Courier', 'Hunt', 'Hack'];
+                for(let i=0; i<3; i++) {
+                    const type = types[Math.floor(Math.random()*types.length)];
+                    let quest = { id: Math.random().toString(36), type: type.toLowerCase(), reward: 100 + (State.player.level*50), complete: false };
+                    if (type === 'Hunt') { quest.desc = `Eliminate 3 enemies in Slums`; quest.target = 3; quest.progress = 0; } 
+                    else if (type === 'Courier') { quest.desc = `Deliver package to Market`; } 
+                    else { quest.desc = `Hack Corp Terminal`; }
+                    Procedural.contracts.push(quest);
+                }
+            },
+            randomEnemy: (loc) => {
+                const danger = DB.locations[loc].danger;
+                if (danger >= 4) return DB.enemies.juggernaut;
+                if (danger >= 3) return DB.enemies.guard;
+                if (danger >= 2) return DB.enemies.drone;
+                return DB.enemies.thug;
+            }
+        };
+
+        Game.consume = (id) => {
+            const item = DB.items[id];
+            Engine.log(item.effect(State.player), "text-neon-yellow");
+            const idx = State.player.inventory.indexOf(id);
+            State.player.inventory.splice(idx, 1);
+            UI.update();
+        };
+
+        /* --- NODES --- */
+        const Nodes = {
+            'boot': {
+                text: "SYSTEM BOOT... MEMORY FRAGMENTS LOADED.<br>WELCOME BACK, SPARK.",
+                visual: "net",
+                options: [{ text: "INITIALIZE", next: 'intro' }]
+            },
+            'intro': {
+                text: "You wake in a dumpster in Sector 7 Slums. Rain falls. You have a knife, a glitched memory, and the Spark.",
+                visual: "city_rain",
+                options: [{ text: "Check Pockets", action: () => { Game.addItem('knife'); Game.equip('knife'); }, next: 'hub' }]
+            },
+            'hub': {
+                text: () => {
+                    const loc = DB.locations[State.player.location];
+                    return `<strong>${loc.name}</strong><br>${loc.desc}<br><br>What will you do?`;
+                },
+                options: [
+                    { text: "Visit Shop", next: 'shop' },
+                    { text: "Patrol (Combat)", action: () => Combat.start(Procedural.randomEnemy(State.player.location)) },
+                    { text: "Hack Terminal", action: () => Hacking.start(3) },
+                    { text: "Check Metro", next: 'metro_station' },
+                    { text: "Visit Rusty Cog (Kenji)", next: 'bar', req: (s) => !s.flags.metKenji && s.location === 'slums' }
+                ]
+            },
+            'safehouse_hub': {
+                text: "<strong>THE BUNKER</strong><br>Your base of operations. The party gathers here.",
+                visual: "bunker",
+                options: [
+                    { text: "Rest (Full Heal)", action: () => { Game.modHp(999); Engine.log("Systems Restored."); } },
+                    { text: "Simulation: Bitcoin City (Recruit Aiko)", next: 'sim_bitcoin', req: (s) => !s.party.includes('Aiko') },
+                    { text: "Simulation: London (Recruit Hana)", next: 'sim_london', req: (s) => !s.party.includes('Hana') },
+                    { text: "Exit to Slums", action: () => Game.travel('slums') }
+                ]
+            },
+            'shop': {
+                text: "A vendor grunts at you.",
+                visual: "market",
+                options: [
+                    { text: "Buy Med-Stim (50cr)", cost: 50, action: () => Game.addItem('med_stim') },
+                    { text: "Buy Spark Cell (80cr)", cost: 80, action: () => Game.addItem('spark_cell') },
+                    { text: "Buy Vest (200cr)", cost: 200, action: () => Game.addItem('vest') },
+                    { text: "Leave", next: 'hub' }
+                ]
+            },
+            // Quest Lines
+            'bar': {
+                text: "Kenji slides a chip over. 'Arasaka Warehouse 42. Get the drive.'",
+                visual: "city_rain",
+                options: [
+                    { text: "Accept Mission", action: () => { State.player.flags.metKenji = true; Procedural.contracts.push({id:'main', desc:'Raid Warehouse 42', type:'raid', reward:500}); UI.update(); }, next: 'hub' }
+                ]
+            },
+            'sim_bitcoin': {
+                text: "<strong>SIMULATION: BITCOIN CITY</strong><br>A realm of pure data. You find Aiko fighting code-wraiths.",
+                visual: "net",
+                options: [
+                    { text: "Help Aiko", action: () => { Game.addParty('Aiko'); Engine.log("Aiko joined the party."); }, next: 'safehouse_hub' }
+                ]
+            },
+            'sim_london': {
+                text: "<strong>SIMULATION: LONDON</strong><br>Gears grind. You find Hana, the Geisha droid, lost in time.",
+                visual: "gears",
+                options: [
+                    { text: "Repair Hana", action: () => { Game.addParty('Hana'); Engine.log("Hana joined the party."); }, next: 'safehouse_hub' }
+                ]
+            },
+            'metro_station': {
+                text: "Mag-lev trains hum.",
+                visual: "city_rain",
+                options: [
+                    { text: "Warehouse 42 (Mission)", next: 'warehouse_entry', req: (s) => s.flags.metKenji },
+                    { text: "Back to Hub", next: 'hub' }
+                ]
+            },
+            'warehouse_entry': {
+                text: "Warehouse 42. Two guards.",
+                visual: "plaza",
+                options: [
+                    { text: "Attack", action: () => Combat.start(DB.enemies.guard) },
+                    { text: "Hack Gate", action: () => Hacking.start(4, 'warehouse_boss') }
+                ]
+            },
+            'warehouse_boss': {
+                text: "Inside, <strong>THE JUGGERNAUT</strong> awaits.",
+                visual: "mech",
+                options: [{ text: "FIGHT", action: () => Combat.start(DB.enemies.juggernaut) }]
+            },
+            'mission_victory': {
+                text: "The Juggernaut falls. <strong>The Ronin</strong> steps from the shadows. 'Impressive.'",
+                visual: "bunker",
+                options: [{ text: "Go with Ronin", action: () => { Game.addParty('The Ronin'); Game.travel('safehouse'); } }]
+            },
+            'death': {
+                text: "<span class='text-red-600 font-bold'>CRITICAL FAILURE</span>",
+                visual: "combat",
+                options: [{ text: "REBOOT", action: () => Engine.init() }]
+            }
+        };
+
+        window.onload = Engine.init;
     </script>
 </body>
 </html>
