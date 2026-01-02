@@ -81,6 +81,7 @@ const gameRegistry = {
 
     // System Modules
     'trophy-room': { name: 'Trophy Room', description: 'Achievement Gallery', icon: 'fa-solid fa-trophy', category: 'System', importFn: () => import('./core/TrophyRoom.js'), wide: true },
+    'clubhouse-game': { name: 'Clubhouse', description: 'Your Personal Hangout', icon: 'fa-solid fa-couch', category: 'System', importFn: () => import('./games/clubhouse.js'), wide: true },
     'hall-of-fame': { name: 'Hall of Fame', description: 'Global Stats & Records', icon: 'fa-solid fa-list-ol', category: 'System', importFn: () => import('./games/hallOfFame.js'), wide: true },
     'avatar-station': { name: 'Avatar Station', description: 'Customize Identity', icon: 'fa-solid fa-user-gear', category: 'System', importFn: () => import('./games/avatarStation.js') },
     'tech-tree': { name: 'Tech Tree', description: 'System Upgrades', icon: 'fa-solid fa-network-wired', category: 'System', importFn: () => import('./games/techTree.js'), wide: true },
@@ -240,7 +241,7 @@ async function transitionToState(newState, context = {}) {
                 currentGameInstance = new GameClass();
                 if (currentGameInstance.init) await currentGameInstance.init(container);
 
-                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'lumina-game', 'prism-realms-game', 'trophy-room', 'hall-of-fame', 'avatar-station', 'tech-tree', 'sudoku-game', 'zen-garden-game', 'neon-zip-game', 'solitaire-game', 'neon-word-game', 'neon-whack-game'];
+                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'lumina-game', 'prism-realms-game', 'trophy-room', 'clubhouse-game', 'hall-of-fame', 'avatar-station', 'tech-tree', 'sudoku-game', 'zen-garden-game', 'neon-zip-game', 'solitaire-game', 'neon-word-game', 'neon-whack-game'];
                 if (!noDpadGames.includes(gameId)) {
                     mobileControls = new MobileControls(container);
                 }

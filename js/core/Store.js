@@ -64,6 +64,191 @@ export default class Store {
                 value: 'red'
             },
 
+            // --- CLUBHOUSE FURNITURE ---
+            {
+                id: 'furniture_couch',
+                name: 'Neon Couch',
+                description: 'Comfy seating with glow.',
+                cost: 200,
+                icon: 'fas fa-couch',
+                type: 'furniture',
+                value: 'couch'
+            },
+            {
+                id: 'furniture_table',
+                name: 'Holo Table',
+                description: 'A table from the future.',
+                cost: 150,
+                icon: 'fas fa-table',
+                type: 'furniture',
+                value: 'table'
+            },
+            {
+                id: 'furniture_lamp',
+                name: 'Lava Lamp',
+                description: 'Groovy lighting.',
+                cost: 100,
+                icon: 'fas fa-lightbulb',
+                type: 'furniture',
+                value: 'lamp'
+            },
+             {
+                id: 'furniture_plant',
+                name: 'Cyber Plant',
+                description: 'Synthetic flora.',
+                cost: 120,
+                icon: 'fas fa-seedling',
+                type: 'furniture',
+                value: 'plant'
+            },
+             {
+                id: 'furniture_arcade',
+                name: 'Mini Arcade',
+                description: 'Play while you play.',
+                cost: 500,
+                icon: 'fas fa-gamepad',
+                type: 'furniture',
+                value: 'arcade'
+            },
+            {
+                id: 'furniture_rug',
+                name: 'Pattern Rug',
+                description: 'Tie the room together.',
+                cost: 80,
+                icon: 'fas fa-dharmachakra',
+                type: 'furniture',
+                value: 'rug',
+                vibe: 5
+            },
+            {
+                id: 'furniture_bed_neon',
+                name: 'Neon Bed',
+                description: 'Sleep in the glow.',
+                cost: 400,
+                icon: 'fas fa-bed',
+                type: 'furniture',
+                value: 'bed_neon',
+                vibe: 20
+            },
+            {
+                id: 'furniture_server',
+                name: 'Data Server',
+                description: 'High-tech computing.',
+                cost: 600,
+                icon: 'fas fa-server',
+                type: 'furniture',
+                value: 'server',
+                vibe: 25
+            },
+            {
+                id: 'furniture_art_glitch',
+                name: 'Glitch Art',
+                description: 'Modern digital masterpiece.',
+                cost: 300,
+                icon: 'fas fa-image',
+                type: 'furniture',
+                value: 'art_glitch',
+                vibe: 15
+            },
+             {
+                id: 'furniture_jukebox',
+                name: 'Holo Jukebox',
+                description: 'Plays the best synthwave.',
+                cost: 500,
+                icon: 'fas fa-music',
+                type: 'furniture',
+                value: 'jukebox',
+                vibe: 30
+            },
+
+            // --- PROPERTIES ---
+            {
+                id: 'property_studio',
+                name: 'Cyber Studio',
+                description: 'A cozy starter apartment.',
+                cost: 0,
+                icon: 'fas fa-home',
+                type: 'property',
+                value: 'studio'
+            },
+            {
+                id: 'property_penthouse',
+                name: 'Neon Penthouse',
+                description: 'Luxury living with a view.',
+                cost: 5000,
+                icon: 'fas fa-building',
+                type: 'property',
+                value: 'penthouse'
+            },
+            {
+                id: 'property_moon',
+                name: 'Moon Base',
+                description: 'Quiet, low gravity, expensive.',
+                cost: 10000,
+                icon: 'fas fa-moon',
+                type: 'property',
+                value: 'moon'
+            },
+
+            // --- WALLPAPERS ---
+            {
+                id: 'wall_concrete',
+                name: 'Raw Concrete',
+                description: 'Industrial chic.',
+                cost: 0,
+                icon: 'fas fa-square',
+                type: 'wallpaper',
+                value: 'concrete'
+            },
+             {
+                id: 'wall_hex',
+                name: 'Hexagon Grid',
+                description: 'Futuristic patterns.',
+                cost: 200,
+                icon: 'fas fa-border-all',
+                type: 'wallpaper',
+                value: 'hex'
+            },
+            {
+                id: 'wall_brick_neon',
+                name: 'Neon Brick',
+                description: 'Classic alleyway vibes.',
+                cost: 300,
+                icon: 'fas fa-th',
+                type: 'wallpaper',
+                value: 'brick'
+            },
+
+            // --- FLOORING ---
+             {
+                id: 'floor_wood',
+                name: 'Synthetic Wood',
+                description: 'Warm and inviting.',
+                cost: 0,
+                icon: 'fas fa-grip-lines',
+                type: 'flooring',
+                value: 'wood'
+            },
+            {
+                id: 'floor_glass',
+                name: 'Glass Floor',
+                description: 'Don\'t look down.',
+                cost: 500,
+                icon: 'fas fa-window-maximize',
+                type: 'flooring',
+                value: 'glass'
+            },
+            {
+                id: 'floor_grid',
+                name: 'Laser Grid',
+                description: 'Tron-like aesthetics.',
+                cost: 400,
+                icon: 'fas fa-border-none',
+                type: 'flooring',
+                value: 'grid'
+            },
+
+
             // --- TROPHY ROOM STYLES ---
             {
                 id: 'trophy_room_default',
@@ -295,7 +480,7 @@ export default class Store {
             let isEquipped = false;
             const equippedVal = this.saveSystem.getEquippedItem(item.type);
 
-            if (item.type === 'theme' || item.type === 'cabinet' || item.type === 'trophy_room') {
+            if (['theme', 'cabinet', 'trophy_room', 'property', 'wallpaper', 'flooring'].includes(item.type)) {
                 // Strict equality if val exists
                 isEquipped = equippedVal === item.value;
                 
@@ -306,12 +491,15 @@ export default class Store {
                 if (item.id === 'theme_neon_blue' && (equippedVal === 'blue' || !equippedVal)) isEquipped = true;
                 if (item.id === 'cabinet_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
                 if (item.id === 'trophy_room_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
+                if (item.id === 'property_studio' && (equippedVal === 'studio' || !equippedVal)) isEquipped = true;
+                if (item.id === 'wall_concrete' && (equippedVal === 'concrete' || !equippedVal)) isEquipped = true;
+                if (item.id === 'floor_wood' && (equippedVal === 'wood' || !equippedVal)) isEquipped = true;
 
             } else if (item.type === 'avatar') {
                 isEquipped = equippedVal === item.value;
                 // Default avatar check
                 if (item.id === 'avatar_astronaut' && !equippedVal) isEquipped = true;
-            } else if (item.type === 'decoration') {
+            } else if (item.type === 'decoration' || item.type === 'furniture') {
                 isEquipped = isUnlocked; // Active if owned
             }
 
@@ -326,7 +514,7 @@ export default class Store {
             let buttonHtml = '';
 
             if (isUnlocked) {
-                 if (item.type === 'decoration') {
+                 if (item.type === 'decoration' || item.type === 'furniture') {
                     buttonHtml = `<button class="w-full py-2 bg-green-600 text-white font-bold rounded cursor-default"><i class="fas fa-check"></i> Owned</button>`;
                  } else if (isEquipped) {
                     buttonHtml = `<button class="w-full py-2 bg-green-600 text-white font-bold rounded cursor-default"><i class="fas fa-check"></i> Active</button>`;
@@ -355,7 +543,7 @@ export default class Store {
                 btn.addEventListener('click', (e) => {
                     this.buy(item, e);
                 });
-            } else if (isUnlocked && !isEquipped && item.type !== 'decoration') {
+            } else if (isUnlocked && !isEquipped && item.type !== 'decoration' && item.type !== 'furniture') {
                 const btn = card.querySelector('.equip-btn');
                 if(btn) {
                     btn.addEventListener('click', () => {
@@ -373,7 +561,7 @@ export default class Store {
     equip(item) {
         try {
             // General Save Trigger
-            if (['theme', 'cabinet', 'trophy_room', 'avatar'].includes(item.type)) {
+            if (['theme', 'cabinet', 'trophy_room', 'avatar', 'property', 'wallpaper', 'flooring'].includes(item.type)) {
                 this.saveSystem.equipItem(item.type, item.value);
             }
 
