@@ -40,6 +40,7 @@ const gameRegistry = {
     'neon-jump': { name: 'Neon Jump', description: 'Jump to the Stars', icon: 'fa-solid fa-arrow-up', category: 'Action', importFn: () => import('./games/neonJump.js') },
     'neon-slice': { name: 'Neon Slice', description: 'Slice the Shapes', icon: 'fa-solid fa-scissors', category: 'Action', importFn: () => import('./games/neonSlice.js') },
     'neon-galaga-game': { name: 'Neon Galaga', description: 'Space Warfare', icon: 'fa-solid fa-jet-fighter', category: 'Action', importFn: () => import('./games/neonGalaga.js') },
+    'neon-combat': { name: 'Neon Combat', description: 'Cyber Fight', icon: 'fa-solid fa-hand-fist', category: 'Action', importFn: () => import('./games/neonCombat.js') },
     'snack-hole-game': { name: 'Neon Snacks', description: 'Devour Everything', icon: 'fa-solid fa-cookie-bite', category: 'Action', importFn: () => import('./games/snackHole.js'), wide: true },
 
     // Simulation
@@ -736,6 +737,7 @@ window.miniGameHub = {
     soundManager,
     saveSystem,
     showGameOver,
+    showToast: (msg) => { import('./core/ToastManager.js').then(m => m.default.getInstance().show(msg)); },
     gameRegistry,
     goBack: () => transitionToState(AppState.MENU),
     getCurrentGame: () => currentGameInstance
