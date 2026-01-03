@@ -74,6 +74,7 @@ const gameRegistry = {
     'eclipse-logic-puzzle-game': { name: 'Logic Puzzle', description: 'Deduction Grid', icon: 'fa-solid fa-lightbulb', category: 'RPG & Logic', importFn: () => import('./games/eclipseLogicPuzzle.js') },
 
     // Logic Puzzles
+    'math-blaster': { name: 'Galactic Rescue', description: 'Math Blaster Episode I', icon: 'fa-solid fa-rocket', category: 'Logic Puzzles', importFn: () => import('./games/mathBlaster.js'), wide: true },
     'queens-game': { name: 'Queens', description: 'Place Queens', icon: 'fa-solid fa-chess-queen', category: 'Logic Puzzles', importFn: () => import('./games/queens.js') },
     'neon-mines-game': { name: 'Neon Mines', description: 'Avoid Mines', icon: 'fa-solid fa-bomb', category: 'Logic Puzzles', importFn: () => import('./games/neonMines.js') },
     'neon-picross-game': { name: 'Neon Picross', description: 'Picture Cross', icon: 'fa-solid fa-pencil-alt', category: 'Logic Puzzles', importFn: () => import('./games/neonPicross.js') },
@@ -242,7 +243,7 @@ async function transitionToState(newState, context = {}) {
                 currentGameInstance = new GameClass();
                 if (currentGameInstance.init) await currentGameInstance.init(container);
 
-                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'lumina-game', 'prism-realms-game', 'trophy-room', 'hall-of-fame', 'avatar-station', 'tech-tree', 'sudoku-game', 'zen-garden-game', 'neon-zip-game', 'solitaire-game', 'neon-word-game', 'neon-whack-game', 'snack-hole-game', 'mahjong-game'];
+                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'lumina-game', 'prism-realms-game', 'trophy-room', 'hall-of-fame', 'avatar-station', 'tech-tree', 'sudoku-game', 'zen-garden-game', 'neon-zip-game', 'solitaire-game', 'neon-word-game', 'neon-whack-game', 'snack-hole-game', 'mahjong-game', 'math-blaster'];
                 if (!noDpadGames.includes(gameId)) {
                     mobileControls = new MobileControls(container);
                 }
@@ -736,6 +737,7 @@ window.miniGameHub = {
     soundManager,
     saveSystem,
     showGameOver,
+    inputManager,
     gameRegistry,
     goBack: () => transitionToState(AppState.MENU),
     getCurrentGame: () => currentGameInstance
