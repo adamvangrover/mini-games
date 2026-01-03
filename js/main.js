@@ -667,13 +667,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }, {passive: true});
     }
 
-    setTimeout(() => {
-        const loader = document.getElementById('app-loader');
-        if (loader) {
+    // --- Enhanced App Loader with Click-to-Start ---
+    const loader = document.getElementById('app-loader');
+    if (loader) {
+        // Update loader text to prompt user
+        const loaderText = loader.querySelector('p');
+        if (loaderText) loaderText.textContent = "Click Anywhere to Start";
+
+        const startApp = () => {
+            if (loader.classList.contains('opacity-0')) return; // Already started
+
+            // Resume Audio Context on user interaction
+            if (soundManager.context && soundManager.context.state === 'suspended') {
+                soundManager.context.resume().then(() => {
+                    console.log("AudioContext resumed successfully.");
+                });
+            }
+            soundManager.startBGM();
+
+            // Hide Loader
             loader.classList.add('opacity-0');
             setTimeout(() => loader.remove(), 1000);
-        }
-    }, 1500);
+
+            // Show Welcome Toast
+            window.miniGameHub.showToast("Welcome to Neon Arcade!");
+        };
+
+        // Add listeners to loader and body to catch first interaction
+        loader.addEventListener('click', startApp);
+        document.body.addEventListener('click', startApp, { once: true });
+        // Also allow Space/Enter to start
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'Enter') startApp();
+        }, { once: true });
+    } else {
+        // Fallback if loader is missing (e.g. debug mode)
+        soundManager.startBGM();
+    }
 
     // Boss Mode Logic
     const bossMode = new BossMode();
@@ -720,11 +750,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.addEventListener('click', (e) => {
         if (e.target.classList.contains('back-btn')) transitionToState(AppState.MENU);
+
+        // --- Global Click Effect (DOM-based) ---
+        // Creates a small ripple/sparkle on any click for juice
+        const clickFx = document.createElement('div');
+        clickFx.style.cssText = `
+            position: fixed;
+            left: ${e.clientX}px;
+            top: ${e.clientY}px;
+            width: 0px;
+            height: 0px;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            transition: all 0.4s ease-out;
+            transform: translate(-50%, -50%);
+        `;
+        document.body.appendChild(clickFx);
+
+        // Force reflow
+        requestAnimationFrame(() => {
+            clickFx.style.width = '50px';
+            clickFx.style.height = '50px';
+            clickFx.style.opacity = '0';
+            clickFx.style.borderWidth = '0px';
+        });
+
+        setTimeout(() => clickFx.remove(), 400);
     });
 
     lastTime = performance.now();
     requestAnimationFrame(mainLoop);
-    soundManager.startBGM();
+    // soundManager.startBGM(); // Moved to interaction handler
     new DevConsole();
     if (saveSystem.getSetting('crt')) {
         const crt = document.createElement('div');
