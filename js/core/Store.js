@@ -17,6 +17,44 @@ export default class Store {
 
         // Define Items
         this.items = [
+            // --- HUB SKINS ---
+            {
+                id: 'skin_default',
+                name: 'Default Hub',
+                description: 'The classic arcade look.',
+                cost: 0,
+                icon: 'fas fa-cube',
+                type: 'hub_skin',
+                value: 'default'
+            },
+            {
+                id: 'skin_retro_future',
+                name: 'Retro Future',
+                description: 'Synthwave sunsets and chrome.',
+                cost: 500,
+                icon: 'fas fa-sun',
+                type: 'hub_skin',
+                value: 'retro_future'
+            },
+            {
+                id: 'skin_gibson',
+                name: 'The Net',
+                description: 'High-speed data traversal.',
+                cost: 1000,
+                icon: 'fas fa-globe',
+                type: 'hub_skin',
+                value: 'gibson'
+            },
+            {
+                id: 'skin_stephenson',
+                name: 'The Metaverse',
+                description: 'White noise and pizza delivery.',
+                cost: 1000,
+                icon: 'fas fa-vr-cardboard',
+                type: 'hub_skin',
+                value: 'stephenson'
+            },
+
             // --- UI THEMES ---
             {
                 id: 'theme_neon_blue',
@@ -480,7 +518,7 @@ export default class Store {
             let isEquipped = false;
             const equippedVal = this.saveSystem.getEquippedItem(item.type);
 
-            if (['theme', 'cabinet', 'trophy_room', 'property', 'wallpaper', 'flooring'].includes(item.type)) {
+            if (['hub_skin', 'theme', 'cabinet', 'trophy_room', 'property', 'wallpaper', 'flooring'].includes(item.type)) {
                 // Strict equality if val exists
                 isEquipped = equippedVal === item.value;
                 
@@ -488,6 +526,7 @@ export default class Store {
                 if (equippedVal === undefined && item.cost === 0) isEquipped = true;
                 
                 // Special robustness checks for default IDs
+                if (item.id === 'skin_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
                 if (item.id === 'theme_neon_blue' && (equippedVal === 'blue' || !equippedVal)) isEquipped = true;
                 if (item.id === 'cabinet_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
                 if (item.id === 'trophy_room_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
@@ -561,7 +600,7 @@ export default class Store {
     equip(item) {
         try {
             // General Save Trigger
-            if (['theme', 'cabinet', 'trophy_room', 'avatar', 'property', 'wallpaper', 'flooring'].includes(item.type)) {
+            if (['hub_skin', 'theme', 'cabinet', 'trophy_room', 'avatar', 'property', 'wallpaper', 'flooring'].includes(item.type)) {
                 this.saveSystem.equipItem(item.type, item.value);
             }
 
