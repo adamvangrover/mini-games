@@ -62,6 +62,7 @@ export default class ArcadeHub {
             // --- Scene Setup ---
             const saveSystem = SaveSystem.getInstance();
             const theme = saveSystem.getEquippedItem('theme') || 'blue';
+            this.currentSkin = saveSystem.getEquippedItem('hub_skin') || 'default';
 
             // Theme Colors
             const themeColors = {
@@ -71,11 +72,20 @@ export default class ArcadeHub {
                 green: { bg: 0x001000, fog: 0x001000, grid: 0x00ff00, light: 0x00ff00 },
                 red:  { bg: 0x100000, fog: 0x100000, grid: 0xff0000, light: 0xff0000 }
             };
-            const colors = themeColors[theme] || themeColors.blue;
+            let colors = themeColors[theme] || themeColors.blue;
+
+            // Apply Skin Overrides
+            if (this.currentSkin === 'retro_future') {
+                colors = { bg: 0x2d004d, fog: 0x2d004d, grid: 0xff00ff, light: 0x00ffff };
+            } else if (this.currentSkin === 'gibson') {
+                colors = { bg: 0x000000, fog: 0x000000, grid: 0x00ff00, light: 0x00ff00 };
+            } else if (this.currentSkin === 'stephenson') {
+                colors = { bg: 0x808080, fog: 0x808080, grid: 0xffffff, light: 0xffffff };
+            }
 
             this.scene = new THREE.Scene();
             this.scene.background = new THREE.Color(colors.bg);
-            this.scene.fog = new THREE.FogExp2(colors.fog, 0.02);
+            this.scene.fog = new THREE.FogExp2(colors.fog, this.currentSkin === 'gibson' ? 0.04 : 0.02);
 
             // --- Camera Setup ---
             this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -228,13 +238,36 @@ export default class ArcadeHub {
     }
 
     createRoom(colors) {
+        let floorColor = 0x111111;
+        let floorMetalness = 0.6;
+        let floorRoughness = 0.1;
+        let wallColor = 0x222222;
+        let isWireframe = false;
+
+        if (this.currentSkin === 'retro_future') {
+            floorColor = 0x1a0b2e;
+            wallColor = 0x3d0066;
+        } else if (this.currentSkin === 'gibson') {
+            floorColor = 0x000000;
+            wallColor = 0x001100;
+            floorMetalness = 0.9;
+            floorRoughness = 0.0;
+            isWireframe = true;
+        } else if (this.currentSkin === 'stephenson') {
+            floorColor = 0x333333;
+            wallColor = 0x555555;
+            floorMetalness = 0.2;
+            floorRoughness = 0.8;
+        }
+
         // Floor
         const floorGeo = new THREE.PlaneGeometry(60, 80);
         const floorMat = new THREE.MeshStandardMaterial({
-            color: 0x111111,
-            roughness: 0.1,
-            metalness: 0.6,
-            side: THREE.FrontSide
+            color: floorColor,
+            roughness: floorRoughness,
+            metalness: floorMetalness,
+            side: THREE.FrontSide,
+            wireframe: isWireframe
         });
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
@@ -243,20 +276,29 @@ export default class ArcadeHub {
         this.floor = floor; // Reference
 
         // Grid on floor
-        const gridHelper = new THREE.GridHelper(60, 30, colors.grid, 0x222222);
+        const gridHelper = new THREE.GridHelper(60, 30, colors.grid, this.currentSkin === 'gibson' ? 0x003300 : 0x222222);
         gridHelper.position.y = 0.02;
         this.scene.add(gridHelper);
 
         // Ceiling
         const ceilGeo = new THREE.PlaneGeometry(60, 80);
-        const ceilMat = new THREE.MeshStandardMaterial({ color: 0x050505, emissive: 0x050505 });
+        const ceilMat = new THREE.MeshStandardMaterial({
+            color: this.currentSkin === 'gibson' ? 0x000000 : 0x050505,
+            emissive: this.currentSkin === 'gibson' ? 0x000000 : 0x050505,
+            wireframe: isWireframe
+        });
         const ceil = new THREE.Mesh(ceilGeo, ceilMat);
         ceil.rotation.x = Math.PI / 2;
         ceil.position.y = 10;
         this.scene.add(ceil);
 
         // Walls
-        const wallMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+        const wallMat = new THREE.MeshStandardMaterial({
+            color: wallColor,
+            roughness: 0.8,
+            wireframe: isWireframe
+        });
+
         const createWall = (w, h, d, x, y, z) => {
             const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
             mesh.position.set(x, y, z);
@@ -268,6 +310,26 @@ export default class ArcadeHub {
         createWall(60, 10, 1, 0, 5, 40);  // Front
         createWall(1, 10, 80, -30, 5, 0); // Left
         createWall(1, 10, 80, 30, 5, 0);  // Right
+
+        // Extra Stephenson Noise (Static)
+        if (this.currentSkin === 'stephenson') {
+            this.createStaticNoise();
+        }
+    }
+
+    createStaticNoise() {
+        // Simple particle system for static
+        const geometry = new THREE.BufferGeometry();
+        const vertices = [];
+        for (let i = 0; i < 5000; i++) {
+            vertices.push(Math.random() * 60 - 30);
+            vertices.push(Math.random() * 10);
+            vertices.push(Math.random() * 80 - 40);
+        }
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        const material = new THREE.PointsMaterial({ color: 0xffffff, size: 0.05, transparent: true, opacity: 0.3 });
+        const particles = new THREE.Points(geometry, material);
+        this.scene.add(particles);
     }
 
     addCollider(mesh) {
