@@ -1,6 +1,7 @@
 import SaveSystem from './SaveSystem.js';
 import SoundManager from './SoundManager.js';
 import AdsManager from './AdsManager.js';
+import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE } from './BossModeContent.js';
 
 export default class BossMode {
     constructor() {
@@ -19,48 +20,37 @@ export default class BossMode {
 
         // State tracking
         this.wasMuted = false;
+        this.wallpaperIndex = 0;
+        this.wallpapers = [
+            'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=2070&auto=format&fit=crop', // Default Blue
+            'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070&auto=format&fit=crop', // Landscape
+            'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop', // Abstract Dark
+            'https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=2070&auto=format&fit=crop'  // Mountains
+        ];
 
         // Excel Data
         this.excelData = {};
         this.selectedCell = null;
         this.snakeGame = null;
+        this.flightGame = null;
 
         // PPT Data
         this.currentSlide = 0;
-        this.slides = [
-            { title: "Q4 Strategy Alignment", bullets: ["Synergize backward overflow", "Leverage holistic paradigms", "Drill down into cross-media value"] },
-            { title: "Growth Vectors", bullets: ["Organic upscale engagement", "Hyper-local bandwidth", "Touch-base with key stakeholders"] },
-            { title: "Risk Analysis", bullets: ["Mitigate mission-critical fallout", "Pivot to agile deliverables", "Right-size the human capital"] },
-            { title: "Blue Sky Thinking", bullets: ["Ideate outside the box", "Disrupt the status quo", "Gamify the user journey"] }
-        ];
+        this.slides = [...SLIDES];
 
         // Word Data
-        this.docTitle = "Meeting_Minutes_FINAL.docx";
-        this.docContent = "MINUTES OF THE QUARTERLY SYNERGY MEETING\n\nDate: " + new Date().toLocaleDateString() + "\nAttendees: John Doe, Jane Smith, Clippy\n\n1. OPENING\nThe meeting was called to order at 09:00 AM. The primary objective was to touch base on high-level deliverables.\n\n2. KEY ACTION ITEMS\n- Circle back on the low-hanging fruit.\n- Drill down into the granularity of the Q3 metrics.\n- Pivot the strategy to a mobile-first paradigm.\n\n3. NEXT STEPS\nWe will take this offline and ping the relevant stakeholders. It is mission-critical that we are all singing from the same hymn sheet.\n\n4. ADJOURNMENT\nThe meeting adjourned at 10:30 AM.";
+        this.docIndex = 0;
+        this.docTitle = DOCUMENTS[0].title;
+        this.docContent = DOCUMENTS[0].content;
+        this.wordStealthMode = false;
 
         // Email Data
-        this.emails = [
-            { id: 1, from: "HR", subject: "Mandatory Fun Day", time: "10:30 AM", body: "Team,\n\nPlease be advised that attendance at the 'Mandatory Fun Day' is, as the name suggests, mandatory. We will be building synergy towers out of marshmallows.\n\nRegards,\nHR" },
-            { id: 2, from: "Boss", subject: "Q3 Projections?", time: "09:15 AM", body: "John,\n\nWhere are we on the Q3 projections? I need them to circle back to the board. Let's touch base EOD.\n\n- Boss" },
-            { id: 3, from: "IT Support", subject: "Phishing Test Failed", time: "Yesterday", body: "User,\n\nYou successfully clicked the link in our phishing test. Please report to Room 101 for re-education.\n\nIT Security" },
-            { id: 4, from: "Karen", subject: "Re: Microwave Policy", time: "Yesterday", body: "To whom it may concern,\n\nSomeone heated up fish again. This is unacceptable workplace behavior.\n\nKaren" },
-            { id: 5, from: "CEO", subject: "Vision 2030", time: "Monday", body: "Team,\n\nOur vision is simple: More synergy, less friction. We are pivoting to a blockchain-based AI solution for our coffee machines.\n\nCEO" }
-        ];
+        this.emails = [...EMAILS];
         this.selectedEmail = this.emails[0];
 
         // Chat Data
         this.activeChannel = 'general';
-        this.chatHistory = {
-            'general': [
-                { user: 'Manager', time: '9:00 AM', text: 'Good morning team! Let\'s crush it today.' },
-                { user: 'Alice', time: '9:02 AM', text: 'Does anyone have the latest slide deck?' },
-                { user: 'Bob', time: '9:05 AM', text: 'It\'s on the shared drive under "Do Not Delete".' }
-            ],
-            'random': [
-                { user: 'Dave', time: '11:00 AM', text: 'Anyone up for tacos?' },
-                { user: 'Eve', time: '11:01 AM', text: 'Always.' }
-            ]
-        };
+        this.chatHistory = JSON.parse(JSON.stringify(CHATS));
 
         // Terminal Data
         this.termHistory = [
@@ -70,6 +60,7 @@ export default class BossMode {
             "C:\\Users\\JohnDoe>"
         ];
         this.termInput = "";
+        this.adventure = null;
 
         // Fake Typing Logic
         this.typingBuffer = "";
@@ -88,6 +79,7 @@ export default class BossMode {
         ];
 
         this.init();
+        window.BossMode = BossMode; // Expose for verification/onclick handlers
     }
 
     init() {
@@ -148,7 +140,7 @@ export default class BossMode {
 
         this.overlay.innerHTML = `
             <!-- Desktop Area -->
-            <div class="flex-1 relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center flex flex-col">
+            <div class="flex-1 relative overflow-hidden bg-cover bg-center flex flex-col transition-[background-image] duration-500 ease-in-out" style="background-image: url('${this.wallpapers[this.wallpaperIndex]}')">
                  <!-- Main App Window -->
                  <div class="flex-1 p-2 flex flex-col overflow-hidden relative backdrop-blur-sm bg-black/10">
                       <div class="flex-1 bg-white shadow-2xl rounded-lg flex flex-col overflow-hidden border border-gray-400 animate-pop-in">
@@ -289,13 +281,18 @@ export default class BossMode {
                            <i class="fas fa-moon text-gray-600"></i>
                            <span class="text-[9px]">Focus</span>
                       </div>
-                      <div class="bg-white p-2 rounded flex flex-col items-center justify-center gap-1 cursor-pointer">
-                           <i class="fas fa-cog text-gray-600"></i>
-                           <span class="text-[9px]">Settings</span>
+                      <div class="bg-white p-2 rounded flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-gray-100" onclick="BossMode.instance.cycleWallpaper()">
+                           <i class="fas fa-image text-purple-600"></i>
+                           <span class="text-[9px]">Wallpaper</span>
                       </div>
                  </div>
             </div>
         `;
+    }
+
+    cycleWallpaper() {
+        this.wallpaperIndex = (this.wallpaperIndex + 1) % this.wallpapers.length;
+        this.render();
     }
 
     getExcelContent() {
@@ -433,6 +430,9 @@ export default class BossMode {
                         <i class="fas fa-plus-square text-orange-600 text-xl"></i> <span>New Slide</span>
                      </button>
                      <div class="border-l border-gray-300 h-10 mx-1"></div>
+                     <div class="flex flex-col items-center hover:bg-gray-200 p-1 rounded text-[10px] cursor-pointer" onclick="BossMode.instance.exportToPPT()">
+                        <i class="fas fa-file-export text-orange-600 text-xl"></i> <span>Export</span>
+                     </div>
                      <div class="flex flex-col items-center hover:bg-gray-200 p-1 rounded text-[10px] cursor-pointer">
                         <i class="fas fa-play text-gray-600 text-xl"></i> <span>Present</span>
                      </div>
@@ -449,12 +449,12 @@ export default class BossMode {
                     `).join('')}
                 </div>
                 <div class="flex-1 flex items-center justify-center p-8 bg-[#d0cec9]">
-                    <div class="bg-white aspect-[16/9] w-full max-w-4xl shadow-2xl flex flex-col p-12 relative animate-fade-in" contenteditable="true" spellcheck="false">
-                        <h1 class="text-4xl font-bold text-gray-800 mb-8 border-b-4 border-[#b7472a] pb-2 outline-none">${this.slides[this.currentSlide].title}</h1>
-                        <ul class="list-disc list-inside text-2xl text-gray-600 space-y-4 outline-none">
+                    <div class="bg-white aspect-[16/9] w-full max-w-4xl shadow-2xl flex flex-col p-12 relative animate-fade-in">
+                        <h1 class="text-4xl font-bold text-gray-800 mb-8 border-b-4 border-[#b7472a] pb-2 outline-none" contenteditable="true" oninput="BossMode.instance.updateSlideTitle(this.innerText)">${this.slides[this.currentSlide].title}</h1>
+                        <ul class="list-disc list-inside text-2xl text-gray-600 space-y-4 outline-none" contenteditable="true" oninput="BossMode.instance.updateSlideBullets(this)">
                             ${this.slides[this.currentSlide].bullets.map(b => `<li>${b}</li>`).join('')}
                         </ul>
-                        <div class="absolute bottom-4 right-4 text-gray-400 text-sm" contenteditable="false">Confidential</div>
+                        <div class="absolute bottom-4 right-4 text-gray-400 text-sm">Confidential</div>
                     </div>
                 </div>
             </div>
@@ -476,7 +476,15 @@ export default class BossMode {
             </div>
             <div class="bg-[#f3f2f1] border-b border-[#e1dfdd] flex flex-col shadow-sm select-none z-20 relative">
                 <div class="flex items-center px-2 py-1 gap-1 text-[#252423] text-[11px]">
-                    <span class="bg-[#2b579a] text-white px-3 py-1 rounded-sm cursor-pointer hover:bg-[#1e3e6e]">File</span>
+                    <div class="relative group">
+                        <span class="bg-[#2b579a] text-white px-3 py-1 rounded-sm cursor-pointer hover:bg-[#1e3e6e] block">File</span>
+                        <div class="absolute top-full left-0 bg-white border border-gray-300 shadow-xl hidden group-hover:block w-48 py-1 z-50">
+                            <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800" onclick="BossMode.instance.cycleDoc()">Open Next</div>
+                            <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800" onclick="BossMode.instance.exportToDoc()">Save As...</div>
+                            <div class="border-t border-gray-200 my-1"></div>
+                            <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800">Print</div>
+                        </div>
+                    </div>
                     <span class="bg-white font-bold border-t border-l border-r border-[#e1dfdd] shadow-sm -mb-[1px] px-3 py-1 cursor-pointer rounded-t-sm border-b-blue-600">Home</span>
                     <span class="hover:bg-[#e1dfdd] px-3 py-1 cursor-pointer rounded-sm">Insert</span>
                     <span class="hover:bg-[#e1dfdd] px-3 py-1 cursor-pointer rounded-sm">Layout</span>
@@ -485,6 +493,9 @@ export default class BossMode {
                 <div class="bg-[#f3f2f1] px-2 py-1 flex gap-2 h-16 items-center border-b border-[#c8c6c4]">
                      <div class="flex flex-col items-center hover:bg-gray-200 p-1 rounded text-[10px] cursor-pointer" onclick="BossMode.instance.exportToDoc()">
                         <i class="fas fa-save text-blue-800 text-xl"></i> <span>Save</span>
+                     </div>
+                     <div class="flex flex-col items-center hover:bg-gray-200 p-1 rounded text-[10px] cursor-pointer ${this.wordStealthMode ? 'bg-gray-300' : ''}" onclick="BossMode.instance.toggleWordStealth()">
+                        <i class="fas fa-user-secret text-black text-xl"></i> <span>Stealth</span>
                      </div>
                      <div class="border-l border-gray-300 h-10 mx-1"></div>
                      <div class="flex flex-col gap-1 px-2">
@@ -501,12 +512,50 @@ export default class BossMode {
             </div>
 
             <div class="flex-1 bg-[#d0cec9] overflow-y-auto flex justify-center p-8">
-                 <div class="bg-white w-[21cm] min-h-[29.7cm] shadow-2xl p-[2.54cm] text-black font-serif text-sm leading-relaxed outline-none" contenteditable="true" spellcheck="false" id="word-doc-content">
+                 <div class="bg-white w-[21cm] min-h-[29.7cm] shadow-2xl p-[2.54cm] text-black font-serif text-sm leading-relaxed outline-none" contenteditable="true" spellcheck="false" id="word-doc-content" oninput="BossMode.instance.updateDocContent(this.innerText)">
                     <p class="mb-4 text-center font-bold text-lg underline">INTERNAL MEMORANDUM</p>
                     ${this.docContent.replace(/\n/g, '<br>')}
                  </div>
             </div>
         `;
+    }
+
+    cycleDoc() {
+        this.docIndex = (this.docIndex + 1) % DOCUMENTS.length;
+        this.docTitle = DOCUMENTS[this.docIndex].title;
+        this.docContent = DOCUMENTS[this.docIndex].content;
+        this.render();
+    }
+
+    toggleWordStealth() {
+        this.wordStealthMode = !this.wordStealthMode;
+        this.render();
+    }
+
+    updateDocContent(newText) {
+        this.docContent = newText;
+    }
+
+    updateSlideTitle(text) {
+        this.slides[this.currentSlide].title = text;
+    }
+
+    updateSlideBullets(ulElement) {
+        // Parse LIs
+        const bullets = [];
+        ulElement.querySelectorAll('li').forEach(li => bullets.push(li.innerText));
+        this.slides[this.currentSlide].bullets = bullets;
+    }
+
+    exportToPPT() {
+        let content = "PRESENTATION DECK\n=================\n\n";
+        this.slides.forEach((s, i) => {
+            content += `SLIDE ${i+1}: ${s.title}\n`;
+            content += "-------------------\n";
+            s.bullets.forEach(b => content += `* ${b}\n`);
+            content += "\n";
+        });
+        this.downloadFile(content, "Presentation.txt", "text/plain");
     }
 
     getEmailContent() {
@@ -798,6 +847,39 @@ export default class BossMode {
             return;
         }
 
+        // Flight Control
+        if (this.flightGame && this.mode === 'excel') {
+            const k = e.key;
+            if (k === 'ArrowLeft') this.flightGame.playerX = Math.max(0, this.flightGame.playerX - 1);
+            if (k === 'ArrowRight') this.flightGame.playerX = Math.min(14, this.flightGame.playerX + 1);
+            if (k === 'Escape') this.stopFlightGame();
+            e.preventDefault();
+            return;
+        }
+
+        // Word Stealth Typing
+        if (this.mode === 'word' && this.wordStealthMode) {
+             e.preventDefault();
+             if (e.key.length === 1 || e.key === 'Enter') {
+                 // this.soundManager.playSound('click');
+                 const doc = document.getElementById('word-doc-content');
+                 if (doc) {
+                     // Add next chunk of fake text
+                     const chunk = this.fakeText.substring(this.fakeTextIndex, this.fakeTextIndex + 3 + Math.floor(Math.random() * 5));
+                     this.fakeTextIndex += chunk.length;
+                     if (this.fakeTextIndex >= this.fakeText.length) this.fakeTextIndex = 0;
+
+                     // Insert at caret (simplified: just append for now, or use range if possible)
+                     // A real implementation would handle selection, but appending is safer for "panic" mode
+                     const range = document.getSelection().getRangeAt(0);
+                     const textNode = document.createTextNode(chunk);
+                     range.insertNode(textNode);
+                     range.collapse(false);
+                 }
+             }
+             return;
+        }
+
         // Fake Typing Logic (If not editing a cell)
         if (this.mode === 'excel' && this.selectedCell) {
              if (document.activeElement.tagName !== 'INPUT' && e.key.length === 1) {
@@ -905,6 +987,7 @@ export default class BossMode {
                 if (item.bold) el.classList.add('font-bold');
             }
             if (this.snakeGame) this.renderSnakeCell(el, id);
+            if (this.flightGame) this.renderFlightCell(el, id);
         });
     }
 
@@ -958,6 +1041,9 @@ export default class BossMode {
         if (upper === '=SNAKE()') {
             this.startSnakeGame();
             this.setCell(this.selectedCell, "SNAKE ACTIVE");
+        } else if (upper === '=FLIGHT()') {
+            this.startFlightGame();
+            this.setCell(this.selectedCell, "FLIGHT SIM ACTIVE");
         } else if (upper === '=GAME()') {
              this.setCell(this.selectedCell, "Nice try.");
              this.adsManager.createPopup("System Alert", "Gaming detected. Reporting to HR.", "bg-red-900 text-white");
@@ -1135,6 +1221,15 @@ export default class BossMode {
         } else if (c === 'npm install') {
             this.termHistory.push("npm WARN deprecated request@2.88.2: request has been deprecated");
             this.termHistory.push("[..................] / idealTree:lib: sill idealTree buildDeps");
+        } else if (c === 'quest' || c === 'adventure') {
+            this.startAdventure();
+        } else if (c === 'matrix') {
+            this.termHistory.push("Wake up, Neo...");
+            this.termHistory.push("The Matrix has you...");
+            setTimeout(() => this.termHistory.push("Follow the white rabbit."), 2000);
+            setTimeout(() => this.termHistory.push("Knock, knock, Neo."), 4000);
+        } else if (this.adventure) {
+            this.handleAdventureCommand(c);
         } else if (c === 'bsod') {
             this.mode = 'bsod';
             this.render();
@@ -1147,6 +1242,72 @@ export default class BossMode {
         }
 
         this.render();
+    }
+
+    // --- Adventure Game ---
+    startAdventure() {
+        this.adventure = {
+            currentRoom: 'start',
+            inventory: []
+        };
+        this.termHistory.push("--- CORPORATE QUEST ---");
+        this.printRoom();
+    }
+
+    printRoom() {
+        if (!this.adventure) return;
+        const room = TERMINAL_ADVENTURE[this.adventure.currentRoom];
+        this.termHistory.push(room.text);
+        if (room.items && room.items.length > 0) {
+            this.termHistory.push("You see: " + room.items.join(", "));
+        }
+        const exits = Object.keys(room.exits).join(", ").toUpperCase();
+        this.termHistory.push("Exits: " + exits);
+    }
+
+    handleAdventureCommand(cmd) {
+        if (!this.adventure) return;
+
+        const args = cmd.split(' ');
+        const action = args[0];
+        const target = args[1];
+        const room = TERMINAL_ADVENTURE[this.adventure.currentRoom];
+
+        if (['n', 'north', 's', 'south', 'e', 'east', 'w', 'west'].includes(action)) {
+            let dir = action;
+            if (dir === 'n') dir = 'north';
+            if (dir === 's') dir = 'south';
+            if (dir === 'e') dir = 'east';
+            if (dir === 'w') dir = 'west';
+
+            if (room.exits[dir]) {
+                if (room.exits[dir] === 'rack_locked' && !this.adventure.inventory.includes('keycard')) {
+                    this.termHistory.push("The door is locked. You need a keycard.");
+                } else {
+                    this.adventure.currentRoom = room.exits[dir];
+                    this.printRoom();
+                }
+            } else {
+                this.termHistory.push("You can't go that way.");
+            }
+        } else if (action === 'look') {
+            this.printRoom();
+        } else if (action === 'take' || action === 'get') {
+            if (room.items && room.items.includes(target)) {
+                this.adventure.inventory.push(target);
+                room.items = room.items.filter(i => i !== target);
+                this.termHistory.push(`You picked up the ${target}.`);
+            } else {
+                this.termHistory.push("You can't take that.");
+            }
+        } else if (action === 'inventory' || action === 'i') {
+            this.termHistory.push("Inventory: " + (this.adventure.inventory.join(", ") || "Nothing"));
+        } else if (action === 'quit') {
+            this.adventure = null;
+            this.termHistory.push("Game Over.");
+        } else {
+            this.termHistory.push("I don't understand that.");
+        }
     }
 
     // --- Snake ---
@@ -1211,6 +1372,74 @@ export default class BossMode {
         }
         if (this.snakeGame.food.c === col && this.snakeGame.food.r === row) {
              el.textContent = '🍎';
+        }
+    }
+
+    // --- Flight Simulator ---
+    startFlightGame() {
+        if (this.flightGame) return;
+        this.flightGame = {
+            active: true,
+            playerX: 7,
+            obstacles: [], // {x, y}
+            score: 0,
+            interval: setInterval(() => this.updateFlight(), 100)
+        };
+    }
+
+    updateFlight() {
+        if (!this.isActive || !this.flightGame) return;
+
+        // Spawn Obstacles
+        if (Math.random() < 0.2) {
+            this.flightGame.obstacles.push({x: Math.floor(Math.random() * 15), y: 31});
+        }
+
+        // Move Obstacles
+        this.flightGame.obstacles.forEach(o => o.y--);
+        this.flightGame.obstacles = this.flightGame.obstacles.filter(o => o.y >= 0);
+
+        // Collision Check (Player is at y=2)
+        if (this.flightGame.obstacles.some(o => o.x === this.flightGame.playerX && o.y === 2)) {
+            this.stopFlightGame();
+            return;
+        }
+
+        this.flightGame.score++;
+        this.updateExcelGrid();
+    }
+
+    stopFlightGame() {
+        if (this.flightGame) {
+            clearInterval(this.flightGame.interval);
+            this.flightGame = null;
+            this.soundManager.playSound('game-over');
+            alert("CRASH! Flight Over.");
+            this.updateExcelGrid();
+        }
+    }
+
+    renderFlightCell(el, id) {
+        const col = id.charCodeAt(0) - 65;
+        const row = parseInt(id.substring(1));
+
+        // Render sky
+        el.style.backgroundColor = '#87CEEB';
+        el.style.color = 'transparent';
+
+        // Render Player (Plane) at Row 2
+        if (row === 2 && col === this.flightGame.playerX) {
+            el.style.backgroundColor = 'transparent';
+            el.style.color = 'black';
+            el.textContent = '✈️';
+            el.style.fontSize = '14px';
+            el.style.textAlign = 'center';
+        }
+
+        // Render Obstacles (Clouds/Birds)
+        if (this.flightGame.obstacles.some(o => o.x === col && o.y === row)) {
+            el.style.backgroundColor = 'white';
+            el.style.borderRadius = '50%';
         }
     }
 
