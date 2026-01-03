@@ -147,9 +147,6 @@ export default class TrophyRoom {
         btn.className = 'absolute top-6 left-6 glass-panel px-6 py-3 rounded-full text-white hover:text-cyan-400 z-40 font-bold uppercase tracking-wider transition-all border border-white/10 hover:border-cyan-500 shadow-lg pointer-events-auto';
         btn.onclick = () => this.exit();
         this.container.appendChild(btn);
-
-        // Add ID for Playwright verification
-        this.container.id = 'trophy-room';
     }
 
     getThemeColors(style) {
