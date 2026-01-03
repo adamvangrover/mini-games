@@ -4,7 +4,7 @@ import InputManager from './InputManager.js';
 
 /**
  * Renders a 3D Trophy Room scene using Three.js.
- * Displays acquired trophies with inspection capabilities and hybrid navigation.
+ * Displays acquired trophies with inspection capabilities and fluid navigation.
  */
 export default class TrophyRoom {
     /**
@@ -23,6 +23,7 @@ export default class TrophyRoom {
         this.renderer = null;
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
+        this.clock = new THREE.Clock();
         
         // State
         this.isActive = true;
@@ -33,10 +34,24 @@ export default class TrophyRoom {
         this.player = {
             position: new THREE.Vector3(0, 1.6, 8),
             speed: 6.0,
-            rotation: { x: 0, y: 0 }
+            rotation: { x: 0, y: 0 } // Legacy support
         };
+
+        // Camera Look State
+        this.yaw = 0;
+        this.pitch = 0;
+        this.dragSensitivity = 0.0025;
+
         this.navTarget = null;
         this.navMarker = null;
+
+        // Mobile Joystick State
+        this.joystick = {
+            active: false,
+            origin: {x:0, y:0},
+            current: {x:0, y:0},
+            id: null
+        };
 
         // Camera / Input State
         this.isDragging = false;
@@ -67,6 +82,7 @@ export default class TrophyRoom {
             // --- Camera ---
             this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
             this.camera.position.copy(this.player.position);
+            this.updateCameraRotation();
 
             // --- Renderer ---
             this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -79,6 +95,7 @@ export default class TrophyRoom {
 
             // --- UI Overlays ---
             this.createUI();
+            this.createVirtualJoystick();
 
             // --- Lighting ---
             this.createLighting(themeConfig);
@@ -100,7 +117,7 @@ export default class TrophyRoom {
             // Touch
             this.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
             window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
-            window.addEventListener('touchend', this.onMouseUp.bind(this));
+            window.addEventListener('touchend', this.onTouchEnd.bind(this));
 
             // Start Loop
             this.animate();
@@ -147,6 +164,80 @@ export default class TrophyRoom {
         btn.className = 'absolute top-6 left-6 glass-panel px-6 py-3 rounded-full text-white hover:text-cyan-400 z-40 font-bold uppercase tracking-wider transition-all border border-white/10 hover:border-cyan-500 shadow-lg pointer-events-auto';
         btn.onclick = () => this.exit();
         this.container.appendChild(btn);
+    }
+
+    createVirtualJoystick() {
+        this.joystickEl = document.createElement('div');
+        this.joystickEl.id = 'trophy-joystick';
+        this.joystickEl.style.cssText = `
+            position: absolute;
+            bottom: 50px;
+            left: 50px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: none;
+            z-index: 40;
+            touch-action: none;
+        `;
+
+        this.knobEl = document.createElement('div');
+        this.knobEl.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 255, 255, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            pointer-events: none;
+        `;
+
+        this.joystickEl.appendChild(this.knobEl);
+        this.container.appendChild(this.joystickEl);
+
+        // Show on touch devices
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+            this.joystickEl.style.display = 'block';
+        }
+
+        // Joystick-specific touch listeners
+        this.joystickEl.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const touch = e.changedTouches[0];
+            this.joystick.id = touch.identifier;
+            this.joystick.active = true;
+            this.joystick.origin = { x: touch.clientX, y: touch.clientY };
+            this.joystick.current = { x: touch.clientX, y: touch.clientY };
+            this.updateJoystickVisual();
+        }, { passive: false });
+    }
+
+    updateJoystickVisual() {
+        if (!this.joystick.active) {
+            this.knobEl.style.transform = `translate(-50%, -50%)`;
+            return;
+        }
+        const dx = this.joystick.current.x - this.joystick.origin.x;
+        const dy = this.joystick.current.y - this.joystick.origin.y;
+
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const maxDist = 35;
+
+        let visualX = dx;
+        let visualY = dy;
+
+        if (dist > maxDist) {
+            visualX = (dx / dist) * maxDist;
+            visualY = (dy / dist) * maxDist;
+        }
+
+        this.knobEl.style.transform = `translate(calc(-50% + ${visualX}px), calc(-50% + ${visualY}px))`;
     }
 
     getThemeColors(style) {
@@ -369,6 +460,11 @@ export default class TrophyRoom {
         this.detailOverlay.querySelector('#detail-card').classList.add('scale-95');
         this.detailOverlay.querySelector('#detail-card').classList.remove('scale-100');
 
+        // Reset Camera Target (look direction will be handled by yaw/pitch restoration)
+        // Actually, we should probably reset yaw/pitch to face the trophy so the snap back isn't jarring?
+        // For now, let's just let it return to free-look mode.
+        this.camera.position.copy(this.player.position).add(new THREE.Vector3(0, 1.6, 0));
+
         if (this.hoverOverlay) this.hoverOverlay.classList.remove('opacity-0');
     }
 
@@ -378,7 +474,7 @@ export default class TrophyRoom {
         if (!this.isActive) return;
         requestAnimationFrame(this.animate.bind(this));
 
-        const dt = 0.016;
+        const dt = this.clock.getDelta();
 
         if (this.focusedTrophy) {
             // [Focus Mode] Smoothly move camera to inspect trophy
@@ -395,19 +491,14 @@ export default class TrophyRoom {
             // [Navigation Mode]
             this.handleMovement(dt);
 
-            // Camera Follows Player (Smooth Lerp)
-            // Camera acts as "Head" (Player pos + Height)
-            const targetCamPos = this.player.position.clone();
-            targetCamPos.y = 1.6; 
+            // Sync Camera Position
+            this.camera.position.set(this.player.position.x, 1.6, this.player.position.z);
             
+            // Sync Camera Rotation (Mouse/Touch Drag)
+            this.updateCameraRotation();
+
             // Check interaction hover
             this.checkHover();
-
-            this.camera.position.lerp(targetCamPos, 0.1);
-            this.camera.rotation.y = this.player.rotation.y;
-            // Prevent gimbal lock on simple camera
-            this.camera.rotation.x = 0;
-            this.camera.rotation.z = 0;
         }
 
         // Ambient Animation (Float)
@@ -422,32 +513,44 @@ export default class TrophyRoom {
     }
 
     handleMovement(dt) {
-        // 
-        // This hybrid system uses both WASD inputs and click-targets.
+        // Hybrid System: WASD + Joystick + Click-to-Move
 
         const velocity = new THREE.Vector3();
-        const moveSpeed = this.player.speed * (this.inputManager.isKeyDown('ShiftLeft') ? 1.5 : 1.0) * dt;
+        const isSprinting = this.inputManager.isKeyDown('ShiftLeft');
+        const moveSpeed = this.player.speed * (isSprinting ? 1.5 : 1.0) * dt;
 
-        // WASD Input relative to Camera Rotation
+        // 1. WASD Input (Relative to Camera Yaw)
         if (this.inputManager.isKeyDown('KeyW') || this.inputManager.isKeyDown('ArrowUp')) velocity.z -= 1;
         if (this.inputManager.isKeyDown('KeyS') || this.inputManager.isKeyDown('ArrowDown')) velocity.z += 1;
-        // Strafe
         if (this.inputManager.isKeyDown('KeyA') || this.inputManager.isKeyDown('ArrowLeft')) velocity.x -= 1;
         if (this.inputManager.isKeyDown('KeyD') || this.inputManager.isKeyDown('ArrowRight')) velocity.x += 1;
 
+        // 2. Joystick Input
+        if (this.joystick.active) {
+            const dx = this.joystick.current.x - this.joystick.origin.x;
+            const dy = this.joystick.current.y - this.joystick.origin.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist > 10) { // Deadzone
+                velocity.x += dx / 50;
+                velocity.z += dy / 50;
+            }
+        }
+
         if (velocity.length() > 0) {
             this.navTarget = null; // Manual override
-            velocity.normalize().multiplyScalar(moveSpeed);
-            const euler = new THREE.Euler(0, this.player.rotation.y, 0, 'YXZ');
+            if (velocity.length() > 1 && !this.joystick.active) velocity.normalize();
+            velocity.multiplyScalar(moveSpeed);
+
+            // Apply Camera Yaw to Velocity
+            const euler = new THREE.Euler(0, this.yaw, 0, 'YXZ');
             velocity.applyEuler(euler);
         }
 
-        // Click-to-Move Logic
+        // 3. Click-to-Move Logic
         if (this.navTarget) {
             this.navMarker.visible = true;
             this.navMarker.position.set(this.navTarget.x, 0.05, this.navTarget.z);
             
-            // Pulse Effect
             const s = 1 + Math.sin(Date.now() * 0.01) * 0.2;
             this.navMarker.scale.set(s,s,s);
 
@@ -472,14 +575,19 @@ export default class TrophyRoom {
         }
     }
 
+    updateCameraRotation() {
+        if (!this.camera || this.focusedTrophy) return;
+        this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
+        // Update legacy property for consistency if something else reads it
+        this.player.rotation.y = this.yaw;
+    }
+
     checkHover() {
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
         
         let found = null;
         if (intersects.length > 0) {
-            // Traverse up scene graph  
-            // to find the root trophy group with userData
             let obj = intersects[0].object;
             while(obj.parent && (!obj.userData || !obj.userData.isTrophy)) {
                 obj = obj.parent;
@@ -511,9 +619,16 @@ export default class TrophyRoom {
         this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
-        if (this.isDragging && !this.focusedTrophy) {
-            const deltaX = e.clientX - this.previousMousePosition.x;
-            this.player.rotation.y -= deltaX * 0.004;
+        if (this.isDragging && !this.focusedTrophy && !this.joystick.active) {
+            const dx = e.clientX - this.previousMousePosition.x;
+            const dy = e.clientY - this.previousMousePosition.y;
+
+            this.yaw -= dx * this.dragSensitivity;
+            this.pitch -= dy * this.dragSensitivity;
+
+            // Limit pitch to avoid flipping
+            this.pitch = Math.max(-Math.PI/3, Math.min(Math.PI/3, this.pitch));
+
             this.previousMousePosition = { x: e.clientX, y: e.clientY };
         }
     }
@@ -523,7 +638,7 @@ export default class TrophyRoom {
     }
 
     onClick(e) {
-        if (this.isDragging || this.focusedTrophy) return;
+        if (this.isDragging || this.focusedTrophy || this.joystick.active) return;
 
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
@@ -550,19 +665,55 @@ export default class TrophyRoom {
     }
 
     onTouchStart(e) {
-        if (e.touches.length === 1) {
+        // 1. Check Joystick
+        let touchingJoystick = false;
+        for(let i=0; i<e.changedTouches.length; i++) {
+             const t = e.changedTouches[i];
+             const el = document.elementFromPoint(t.clientX, t.clientY);
+             if(this.joystickEl && (el === this.joystickEl || this.joystickEl.contains(el))) {
+                 touchingJoystick = true;
+             }
+        }
+        if (touchingJoystick) return; // Handled by joystick listener
+
+        if (e.touches.length === 1 && !this.focusedTrophy) {
             this.isDragging = true;
             this.previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         }
     }
 
     onTouchMove(e) {
-        if (this.isDragging && e.touches.length === 1) {
+        // Joystick update handled in its own state check via handleMovement or its own listener
+        if (this.joystick.active) {
+             for(let i=0; i<e.changedTouches.length; i++) {
+                 if (e.changedTouches[i].identifier === this.joystick.id) {
+                     this.joystick.current = { x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY };
+                     this.updateJoystickVisual();
+                 }
+             }
+        }
+
+        if (this.isDragging && e.touches.length === 1 && !this.joystick.active && !this.focusedTrophy) {
             e.preventDefault();
-            const deltaX = e.touches[0].clientX - this.previousMousePosition.x;
-            this.player.rotation.y -= deltaX * 0.005;
+            const dx = e.touches[0].clientX - this.previousMousePosition.x;
+            const dy = e.touches[0].clientY - this.previousMousePosition.y;
+
+            this.yaw -= dx * this.dragSensitivity * 1.5;
+            this.pitch -= dy * this.dragSensitivity * 1.5;
+            this.pitch = Math.max(-Math.PI/3, Math.min(Math.PI/3, this.pitch));
+
             this.previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         }
+    }
+
+    onTouchEnd(event) {
+         for(let i=0; i<event.changedTouches.length; i++) {
+             if (event.changedTouches[i].identifier === this.joystick.id) {
+                 this.joystick.active = false;
+                 this.updateJoystickVisual();
+             }
+         }
+         this.isDragging = false;
     }
 
     onResize() {
@@ -572,15 +723,37 @@ export default class TrophyRoom {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
+    resume() {
+        this.isActive = true;
+        if(this.container) this.container.style.display = 'block';
+        if(this.joystickEl && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+            this.joystickEl.style.display = 'block';
+        }
+        this.clock.start();
+        this.animate();
+    }
+
+    pause() {
+        this.isActive = false;
+        if(this.container) this.container.style.display = 'none';
+        if(this.joystickEl) this.joystickEl.style.display = 'none';
+        this.clock.stop();
+    }
+
     exit() {
         this.isActive = false;
         // Clean DOM
         if (document.getElementById('trophy-back-btn')) document.getElementById('trophy-back-btn').remove();
         if (this.hoverOverlay) this.hoverOverlay.remove();
         if (this.detailOverlay) this.detailOverlay.remove();
-        
+        if (this.joystickEl) this.joystickEl.remove();
+
         // Clean Listeners
         window.removeEventListener('resize', this.onResize.bind(this));
+        window.removeEventListener('mousemove', this.onMouseMove.bind(this));
+        window.removeEventListener('mouseup', this.onMouseUp.bind(this));
+        window.removeEventListener('touchmove', this.onTouchMove.bind(this));
+        window.removeEventListener('touchend', this.onTouchEnd.bind(this));
         
         if (this.onBack) this.onBack();
     }
