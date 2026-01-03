@@ -23,6 +23,7 @@ const gameRegistry = {
     'lumina-game': { name: 'Lumina', description: 'Purify the Glitch', icon: 'fa-solid fa-cube', category: '3D Immersive', importFn: () => import('./games/lumina.js'), wide: true, noDpad: true },
     'prism-realms-game': { name: 'Prism Realms', description: 'Shadowfall FPS', icon: 'fa-solid fa-ghost', category: '3D Immersive', importFn: () => import('./games/prismRealms.js'), wide: true, noDpad: true },
     'rage-quit-game': { name: 'Rage Quit 3D', description: 'Clinical Trial', icon: 'fa-solid fa-person-falling-burst', category: '3D Immersive', importFn: () => import('./games/rageQuit.js'), wide: true, noDpad: true },
+    'all-in-hole-game': { name: 'All In Hole', description: 'Swallow the World', icon: 'fa-solid fa-circle-notch', category: '3D Immersive', importFn: () => import('./games/allInHole.js'), wide: true, noDpad: true },
 
     // New Games
     'tower-defense-game': { name: 'Tower Defense', description: 'Defend the Base', icon: 'fa-solid fa-chess-rook', category: 'New Games', importFn: () => import('./games/towerDefense.js') },

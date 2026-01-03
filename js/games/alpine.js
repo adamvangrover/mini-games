@@ -1,4 +1,4 @@
-// Alpine Adventure (Alpine Legend Port)
+// Alpine Adventure (Alpine Legend Port) - Ultimate Edition
 import SoundManager from '../core/SoundManager.js';
 import SaveSystem from '../core/SaveSystem.js';
 
@@ -106,6 +106,61 @@ const Utils = {
     lerp(a, b, t) { return a + (b - a) * t; },
     randRange(min, max) { return Math.random() * (max - min) + min; },
     damp(a, b, lambda, dt) { return Utils.lerp(a, b, 1 - Math.exp(-lambda * dt)); }
+};
+
+const SnowShader = {
+    vertex: `
+        uniform float uTime;
+        uniform float uHeight;
+        attribute float aSize;
+        attribute vec3 aVelocity;
+        varying float vAlpha;
+        void main() {
+            vec3 pos = position;
+            float fall = uTime * aVelocity.y * 20.0;
+            pos.y = mod(pos.y - fall, uHeight);
+            pos.x += sin(uTime * 0.5 + pos.y * 0.05) * 2.0;
+            pos.z += cos(uTime * 0.3 + pos.y * 0.05) * 2.0;
+            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+            gl_PointSize = aSize * (300.0 / -mvPosition.z);
+            gl_Position = projectionMatrix * mvPosition;
+            vAlpha = 0.8;
+        }
+    `,
+    fragment: `
+        uniform vec3 uColor;
+        varying float vAlpha;
+        void main() {
+            vec2 coord = gl_PointCoord - vec2(0.5);
+            float dist = length(coord);
+            if(dist > 0.5) discard;
+            float alpha = smoothstep(0.5, 0.0, dist) * vAlpha;
+            gl_FragColor = vec4(uColor, alpha);
+        }
+    `
+};
+
+const AuroraShader = {
+    vertex: `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragment: `
+        uniform float uTime;
+        varying vec2 vUv;
+        void main() {
+            float t = uTime * 0.2;
+            // Wavy patterns
+            float p = sin(vUv.x * 10.0 + t) * 0.5 + 0.5;
+            float p2 = cos(vUv.x * 15.0 - t * 1.5) * 0.5 + 0.5;
+            float brightness = p * p2 * (1.0 - vUv.y); // Fade at top
+            vec3 color = mix(vec3(0.0, 1.0, 0.5), vec3(0.5, 0.0, 1.0), p2);
+            gl_FragColor = vec4(color, brightness * 0.4);
+        }
+    `
 };
 
 class GameController {
@@ -530,6 +585,10 @@ class World {
         this.obstacles = [];
         this.initTerrain();
         this.initVillage();
+        this.initSnow();
+        this.initAurora();
+
+        this.boat = new Boat(scene, this.obstacles);
         this.animals = new Animals(scene, this.getHeightAt.bind(this));
         
         // Lake
@@ -601,35 +660,134 @@ class World {
         this.obstacles.push({pos: pos.clone(), radius: 7});
     }
 
+    initSnow() {
+        const cnt = 8000;
+        const geo = new THREE.BufferGeometry();
+        const pos = [];
+        const vel = [];
+        const size = [];
+
+        for(let i=0; i<cnt; i++) {
+            pos.push(Utils.randRange(-1000,1000), Utils.randRange(0,500), Utils.randRange(-1000,1000));
+            vel.push(0, Utils.randRange(0.5, 1.0), 0);
+            size.push(Utils.randRange(2, 5));
+        }
+
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        geo.setAttribute('aVelocity', new THREE.Float32BufferAttribute(vel, 3));
+        geo.setAttribute('aSize', new THREE.Float32BufferAttribute(size, 1));
+
+        const mat = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uHeight: { value: 500 },
+                uColor: { value: new THREE.Color(0xffffff) }
+            },
+            vertexShader: SnowShader.vertex,
+            fragmentShader: SnowShader.fragment,
+            transparent: true,
+            depthWrite: false
+        });
+
+        this.snow = new THREE.Points(geo, mat);
+        this.scene.add(this.snow);
+    }
+
+    initAurora() {
+        const geo = new THREE.PlaneGeometry(800, 300, 64, 64);
+        const mat = new THREE.ShaderMaterial({
+            uniforms: { uTime: {value:0} },
+            vertexShader: AuroraShader.vertex,
+            fragmentShader: AuroraShader.fragment,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        this.aurora = new THREE.Mesh(geo, mat);
+        this.aurora.position.set(0, 150, -400);
+        this.aurora.rotation.x = 0.5;
+        this.scene.add(this.aurora);
+    }
+
     update(dt, time) {
+        if(this.snow) this.snow.material.uniforms.uTime.value += dt;
+        if(this.aurora) {
+            this.aurora.material.uniforms.uTime.value += dt;
+            this.aurora.visible = (time < 6 || time > 19);
+        }
+        if(this.boat) this.boat.update(dt);
         if(this.animals) this.animals.update(dt);
+    }
+}
+
+class Boat {
+    constructor(scene, obstacles) {
+        this.scene = scene;
+        const g = new THREE.Group();
+        const hull = new THREE.Mesh(new THREE.BoxGeometry(6,2,10), new THREE.MeshStandardMaterial({color:0x8b4513}));
+        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,8), new THREE.MeshStandardMaterial({color:0x222}));
+        mast.position.set(0,4,0);
+        g.add(hull); g.add(mast);
+        g.position.set(50, 2, 50);
+        g.castShadow=true;
+        this.mesh = g;
+        scene.add(this.mesh);
+
+        obstacles.push({ pos: new THREE.Vector3(50,0,50), radius: 6 });
+    }
+    update(dt) {
+        const t = performance.now()*0.001;
+        this.mesh.position.y = 2 + Math.sin(t)*0.2;
+        this.mesh.rotation.z = Math.sin(t*0.5)*0.05;
     }
 }
 
 class Animals {
     constructor(scene, heightFunc) {
         this.scene = scene; this.heightFunc = heightFunc; this.ibexList = [];
-        for(let i=0; i<8; i++) this.spawn();
+        for(let i=0; i<12; i++) this.spawn();
     }
     spawn() {
         const g = new THREE.Group();
         const b = new THREE.Mesh(new THREE.BoxGeometry(1,0.8,1.5), new THREE.MeshStandardMaterial({color:0xDAA520}));
-        g.add(b);
+        const h = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,0.8), new THREE.MeshStandardMaterial({color:0x8B4513}));
+        h.position.set(0,0.8,0.8);
+        g.add(b); g.add(h);
+
         const x = (Math.random()-0.5)*600, z = (Math.random()-0.5)*600;
         const y = this.heightFunc(x,z);
         g.position.set(x,y+1,z); g.castShadow=true;
         this.scene.add(g);
-        this.ibexList.push({mesh:g, dir:Math.random()*6, speed:2, timer:0});
+        this.ibexList.push({mesh:g, dir:Math.random()*6, speed:2, state:'idle', timer:0});
     }
     update(dt) {
+        if (!this.player) return; // Wait for player link
         for(const b of this.ibexList) {
+             // AI Logic
+            const dist = b.mesh.position.distanceTo(this.player.position);
+
+            if (dist < 15) {
+                // Flee
+                b.state = 'flee';
+                const fleeDir = b.mesh.position.clone().sub(this.player.position).normalize();
+                b.dir = Math.atan2(fleeDir.x, fleeDir.z);
+                b.speed = 6;
+            } else if (b.state === 'flee' && dist > 30) {
+                b.state = 'idle';
+                b.speed = 2;
+            }
+
+            if (b.state === 'idle') {
+                b.timer += dt;
+                if(b.timer > 3) { b.dir += (Math.random()-0.5); b.timer = 0; }
+            }
+
             b.mesh.position.x += Math.sin(b.dir)*b.speed*dt;
             b.mesh.position.z += Math.cos(b.dir)*b.speed*dt;
             const h = this.heightFunc(b.mesh.position.x, b.mesh.position.z);
             b.mesh.position.y = h + 0.5;
             b.mesh.rotation.y = b.dir;
-            b.timer += dt;
-            if(b.timer > 3) { b.dir += (Math.random()-0.5); b.timer = 0; }
         }
     }
 }
