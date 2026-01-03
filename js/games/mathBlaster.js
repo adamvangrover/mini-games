@@ -20,6 +20,10 @@ export default class MathBlasterGame {
         this.mathEngine = new MathEngine();
         this.games = {}; // Initialize in init
         this.currentGame = null;
+
+        // Shared background state
+        this.stars = [];
+        this.gridOffset = 0;
     }
 
     async init(container) {
@@ -35,6 +39,7 @@ export default class MathBlasterGame {
         this.ctx = this.canvas.getContext('2d');
 
         this.bindInput();
+        this.initBackground();
 
         // Initialize games now that canvas exists
         this.games = {
@@ -48,6 +53,19 @@ export default class MathBlasterGame {
 
         this.boundResize = () => this.resize();
         window.addEventListener('resize', this.boundResize);
+    }
+
+    initBackground() {
+        this.stars = [];
+        for(let i=0; i<100; i++) {
+            this.stars.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                size: Math.random() * 2,
+                speed: Math.random() * 0.5 + 0.1,
+                alpha: Math.random()
+            });
+        }
     }
 
     bindInput() {
@@ -74,6 +92,7 @@ export default class MathBlasterGame {
         this.canvas.addEventListener('touchmove', this.boundTouchMove, {passive: false});
 
         this.boundTouchStart = (e) => {
+             e.preventDefault(); // Prevent scrolling/zoom
              this.inputWrapper.mouse.down = true;
              const rect = this.canvas.getBoundingClientRect();
              this.inputWrapper.mouse.x = e.touches[0].clientX - rect.left;
@@ -81,8 +100,11 @@ export default class MathBlasterGame {
         };
         this.canvas.addEventListener('touchstart', this.boundTouchStart, {passive: false});
 
-        this.boundTouchEnd = () => this.inputWrapper.mouse.down = false;
-        this.canvas.addEventListener('touchend', this.boundTouchEnd);
+        this.boundTouchEnd = (e) => {
+             e.preventDefault();
+             this.inputWrapper.mouse.down = false;
+        };
+        this.canvas.addEventListener('touchend', this.boundTouchEnd, {passive: false});
     }
 
     switchState(newState) {
@@ -103,10 +125,12 @@ export default class MathBlasterGame {
 
     victory() {
         window.miniGameHub.soundManager.playSound('win');
+        // Calculate score from all modules if possible, otherwise just show generic win
         window.miniGameHub.showGameOver(5000, () => this.switchState('TRASH'));
     }
 
     gameOver() {
+        window.miniGameHub.soundManager.playSound('gameover');
         window.miniGameHub.showGameOver(0, () => this.switchState('TRASH'));
     }
 
@@ -115,6 +139,16 @@ export default class MathBlasterGame {
         const im = window.miniGameHub.inputManager;
         ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].forEach(k => {
              this.inputWrapper.keys[k === ' ' ? 'Space' : k] = im.keys[k];
+        });
+
+        // Update Background
+        this.gridOffset = (this.gridOffset + dt * 20) % 40;
+        this.stars.forEach(star => {
+            star.y += star.speed;
+            if (star.y > this.canvas.height) {
+                star.y = 0;
+                star.x = Math.random() * this.canvas.width;
+            }
         });
 
         if (this.currentGame) {
@@ -128,14 +162,54 @@ export default class MathBlasterGame {
     }
 
     draw() {
+        // Clear screen
+        this.ctx.fillStyle = '#050510'; // Deep dark blue/black
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw Shared Background
+        this.drawBackground(this.ctx);
+
         if (this.currentGame) {
             this.currentGame.draw();
         }
     }
 
+    drawBackground(ctx) {
+        // Stars
+        ctx.fillStyle = '#fff';
+        this.stars.forEach(s => {
+            ctx.globalAlpha = s.alpha;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+
+        // Retro Grid at bottom
+        /*
+        ctx.strokeStyle = 'rgba(255, 0, 255, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        // Vertical lines
+        for(let x = 0; x < this.canvas.width; x += 40) {
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, this.canvas.height);
+        }
+        // Horizontal lines (moving)
+        for(let y = this.gridOffset; y < this.canvas.height; y += 40) {
+            ctx.moveTo(0, y);
+            ctx.lineTo(this.canvas.width, y);
+        }
+        ctx.stroke();
+        */
+        // Actually, maybe just leave it clean for the mini-games to overlay or let them handle specific grids if needed.
+        // I'll keep the stars as the base.
+    }
+
     resize() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
+        this.initBackground(); // Re-scatter stars
         if (this.currentGame && this.currentGame.resize) this.currentGame.resize();
     }
 
