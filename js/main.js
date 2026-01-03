@@ -20,17 +20,17 @@ const gameRegistry = {
     'aetheria-game': { name: 'Aetheria', description: 'Floating Isles Exploration', icon: 'fa-solid fa-cloud', category: '3D Immersive', importFn: () => import('./games/aetheria/aetheria.js'), wide: true },
     'aetheria-classic': { name: 'Aetheria (Classic)', description: 'Standalone Version', icon: 'fa-solid fa-wind', category: '3D Immersive', importFn: () => import('./games/aetheriaClassic.js'), wide: true },
     'matterhorn-game': { name: 'Matterhorn Ascent', description: '3D Alpine Adventure', icon: 'fa-solid fa-mountain', category: '3D Immersive', importFn: () => import('./games/matterhorn.js'), wide: true },
-    'lumina-game': { name: 'Lumina', description: 'Purify the Glitch', icon: 'fa-solid fa-cube', category: '3D Immersive', importFn: () => import('./games/lumina.js'), wide: true },
-    'prism-realms-game': { name: 'Prism Realms', description: 'Shadowfall FPS', icon: 'fa-solid fa-ghost', category: '3D Immersive', importFn: () => import('./games/prismRealms.js'), wide: true },
-    'rage-quit-game': { name: 'Rage Quit 3D', description: 'Clinical Trial', icon: 'fa-solid fa-person-falling-burst', category: '3D Immersive', importFn: () => import('./games/rageQuit.js'), wide: true },
+    'lumina-game': { name: 'Lumina', description: 'Purify the Glitch', icon: 'fa-solid fa-cube', category: '3D Immersive', importFn: () => import('./games/lumina.js'), wide: true, noDpad: true },
+    'prism-realms-game': { name: 'Prism Realms', description: 'Shadowfall FPS', icon: 'fa-solid fa-ghost', category: '3D Immersive', importFn: () => import('./games/prismRealms.js'), wide: true, noDpad: true },
+    'rage-quit-game': { name: 'Rage Quit 3D', description: 'Clinical Trial', icon: 'fa-solid fa-person-falling-burst', category: '3D Immersive', importFn: () => import('./games/rageQuit.js'), wide: true, noDpad: true },
 
     // New Games
     'tower-defense-game': { name: 'Tower Defense', description: 'Defend the Base', icon: 'fa-solid fa-chess-rook', category: 'New Games', importFn: () => import('./games/towerDefense.js') },
     'stacker-game': { name: 'Physics Stacker', description: 'Balance Blocks', icon: 'fa-solid fa-cubes-stacked', category: 'New Games', importFn: () => import('./games/physicsStacker.js') },
-    'neon-2048': { name: 'Neon 2048', description: 'Merge the Grid', icon: 'fa-solid fa-border-all', category: 'New Games', importFn: () => import('./games/neon2048.js') },
-    'neon-flap': { name: 'Neon Flap', description: 'Flappy Clone', icon: 'fa-solid fa-dove', category: 'New Games', importFn: () => import('./games/neonFlap.js') },
-    'neon-memory': { name: 'Neon Memory', description: 'Simon Says', icon: 'fa-solid fa-brain', category: 'New Games', importFn: () => import('./games/neonMemory.js') },
-    'neon-flow-game': { name: 'Neon Flow', description: 'Relax & Create', icon: 'fa-solid fa-wind', category: 'New Games', importFn: () => import('./games/neonFlow.js'), wide: true },
+    'neon-2048': { name: 'Neon 2048', description: 'Merge the Grid', icon: 'fa-solid fa-border-all', category: 'New Games', importFn: () => import('./games/neon2048.js'), noDpad: true },
+    'neon-flap': { name: 'Neon Flap', description: 'Flappy Clone', icon: 'fa-solid fa-dove', category: 'New Games', importFn: () => import('./games/neonFlap.js'), noDpad: true },
+    'neon-memory': { name: 'Neon Memory', description: 'Simon Says', icon: 'fa-solid fa-brain', category: 'New Games', importFn: () => import('./games/neonMemory.js'), noDpad: true },
+    'neon-flow-game': { name: 'Neon Flow', description: 'Relax & Create', icon: 'fa-solid fa-wind', category: 'New Games', importFn: () => import('./games/neonFlow.js'), wide: true, noDpad: true },
 
     // Sports
     'neon-golf': { name: 'Neon Golf', description: 'Mini Golf Challenge', icon: 'fa-solid fa-golf-ball-tee', category: 'Sports', importFn: () => import('./games/neonGolf.js') },
@@ -38,16 +38,16 @@ const gameRegistry = {
 
     // Action
     'neon-shooter': { name: 'Neon FPS', description: 'Cyber Defense', icon: 'fa-solid fa-gun', category: 'Action', importFn: () => import('./games/neonShooter.js') },
-    'neon-jump': { name: 'Neon Jump', description: 'Jump to the Stars', icon: 'fa-solid fa-arrow-up', category: 'Action', importFn: () => import('./games/neonJump.js') },
-    'neon-slice': { name: 'Neon Slice', description: 'Slice the Shapes', icon: 'fa-solid fa-scissors', category: 'Action', importFn: () => import('./games/neonSlice.js') },
+    'neon-jump': { name: 'Neon Jump', description: 'Jump to the Stars', icon: 'fa-solid fa-arrow-up', category: 'Action', importFn: () => import('./games/neonJump.js'), noDpad: true },
+    'neon-slice': { name: 'Neon Slice', description: 'Slice the Shapes', icon: 'fa-solid fa-scissors', category: 'Action', importFn: () => import('./games/neonSlice.js'), noDpad: true },
     'neon-galaga-game': { name: 'Neon Galaga', description: 'Space Warfare', icon: 'fa-solid fa-jet-fighter', category: 'Action', importFn: () => import('./games/neonGalaga.js') },
     'neon-combat': { name: 'Neon Combat', description: 'Cyber Fight', icon: 'fa-solid fa-hand-fist', category: 'Action', importFn: () => import('./games/neonCombat.js') },
-    'snack-hole-game': { name: 'Neon Snacks', description: 'Devour Everything', icon: 'fa-solid fa-cookie-bite', category: 'Action', importFn: () => import('./games/snackHole.js'), wide: true },
+    'snack-hole-game': { name: 'Neon Snacks', description: 'Devour Everything', icon: 'fa-solid fa-cookie-bite', category: 'Action', importFn: () => import('./games/snackHole.js'), wide: true, noDpad: true },
 
     // Simulation
     'work-game': { name: 'The Grind 98', description: 'Life Simulator', icon: 'fa-solid fa-briefcase', category: 'Simulation', importFn: () => import('./games/work.js'), wide: true },
     'life-sim-game': { name: 'Neon Life', description: 'Live Your Best Life', icon: 'fa-solid fa-user-astronaut', category: 'Simulation', importFn: () => import('./games/lifeSim.js'), wide: true },
-    'zen-garden-game': { name: 'Zen Garden', description: 'Relax & Create', icon: 'fa-solid fa-spa', category: 'Simulation', importFn: () => import('./games/zenGarden.js'), wide: true },
+    'zen-garden-game': { name: 'Zen Garden', description: 'Relax & Create', icon: 'fa-solid fa-spa', category: 'Simulation', importFn: () => import('./games/zenGarden.js'), wide: true, noDpad: true },
 
     // Arcade Classics
     'matterhorn-arcade': { name: 'Matterhorn Arcade', description: 'Retro Climbing Challenge', icon: 'fa-solid fa-person-hiking', category: 'Arcade Classics', importFn: () => import('./games/matterhornArcade.js'), wide: true },
@@ -61,36 +61,36 @@ const gameRegistry = {
     'maze-game': { name: 'Maze', description: 'Find the Path', icon: 'fa-solid fa-dungeon', category: 'Quick Minigames', importFn: () => import('./games/maze.js') },
     'runner-game': { name: 'Endless Runner', description: 'Jump the Obstacles', icon: 'fa-solid fa-person-running', category: 'Quick Minigames', importFn: () => import('./games/runner.js') },
     'typing-game': { name: 'Speed Type', description: 'Test Your WPM', icon: 'fa-solid fa-keyboard', category: 'Quick Minigames', importFn: () => import('./games/typing.js') },
-    'clicker-game': { name: 'Clicker', description: 'Exponential Growth', icon: 'fa-solid fa-hand-pointer', category: 'Quick Minigames', importFn: () => import('./games/clicker.js') },
-    'neon-stack': { name: 'Neon Stack', description: 'Stack the Blocks', icon: 'fa-solid fa-layer-group', category: 'Quick Minigames', importFn: () => import('./games/neonStack.js') },
-    'neon-whack-game': { name: 'Neon Whack', description: 'Whack the Moles', icon: 'fa-solid fa-hammer', category: 'Quick Minigames', importFn: () => import('./games/neonWhack.js') },
+    'clicker-game': { name: 'Clicker', description: 'Exponential Growth', icon: 'fa-solid fa-hand-pointer', category: 'Quick Minigames', importFn: () => import('./games/clicker.js'), noDpad: true },
+    'neon-stack': { name: 'Neon Stack', description: 'Stack the Blocks', icon: 'fa-solid fa-layer-group', category: 'Quick Minigames', importFn: () => import('./games/neonStack.js'), noDpad: true },
+    'neon-whack-game': { name: 'Neon Whack', description: 'Whack the Moles', icon: 'fa-solid fa-hammer', category: 'Quick Minigames', importFn: () => import('./games/neonWhack.js'), noDpad: true },
 
     // Arcade Classics
-    'solitaire-game': { name: 'Cyber Solitaire', description: 'Classic Card Game', icon: 'fa-solid fa-diamond', category: 'Arcade Classics', importFn: () => import('./games/solitaire.js'), wide: true },
-    'mahjong-game': { name: 'Mahjong', description: 'Classic Tile Matching', icon: 'fa-solid fa-layer-group', category: 'Arcade Classics', importFn: () => import('./games/mahjong.js'), wide: true },
+    'solitaire-game': { name: 'Cyber Solitaire', description: 'Classic Card Game', icon: 'fa-solid fa-diamond', category: 'Arcade Classics', importFn: () => import('./games/solitaire.js'), wide: true, noDpad: true },
+    'mahjong-game': { name: 'Mahjong', description: 'Classic Tile Matching', icon: 'fa-solid fa-layer-group', category: 'Arcade Classics', importFn: () => import('./games/mahjong.js'), wide: true, noDpad: true },
 
     // RPG & Logic
     'rpg-game': { name: 'RPG Battle', description: 'Turn-Based Combat', icon: 'fa-solid fa-khanda', category: 'RPG & Logic', importFn: () => import('./games/rpg.js') },
     'eclipse-game': { name: 'Eclipse', description: 'Strategy Board', icon: 'fa-solid fa-sun', category: 'RPG & Logic', importFn: () => import('./games/eclipse.js') },
     'eclipse-puzzle-game': { name: 'Eclipse Puzzle', description: 'Pattern Matching', icon: 'fa-solid fa-puzzle-piece', category: 'RPG & Logic', importFn: () => import('./games/eclipsePuzzle.js') },
     'eclipse-logic-puzzle-game': { name: 'Logic Puzzle', description: 'Deduction Grid', icon: 'fa-solid fa-lightbulb', category: 'RPG & Logic', importFn: () => import('./games/eclipseLogicPuzzle.js') },
-    'exiled-game': { name: 'Exiled Spark', description: 'Text RPG Adventure', icon: 'fa-solid fa-terminal', category: 'RPG & Logic', importFn: () => import('./games/exiled.js'), wide: true },
+    'exiled-game': { name: 'Exiled Spark', description: 'Text RPG Adventure', icon: 'fa-solid fa-terminal', category: 'RPG & Logic', importFn: () => import('./games/exiled.js'), wide: true, noDpad: true },
 
     // Logic Puzzles
-    'math-blaster': { name: 'Galactic Rescue', description: 'Math Blaster Episode I', icon: 'fa-solid fa-rocket', category: 'Logic Puzzles', importFn: () => import('./games/mathBlaster.js'), wide: true },
+    'math-blaster': { name: 'Galactic Rescue', description: 'Math Blaster Episode I', icon: 'fa-solid fa-rocket', category: 'Logic Puzzles', importFn: () => import('./games/mathBlaster.js'), wide: true, noDpad: true },
     'queens-game': { name: 'Queens', description: 'Place Queens', icon: 'fa-solid fa-chess-queen', category: 'Logic Puzzles', importFn: () => import('./games/queens.js') },
-    'neon-mines-game': { name: 'Neon Mines', description: 'Avoid Mines', icon: 'fa-solid fa-bomb', category: 'Logic Puzzles', importFn: () => import('./games/neonMines.js') },
-    'neon-picross-game': { name: 'Neon Picross', description: 'Picture Cross', icon: 'fa-solid fa-pencil-alt', category: 'Logic Puzzles', importFn: () => import('./games/neonPicross.js') },
-    'sudoku-game': { name: 'Neon Sudoku', description: 'Classic Number Puzzle', icon: 'fa-solid fa-border-none', category: 'Logic Puzzles', importFn: () => import('./games/sudoku.js') },
-    'neon-zip-game': { name: 'Neon Zip', description: 'Connect the Dots', icon: 'fa-solid fa-bolt', category: 'Logic Puzzles', importFn: () => import('./games/neonZip.js') },
-    'neon-word-game': { name: 'Neon Word', description: 'Word Guessing', icon: 'fa-solid fa-font', category: 'Logic Puzzles', importFn: () => import('./games/neonWord.js') },
+    'neon-mines-game': { name: 'Neon Mines', description: 'Avoid Mines', icon: 'fa-solid fa-bomb', category: 'Logic Puzzles', importFn: () => import('./games/neonMines.js'), noDpad: true },
+    'neon-picross-game': { name: 'Neon Picross', description: 'Picture Cross', icon: 'fa-solid fa-pencil-alt', category: 'Logic Puzzles', importFn: () => import('./games/neonPicross.js'), noDpad: true },
+    'sudoku-game': { name: 'Neon Sudoku', description: 'Classic Number Puzzle', icon: 'fa-solid fa-border-none', category: 'Logic Puzzles', importFn: () => import('./games/sudoku.js'), noDpad: true },
+    'neon-zip-game': { name: 'Neon Zip', description: 'Connect the Dots', icon: 'fa-solid fa-bolt', category: 'Logic Puzzles', importFn: () => import('./games/neonZip.js'), noDpad: true },
+    'neon-word-game': { name: 'Neon Word', description: 'Word Guessing', icon: 'fa-solid fa-font', category: 'Logic Puzzles', importFn: () => import('./games/neonWord.js'), noDpad: true },
 
     // System Modules
-    'trophy-room': { name: 'Trophy Room', description: 'Achievement Gallery', icon: 'fa-solid fa-trophy', category: 'System', importFn: () => import('./core/TrophyRoom.js'), wide: true },
-    'clubhouse-game': { name: 'Clubhouse', description: 'Your Personal Hangout', icon: 'fa-solid fa-couch', category: 'System', importFn: () => import('./games/clubhouse.js'), wide: true },
-    'hall-of-fame': { name: 'Hall of Fame', description: 'Global Stats & Records', icon: 'fa-solid fa-list-ol', category: 'System', importFn: () => import('./games/hallOfFame.js'), wide: true },
-    'avatar-station': { name: 'Avatar Station', description: 'Customize Identity', icon: 'fa-solid fa-user-gear', category: 'System', importFn: () => import('./games/avatarStation.js') },
-    'tech-tree': { name: 'Tech Tree', description: 'System Upgrades', icon: 'fa-solid fa-network-wired', category: 'System', importFn: () => import('./games/techTree.js'), wide: true },
+    'trophy-room': { name: 'Trophy Room', description: 'Achievement Gallery', icon: 'fa-solid fa-trophy', category: 'System', importFn: () => import('./core/TrophyRoom.js'), wide: true, noDpad: true },
+    'clubhouse-game': { name: 'Clubhouse', description: 'Your Personal Hangout', icon: 'fa-solid fa-couch', category: 'System', importFn: () => import('./games/clubhouse.js'), wide: true, noDpad: true },
+    'hall-of-fame': { name: 'Hall of Fame', description: 'Global Stats & Records', icon: 'fa-solid fa-list-ol', category: 'System', importFn: () => import('./games/hallOfFame.js'), wide: true, noDpad: true },
+    'avatar-station': { name: 'Avatar Station', description: 'Customize Identity', icon: 'fa-solid fa-user-gear', category: 'System', importFn: () => import('./games/avatarStation.js'), noDpad: true },
+    'tech-tree': { name: 'Tech Tree', description: 'System Upgrades', icon: 'fa-solid fa-network-wired', category: 'System', importFn: () => import('./games/techTree.js'), wide: true, noDpad: true },
 };
 
 
@@ -247,8 +247,7 @@ async function transitionToState(newState, context = {}) {
                 currentGameInstance = new GameClass();
                 if (currentGameInstance.init) await currentGameInstance.init(container);
 
-                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'lumina-game', 'prism-realms-game', 'trophy-room', 'clubhouse-game', 'hall-of-fame', 'avatar-station', 'tech-tree', 'sudoku-game', 'zen-garden-game', 'neon-zip-game', 'solitaire-game', 'neon-word-game', 'neon-whack-game', 'snack-hole-game', 'mahjong-game', 'rage-quit-game', 'exiled-game', 'math-blaster'];
-                if (!noDpadGames.includes(gameId)) {
+                if (!gameInfo.noDpad) {
                     mobileControls = new MobileControls(container);
                 }
             } else { throw new Error("Game class failed to load"); }
@@ -493,10 +492,6 @@ window.updateHubStats = function updateHubStats() {
         const el = document.getElementById(id);
         if (el) el.textContent = currency;
     });
-}
-
-function updateHubStats() {
-    window.updateHubStats();
 }
 
 function toggleView() {
