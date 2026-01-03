@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Arcade - Trophy Room Verification</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js (CDN) -->
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+          }
+        }
+    </script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #050510; }
+        .glass-panel {
+            background: rgba(20, 30, 50, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <div id="trophy-room-container" style="width: 100vw; height: 100vh;"></div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        window.THREE = THREE;
+
+        // Dynamic import to ensure THREE is set before TrophyRoom loads
+        import('./js/core/TrophyRoom.js').then(module => {
+            const TrophyRoom = module.default;
+            import('./js/core/SaveSystem.js').then(saveModule => {
+                 const SaveSystem = saveModule.default;
+
+                 // Mock SaveSystem data
+                 const saveSystem = SaveSystem.getInstance();
+                 saveSystem.data.achievements = ['runner-coins-50', 'clicker-millionaire'];
+
+                 const container = document.getElementById('trophy-room-container');
+                 console.log("Initializing TrophyRoom...");
+                 const trophyRoom = new TrophyRoom(container, () => {
+                     console.log("Back button clicked!");
+                 });
+                 window.trophyRoom = trophyRoom;
+            });
+        }).catch(err => console.error("Import failed", err));
+    </script>
+</body>
+</html>
