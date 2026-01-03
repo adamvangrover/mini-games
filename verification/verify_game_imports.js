@@ -9,6 +9,7 @@ async function verifyGameImports() {
         'matterhorn-game': () => import('../js/games/matterhorn.js'),
         'lumina-game': () => import('../js/games/lumina.js'),
         'prism-realms-game': () => import('../js/games/prismRealms.js'),
+        'rage-quit-game': () => import('../js/games/rageQuit.js'),
 
         // New Games
         'tower-defense-game': () => import('../js/games/towerDefense.js'),
@@ -27,6 +28,8 @@ async function verifyGameImports() {
         'neon-jump': () => import('../js/games/neonJump.js'),
         'neon-slice': () => import('../js/games/neonSlice.js'),
         'neon-galaga-game': () => import('../js/games/neonGalaga.js'),
+        'neon-combat': () => import('../js/games/neonCombat.js'),
+        'snack-hole-game': () => import('../js/games/snackHole.js'),
 
         // Simulation
         'work-game': () => import('../js/games/work.js'),
@@ -40,6 +43,8 @@ async function verifyGameImports() {
         'space-game': () => import('../js/games/space.js'),
         'breakout-game': () => import('../js/games/breakout.js'),
         'tetris-game': () => import('../js/games/tetris.js'),
+        'solitaire-game': () => import('../js/games/solitaire.js'),
+        'mahjong-game': () => import('../js/games/mahjong.js'),
 
         // Quick Minigames
         'maze-game': () => import('../js/games/maze.js'),
@@ -47,12 +52,14 @@ async function verifyGameImports() {
         'typing-game': () => import('../js/games/typing.js'),
         'clicker-game': () => import('../js/games/clicker.js'),
         'neon-stack': () => import('../js/games/neonStack.js'),
+        'neon-whack-game': () => import('../js/games/neonWhack.js'),
 
         // RPG & Logic
         'rpg-game': () => import('../js/games/rpg.js'),
         'eclipse-game': () => import('../js/games/eclipse.js'),
         'eclipse-puzzle-game': () => import('../js/games/eclipsePuzzle.js'),
         'eclipse-logic-puzzle-game': () => import('../js/games/eclipseLogicPuzzle.js'),
+        'exiled-game': () => import('../js/games/exiled.js'),
 
         // Logic Puzzles
         'queens-game': () => import('../js/games/queens.js'),
@@ -60,6 +67,7 @@ async function verifyGameImports() {
         'neon-picross-game': () => import('../js/games/neonPicross.js'),
         'sudoku-game': () => import('../js/games/sudoku.js'),
         'neon-zip-game': () => import('../js/games/neonZip.js'),
+        'neon-word-game': () => import('../js/games/neonWord.js'),
 
         // System Modules
         'trophy-room': () => import('../js/core/TrophyRoom.js'),
