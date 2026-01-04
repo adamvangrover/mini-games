@@ -31,10 +31,17 @@ export default class Game {
         this.renderWidth = 320;
         this.renderHeight = 240;
 
+        this.boundResize = this.onResize.bind(this);
+        this.boundMouseMove = this.onMouseMove.bind(this);
+        this.boundOnShoot = this.onShoot.bind(this);
+        this.boundTouchStart = (e) => {
+            if (this.state === 'PLAYING') this.onShoot(e);
+        };
+
         this.initThree();
         this.createMenu();
 
-        window.addEventListener('resize', this.onResize.bind(this));
+        window.addEventListener('resize', this.boundResize);
     }
 
     initThree() {
@@ -47,37 +54,35 @@ export default class Game {
             antialias: false,
             powerPreference: "high-performance"
         });
-        this.renderer.setSize(window.innerWidth, window.innerHeight); // Canvas size matches window
-        this.renderer.setPixelRatio(1); // Standard pixel ratio
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(1);
         this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.BasicShadowMap; // Rough shadows for 90s feel
+        this.renderer.shadowMap.type = THREE.BasicShadowMap;
 
-        // We render to a low-res target and upscale via CSS or a pass
-        // But for simplicity in "additive" mode, we'll use a low-res RenderTarget or just setSize small and scale up canvas?
-        // Setting canvas size small and CSS large creates blur.
-        // To get pixelated look:
         this.renderer.domElement.style.imageRendering = 'pixelated';
-        this.renderer.setSize(this.renderWidth, this.renderHeight, false); // Update canvas buffer size
-        this.renderer.domElement.style.width = '100%'; // Stretch via CSS
+        this.renderer.setSize(this.renderWidth, this.renderHeight, false);
+        this.renderer.domElement.style.width = '100%';
         this.renderer.domElement.style.height = '100%';
 
         this.container.appendChild(this.renderer.domElement);
 
-        // Interaction
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
 
-        // Crosshair
         this.createCrosshair();
 
-        // Click Listener for Shooting
-        this.container.addEventListener('click', this.onShoot.bind(this));
+        this.container.addEventListener('click', this.boundOnShoot);
+        document.addEventListener('mousemove', this.boundMouseMove);
+        this.container.addEventListener('touchstart', this.boundTouchStart, {passive: false});
+    }
 
-        // Mobile tap
-        this.container.addEventListener('touchstart', (e) => {
-             // Basic tap to shoot for now
-             if(this.state === 'PLAYING') this.onShoot(e);
-        }, {passive: false});
+    onMouseMove(e) {
+        if (this.state === 'PLAYING' && document.pointerLockElement === this.container) {
+            const lookSpeed = 0.002;
+            this.camera.rotation.y -= e.movementX * lookSpeed;
+            this.camera.rotation.x -= e.movementY * lookSpeed;
+            this.camera.rotation.x = Math.max(-1.5, Math.min(1.5, this.camera.rotation.x));
+        }
     }
 
     createCrosshair() {
@@ -133,7 +138,6 @@ export default class Game {
             if (window.miniGameHub) window.miniGameHub.goBack();
         });
 
-        // HUD
         this.hud = document.createElement('div');
         this.hud.className = 'absolute top-0 left-0 w-full p-4 flex justify-between font-mono text-xl text-green-400 pointer-events-none hidden';
         this.hud.innerHTML = `
@@ -152,9 +156,7 @@ export default class Game {
         this.crosshair.style.display = 'block';
 
         this.score = 0;
-        this.updateHUD();
 
-        // Clear scene (keep camera/lights?)
         while(this.scene.children.length > 0){
             this.scene.remove(this.scene.children[0]);
         }
@@ -168,8 +170,8 @@ export default class Game {
         }
 
         this.activeModeInstance.init();
+        this.updateHUD();
 
-        // Lock pointer
         if (!('ontouchstart' in window)) {
             this.container.requestPointerLock();
         }
@@ -178,13 +180,8 @@ export default class Game {
     onShoot(e) {
         if (this.state !== 'PLAYING' || !this.activeModeInstance) return;
 
-        // Recoil effect?
-        this.camera.rotateX(0.02);
+        this.soundManager.playSound(this.activeMode === 'shark' ? 'shoot-water' : 'shoot');
 
-        // Sound
-        this.soundManager.playSound(this.activeMode === 'shark' ? 'shoot-water' : 'shoot'); // Need to register these sounds or use generic
-
-        // Raycast
         this.raycaster.setFromCamera(new THREE.Vector2(0,0), this.camera);
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
@@ -194,32 +191,16 @@ export default class Game {
     update(dt) {
         if (this.state === 'PLAYING' && this.activeModeInstance) {
             this.activeModeInstance.update(dt);
-
-            // Recoil recovery
-            this.camera.rotation.x *= 0.9;
-        }
-
-        // Camera input handling (if pointer locked or touch drag implemented)
-        if (document.pointerLockElement === this.container) {
-            const lookSpeed = 0.002;
-            this.camera.rotation.y -= this.inputManager.mouseMovement.x * lookSpeed;
-            this.camera.rotation.x -= this.inputManager.mouseMovement.y * lookSpeed;
-            this.camera.rotation.x = Math.max(-1.5, Math.min(1.5, this.camera.rotation.x));
-
-            // Reset mouse delta after reading (InputManager accumulates usually, depends on impl)
-            // InputManager in this codebase: accumulates in `handleMouseMove`.
-            // We need to verify if `InputManager` resets it or if we use `movementX` directly.
-            // Using standard pointer lock API listeners is safer if InputManager doesn't support 3D look well.
-        } else if (this.state === 'PLAYING') {
-             // Fallback for non-pointer lock (e.g. testing)
         }
 
         this.renderer.render(this.scene, this.camera);
     }
 
     updateHUD() {
-        document.getElementById('nh-score').innerText = this.score;
-        // Ammo update by mode
+        const scoreEl = document.getElementById('nh-score');
+        const ammoEl = document.getElementById('nh-ammo');
+        if (scoreEl) scoreEl.innerText = this.score;
+        if (ammoEl) ammoEl.innerText = this.ammo;
     }
 
     gameOver(finalScore) {
@@ -238,17 +219,23 @@ export default class Game {
     }
 
     onResize() {
-        // Keep low res buffer, stretch via CSS
-        // Aspect ratio update
         this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
         this.camera.updateProjectionMatrix();
     }
 
     shutdown() {
-        window.removeEventListener('resize', this.onResize.bind(this));
+        window.removeEventListener('resize', this.boundResize);
+        document.removeEventListener('mousemove', this.boundMouseMove);
+        if (this.container) {
+            this.container.removeEventListener('click', this.boundOnShoot);
+            this.container.removeEventListener('touchstart', this.boundTouchStart);
+        }
+
         if (this.menu) this.menu.remove();
         if (this.hud) this.hud.remove();
         if (this.crosshair) this.crosshair.remove();
         this.container.innerHTML = '';
+
+        if(this.renderer) this.renderer.dispose();
     }
 }
