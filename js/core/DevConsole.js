@@ -137,6 +137,43 @@ export default class DevConsole {
                 }
                 break;
 
+            case 'idkfa':
+                this.saveSystem.addCurrency(1000000);
+                this.print("Very happy ammo added. (Rich Mode Activated)", 'success');
+                if(window.updateHubStats) window.updateHubStats();
+                break;
+
+            case 'party':
+                this.print("PARTY MODE ACTIVATED!", 'success');
+                const partyInterval = setInterval(() => {
+                    const hue = Math.floor(Math.random() * 360);
+                    document.body.style.filter = `hue-rotate(${hue}deg)`;
+                }, 100);
+                setTimeout(() => {
+                    clearInterval(partyInterval);
+                    document.body.style.filter = 'none';
+                    this.print("Party over.", 'info');
+                }, 5000);
+                break;
+
+            case 'glitch':
+                this.print("GLITCHING...", 'error');
+                document.body.classList.add('glitch-active'); // Assume CSS handles this or we inline styles
+                const originalTransform = document.body.style.transform;
+                const glitchInt = setInterval(() => {
+                    const x = (Math.random() - 0.5) * 20;
+                    const y = (Math.random() - 0.5) * 20;
+                    document.body.style.transform = `translate(${x}px, ${y}px)`;
+                    document.body.style.filter = `invert(${Math.random() > 0.8 ? 1 : 0})`;
+                }, 50);
+                setTimeout(() => {
+                    clearInterval(glitchInt);
+                    document.body.style.transform = originalTransform;
+                    document.body.style.filter = 'none';
+                    document.body.classList.remove('glitch-active');
+                }, 2000);
+                break;
+
             default:
                 this.print(`Unknown command: ${cmd}`, 'error');
         }

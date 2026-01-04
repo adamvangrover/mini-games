@@ -18,7 +18,11 @@ export default class DuckHunt extends ModeBase {
         this.scene.add(grass);
 
         this.spawnTimer = 0;
+        
+        // Ammo Setup (Main Branch - Abstracted HUD)
         this.game.ammo = 3;
+        this.game.maxAmmo = 3; 
+        this.game.updateHUD();
     }
 
     update(dt) {
@@ -26,6 +30,14 @@ export default class DuckHunt extends ModeBase {
         if (this.spawnTimer <= 0) {
             this.spawnDuck();
             this.spawnTimer = 4.0;
+            
+            // Reload Logic (Main Branch - Uses Helper Methods)
+            // Reloads automatically when a new duck spawns if you are out of ammo
+            if(this.game.ammo <= 0) {
+                 this.game.ammo = 3;
+                 this.game.updateHUD();
+                 if(this.game.showMsg) this.game.showMsg("RELOADED");
+            }
         }
 
         // Move ducks
@@ -63,6 +75,12 @@ export default class DuckHunt extends ModeBase {
     }
 
     onShoot(intersects) {
+        if (this.game.ammo <= 0) return;
+        this.game.ammo--;
+        
+        // UI Update (Main Branch)
+        this.game.updateHUD();
+
         for (let hit of intersects) {
             // Traverse up to find the group
             let obj = hit.object;

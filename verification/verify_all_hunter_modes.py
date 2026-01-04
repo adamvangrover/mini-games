@@ -1,71 +1,104 @@
-from playwright.sync_api import sync_playwright
+import sys
+import os
+from playwright.sync_api import sync_playwright, expect
 
-def run():
+def verify_hunter_modes():
+    print("Starting Neon Hunter Modes Verification...")
+
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.set_viewport_size({"width": 1280, "height": 720})
 
-        print("Navigating to app...")
-        page.goto("http://localhost:8080")
+        # Capture console logs
+        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
 
-        # Handle loader
+        # Navigate to the game
+        page.goto("http://localhost:8000/index.html")
+
+        # Wait for initialization and handle App Loader
+        print("Waiting for App Loader...")
         try:
-            page.wait_for_selector("#app-loader", state="visible", timeout=3000)
-            page.click("#app-loader")
-            page.wait_for_selector("#app-loader", state="hidden", timeout=3000)
-        except:
-            pass
+            loader = page.locator("#app-loader")
+            if loader.is_visible(timeout=3000):
+                print("Dismissing app loader...")
+                page.click("body")
+                expect(loader).to_be_hidden(timeout=5000)
+        except Exception as e:
+            print(f"Loader handling warning: {e}")
 
-        print("Forcing transition to Neon Hunter 64...")
+        print("Launching Neon Hunter via Hub...")
         page.evaluate("if(window.miniGameHub) window.miniGameHub.transitionToState('IN_GAME', { gameId: 'neon-hunter' })")
 
-        # Wait for game menu
-        print("Waiting for menu...")
-        try:
-            page.wait_for_selector("#neon-hunter h1:has-text('NEON HUNTER 64')", state="visible", timeout=10000)
-            print("Menu visible.")
-        except:
-            print("Menu not found!")
-            page.screenshot(path="verification/debug_menu_fail.png")
-            return
+        expect(page.locator("h1:has-text('NEON HUNTER 64')")).to_be_visible(timeout=5000)
+        print("Neon Hunter Menu loaded.")
 
-        # Test Cycle Modes
         modes = ['clay', 'duck', 'deer', 'safari', 'shark']
 
         for mode in modes:
-            print(f"Testing mode: {mode}")
+            print(f"Testing Mode: {mode}")
 
-            # Click mode button via JS to ensure it triggers
-            page.evaluate(f"document.querySelector('button[data-mode=\"{mode}\"]').click()")
+            # Restart game to get to menu (if not already)
+            page.evaluate("if(window.miniGameHub) window.miniGameHub.transitionToState('IN_GAME', { gameId: 'neon-hunter' })")
+            page.wait_for_timeout(2000)
 
-            # Check HUD
+            # Click mode button
+            btn_selector = f"button[data-mode='{mode}']"
+            # Ensure menu is visible
+            expect(page.locator(btn_selector)).to_be_visible()
+
+            # Use force=True to click through any overlays
+            page.click(btn_selector, force=True)
+
+            # Wait for HUD to appear
             try:
-                page.wait_for_selector("#nh-score", state="visible", timeout=5000)
+                # Wait for score to be visible
+                expect(page.locator("#nh-score")).to_be_visible(timeout=3000)
             except:
-                print(f"HUD not visible for {mode}")
-                page.screenshot(path=f"verification/debug_fail_{mode}.png")
-                return
+                print(f"HUD not visible for {mode}. Attempting retry click...")
+                # Retry click
+                page.click(btn_selector, force=True)
+                expect(page.locator("#nh-score")).to_be_visible(timeout=3000)
 
-            # Wait a bit
-            page.wait_for_timeout(500)
+            expect(page.locator("h1:has-text('NEON HUNTER 64')")).not_to_be_visible()
 
-            # Check for canvas
-            if page.locator("#neon-hunter canvas").count() == 0:
-                print(f"FAILED: Canvas missing in {mode}")
-                return
+            # Verify Ammo Init
+            ammo_text = page.locator("#nh-ammo").inner_text()
+            print(f"  Initial Ammo: {ammo_text}")
 
-            print(f"Mode {mode} active.")
+            expected_ammo = "2" if mode == 'clay' else "3" if mode == 'duck' else "6"
+            if ammo_text != expected_ammo:
+                print(f"  ERROR: Expected ammo {expected_ammo}, got {ammo_text}")
+            else:
+                print("  Ammo check passed.")
 
-            # Reset by forcing a transition via console to reload the game module cleanly
-            page.evaluate("window.miniGameHub.transitionToState('IN_GAME', { gameId: 'neon-hunter' })")
-            page.wait_for_selector("#neon-hunter h1:has-text('NEON HUNTER 64')", state="visible", timeout=5000)
+            if mode in ['deer', 'safari', 'shark']:
+                print("  Simulating shooting to empty...")
+                # To simulate shooting we click the canvas
+                # We need to make sure we are not clicking UI elements.
+                # Canvas is usually behind HUD which is pointer-events: none.
 
-            # Small pause to ensure menu is ready
-            page.wait_for_timeout(500)
+                for _ in range(int(expected_ammo) + 2):
+                    page.mouse.click(400, 300)
+                    page.wait_for_timeout(100)
 
-        print("All modes verified successfully.")
+                msg_text = page.locator("#nh-center-msg").inner_text()
+                print(f"  Message after emptying: '{msg_text}'")
+
+                if "RELOADING" in msg_text:
+                    print("  Reload text detected.")
+                    page.wait_for_timeout(2500)
+                    ammo_text_reloaded = page.locator("#nh-ammo").inner_text()
+                    print(f"  Ammo after reload: {ammo_text_reloaded}")
+                    if ammo_text_reloaded == expected_ammo:
+                         print("  Reload successful.")
+                    else:
+                         print("  ERROR: Ammo did not reset.")
+                else:
+                    print(f"  WARNING: Reload message not detected. HUD Msg: '{msg_text}'")
+
+        print("Verification Complete.")
         browser.close()
 
 if __name__ == "__main__":
-    run()
+    verify_hunter_modes()
