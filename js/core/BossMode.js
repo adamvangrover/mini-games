@@ -1,6 +1,7 @@
 import SaveSystem from './SaveSystem.js';
 import SoundManager from './SoundManager.js';
 import AdsManager from './AdsManager.js';
+import ContentGenerator from './ContentGenerator.js';
 import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE } from './BossModeContent.js';
 
 export default class BossMode {
@@ -9,7 +10,7 @@ export default class BossMode {
         BossMode.instance = this;
 
         this.isActive = false;
-        this.mode = 'excel'; // 'excel', 'ppt', 'word', 'email', 'chat', 'terminal', 'spotify', 'bsod'
+        this.mode = 'excel'; // 'excel', 'ppt', 'word', 'email', 'chat', 'terminal', 'spotify', 'bsod', 'podcast', 'audiobook'
         this.startMenuOpen = false;
         this.notificationOpen = false;
 
@@ -17,6 +18,7 @@ export default class BossMode {
         this.soundManager = SoundManager.getInstance();
         this.saveSystem = SaveSystem.getInstance();
         this.adsManager = AdsManager.getInstance();
+        this.contentGen = new ContentGenerator();
 
         // State tracking
         this.wasMuted = false;
@@ -67,11 +69,23 @@ export default class BossMode {
             { id: 'focus', name: 'Deep Work Focus', description: 'Beats to study/relax to', style: 'lofi', cover: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=200&auto=format' },
             { id: 'coding', name: 'Cyberpunk Coding', description: 'Synthwave for hackers', style: 'synthwave', cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=200&auto=format' },
             { id: 'gym', name: 'Industrial Grind', description: 'Heavy machinery beats', style: 'industrial', cover: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=200&auto=format' },
-            { id: 'nostalgia', name: '8-Bit Memories', description: 'Chiptune classics', style: 'chiptune', cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=200&auto=format' }, // Reusing image
-            { id: 'acid', name: 'Acid Techno', description: '303 lines all night', style: 'acid', cover: 'https://images.unsplash.com/photo-1594623930572-300a3011d9ae?q=80&w=200&auto=format' }
+            { id: 'nostalgia', name: '8-Bit Memories', description: 'Chiptune classics', style: 'chiptune', cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=200&auto=format' },
+            { id: 'acid', name: 'Acid Techno', description: '303 lines all night', style: 'acid', cover: 'https://images.unsplash.com/photo-1594623930572-300a3011d9ae?q=80&w=200&auto=format' },
+            { id: 'dnb', name: 'Liquid DnB', description: '170 BPM Soul', style: 'dnb', cover: 'https://images.unsplash.com/photo-1514525253440-b393452e8d26?q=80&w=200&auto=format' },
+            { id: 'jazz', name: 'Jazz Cafe', description: 'Smooth jazz for rough days', style: 'jazz', cover: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=200&auto=format' },
+            { id: 'rock', name: 'Dad Rock', description: 'Guitar solos and denim', style: 'rock', cover: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?q=80&w=200&auto=format' },
+            { id: 'reggae', name: 'Dub Lab', description: 'Deep bass echoes', style: 'reggae', cover: 'https://images.unsplash.com/photo-1508186736123-44a5fcb36f9f?q=80&w=200&auto=format' },
+            { id: 'country', name: 'Neon Rodeo', description: 'Trucks, trains, and rain', style: 'country', cover: 'https://images.unsplash.com/photo-1483101974978-726213381666?q=80&w=200&auto=format' },
+            { id: 'classical', name: 'Baroque & Roll', description: 'Fancy wigs required', style: 'classical', cover: 'https://images.unsplash.com/photo-1507838153414-b4b713384ebd?q=80&w=200&auto=format' }
         ];
         this.currentPlaylist = this.spotifyPlaylists[0];
         this.isPlayingSpotify = false;
+
+        // Podcast Data
+        this.activePodcast = null; // { title, episode, script, index }
+
+        // Audiobook Data
+        this.activeBook = null;
 
 
         // Fake Typing Logic
@@ -137,6 +151,8 @@ export default class BossMode {
             { id: 'email', icon: 'fa-envelope', color: 'text-blue-400', label: 'Outlook' },
             { id: 'chat', icon: 'fa-comments', color: 'text-indigo-600', label: 'Teams' },
             { id: 'spotify', icon: 'fa-spotify', color: 'text-green-500', label: 'Spotify' },
+            { id: 'podcast', icon: 'fa-microphone-alt', color: 'text-purple-500', label: 'PodCaster' },
+            { id: 'audiobook', icon: 'fa-book-open', color: 'text-yellow-600', label: 'BookWorm' },
             { id: 'terminal', icon: 'fa-terminal', color: 'text-gray-400', label: 'Terminal' }
         ];
 
@@ -150,6 +166,8 @@ export default class BossMode {
         else if (this.mode === 'email') appContent = this.getEmailContent();
         else if (this.mode === 'chat') appContent = this.getChatContent();
         else if (this.mode === 'spotify') appContent = this.getSpotifyContent();
+        else if (this.mode === 'podcast') appContent = this.getPodcastContent();
+        else if (this.mode === 'audiobook') appContent = this.getAudiobookContent();
         else if (this.mode === 'terminal') appContent = this.getTerminalContent();
 
         this.overlay.innerHTML = `
@@ -722,7 +740,7 @@ export default class BossMode {
                     <div class="flex flex-col gap-4 text-gray-400 text-sm font-bold">
                         <div class="hover:text-white cursor-pointer flex items-center gap-3"><i class="fas fa-home text-lg"></i> Home</div>
                         <div class="hover:text-white cursor-pointer flex items-center gap-3"><i class="fas fa-search text-lg"></i> Search</div>
-                        <div class="hover:text-white cursor-pointer flex items-center gap-3"><i class="fas fa-book text-lg"></i> Your Library</div>
+                        <div class="hover:text-white cursor-pointer flex items-center gap-3"><i class="fas fa-broadcast-tower text-lg"></i> Radio Stations</div>
                     </div>
                     <div class="border-t border-gray-800 my-2"></div>
                     <div class="flex flex-col gap-2 overflow-y-auto flex-1">
@@ -744,7 +762,7 @@ export default class BossMode {
                             <p class="text-gray-400 text-sm font-bold">${this.currentPlaylist.description}</p>
                             <div class="flex items-center gap-2 mt-2">
                                 <span class="text-green-500 font-bold text-xs">Spotify</span>
-                                <span class="text-gray-400 text-xs">• 50 likes • 2h 30min</span>
+                                <span class="text-gray-400 text-xs">• ${Math.floor(Math.random()*9000)+100} likes • 100h+</span>
                             </div>
                         </div>
                     </div>
@@ -755,7 +773,6 @@ export default class BossMode {
                             <i class="fas ${this.isPlayingSpotify ? 'fa-pause' : 'fa-play'} ml-1"></i>
                         </div>
                         <i class="fas fa-heart text-3xl text-gray-400 hover:text-white cursor-pointer"></i>
-                        <i class="fas fa-ellipsis-h text-3xl text-gray-400 hover:text-white cursor-pointer"></i>
                     </div>
 
                     <!-- Tracklist -->
@@ -765,14 +782,14 @@ export default class BossMode {
                             <span>Title</span>
                             <span><i class="far fa-clock"></i></span>
                         </div>
-                        ${[1,2,3,4,5].map(i => `
+                        ${[1,2,3,4,5,6,7,8].map(i => `
                             <div class="grid grid-cols-[auto_1fr_auto] gap-4 hover:bg-white/10 p-2 rounded group items-center">
                                 <span>${i}</span>
                                 <div class="flex flex-col">
-                                    <span class="text-white font-bold group-hover:underline cursor-pointer">Procedural Track ${i}</span>
-                                    <span class="text-xs">Artist Unknown</span>
+                                    <span class="text-white font-bold group-hover:underline cursor-pointer">${this.contentGen.generateSongTitle(this.currentPlaylist.id === 'coding' ? 'cyber' : 'standard')}</span>
+                                    <span class="text-xs">${this.contentGen.generateArtistName()}</span>
                                 </div>
-                                <span>3:42</span>
+                                <span>${Math.floor(Math.random()*3)+2}:${Math.floor(Math.random()*50)+10}</span>
                             </div>
                         `).join('')}
                     </div>
@@ -796,26 +813,10 @@ export default class BossMode {
                             <i class="fas ${this.isPlayingSpotify ? 'fa-pause' : 'fa-play'}"></i>
                         </div>
                         <i class="fas fa-step-forward hover:text-white cursor-pointer" onclick="BossMode.instance.nextTrack()"></i>
-                        <i class="fas fa-redo hover:text-white cursor-pointer text-sm"></i>
-                    </div>
-                    <div class="w-full max-w-md flex items-center gap-2 text-xs text-gray-400">
-                        <span>0:42</span>
-                        <div class="flex-1 h-1 bg-gray-600 rounded-full group cursor-pointer">
-                            <div class="w-1/3 h-full bg-white rounded-full group-hover:bg-green-500"></div>
-                        </div>
-                        <span>3:42</span>
                     </div>
                 </div>
                 <div class="flex items-center justify-end w-1/3 gap-3 text-gray-400">
-                     <i class="fas fa-microphone hover:text-white cursor-pointer"></i>
-                     <i class="fas fa-list hover:text-white cursor-pointer"></i>
-                     <i class="fas fa-desktop hover:text-white cursor-pointer"></i>
-                     <div class="flex items-center gap-2 w-24">
-                        <i class="fas fa-volume-up hover:text-white cursor-pointer"></i>
-                        <div class="flex-1 h-1 bg-gray-600 rounded-full">
-                            <div class="w-3/4 h-full bg-white rounded-full hover:bg-green-500"></div>
-                        </div>
-                     </div>
+                     <i class="fas fa-volume-up hover:text-white cursor-pointer"></i>
                 </div>
             </div>
         `;
@@ -1360,6 +1361,206 @@ export default class BossMode {
             this.chatHistory[this.activeChannel].push({ user: 'Manager', time: 'Now', text: randomResp });
             this.render();
         }, 1000);
+    }
+
+    getPodcastContent() {
+        return `
+            <div class="bg-purple-800 text-white flex items-center justify-between px-2 py-1 select-none h-8 shadow-sm">
+                <div class="flex items-center gap-4">
+                     <i class="fas fa-microphone-alt"></i>
+                     <span class="font-bold text-sm">PodCaster</span>
+                </div>
+                <div class="flex gap-3 text-white/80"><i class="fas fa-times cursor-pointer hover:bg-red-500 px-2" id="boss-close-x"></i></div>
+            </div>
+            <div class="flex-1 bg-purple-50 flex flex-col overflow-hidden text-gray-800">
+                 <div class="p-4 grid grid-cols-2 gap-4">
+                      <div class="bg-white p-4 rounded shadow hover:shadow-lg cursor-pointer transition-all ${this.activePodcast && this.activePodcast.id === 'tech' ? 'ring-2 ring-purple-600' : ''}" onclick="BossMode.instance.playPodcast('tech')">
+                          <i class="fas fa-laptop-code text-4xl text-purple-600 mb-2"></i>
+                          <div class="font-bold">The Daily Standup</div>
+                          <div class="text-xs text-gray-500">Tech satire & synergy.</div>
+                      </div>
+                      <div class="bg-white p-4 rounded shadow hover:shadow-lg cursor-pointer transition-all ${this.activePodcast && this.activePodcast.id === 'crime' ? 'ring-2 ring-purple-600' : ''}" onclick="BossMode.instance.playPodcast('crime')">
+                          <i class="fas fa-user-secret text-4xl text-red-600 mb-2"></i>
+                          <div class="font-bold">True Office Crime</div>
+                          <div class="text-xs text-gray-500">Who stole the lunch?</div>
+                      </div>
+                      <div class="bg-white p-4 rounded shadow hover:shadow-lg cursor-pointer transition-all ${this.activePodcast && this.activePodcast.id === 'meditation' ? 'ring-2 ring-purple-600' : ''}" onclick="BossMode.instance.playPodcast('meditation')">
+                          <i class="fas fa-spa text-4xl text-green-600 mb-2"></i>
+                          <div class="font-bold">Corporate Zen</div>
+                          <div class="text-xs text-gray-500">Mindfulness for managers.</div>
+                      </div>
+                 </div>
+                 <div class="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                      ${this.activePodcast ? `
+                           <div class="animate-pulse mb-4"><i class="fas fa-broadcast-tower text-6xl text-purple-600"></i></div>
+                           <h2 class="text-2xl font-bold">${this.activePodcast.title}</h2>
+                           <p class="text-gray-600 mb-4">Playing Episode: ${this.activePodcast.episode}</p>
+                           <button class="bg-purple-600 text-white px-6 py-2 rounded-full font-bold hover:bg-purple-700" onclick="BossMode.instance.stopPodcast()">Stop Playback</button>
+                      ` : `
+                           <div class="text-gray-400">Select a podcast to start listening.</div>
+                      `}
+                 </div>
+            </div>
+        `;
+    }
+
+    getAudiobookContent() {
+        return `
+            <div class="bg-yellow-700 text-white flex items-center justify-between px-2 py-1 select-none h-8 shadow-sm">
+                <div class="flex items-center gap-4">
+                     <i class="fas fa-book-open"></i>
+                     <span class="font-bold text-sm">BookWorm Audio</span>
+                </div>
+                <div class="flex gap-3 text-white/80"><i class="fas fa-times cursor-pointer hover:bg-red-500 px-2" id="boss-close-x"></i></div>
+            </div>
+            <div class="flex-1 bg-[#fbf6e9] flex flex-col overflow-hidden text-gray-900 font-serif">
+                <div class="p-6 flex-1 flex flex-col items-center justify-center">
+                    <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=200&auto=format" class="w-32 h-48 shadow-xl mb-6 object-cover rounded">
+                    <h2 class="text-2xl font-bold mb-2">The 7 Habits of Highly Effective Droids</h2>
+                    <p class="text-gray-600 italic mb-6">By Stephen R. Cov-E</p>
+
+                    ${this.activeBook ? `
+                        <div class="w-full max-w-md bg-gray-200 h-2 rounded-full mb-4 overflow-hidden">
+                            <div class="h-full bg-yellow-600 animate-[width_2s_ease-in-out_infinite]" style="width: 50%"></div>
+                        </div>
+                        <p class="text-sm text-gray-500 mb-4">Reading Chapter 1...</p>
+                        <button class="bg-yellow-700 text-white px-8 py-2 rounded hover:bg-yellow-800" onclick="BossMode.instance.stopAudiobook()">Pause</button>
+                    ` : `
+                        <button class="bg-yellow-600 text-white px-8 py-2 rounded hover:bg-yellow-700 shadow-lg transform hover:-translate-y-1 transition-all" onclick="BossMode.instance.playAudiobook()">Start Listening</button>
+                    `}
+                </div>
+            </div>
+        `;
+    }
+
+    playPodcast(type) {
+        if (this.activePodcast) this.stopPodcast();
+
+        const script = this.contentGen.generatePodcastScript(type);
+        this.activePodcast = {
+            id: type,
+            title: type === 'tech' ? 'The Daily Standup' : (type === 'crime' ? 'True Office Crime' : 'Corporate Zen'),
+            episode: 'Ep. ' + Math.floor(Math.random() * 100),
+            script: script,
+            index: 0
+        };
+        this.render();
+        this.speakNextLine();
+    }
+
+    speakNextLine() {
+        if (!this.activePodcast || this.activePodcast.index >= this.activePodcast.script.length) {
+            this.activePodcast = null;
+            this.render();
+            return;
+        }
+
+        const line = this.activePodcast.script[this.activePodcast.index];
+        this.soundManager.speak(line, 1.0, 1.1, true); // Ducking enabled
+        this.activePodcast.index++;
+
+        // Poll for completion to speak next line (simple timeout approx based on length)
+        // A real system would use onend event from SoundManager, but for now we approximate or assume user clicks wait
+        // Actually, let's just chain them in SoundManager if we could, but here we can just use a delay loop
+        const duration = line.length * 80;
+        this.podcastTimer = setTimeout(() => this.speakNextLine(), duration);
+    }
+
+    stopPodcast() {
+        if (this.podcastTimer) clearTimeout(this.podcastTimer);
+        this.soundManager.stopSpeaking();
+        this.activePodcast = null;
+        this.render();
+    }
+
+    playAudiobook() {
+        this.activeBook = true;
+        this.render();
+        const script = this.contentGen.generateAudiobookChapter("The 7 Habits");
+        let i = 0;
+        const read = () => {
+            if (!this.activeBook || i >= script.length) {
+                this.stopAudiobook();
+                return;
+            }
+            this.soundManager.speak(script[i], 0.9, 0.9, true);
+            const duration = script[i].length * 90;
+            i++;
+            this.bookTimer = setTimeout(read, duration);
+        };
+        read();
+    }
+
+    stopAudiobook() {
+        this.activeBook = false;
+        if (this.bookTimer) clearTimeout(this.bookTimer);
+        this.soundManager.stopSpeaking();
+        this.render();
+    }
+
+    bindInternalEvents() {
+        const close = document.getElementById('boss-close-x');
+        if (close) close.onclick = () => this.toggle(false);
+
+        // Taskbar App Switcher
+        const modes = ['excel', 'ppt', 'word', 'email', 'chat', 'spotify', 'podcast', 'audiobook', 'terminal'];
+        modes.forEach(m => {
+            const btn = document.getElementById(`boss-switch-${m}`);
+            if (btn) btn.onclick = () => {
+                this.mode = m;
+                this.soundManager.playSound('click');
+                this.render();
+            };
+        });
+
+        // Start Menu Toggle
+        const startBtn = document.getElementById('boss-start-btn');
+        if (startBtn) startBtn.onclick = () => {
+             this.startMenuOpen = !this.startMenuOpen;
+             this.notificationOpen = false;
+             this.soundManager.playSound('click');
+             this.render();
+        };
+
+        // Power Off (in Start Menu)
+        const powerBtn = document.getElementById('boss-power-btn');
+        if (powerBtn) powerBtn.onclick = () => this.toggle(false);
+
+        // Notification Toggle
+        const notifBtn = document.getElementById('boss-notification-btn');
+        const clockArea = document.getElementById('boss-clock-area');
+        const toggleNotif = () => {
+             this.notificationOpen = !this.notificationOpen;
+             this.startMenuOpen = false;
+             this.soundManager.playSound('click');
+             this.render();
+        };
+        if(notifBtn) notifBtn.onclick = toggleNotif;
+        if(clockArea) clockArea.onclick = toggleNotif;
+
+        // Excel Specifics
+        if (this.mode === 'excel') {
+            const input = document.getElementById('boss-formula-input');
+            if (input) {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        this.commitEdit(input.value);
+                        input.blur();
+                    }
+                });
+            }
+
+            // Clippy interaction
+            const clippy = document.getElementById('clippy-container');
+            if (clippy) {
+                clippy.onclick = () => {
+                    const bubble = document.getElementById('clippy-bubble');
+                    bubble.textContent = "I see you're clicking me. Stop it.";
+                    bubble.classList.remove('hidden');
+                    setTimeout(() => bubble.classList.add('hidden'), 2000);
+                };
+            }
+        }
     }
 
     // --- Terminal ---
