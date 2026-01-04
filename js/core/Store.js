@@ -66,6 +66,14 @@ export default class Store {
             { id: 'disk_synthwave', name: 'Synthwave Disk', description: 'Retro 80s driving music.', cost: 350, icon: 'fas fa-car-side', type: 'music_disk', value: 'synthwave', category: 'music' },
             { id: 'disk_industrial', name: 'Industrial Disk', description: 'Heavy metallic beats.', cost: 400, icon: 'fas fa-industry', type: 'music_disk', value: 'industrial', category: 'music' },
             { id: 'disk_lofi', name: 'Lo-Fi Disk', description: 'Chill beats to study to.', cost: 150, icon: 'fas fa-coffee', type: 'music_disk', value: 'lofi', category: 'music' },
+            { id: 'disk_dubstep', name: 'Dubstep Disk', description: 'Wub wub wub.', cost: 500, icon: 'fas fa-bullhorn', type: 'music_disk', value: 'dubstep', category: 'music' },
+            { id: 'disk_dnb', name: 'DnB Disk', description: 'Fast breakbeats.', cost: 450, icon: 'fas fa-tachometer-alt', type: 'music_disk', value: 'dnb', category: 'music' },
+            { id: 'disk_jazz', name: 'Jazz Disk', description: 'Smooth jazz.', cost: 200, icon: 'fas fa-coffee', type: 'music_disk', value: 'jazz', category: 'music' },
+            { id: 'disk_classical', name: 'Classical Disk', description: 'Baroque mastery.', cost: 300, icon: 'fas fa-violin', type: 'music_disk', value: 'classical', category: 'music' },
+
+            // --- BOSS MODE OS ---
+            { id: 'os_legacy', name: 'Legacy OS License', description: 'Unlock Windows 95 style interface in Boss Mode.', cost: 1000, icon: 'fab fa-windows', type: 'os_license', value: 'legacy', category: 'system' },
+            { id: 'os_terminal', name: 'Linux Distro', description: 'Unlock Terminal-only interface in Boss Mode.', cost: 1500, icon: 'fab fa-linux', type: 'os_license', value: 'terminal', category: 'system' },
             { id: 'disk_dnb', name: 'Drum & Bass Disk', description: 'High tempo breakbeats.', cost: 350, icon: 'fas fa-drum', type: 'music_disk', value: 'dnb', category: 'music' },
             { id: 'disk_jazz', name: 'Jazz Collection', description: 'Smooth jazz for rough days.', cost: 400, icon: 'fas fa-saxophone', type: 'music_disk', value: 'jazz', category: 'music' },
             { id: 'disk_rock', name: 'Rock Anthology', description: 'Dad rock classics.', cost: 400, icon: 'fas fa-guitar', type: 'music_disk', value: 'rock', category: 'music' },
@@ -118,7 +126,8 @@ export default class Store {
             { id: 'arcade', label: 'Arcade', icon: 'fas fa-gamepad' },
             { id: 'customization', label: 'Themes & Skins', icon: 'fas fa-palette' },
             { id: 'music', label: 'Music', icon: 'fas fa-music' },
-            { id: 'property', label: 'Properties', icon: 'fas fa-home' }
+            { id: 'property', label: 'Properties', icon: 'fas fa-home' },
+            { id: 'system', label: 'System', icon: 'fas fa-microchip' }
         ];
 
         this.container.innerHTML = `
@@ -158,7 +167,7 @@ export default class Store {
             let isEquipped = false;
             const equippedVal = this.saveSystem.getEquippedItem(item.type);
 
-            if (['hub_skin', 'theme', 'cabinet', 'trophy_room', 'property', 'wallpaper', 'flooring', 'music_disk'].includes(item.type)) {
+            if (['hub_skin', 'theme', 'cabinet', 'trophy_room', 'property', 'wallpaper', 'flooring', 'music_disk', 'os_license'].includes(item.type)) {
                 // Strict equality if val exists
                 isEquipped = equippedVal === item.value;
                 
@@ -241,7 +250,7 @@ export default class Store {
     equip(item) {
         try {
             // General Save Trigger
-            if (['hub_skin', 'theme', 'cabinet', 'trophy_room', 'avatar', 'property', 'wallpaper', 'flooring', 'music_disk'].includes(item.type)) {
+            if (['hub_skin', 'theme', 'cabinet', 'trophy_room', 'avatar', 'property', 'wallpaper', 'flooring', 'music_disk', 'os_license'].includes(item.type)) {
                 this.saveSystem.equipItem(item.type, item.value);
             }
 
