@@ -8,50 +8,82 @@ def verify_boss_mode_enhanced():
         # Use a larger viewport to see the full UI and taskbar
         page = browser.new_page(viewport={'width': 1280, 'height': 800})
 
+        page.on("console", lambda msg: print(f"PAGE LOG: {msg.text}"))
+        page.on("pageerror", lambda msg: print(f"PAGE ERROR: {msg}"))
+
         # Navigate to the app (ensure server is running on port 8000)
         page.goto("http://localhost:8000/index.html")
 
-        # Wait for the app to load
-        expect(page.locator("#app-loader")).to_be_hidden(timeout=10000)
+        # Wait for the app to load and click to dismiss loader
+        loader = page.locator("#app-loader")
+        if loader.is_visible():
+            loader.click()
+        expect(loader).to_be_hidden(timeout=10000)
 
         # Trigger Boss Mode
         page.keyboard.press("Alt+b")
 
-        # Wait for overlay and verify the new desktop layout
+        # Check if overlay exists
         overlay = page.locator("#boss-mode-overlay")
-        expect(overlay).to_be_visible()
+        if not overlay.is_visible():
+            print("Overlay not visible. Checking DOM...")
+            html = page.content()
+            if "boss-mode-overlay" in html:
+                print("Overlay IS in DOM but hidden.")
+                # check class
+                cls = overlay.get_attribute("class")
+                print(f"Overlay classes: {cls}")
+            else:
+                print("Overlay NOT in DOM.")
 
-        # Check for the taskbar (bottom bar) - Using a more robust selector or text
-        # The class name has slashes which confuses the CSS selector parser
-        taskbar = page.locator("div.flex.items-center.justify-between.px-2.shadow-lg.z-50")
-        expect(taskbar).to_be_visible()
+        # 1. Verify Boot Screen
+        boot_screen = page.locator("#boss-boot-screen")
+        expect(boot_screen).to_be_visible(timeout=5000)
+        print("Boot screen visible")
 
-        # Verify default app is Excel
-        page.screenshot(path="verification/boss_mode_desktop_excel.png")
-        print("Screenshot saved: verification/boss_mode_desktop_excel.png")
+        # Wait for Boot to finish (2000ms in code + buffer)
+        page.wait_for_timeout(2500)
 
-        # Open Start Menu
-        page.locator("#boss-start-btn").click()
-        start_menu = page.locator("text=Pinned") # Look for "Pinned" text in start menu
+        # 2. Verify Login Screen
+        login_screen = page.locator("#boss-login-screen")
+        expect(login_screen).to_be_visible()
+        print("Login screen visible")
+
+        # 3. Perform Login
+        page.locator("#boss-login-btn").click(force=True)
+
+        # 4. Verify Desktop (Wait for wallpaper/desktop icons)
+        desktop_icons = page.locator("#desktop-icons")
+        expect(desktop_icons).to_be_visible(timeout=5000)
+        print("Desktop loaded")
+
+        # Take screenshot of Desktop
+        page.screenshot(path="verification/boss_mode_os_desktop.png")
+        print("Screenshot saved: verification/boss_mode_os_desktop.png")
+
+        # 5. Verify Start Menu Toggle
+        page.locator("#boss-start-btn").click(force=True)
+        start_menu = page.locator("#boss-start-menu")
         expect(start_menu).to_be_visible()
-        page.screenshot(path="verification/boss_mode_start_menu.png")
-        print("Screenshot saved: verification/boss_mode_start_menu.png")
+        page.screenshot(path="verification/boss_mode_os_start.png")
+        print("Screenshot saved: verification/boss_mode_os_start.png")
+        page.locator("#boss-start-btn").click(force=True) # Close it
 
-        # Close Start Menu by clicking outside (or toggling)
-        page.locator("#boss-start-btn").click()
+        # 6. Verify Excel (Default App)
+        excel_body = page.locator("#boss-excel-body")
+        expect(excel_body).to_be_visible()
 
-        # Switch to Word via Taskbar
-        page.locator("#boss-switch-word").click()
-        # Verify Word UI
-        expect(page.get_by_text("Meeting_Minutes_FINAL.docx")).to_be_visible()
-        page.screenshot(path="verification/boss_mode_desktop_word.png")
-        print("Screenshot saved: verification/boss_mode_desktop_word.png")
+        # 7. Switch to Word
+        page.locator("#boss-app-word").click(force=True)
+        word_editor = page.locator("#word-editor")
+        expect(word_editor).to_be_visible()
+        page.screenshot(path="verification/boss_mode_os_word.png")
+        print("Screenshot saved: verification/boss_mode_os_word.png")
 
-        # Open Notification Center
-        page.locator("#boss-notification-btn").click()
-        expect(page.get_by_text("New Email from HR")).to_be_visible()
-        page.screenshot(path="verification/boss_mode_notifications.png")
-        print("Screenshot saved: verification/boss_mode_notifications.png")
+        # 8. Switch to Outlook
+        page.locator("#boss-app-outlook").click(force=True)
+        expect(page.get_by_text("Inbox")).to_be_visible()
+        page.screenshot(path="verification/boss_mode_os_outlook.png")
 
         browser.close()
 

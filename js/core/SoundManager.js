@@ -264,6 +264,10 @@ export default class SoundManager {
         this.scheduler();
     }
 
+    stopAll() {
+        this.stopBGM();
+    }
+
     stopBGM() {
         this.isPlayingBGM = false;
         if (this.sequencerTimer) clearTimeout(this.sequencerTimer);

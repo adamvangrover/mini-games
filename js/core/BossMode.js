@@ -280,6 +280,10 @@ export default class BossMode {
                 <i class="fas fa-power-off cursor-pointer hover:text-red-400" onclick="BossMode.instance.toggle(false)"></i>
             </div>
         `;
+        setTimeout(() => {
+            const input = document.getElementById('boss-login-input');
+            if(input) input.focus();
+        }, 100);
     }
 
     login() {
