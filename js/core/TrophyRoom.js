@@ -59,6 +59,9 @@ export default class TrophyRoom {
             // --- Scene Setup ---
             const themeStyle = this.saveSystem.getEquippedItem('trophy_room') || 'default';
             const themeConfig = this.getThemeColors(themeStyle);
+            // Get Neon Color from global setting (Store)
+            const neonColor = this.saveSystem.getEquippedItem('color') || '#00ffff';
+            this.userColor = new THREE.Color(neonColor);
 
             this.scene = new THREE.Scene();
             this.scene.background = new THREE.Color(themeConfig.fog);
@@ -86,7 +89,9 @@ export default class TrophyRoom {
             // --- Environment & Content ---
             this.createRoom(themeConfig);
             this.renderTrophies();
+            this.renderDecorations(); // Render purchased Store items
             this.createNavMarker();
+            this.createAvatarHologram(); // New Feature
 
             // --- Event Listeners ---
             window.addEventListener('resize', this.onResize.bind(this));
@@ -175,12 +180,13 @@ export default class TrophyRoom {
         spotLight.penumbra = 0.5;
         this.scene.add(spotLight);
 
-        // Theme Accents
-        const leftLight = new THREE.PointLight(theme.grid, 1.5, 40);
+        // Theme Accents (Using User Color instead of fixed Theme Grid color for extra consistency)
+        const accentColor = this.userColor || new THREE.Color(theme.grid);
+        const leftLight = new THREE.PointLight(accentColor, 1.5, 40);
         leftLight.position.set(-15, 8, -5);
         this.scene.add(leftLight);
 
-        const rightLight = new THREE.PointLight(theme.grid, 1.5, 40);
+        const rightLight = new THREE.PointLight(accentColor, 1.5, 40);
         rightLight.position.set(15, 8, -5);
         this.scene.add(rightLight);
     }
@@ -199,8 +205,9 @@ export default class TrophyRoom {
         this.scene.add(floor);
         this.floor = floor; // Reference for clicking
 
-        // Grid
-        const gridHelper = new THREE.GridHelper(60, 30, theme.grid, 0x222222);
+        // Grid (Uses User Color)
+        const gridColor = this.userColor ? this.userColor.getHex() : theme.grid;
+        const gridHelper = new THREE.GridHelper(60, 30, gridColor, 0x222222);
         gridHelper.position.y = 0.01;
         this.scene.add(gridHelper);
 
@@ -209,6 +216,166 @@ export default class TrophyRoom {
         const roomBox = new THREE.Mesh(new THREE.BoxGeometry(60, 25, 60), wallMat);
         roomBox.position.y = 12.5;
         this.scene.add(roomBox);
+    }
+
+    renderDecorations() {
+        const decoItems = ['deco_stool', 'deco_plant', 'deco_vending', 'deco_lamp', 'deco_rug', 'deco_hologram', 'deco_poster', 'deco_mini_cab'];
+
+        decoItems.forEach(id => {
+            if (this.saveSystem.isItemUnlocked(id)) {
+                this.placeDecoration(id);
+            }
+        });
+    }
+
+    placeDecoration(id) {
+        // Simple procedural placement based on ID
+        // In a real engine, we'd have a slot system, but here we hardcode positions for "juice"
+
+        switch(id) {
+            case 'deco_stool':
+                // Place a few stools near shelves
+                this.createProp('stool', -6, 0.5, 5);
+                this.createProp('stool', 6, 0.5, 5);
+                break;
+            case 'deco_plant':
+                this.createProp('plant', -12, 0, -10);
+                this.createProp('plant', 12, 0, -10);
+                break;
+            case 'deco_vending':
+                this.createProp('vending', -14, 2, 10);
+                break;
+            case 'deco_lamp':
+                this.createProp('lamp', 14, 0, 10);
+                break;
+            case 'deco_rug':
+                this.createProp('rug', 0, 0.02, 0);
+                break;
+            case 'deco_hologram':
+                // Already have avatar hologram, maybe add another side one?
+                break;
+            case 'deco_mini_cab':
+                this.createProp('minicab', 10, 1, 0);
+                break;
+        }
+    }
+
+    createProp(type, x, y, z) {
+        const group = new THREE.Group();
+        group.position.set(x, y, z);
+
+        let mesh;
+        const mat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.5 });
+
+        if (type === 'stool') {
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1, 8), mat);
+            const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.1, 16), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
+            seat.position.y = 0.5;
+            group.add(leg); group.add(seat);
+        } else if (type === 'plant') {
+             const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.4, 0.8, 8), new THREE.MeshStandardMaterial({ color: 0x8B4513 }));
+             pot.position.y = 0.4;
+             const leaves = new THREE.Mesh(new THREE.ConeGeometry(0.8, 2, 8), new THREE.MeshStandardMaterial({ color: 0x00ff00 }));
+             leaves.position.y = 1.5;
+             group.add(pot); group.add(leaves);
+        } else if (type === 'vending') {
+            const body = new THREE.Mesh(new THREE.BoxGeometry(2, 4, 2), new THREE.MeshStandardMaterial({ color: 0x3333aa }));
+            const glass = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 2), new THREE.MeshBasicMaterial({ color: 0x00ffff, opacity: 0.5, transparent: true }));
+            glass.position.z = 1.01; glass.position.y = 0.5;
+            group.add(body); group.add(glass);
+        } else if (type === 'rug') {
+            const rug = new THREE.Mesh(new THREE.CircleGeometry(4, 32), new THREE.MeshBasicMaterial({ color: 0x550055 }));
+            rug.rotation.x = -Math.PI/2;
+            group.add(rug);
+        } else if (type === 'lamp') {
+            const post = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4, 8), mat);
+            post.position.y = 2;
+            const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffaa00 }));
+            bulb.position.y = 4;
+            group.add(post); group.add(bulb);
+
+            const light = new THREE.PointLight(0xffaa00, 1, 10);
+            light.position.y = 4;
+            group.add(light);
+        } else if (type === 'minicab') {
+            const cab = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+            const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.6), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
+            screen.position.z = 0.51; screen.position.y = 0.5;
+            group.add(cab); group.add(screen);
+        }
+
+        this.scene.add(group);
+        this.interactables.push(group);
+    }
+
+    createAvatarHologram() {
+        // Centerpiece: 3D Holographic projection of the user's equipped Avatar
+        const profile = this.saveSystem.getProfile();
+        // const iconClass = profile.avatar || 'fas fa-user-astronaut'; // Unused
+
+        // 1. Create Texture from Icon
+        const canvas = document.createElement('canvas');
+        canvas.width = 256; canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+
+        const colorStr = this.userColor.getStyle();
+
+        ctx.fillStyle = 'rgba(0,0,0,0)';
+        ctx.fillRect(0,0,256,256);
+
+        // Glow Ring
+        ctx.strokeStyle = colorStr;
+        ctx.lineWidth = 10;
+        ctx.beginPath(); ctx.arc(128, 128, 100, 0, Math.PI*2); ctx.stroke();
+
+        // Inner Glow
+        ctx.fillStyle = colorStr;
+        ctx.globalAlpha = 0.2;
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+
+        // Initial?
+        ctx.font = 'bold 100px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText("PLAYER", 128, 128);
+
+        const tex = new THREE.CanvasTexture(canvas);
+        const mat = new THREE.MeshBasicMaterial({
+            map: tex,
+            transparent: true,
+            opacity: 0.8,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
+        });
+
+        // Create intersecting planes for 3D effect
+        const group = new THREE.Group();
+        group.position.set(0, 2.5, 0); // Center of room
+
+        const p1 = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), mat);
+        const p2 = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), mat);
+        p2.rotation.y = Math.PI / 2;
+
+        group.add(p1);
+        group.add(p2);
+
+        // Base projector
+        const projector = new THREE.Mesh(
+            new THREE.CylinderGeometry(2, 2.5, 0.5, 16),
+            new THREE.MeshStandardMaterial({ color: 0x333333, emissive: 0x111111 })
+        );
+        projector.position.y = -2.25;
+        group.add(projector);
+
+        // Light
+        const light = new THREE.PointLight(this.userColor.getHex(), 2, 10);
+        light.position.y = 0;
+        group.add(light);
+
+        this.scene.add(group);
+        this.hologram = group; // Anim ref
     }
 
     renderTrophies() {
@@ -306,17 +473,18 @@ export default class TrophyRoom {
 
     createNavMarker() {
         this.navMarker = new THREE.Group();
+        const colorHex = this.userColor ? this.userColor.getHex() : 0xffd700;
         
         const ring = new THREE.Mesh(
             new THREE.RingGeometry(0.3, 0.4, 32),
-            new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.8, side: THREE.DoubleSide })
+            new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.8, side: THREE.DoubleSide })
         );
         ring.rotation.x = -Math.PI / 2;
         this.navMarker.add(ring);
 
         const inner = new THREE.Mesh(
             new THREE.CircleGeometry(0.2, 32),
-            new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.4, side: THREE.DoubleSide })
+            new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.4, side: THREE.DoubleSide })
         );
         inner.rotation.x = -Math.PI / 2;
         inner.position.y = 0.01;
@@ -416,10 +584,18 @@ export default class TrophyRoom {
         // Ambient Animation (Float)
         this.interactables.forEach(obj => {
             if (obj !== this.focusedTrophy) {
-                obj.position.y = 1.1 + Math.sin(Date.now() * 0.002 + obj.position.x) * 0.05;
-                obj.rotation.y += 0.005;
+                obj.position.y = obj.position.y + Math.sin(Date.now() * 0.002 + obj.position.x) * 0.001; // subtle float
+                if(obj.userData && obj.userData.isTrophy) {
+                     // Trophies rotate
+                     obj.rotation.y += 0.005;
+                }
             }
         });
+
+        // Rotate Hologram
+        if (this.hologram) {
+            this.hologram.rotation.y -= 0.01;
+        }
 
         this.renderer.render(this.scene, this.camera);
     }

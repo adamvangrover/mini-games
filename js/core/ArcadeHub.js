@@ -1,5 +1,6 @@
 import SaveSystem from './SaveSystem.js';
 import InputManager from './InputManager.js';
+import SoundManager from './SoundManager.js';
 
 export default class ArcadeHub {
     constructor(container, gameRegistry, onGameSelect, onFallback) {
@@ -20,6 +21,9 @@ export default class ArcadeHub {
         this.cabinets = [];
         this.colliders = []; 
         this.walls = [];
+        this.trailParticles = []; // For Trail Effect
+        this.ghosts = []; // AI Players
+        this.environmentLights = []; // For Visualizer
         
         // State
         this.isHovering = false;
@@ -27,10 +31,12 @@ export default class ArcadeHub {
 
         // Player / Physics State
         this.inputManager = InputManager.getInstance();
+        this.soundManager = SoundManager.getInstance();
         this.player = {
             position: new THREE.Vector3(0, 1.6, 25), // Start at entrance
             velocity: new THREE.Vector3(),
             speed: 8.0,
+            runSpeed: 14.0,
             radius: 0.5,
             height: 1.6
         };
@@ -62,6 +68,7 @@ export default class ArcadeHub {
             // --- Scene Setup ---
             const saveSystem = SaveSystem.getInstance();
             const theme = saveSystem.getEquippedItem('theme') || 'blue';
+            const neonColor = saveSystem.getEquippedItem('color') || '#00ffff';
 
             // Theme Colors
             const themeColors = {
@@ -69,9 +76,11 @@ export default class ArcadeHub {
                 pink: { bg: 0x100505, fog: 0x100505, grid: 0xff00ff, light: 0xff0088 },
                 gold: { bg: 0x101005, fog: 0x101005, grid: 0xffd700, light: 0xffaa00 },
                 green: { bg: 0x001000, fog: 0x001000, grid: 0x00ff00, light: 0x00ff00 },
-                red:  { bg: 0x100000, fog: 0x100000, grid: 0xff0000, light: 0xff0000 }
+                red:  { bg: 0x100000, fog: 0x100000, grid: 0xff0000, light: 0xff0000 },
+                vaporwave: { bg: 0x1a0b2e, fog: 0x1a0b2e, grid: 0x00f0ff, light: 0xff00ff }
             };
             const colors = themeColors[theme] || themeColors.blue;
+            const userColor = new THREE.Color(neonColor);
 
             this.scene = new THREE.Scene();
             this.scene.background = new THREE.Color(colors.bg);
@@ -92,7 +101,7 @@ export default class ArcadeHub {
             if (this.container) {
                 this.container.innerHTML = '';
                 this.container.appendChild(this.renderer.domElement);
-                this.createVirtualJoystick(); // Add Mobile Controls
+                this.createVirtualJoystick();
             } else {
                 return;
             }
@@ -102,16 +111,17 @@ export default class ArcadeHub {
             this.scene.add(ambientLight);
 
             // Ceiling Lights
-            this.createCeilingLight(0, 9, 0, colors.light, 2.0, 40);
+            this.createCeilingLight(0, 9, 0, userColor.getHex(), 2.0, 40);
             this.createCeilingLight(0, 9, -15, colors.light, 2.0, 40);
             this.createCeilingLight(0, 9, 15, colors.light, 2.0, 40);
-            this.createCeilingLight(0, 9, -30, colors.light, 2.0, 40);
+            this.createCeilingLight(0, 9, -30, userColor.getHex(), 2.0, 40);
 
             // --- Environment & Layout ---
-            this.createRoom(colors);
-            this.organizeLayout();
+            this.createRoom(colors, userColor);
+            this.organizeLayout(userColor);
             this.createTeleporter();
-            this.createNavMarker();
+            this.createNavMarker(userColor);
+            this.createGhostPlayers();
 
             // --- Event Listeners ---
             window.addEventListener('resize', this.onResize.bind(this));
@@ -218,6 +228,7 @@ export default class ArcadeHub {
         const light = new THREE.PointLight(color, intensity, distance);
         light.position.set(x, y, z);
         this.scene.add(light);
+        this.environmentLights.push({ light, originalIntensity: intensity, originalColor: new THREE.Color(color) });
 
         // Glow mesh
         const geometry = new THREE.SphereGeometry(0.2, 8, 8);
@@ -225,9 +236,10 @@ export default class ArcadeHub {
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(x, y, z);
         this.scene.add(mesh);
+        this.environmentLights[this.environmentLights.length - 1].mesh = mesh;
     }
 
-    createRoom(colors) {
+    createRoom(colors, userColor) {
         // Floor
         const floorGeo = new THREE.PlaneGeometry(60, 80);
         const floorMat = new THREE.MeshStandardMaterial({
@@ -243,7 +255,7 @@ export default class ArcadeHub {
         this.floor = floor; // Reference
 
         // Grid on floor
-        const gridHelper = new THREE.GridHelper(60, 30, colors.grid, 0x222222);
+        const gridHelper = new THREE.GridHelper(60, 30, userColor || colors.grid, 0x222222);
         gridHelper.position.y = 0.02;
         this.scene.add(gridHelper);
 
@@ -270,12 +282,49 @@ export default class ArcadeHub {
         createWall(1, 10, 80, 30, 5, 0);  // Right
     }
 
+    createGhostPlayers() {
+        const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
+
+        for (let i = 0; i < 3; i++) {
+            const group = new THREE.Group();
+
+            // Simple Droid Shape
+            const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.3, 0.8, 4, 8), new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.2 }));
+            body.position.y = 0.7;
+            group.add(body);
+
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8 }));
+            head.position.y = 1.3;
+            group.add(head);
+
+            const eye = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.1), new THREE.MeshBasicMaterial({ color: colors[i % colors.length] }));
+            eye.position.set(0, 1.3, 0.2);
+            group.add(eye);
+
+            // Random start position
+            group.position.set((Math.random() - 0.5) * 10, 0, (Math.random() - 0.5) * 20);
+
+            this.scene.add(group);
+            this.ghosts.push({
+                mesh: group,
+                target: this.getRandomNavPoint(),
+                state: 'walking',
+                waitTime: 0,
+                speed: 3 + Math.random() * 2
+            });
+        }
+    }
+
+    getRandomNavPoint() {
+        return new THREE.Vector3((Math.random() - 0.5) * 20, 0, (Math.random() - 0.5) * 40);
+    }
+
     addCollider(mesh) {
         const box = new THREE.Box3().setFromObject(mesh);
         this.colliders.push(box);
     }
 
-    organizeLayout() {
+    organizeLayout(userColor) {
         const categories = {};
         Object.entries(this.gameRegistry).forEach(([id, game]) => {
             const cat = game.category || 'Misc';
@@ -292,23 +341,23 @@ export default class ArcadeHub {
             const games = categories[cat];
             
             // Signage
-            this.createNeonSign(cat, 0, 7, currentZ);
+            this.createNeonSign(cat, 0, 7, currentZ, userColor);
 
             let rowZ = currentZ;
             games.forEach((game, i) => {
                 const isLeft = i % 2 === 0;
                 const offsetZ = Math.floor(i / 2) * cabinetSpacing;
                 if (isLeft) {
-                    this.createCabinet(-6, 0, rowZ - offsetZ, Math.PI / 2, game.id, game);
+                    this.createCabinet(-6, 0, rowZ - offsetZ, Math.PI / 2, game.id, game, userColor);
                 } else {
-                    this.createCabinet(6, 0, rowZ - offsetZ, -Math.PI / 2, game.id, game);
+                    this.createCabinet(6, 0, rowZ - offsetZ, -Math.PI / 2, game.id, game, userColor);
                 }
             });
             currentZ -= aisleSpacing;
         });
     }
 
-    createNeonSign(text, x, y, z) {
+    createNeonSign(text, x, y, z, color) {
         const canvas = document.createElement('canvas');
         canvas.width = 512;
         canvas.height = 128;
@@ -320,7 +369,7 @@ export default class ArcadeHub {
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.shadowColor = '#00ffff';
+        ctx.shadowColor = color ? color.getStyle() : '#00ffff';
         ctx.shadowBlur = 20;
         ctx.fillText(text.toUpperCase(), 256, 64);
 
@@ -328,14 +377,16 @@ export default class ArcadeHub {
         const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
         const mesh = new THREE.Mesh(new THREE.PlaneGeometry(10, 2.5), mat);
         mesh.position.set(x, y, z);
+        // Rotate 180 to face entrance
+        mesh.rotation.y = Math.PI;
 
-        const light = new THREE.PointLight(0x00ffff, 1.5, 20);
+        const light = new THREE.PointLight(color ? color.getHex() : 0x00ffff, 1.5, 20);
         light.position.set(x, y - 1, z);
         this.scene.add(light);
         this.scene.add(mesh);
     }
 
-    createCabinet(x, y, z, rotation, id, gameInfo) {
+    createCabinet(x, y, z, rotation, id, gameInfo, userColor) {
         const group = new THREE.Group();
         group.position.set(x, y, z);
         group.rotation.y = rotation;
@@ -361,7 +412,11 @@ export default class ArcadeHub {
         canvas.width = 256; canvas.height = 192;
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 256, 192);
-        ctx.fillStyle = this.getNeonColor(id);
+
+        // Use user color for neon accents if available, else game hash color
+        const glowColor = userColor ? userColor.getStyle() : this.getNeonColor(id);
+
+        ctx.fillStyle = glowColor;
         ctx.font = 'bold 24px Arial'; ctx.textAlign = 'center';
         ctx.fillText(gameInfo.name, 128, 100);
         ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4;
@@ -372,7 +427,7 @@ export default class ArcadeHub {
         screen.position.set(0, 1.5, 0.51);
         group.add(screen);
 
-        const marqMat = new THREE.MeshStandardMaterial({ color: this.getNeonColor(id), emissive: this.getNeonColor(id), emissiveIntensity: 0.6 });
+        const marqMat = new THREE.MeshStandardMaterial({ color: glowColor, emissive: glowColor, emissiveIntensity: 0.6 });
         const marq = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.3, 1.0), marqMat);
         marq.position.set(0, 2.35, 0);
         group.add(marq);
@@ -422,16 +477,17 @@ export default class ArcadeHub {
         this.teleporterTrigger = group;
     }
 
-    createNavMarker() {
+    createNavMarker(userColor) {
         const geometry = new THREE.RingGeometry(0.3, 0.4, 32);
-        const material = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+        const colorVal = userColor ? userColor.getHex() : 0x00ffff;
+        const material = new THREE.MeshBasicMaterial({ color: colorVal, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
         this.navMarker = new THREE.Mesh(geometry, material);
         this.navMarker.rotation.x = -Math.PI / 2;
         this.navMarker.visible = false;
         this.scene.add(this.navMarker);
 
         const innerGeo = new THREE.CircleGeometry(0.2, 32);
-        const innerMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
+        const innerMat = new THREE.MeshBasicMaterial({ color: colorVal, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
         const navInner = new THREE.Mesh(innerGeo, innerMat);
         navInner.position.z = 0.01;
         this.navMarker.add(navInner);
@@ -442,6 +498,90 @@ export default class ArcadeHub {
         for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
         const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
         return '#' + '00000'.substring(0, 6 - c.length) + c;
+    }
+
+    spawnTrailParticle(pos) {
+        if (!this.scene) return;
+        const saveSystem = SaveSystem.getInstance();
+        const trailType = saveSystem.getEquippedItem('trail') || 'default';
+        if (trailType === 'default') return;
+
+        let color = 0x00ffff;
+        let size = 0.2;
+
+        if (trailType === 'fire') color = 0xff4500;
+        else if (trailType === 'rainbow') color = new THREE.Color().setHSL(Math.random(), 1, 0.5);
+        else if (trailType === 'binary') color = 0x00ff00;
+
+        const geometry = new THREE.BoxGeometry(size, size, size);
+        const material = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.8 });
+        const mesh = new THREE.Mesh(geometry, material);
+
+        // Random offset
+        mesh.position.set(
+            pos.x + (Math.random() - 0.5) * 0.5,
+            pos.y - 0.5 + (Math.random() * 0.5),
+            pos.z + (Math.random() - 0.5) * 0.5
+        );
+
+        this.scene.add(mesh);
+        this.trailParticles.push({ mesh, life: 1.0 });
+    }
+
+    updateTrails(dt) {
+        for (let i = this.trailParticles.length - 1; i >= 0; i--) {
+            const p = this.trailParticles[i];
+            p.life -= dt * 1.5;
+            p.mesh.rotation.x += dt * 2;
+            p.mesh.rotation.y += dt * 2;
+            p.mesh.scale.setScalar(p.life);
+
+            if (p.life <= 0) {
+                this.scene.remove(p.mesh);
+                p.mesh.geometry.dispose();
+                p.mesh.material.dispose();
+                this.trailParticles.splice(i, 1);
+            }
+        }
+    }
+
+    updateAudioVisuals(dt) {
+        if (!this.soundManager) return;
+        const volume = this.soundManager.getAverageVolume();
+        const scale = 1 + (volume / 256) * 0.5;
+
+        // Pulse Lights
+        this.environmentLights.forEach(item => {
+            item.light.intensity = item.originalIntensity * scale;
+            // Optionally shift hue
+            const hsl = {};
+            item.originalColor.getHSL(hsl);
+            item.light.color.setHSL((hsl.h + volume * 0.001) % 1, hsl.s, hsl.l);
+            if(item.mesh) item.mesh.material.color.copy(item.light.color);
+        });
+    }
+
+    updateGhosts(dt) {
+        this.ghosts.forEach(ghost => {
+            if (ghost.state === 'walking') {
+                const dir = new THREE.Vector3().subVectors(ghost.target, ghost.mesh.position);
+                const dist = dir.length();
+                if (dist < 0.2) {
+                    ghost.state = 'waiting';
+                    ghost.waitTime = 2 + Math.random() * 3;
+                } else {
+                    dir.normalize().multiplyScalar(ghost.speed * dt);
+                    ghost.mesh.position.add(dir);
+                    ghost.mesh.lookAt(ghost.target);
+                }
+            } else if (ghost.state === 'waiting') {
+                ghost.waitTime -= dt;
+                if (ghost.waitTime <= 0) {
+                    ghost.state = 'walking';
+                    ghost.target = this.getRandomNavPoint();
+                }
+            }
+        });
     }
 
     // --- Update Loop & Movement ---
@@ -456,6 +596,9 @@ export default class ArcadeHub {
 
         // Logic
         this.handleMovement(dt);
+        this.updateTrails(dt);
+        this.updateAudioVisuals(dt);
+        this.updateGhosts(dt);
         this.checkInteractions();
     }
 
@@ -472,8 +615,9 @@ export default class ArcadeHub {
         // This function merges keyboard input with mobile joystick input.
 
         const velocity = new THREE.Vector3();
-        const isSprinting = this.inputManager.isKeyDown('ShiftLeft');
-        const moveSpeed = this.player.speed * (isSprinting ? 1.5 : 1.0) * dt;
+        const isSprinting = this.inputManager.isKeyDown('ShiftLeft') || this.inputManager.isKeyDown('ShiftRight');
+        const speed = isSprinting ? this.player.runSpeed : this.player.speed;
+        const moveSpeed = speed * dt;
 
         // 1. Keyboard Input
         if (this.inputManager.isKeyDown('KeyW') || this.inputManager.isKeyDown('ArrowUp')) velocity.z -= 1;
@@ -501,6 +645,9 @@ export default class ArcadeHub {
             velocity.applyEuler(euler);
             
             this.navTarget = null; // Manual input overrides click-move
+
+            // Emit Trail
+            this.spawnTrailParticle(this.player.position.clone());
         }
 
         // 3. Click-to-Move Logic
@@ -519,6 +666,8 @@ export default class ArcadeHub {
             } else {
                 dir.normalize().multiplyScalar(Math.min(moveSpeed, dist));
                 velocity.add(dir);
+                // Emit Trail
+                this.spawnTrailParticle(this.player.position.clone());
             }
         } else {
             this.navMarker.visible = false;

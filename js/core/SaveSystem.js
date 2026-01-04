@@ -5,7 +5,7 @@ export default class SaveSystem {
         }
 
         this.storageKey = 'miniGameHub_v1';
-        this.currentVersion = 1.2; // Schema Version
+        this.currentVersion = 1.3; // Schema Version
         this.data = this.load();
 
         SaveSystem.instance = this;
@@ -92,6 +92,15 @@ export default class SaveSystem {
             data.version = 1.2;
         }
 
+        // Migration 1.2 -> 1.3 (Add Trails and Colors)
+        if (data.version < 1.3) {
+            console.log("SaveSystem: Migrating to 1.3...");
+            if (!data.equipped) data.equipped = {};
+            if (!data.equipped.trail) data.equipped.trail = 'default';
+            if (!data.equipped.color) data.equipped.color = '#00ffff';
+            data.version = 1.3;
+        }
+
         // Always merge with default to ensure all fields exist (Schema Enforcement)
         return { ...this.getDefaultData(), ...data, version: this.currentVersion };
     }
@@ -141,7 +150,9 @@ export default class SaveSystem {
             equipped: {
                 theme: 'theme_neon_blue',
                 avatar: 'fas fa-user-astronaut',
-                cabinet: 'default'
+                cabinet: 'default',
+                trail: 'default',
+                color: '#00ffff'
             },
             stats: {},
             xp: 0,

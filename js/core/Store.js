@@ -63,6 +63,91 @@ export default class Store {
                 type: 'theme',
                 value: 'red'
             },
+            {
+                id: 'theme_vaporwave',
+                name: 'Vaporwave',
+                description: 'Aesthetic purple & teal.',
+                cost: 120,
+                icon: 'fas fa-water',
+                type: 'theme',
+                value: 'vaporwave'
+            },
+
+            // --- NEON COLORS (For Hub/Games) ---
+            {
+                id: 'color_cyan',
+                name: 'Cyan Glow',
+                description: 'Standard neon cyan.',
+                cost: 0,
+                icon: 'fas fa-circle',
+                type: 'color',
+                value: '#00ffff'
+            },
+            {
+                id: 'color_magenta',
+                name: 'Magenta Glow',
+                description: 'Deep neon pink.',
+                cost: 75,
+                icon: 'fas fa-circle',
+                type: 'color',
+                value: '#ff00ff'
+            },
+            {
+                id: 'color_lime',
+                name: 'Lime Glow',
+                description: 'Toxic green.',
+                cost: 75,
+                icon: 'fas fa-circle',
+                type: 'color',
+                value: '#00ff00'
+            },
+            {
+                id: 'color_orange',
+                name: 'Amber Glow',
+                description: 'Retro terminal orange.',
+                cost: 75,
+                icon: 'fas fa-circle',
+                type: 'color',
+                value: '#ffaa00'
+            },
+
+            // --- PARTICLE TRAILS ---
+            {
+                id: 'trail_default',
+                name: 'Standard Trail',
+                description: 'Simple fading sparks.',
+                cost: 0,
+                icon: 'fas fa-wind',
+                type: 'trail',
+                value: 'default'
+            },
+            {
+                id: 'trail_fire',
+                name: 'Firewalker',
+                description: 'Leave flames behind you.',
+                cost: 250,
+                icon: 'fas fa-fire-alt',
+                type: 'trail',
+                value: 'fire'
+            },
+            {
+                id: 'trail_rainbow',
+                name: 'Rainbow Dash',
+                description: 'Taste the rainbow.',
+                cost: 500,
+                icon: 'fas fa-rainbow',
+                type: 'trail',
+                value: 'rainbow'
+            },
+            {
+                id: 'trail_binary',
+                name: 'Binary Stream',
+                description: 'Ones and Zeros.',
+                cost: 300,
+                icon: 'fas fa-code',
+                type: 'trail',
+                value: 'binary'
+            },
 
             // --- TROPHY ROOM STYLES ---
             {
@@ -138,6 +223,62 @@ export default class Store {
                 icon: 'fas fa-coins',
                 type: 'cabinet',
                 value: 'gold'
+            },
+
+            // --- MUSIC ---
+            {
+                id: 'music_track_1',
+                name: 'Disk: Synthwave',
+                description: 'Jukebox: "Synthwave Highway" (Arpeggio)',
+                cost: 100,
+                icon: 'fas fa-compact-disc',
+                type: 'music',
+                value: 'track1'
+            },
+            {
+                id: 'music_track_2',
+                name: 'Disk: Dark Techno',
+                description: 'Jukebox: "Cyber Core" (Industrial)',
+                cost: 150,
+                icon: 'fas fa-compact-disc',
+                type: 'music',
+                value: 'track2'
+            },
+            {
+                id: 'music_track_3',
+                name: 'Disk: Acid Rain',
+                description: 'Jukebox: "Acid Rain" (TB-303 Style)',
+                cost: 250,
+                icon: 'fas fa-flask',
+                type: 'music',
+                value: 'track3'
+            },
+            {
+                id: 'music_track_4',
+                name: 'Disk: 8-Bit Hero',
+                description: 'Jukebox: "8-Bit Hero" (Chiptune)',
+                cost: 200,
+                icon: 'fas fa-gamepad',
+                type: 'music',
+                value: 'track4'
+            },
+            {
+                id: 'music_track_5',
+                name: 'Disk: Deep Space',
+                description: 'Jukebox: "Deep Space" (Ambient)',
+                cost: 300,
+                icon: 'fas fa-satellite',
+                type: 'music',
+                value: 'track5'
+            },
+            {
+                id: 'music_track_6',
+                name: 'Disk: Glitch Hop',
+                description: 'Jukebox: "Glitch Hop" (Experimental)',
+                cost: 350,
+                icon: 'fas fa-random',
+                type: 'music',
+                value: 'track6'
             },
 
             // --- AVATARS ---
@@ -287,84 +428,108 @@ export default class Store {
         this.container.innerHTML = '';
         const currentCurrency = this.saveSystem.getCurrency();
 
-        this.items.forEach(item => {
-            const isUnlocked = this.saveSystem.isItemUnlocked(item.id) || item.cost === 0;
-            const canAfford = currentCurrency >= item.cost;
+        // Group items by category for cleaner UI
+        const categories = {
+            'theme': 'Themes',
+            'color': 'Neon Colors',
+            'trail': 'Trails',
+            'cabinet': 'Cabinets',
+            'trophy_room': 'Trophy Room',
+            'avatar': 'Avatars',
+            'music': 'Music (Jukebox)',
+            'decoration': 'Decorations'
+        };
 
-            // Check if currently equipped
-            let isEquipped = false;
-            const equippedVal = this.saveSystem.getEquippedItem(item.type);
+        Object.keys(categories).forEach(catKey => {
+            const catItems = this.items.filter(i => i.type === catKey);
+            if (catItems.length === 0) return;
 
-            if (item.type === 'theme' || item.type === 'cabinet' || item.type === 'trophy_room') {
-                // Strict equality if val exists
-                isEquipped = equippedVal === item.value;
-                
-                // Fallback: if undefined, check if this is the default item
-                if (equippedVal === undefined && item.cost === 0) isEquipped = true;
-                
-                // Special robustness checks for default IDs
-                if (item.id === 'theme_neon_blue' && (equippedVal === 'blue' || !equippedVal)) isEquipped = true;
-                if (item.id === 'cabinet_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
-                if (item.id === 'trophy_room_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
+            // Section Header
+            const header = document.createElement('h3');
+            header.className = "col-span-full text-2xl font-bold text-fuchsia-400 mt-6 mb-2 border-b border-fuchsia-500/30 pb-2 uppercase tracking-wider";
+            header.innerText = categories[catKey];
+            this.container.appendChild(header);
 
-            } else if (item.type === 'avatar') {
-                isEquipped = equippedVal === item.value;
-                // Default avatar check
-                if (item.id === 'avatar_astronaut' && !equippedVal) isEquipped = true;
-            } else if (item.type === 'decoration') {
-                isEquipped = isUnlocked; // Active if owned
-            }
+            catItems.forEach(item => {
+                const isUnlocked = this.saveSystem.isItemUnlocked(item.id) || item.cost === 0;
+                const canAfford = currentCurrency >= item.cost;
 
-            const card = document.createElement('div');
-            // Visual border
-            let borderClass = 'border-slate-700';
-            if (isEquipped) borderClass = 'border-fuchsia-500 shadow-lg shadow-fuchsia-500/20';
-            else if (isUnlocked) borderClass = 'border-green-500/50';
+                // Check if currently equipped
+                let isEquipped = false;
+                const equippedVal = this.saveSystem.getEquippedItem(item.type);
 
-            card.className = `glass-panel p-4 rounded-lg flex flex-col items-center text-center transition-all ${borderClass}`;
-
-            let buttonHtml = '';
-
-            if (isUnlocked) {
-                 if (item.type === 'decoration') {
-                    buttonHtml = `<button class="w-full py-2 bg-green-600 text-white font-bold rounded cursor-default"><i class="fas fa-check"></i> Owned</button>`;
-                 } else if (isEquipped) {
-                    buttonHtml = `<button class="w-full py-2 bg-green-600 text-white font-bold rounded cursor-default"><i class="fas fa-check"></i> Active</button>`;
-                 } else {
-                    buttonHtml = `<button class="equip-btn w-full py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded transition-colors" data-id="${item.id}">Equip</button>`;
-                 }
-            } else {
-                 buttonHtml = `<button class="buy-btn w-full py-2 font-bold rounded transition-all ${canAfford ? 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}" data-id="${item.id}">
-                             ${item.cost} <i class="fas fa-coins text-yellow-400"></i>
-                            </button>`;
-            }
-
-            card.innerHTML = `
-                <div class="text-4xl mb-2 ${isUnlocked ? (isEquipped ? 'text-fuchsia-400' : 'text-green-400') : 'text-slate-500'}">
-                    <i class="${item.icon}"></i>
-                </div>
-                <h3 class="text-xl font-bold text-white mb-1">${item.name}</h3>
-                <p class="text-xs text-slate-400 mb-3 h-8 overflow-hidden">${item.description}</p>
-                <div class="mt-auto w-full">
-                    ${buttonHtml}
-                </div>
-            `;
-
-            if (!isUnlocked && canAfford) {
-                const btn = card.querySelector('.buy-btn');
-                btn.addEventListener('click', (e) => {
-                    this.buy(item, e);
-                });
-            } else if (isUnlocked && !isEquipped && item.type !== 'decoration') {
-                const btn = card.querySelector('.equip-btn');
-                if(btn) {
-                    btn.addEventListener('click', () => {
-                        this.equip(item);
-                    });
+                if (['theme', 'cabinet', 'trophy_room', 'avatar', 'trail', 'color'].includes(item.type)) {
+                    isEquipped = equippedVal === item.value;
+                    if (equippedVal === undefined && item.cost === 0) isEquipped = true;
+                    // Robustness for defaults
+                    if (item.id === 'theme_neon_blue' && (equippedVal === 'blue' || !equippedVal)) isEquipped = true;
+                    if (item.id === 'cabinet_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
+                    if (item.id === 'trophy_room_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
+                    if (item.id === 'trail_default' && (equippedVal === 'default' || !equippedVal)) isEquipped = true;
+                    if (item.id === 'color_cyan' && (equippedVal === '#00ffff' || !equippedVal)) isEquipped = true;
+                } else if (item.type === 'decoration' || item.type === 'music') {
+                    isEquipped = isUnlocked; // "Active" if owned
                 }
-            }
 
-            this.container.appendChild(card);
+                const card = document.createElement('div');
+                let borderClass = 'border-slate-700 bg-slate-800/50';
+                if (isEquipped && item.type !== 'decoration' && item.type !== 'music') {
+                    borderClass = 'border-fuchsia-500 shadow-[0_0_15px_rgba(217,70,239,0.3)] bg-slate-800';
+                } else if (isUnlocked) {
+                    borderClass = 'border-green-500/50 bg-slate-800/80';
+                }
+
+                card.className = `p-4 rounded-lg flex flex-col items-center text-center transition-all hover:scale-[1.02] border ${borderClass}`;
+
+                let buttonHtml = '';
+
+                if (isUnlocked) {
+                    if (item.type === 'decoration' || item.type === 'music') {
+                        buttonHtml = `<button class="w-full py-2 bg-green-600/20 text-green-400 font-bold rounded cursor-default border border-green-500/50"><i class="fas fa-check"></i> Owned</button>`;
+                    } else if (isEquipped) {
+                        buttonHtml = `<button class="w-full py-2 bg-fuchsia-600 text-white font-bold rounded cursor-default shadow-lg"><i class="fas fa-check-circle"></i> Active</button>`;
+                    } else {
+                        buttonHtml = `<button class="equip-btn w-full py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded transition-colors border border-slate-600" data-id="${item.id}">Equip</button>`;
+                    }
+                } else {
+                    buttonHtml = `<button class="buy-btn w-full py-2 font-bold rounded transition-all ${canAfford ? 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white shadow-[0_0_10px_rgba(217,70,239,0.5)]' : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'}" data-id="${item.id}">
+                                ${item.cost} <i class="fas fa-coins text-yellow-400"></i>
+                                </button>`;
+                }
+
+                // Render Color Swatch if it's a color type
+                let iconHtml = `<i class="${item.icon}"></i>`;
+                if (item.type === 'color') {
+                    iconHtml = `<div class="w-8 h-8 rounded-full shadow-[0_0_10px_currentColor]" style="background-color: ${item.value}; color: ${item.value}"></div>`;
+                }
+
+                card.innerHTML = `
+                    <div class="text-4xl mb-3 ${isUnlocked ? (isEquipped ? 'text-fuchsia-400' : 'text-green-400') : 'text-slate-500'} transition-colors">
+                        ${iconHtml}
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-1 leading-tight">${item.name}</h3>
+                    <p class="text-xs text-slate-400 mb-3 h-8 overflow-hidden line-clamp-2">${item.description}</p>
+                    <div class="mt-auto w-full">
+                        ${buttonHtml}
+                    </div>
+                `;
+
+                if (!isUnlocked && canAfford) {
+                    const btn = card.querySelector('.buy-btn');
+                    btn.addEventListener('click', (e) => {
+                        this.buy(item, e);
+                    });
+                } else if (isUnlocked && !isEquipped && !['decoration', 'music'].includes(item.type)) {
+                    const btn = card.querySelector('.equip-btn');
+                    if(btn) {
+                        btn.addEventListener('click', () => {
+                            this.equip(item);
+                        });
+                    }
+                }
+
+                this.container.appendChild(card);
+            });
         });
 
         this.updateCurrencyDisplays();
@@ -373,13 +538,12 @@ export default class Store {
     equip(item) {
         try {
             // General Save Trigger
-            if (['theme', 'cabinet', 'trophy_room', 'avatar'].includes(item.type)) {
+            if (['theme', 'cabinet', 'trophy_room', 'avatar', 'trail', 'color'].includes(item.type)) {
                 this.saveSystem.equipItem(item.type, item.value);
             }
 
             // Specific Side Effects
             if (item.type === 'avatar') {
-                // Update Player Profile Object
                 const profile = this.saveSystem.getProfile();
                 if (profile) {
                     profile.avatar = item.value;
@@ -388,9 +552,11 @@ export default class Store {
             } 
             
             if (item.type === 'theme') {
-                // Update CSS Hook immediately
                 document.body.className = `theme-${item.value}`;
             }
+
+            // Sound
+            SoundManager.getInstance().playSound('click');
 
             this.render();
         } catch (e) {
@@ -413,7 +579,6 @@ export default class Store {
                 // Visual feedback: Particles
                 const particleSystem = ParticleSystem.getInstance();
                 if (particleSystem) {
-                    // Spawn particles at the click location (button center)
                     const rect = event.target.getBoundingClientRect();
                     const x = rect.left + rect.width / 2;
                     const y = rect.top + rect.height / 2;
@@ -436,10 +601,10 @@ export default class Store {
 
     showToast(message) {
         const toast = document.createElement('div');
-        toast.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-full shadow-lg font-bold z-[100] animate-bounce';
-        toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ${message}`;
+        toast.className = 'fixed top-24 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-full shadow-[0_0_20px_rgba(74,222,128,0.5)] font-bold z-[100] animate-bounce flex items-center gap-2 border border-green-400';
+        toast.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
+        setTimeout(() => toast.remove(), 2500);
     }
 
     updateCurrencyDisplays() {
