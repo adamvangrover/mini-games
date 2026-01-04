@@ -2,7 +2,7 @@ import SaveSystem from './SaveSystem.js';
 import SoundManager from './SoundManager.js';
 import AdsManager from './AdsManager.js';
 // Fallback if file missing, we define defaults inside constructor
-import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, SPOTIFY_PLAYLISTS } from './BossModeContent.js';
+import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE } from './BossModeContent.js'; 
 
 export default class BossMode {
     constructor() {
@@ -13,7 +13,6 @@ export default class BossMode {
         // --- Core System State ---
         this.isActive = false;
         this.systemState = 'boot'; // 'boot', 'login', 'desktop', 'bsod'
-        this.currentOS = 'modern'; // 'modern', 'legacy', 'terminal'
         
         // --- Window Management ---
         this.windows = []; // Array of active window objects
@@ -32,7 +31,6 @@ export default class BossMode {
         this.saveSystem = SaveSystem.getInstance();
         this.adsManager = AdsManager.getInstance();
         this.overlay = null;
-        this.legacyOS = null;
 
         // --- User Profile ---
         this.user = {
@@ -78,11 +76,6 @@ export default class BossMode {
         // Terminal
         this.termHistory = ["Microsoft Windows [Version 10.0.19045]", "(c) Microsoft Corporation.", ""];
 
-        // Spotify
-        this.spotifyPlaylists = SPOTIFY_PLAYLISTS || [];
-        this.currentPlaylist = this.spotifyPlaylists[0];
-        this.isPlayingSpotify = false;
-
         this.init();
     }
 
@@ -116,9 +109,6 @@ export default class BossMode {
                 <div id="boss-taskbar-container" class="absolute bottom-0 left-0 right-0 h-10 z-[10000]"></div>
             </div>
 
-            <!-- Legacy OS Container -->
-            <div id="os-legacy-container" class="absolute inset-0 z-[10005] hidden bg-teal-800"></div>
-
             <div id="boss-bsod-container" class="absolute inset-0 z-[10050] hidden bg-[#0078d7]"></div>
         `;
 
@@ -128,13 +118,6 @@ export default class BossMode {
         this.bindGlobalEvents();
         document.addEventListener('mousemove', (e) => this.handleDragMove(e));
         document.addEventListener('mouseup', () => this.handleDragEnd());
-
-        // Check Persistence
-        if (localStorage.getItem('boss_mode_loggedin') === 'true') {
-            this.systemState = 'desktop';
-            const savedOS = localStorage.getItem('boss_mode_os') || 'modern';
-            this.currentOS = savedOS;
-        }
 
         // Pre-load Data
         if(!this.fileSystem.excel[0].data) this.generateFakeExcelData(this.fileSystem.excel[0]);
@@ -244,12 +227,7 @@ export default class BossMode {
             } else if (this.systemState === 'login') {
                 this.renderLogin();
             } else {
-                if (this.currentOS === 'legacy') {
-                    if (!this.legacyOS) this.startLegacyOS();
-                } else {
-                    document.getElementById('os-desktop-layer').classList.remove('hidden');
-                    this.renderDesktop();
-                }
+                this.renderDesktop();
             }
             
             // Auto mute real world audio
@@ -260,7 +238,6 @@ export default class BossMode {
             // Stop Loops
             if (this.snakeGame) clearInterval(this.snakeGame.interval);
             if (this.flightGame) clearInterval(this.flightGame.interval);
-            if (this.legacyOS && this.legacyOS.isPlayingMusic) this.legacyOS.toggleMusic();
         }
     }
 
@@ -302,73 +279,17 @@ export default class BossMode {
                 <i class="fas fa-wifi"></i>
                 <i class="fas fa-power-off cursor-pointer hover:text-red-400" onclick="BossMode.instance.toggle(false)"></i>
             </div>
-            <!-- OS Selector -->
-            <div class="absolute bottom-8 left-8 flex gap-4 text-white/50 text-xs font-mono bg-black/50 p-2 rounded">
-                <div class="cursor-pointer hover:text-white flex flex-col items-center gap-1 ${this.currentOS==='modern'?'text-white font-bold':''}" onclick="BossMode.instance.selectOS('modern')"><i class="fab fa-windows text-xl"></i>Modern</div>
-                <div class="cursor-pointer hover:text-white flex flex-col items-center gap-1 ${this.currentOS==='legacy'?'text-white font-bold':''}" onclick="BossMode.instance.selectOS('legacy')"><i class="fas fa-save text-xl"></i>Legacy</div>
-            </div>
         `;
-        setTimeout(() => {
-            const input = document.getElementById('boss-login-input');
-            if(input) input.focus();
-        }, 100);
     }
 
     login() {
         this.soundManager.playSound('click');
         this.systemState = 'desktop';
-
-        // Persistence
-        localStorage.setItem('boss_mode_loggedin', 'true');
-        localStorage.setItem('boss_mode_os', this.currentOS);
-
         document.getElementById('os-login-layer').classList.add('hidden');
-
-        if (this.currentOS === 'modern') {
-            document.getElementById('os-desktop-layer').classList.remove('hidden');
-            this.renderDesktop();
-            setTimeout(() => this.openApp('mission'), 500);
-        } else if (this.currentOS === 'legacy') {
-            this.startLegacyOS();
-        }
-    }
-
-    selectOS(os) {
-        // Check Unlock
-        if (os === 'legacy') {
-            const unlocked = this.saveSystem.getEquippedItem('os_license') === 'legacy' || this.saveSystem.isItemUnlocked('os_legacy');
-            if (!unlocked) {
-                alert("Legacy OS License Required. Purchase from Store.");
-                return;
-            }
-        }
-        this.currentOS = os;
-        this.renderLogin();
-    }
-
-    startLegacyOS() {
-        const container = document.getElementById('os-legacy-container');
-        container.classList.remove('hidden');
-        import('./BossModeLegacy.js').then(module => {
-            this.legacyOS = new module.default(container);
-        });
-    }
-
-    logout() {
-        this.soundManager.playSound('click');
-        localStorage.removeItem('boss_mode_loggedin');
-        this.systemState = 'login';
-
-        // Hide desktops
-        document.getElementById('os-desktop-layer').classList.add('hidden');
-        const legacy = document.getElementById('os-legacy-container');
-        legacy.classList.add('hidden');
-        if(this.legacyOS) {
-             this.legacyOS.destroy();
-             this.legacyOS = null;
-        }
-
-        this.renderLogin();
+        document.getElementById('os-desktop-layer').classList.remove('hidden');
+        this.renderDesktop();
+        // Auto-launch Mission Control
+        setTimeout(() => this.openApp('mission'), 500);
     }
 
     renderDesktop() {
@@ -413,7 +334,6 @@ export default class BossMode {
             { id: 'excel', icon: 'fa-file-excel', color: 'text-green-500' },
             { id: 'word', icon: 'fa-file-word', color: 'text-blue-500' },
             { id: 'ppt', icon: 'fa-file-powerpoint', color: 'text-orange-500' },
-            { id: 'spotify', icon: 'fa-spotify', color: 'text-green-400' },
             { id: 'dcf', icon: 'fa-chart-line', color: 'text-cyan-400' },
             { id: 'terminal', icon: 'fa-terminal', color: 'text-gray-400' }
         ];
@@ -453,7 +373,6 @@ export default class BossMode {
             'word': { title: 'Word - Report.docx', w: 700, h: 800, color: 'bg-[#2b579a]', icon: 'fa-file-word' },
             'ppt': { title: 'PowerPoint - Deck.pptx', w: 900, h: 600, color: 'bg-[#b7472a]', icon: 'fa-file-powerpoint' },
             'terminal': { title: 'Command Prompt', w: 600, h: 400, color: 'bg-[#0c0c0c]', icon: 'fa-terminal' },
-            'spotify': { title: 'Spotify Premium', w: 800, h: 500, color: 'bg-[#121212]', icon: 'fa-spotify' },
             'dcf': { title: 'DCF Valuator Pro', w: 800, h: 600, color: 'bg-[#0f172a]', icon: 'fa-chart-line' },
             'mission': { title: 'Mission Control', w: 600, h: 400, color: 'bg-[#1e293b]', icon: 'fa-microchip' },
             'market': { title: 'Market Radar', w: 500, h: 350, color: 'bg-[#0f172a]', icon: 'fa-satellite-dish' }
@@ -521,7 +440,6 @@ export default class BossMode {
         if(win.app === 'word') this.renderWord(contentArea);
         if(win.app === 'ppt') this.renderPPT(contentArea);
         if(win.app === 'terminal') this.renderTerminal(contentArea);
-        if(win.app === 'spotify') this.renderSpotify(contentArea);
         if(win.app === 'dcf') new DCFApp(contentArea); // Use Class for complex logic
         if(win.app === 'mission') {
             const tpl = document.getElementById('tpl-mission');
@@ -678,96 +596,12 @@ export default class BossMode {
     renderWord(c) { c.innerHTML = `<div class="h-full bg-[#f3f2f1] flex flex-col"><div class="bg-white p-2 border-b flex gap-2"><button class="hover:bg-gray-100 p-1 font-bold w-6">B</button><button class="hover:bg-gray-100 p-1 italic w-6">I</button><div class="border-l mx-2"></div><button class="hover:bg-gray-100 p-1 text-xs" onclick="BossMode.instance.toggleWordStealth()"><i class="fas fa-user-secret"></i> Stealth</button></div><div class="flex-1 overflow-y-auto p-8 flex justify-center"><div class="bg-white w-[21cm] min-h-[29.7cm] shadow-xl p-[2cm] text-black font-serif text-sm outline-none" contenteditable="true" id="word-doc-content"><p class="text-center font-bold text-lg mb-4 underline">${this.currentWord.title}</p>${this.currentWord.content.replace(/\n/g,'<br>')}</div></div></div>`; }
     renderPPT(c) { c.innerHTML = `<div class="h-full flex bg-[#d0cec9]"><div class="w-40 bg-gray-100 border-r p-2 overflow-y-auto">${this.currentPPT.slides.map((s,i)=>`<div class="bg-white aspect-video shadow mb-2 p-1 text-[8px] cursor-pointer" onclick="BossMode.instance.currentSlide=${i};BossMode.instance.renderPPT(this.parentElement.parentElement)">Slide ${i+1}</div>`).join('')}</div><div class="flex-1 flex items-center justify-center"><div class="bg-white aspect-[16/9] w-3/4 shadow-xl p-8"><h1 class="text-3xl font-bold mb-4">${this.currentPPT.slides[this.currentSlide].title}</h1><ul>${this.currentPPT.slides[this.currentSlide].bullets.map(b=>`<li>${b}</li>`).join('')}</ul></div></div></div>`; }
     renderTerminal(c) { 
-        c.innerHTML = `<div class="bg-black text-gray-300 font-mono text-sm h-full p-2 overflow-y-auto" onclick="this.querySelector('input').focus()"><div id="term-output">${this.termHistory.map(l=>`<div>${l}</div>`).join('')}</div><div class="flex"><span>C:\\Users\\${this.user.name.replace(' ','')}></span><input class="bg-transparent border-none outline-none text-gray-300 flex-1 ml-2" autofocus onkeydown="if(event.key==='Enter') BossMode.instance.runTerminalCommand(this.value)"></div></div>`;
-    }
-
-    renderSpotify(c) {
-        c.innerHTML = `
-            <div class="h-full flex flex-col bg-[#121212] text-white">
-                <div class="flex-1 flex overflow-hidden">
-                    <div class="w-48 bg-black p-4 flex flex-col gap-2 overflow-y-auto border-r border-gray-800">
-                        <div class="text-xs text-gray-400 font-bold uppercase mb-2">Playlists</div>
-                        ${this.spotifyPlaylists.map(p => `
-                            <div class="text-sm text-gray-300 hover:text-white cursor-pointer truncate p-1 rounded ${this.currentPlaylist.id === p.id ? 'bg-gray-800' : ''}" onclick="BossMode.instance.selectPlaylist('${p.id}')">${p.name}</div>
-                        `).join('')}
-                    </div>
-                    <div class="flex-1 p-6 bg-gradient-to-b from-[#1e1e1e] to-[#121212] flex flex-col">
-                        <div class="flex gap-6 mb-6">
-                            <img src="${this.currentPlaylist.cover}" class="w-32 h-32 shadow-2xl">
-                            <div class="flex flex-col justify-end">
-                                <span class="text-xs font-bold uppercase">Playlist</span>
-                                <h1 class="text-4xl font-black mb-2">${this.currentPlaylist.name}</h1>
-                                <p class="text-gray-400 text-sm">${this.currentPlaylist.description}</p>
-                            </div>
-                        </div>
-                        <div class="flex-1">
-                            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-black text-xl hover:scale-105 cursor-pointer transition-transform" onclick="BossMode.instance.toggleMusic()">
-                                <i class="fas ${this.isPlayingSpotify ? 'fa-pause' : 'fa-play'}"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="h-20 bg-[#181818] border-t border-[#282828] px-4 flex items-center justify-between">
-                     <div class="flex items-center gap-4 w-1/3">
-                        <img src="${this.currentPlaylist.cover}" class="w-14 h-14">
-                        <div class="flex flex-col">
-                            <span class="text-sm font-bold hover:underline cursor-pointer">${this.currentPlaylist.name} Mix</span>
-                            <span class="text-xs text-gray-400">Procedural Audio</span>
-                        </div>
-                     </div>
-                     <div class="flex flex-col items-center w-1/3">
-                         <div class="flex items-center gap-4 text-gray-400 text-lg mb-1">
-                             <i class="fas fa-step-backward hover:text-white cursor-pointer"></i>
-                             <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-black text-sm hover:scale-105 cursor-pointer" onclick="BossMode.instance.toggleMusic()">
-                                 <i class="fas ${this.isPlayingSpotify ? 'fa-pause' : 'fa-play'}"></i>
-                             </div>
-                             <i class="fas fa-step-forward hover:text-white cursor-pointer" onclick="BossMode.instance.nextTrack()"></i>
-                         </div>
-                         <div class="w-full h-1 bg-gray-600 rounded-full"><div class="w-1/3 h-full bg-white rounded-full"></div></div>
-                     </div>
-                     <div class="w-1/3"></div>
-                </div>
-            </div>
-        `;
-    }
-
-    selectPlaylist(id) {
-        this.currentPlaylist = this.spotifyPlaylists.find(p => p.id === id);
-        if (this.isPlayingSpotify) {
-             this.soundManager.setMusicStyle(this.currentPlaylist.style);
-             this.soundManager.stopBGM();
-             this.soundManager.startBGM();
-        }
-        // Re-render only if active window is Spotify (Optimization)
-        const wins = document.querySelectorAll('.os-window');
-        wins.forEach(w => {
-             const content = w.querySelector('.window-content');
-             if(content && w.querySelector('.fa-spotify')) this.renderSpotify(content);
-        });
-    }
-
-    toggleMusic() {
-        this.isPlayingSpotify = !this.isPlayingSpotify;
-        if (this.isPlayingSpotify) {
-            this.soundManager.setMusicStyle(this.currentPlaylist.style);
-            this.soundManager.startBGM();
-        } else {
-            this.soundManager.stopBGM();
-        }
-        // Force Re-render
-        this.selectPlaylist(this.currentPlaylist.id);
-    }
-
-    nextTrack() {
-        if(this.isPlayingSpotify) {
-             this.soundManager.stopBGM();
-             setTimeout(() => this.soundManager.startBGM(), 100);
-        }
+        c.innerHTML = `<div class="bg-black text-gray-300 font-mono text-sm h-full p-2 overflow-y-auto" onclick="this.querySelector('input').focus()"><div id="term-output">${this.termHistory.map(l=>`<div>${l}</div>`).join('')}</div><div class="flex"><span>C:\\Users\\${this.userName.replace(' ','')}></span><input class="bg-transparent border-none outline-none text-gray-300 flex-1 ml-2" autofocus onkeydown="if(event.key==='Enter') BossMode.instance.runTerminalCommand(this.value)"></div></div>`; 
     }
 
     // --- Logic Handlers ---
     runTerminalCommand(cmd) {
-        this.termHistory.push(`C:\\Users\\${this.user.name.replace(' ','')}> ${cmd}`);
+        this.termHistory.push(`C:\\Users\\${this.userName.replace(' ','')}> ${cmd}`);
         // ... (Include logic from previous step: help, ls, matrix, etc.)
         if(cmd === 'matrix') { /* Matrix logic */ }
         // Force update of terminal window(s)
@@ -799,33 +633,7 @@ export default class BossMode {
 
     // --- State Toggles ---
     toggleWordStealth() { this.wordStealthMode = !this.wordStealthMode; }
-
-    toggleStartMenu() {
-        const container = document.getElementById('boss-startmenu-container');
-        this.startMenuOpen = !this.startMenuOpen;
-
-        if (this.startMenuOpen) {
-            container.innerHTML = `
-                <div class="w-64 bg-[#0f172a]/95 backdrop-blur border border-gray-700 rounded-t-lg shadow-2xl flex flex-col overflow-hidden text-gray-300">
-                     <div class="p-4 bg-gradient-to-r from-blue-900 to-slate-900 border-b border-gray-700 flex items-center gap-3">
-                          <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs">JD</div>
-                          <div class="font-bold text-white">${this.user.name}</div>
-                     </div>
-                     <div class="p-2 flex flex-col gap-1">
-                          <button class="flex items-center gap-3 p-2 hover:bg-white/10 rounded text-left transition-colors" onclick="BossMode.instance.openApp('excel')"><i class="fas fa-file-excel text-green-500 w-5 text-center"></i> Excel</button>
-                          <button class="flex items-center gap-3 p-2 hover:bg-white/10 rounded text-left transition-colors" onclick="BossMode.instance.openApp('word')"><i class="fas fa-file-word text-blue-500 w-5 text-center"></i> Word</button>
-                          <button class="flex items-center gap-3 p-2 hover:bg-white/10 rounded text-left transition-colors" onclick="BossMode.instance.openApp('spotify')"><i class="fas fa-spotify text-green-500 w-5 text-center"></i> Spotify</button>
-                          <div class="border-t border-gray-700 my-1"></div>
-                          <button class="flex items-center gap-3 p-2 hover:bg-white/10 rounded text-left transition-colors" onclick="BossMode.instance.logout()"><i class="fas fa-sign-out-alt text-red-400 w-5 text-center"></i> Log Out</button>
-                          <button class="flex items-center gap-3 p-2 hover:bg-white/10 rounded text-left transition-colors" onclick="BossMode.instance.toggle(false)"><i class="fas fa-power-off text-gray-400 w-5 text-center"></i> Shut Down</button>
-                     </div>
-                </div>
-            `;
-        } else {
-            container.innerHTML = '';
-        }
-    }
-
+    toggleStartMenu() { this.startMenuOpen = !this.startMenuOpen; this.notificationOpen = false; this.render(); }
     toggleNotification() { this.notificationOpen = !this.notificationOpen; this.startMenuOpen = false; this.render(); }
     
     // --- Data Gen ---

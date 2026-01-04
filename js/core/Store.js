@@ -74,6 +74,15 @@ export default class Store {
             // --- BOSS MODE OS ---
             { id: 'os_legacy', name: 'Legacy OS License', description: 'Unlock Windows 95 style interface in Boss Mode.', cost: 1000, icon: 'fab fa-windows', type: 'os_license', value: 'legacy', category: 'system' },
             { id: 'os_terminal', name: 'Linux Distro', description: 'Unlock Terminal-only interface in Boss Mode.', cost: 1500, icon: 'fab fa-linux', type: 'os_license', value: 'terminal', category: 'system' },
+            { id: 'disk_dnb', name: 'Drum & Bass Disk', description: 'High tempo breakbeats.', cost: 350, icon: 'fas fa-drum', type: 'music_disk', value: 'dnb', category: 'music' },
+            { id: 'disk_jazz', name: 'Jazz Collection', description: 'Smooth jazz for rough days.', cost: 400, icon: 'fas fa-saxophone', type: 'music_disk', value: 'jazz', category: 'music' },
+            { id: 'disk_rock', name: 'Rock Anthology', description: 'Dad rock classics.', cost: 400, icon: 'fas fa-guitar', type: 'music_disk', value: 'rock', category: 'music' },
+            { id: 'disk_reggae', name: 'Reggae Vibes', description: 'Chill island sounds.', cost: 350, icon: 'fas fa-cannabis', type: 'music_disk', value: 'reggae', category: 'music' },
+            { id: 'disk_country', name: 'Country Hits', description: 'Trucks, trains, and rain.', cost: 300, icon: 'fas fa-hat-cowboy', type: 'music_disk', value: 'country', category: 'music' },
+            { id: 'disk_classical', name: 'Classical Masterpieces', description: 'For the sophisticated ear.', cost: 500, icon: 'fas fa-violin', type: 'music_disk', value: 'classical', category: 'music' },
+
+            { id: 'sub_podcast', name: 'PodCaster Premium', description: 'Unlock exclusive corporate satire podcasts.', cost: 1000, icon: 'fas fa-microphone-alt', type: 'subscription', value: 'podcast', category: 'music' },
+            { id: 'sub_audiobook', name: 'BookWorm Gold', description: 'Unlimited audiobook streaming.', cost: 1500, icon: 'fas fa-book-open', type: 'subscription', value: 'audiobook', category: 'music' },
 
             // --- TROPHY ROOM STYLES ---
             { id: 'trophy_room_default', name: 'Classic Museum', description: 'The standard exhibition hall. Please do not touch the exhibits.', cost: 0, icon: 'fas fa-columns', type: 'trophy_room', value: 'default', category: 'arcade' },
