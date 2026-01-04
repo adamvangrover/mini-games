@@ -1,5 +1,6 @@
 import SaveSystem from './SaveSystem.js';
 import InputManager from './InputManager.js';
+import SoundManager from './SoundManager.js';
 
 export default class ArcadeHub {
     constructor(container, gameRegistry, onGameSelect, onFallback) {
@@ -20,6 +21,8 @@ export default class ArcadeHub {
         this.cabinets = [];
         this.colliders = []; 
         this.walls = [];
+        this.ceilingLights = [];
+        this.ghostPlayers = [];
         
         // State
         this.isHovering = false;
@@ -122,6 +125,7 @@ export default class ArcadeHub {
             this.organizeLayout();
             this.createTeleporter();
             this.createNavMarker();
+            this.createGhostPlayers();
 
             // --- Event Listeners ---
             window.addEventListener('resize', this.onResize.bind(this));
@@ -228,6 +232,7 @@ export default class ArcadeHub {
         const light = new THREE.PointLight(color, intensity, distance);
         light.position.set(x, y, z);
         this.scene.add(light);
+        this.ceilingLights.push(light);
 
         // Glow mesh
         const geometry = new THREE.SphereGeometry(0.2, 8, 8);
@@ -235,6 +240,9 @@ export default class ArcadeHub {
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(x, y, z);
         this.scene.add(mesh);
+
+        // Save base intensity for visualizer
+        light.userData.baseIntensity = intensity;
     }
 
     createRoom(colors) {
@@ -395,6 +403,10 @@ export default class ArcadeHub {
         light.position.set(x, y - 1, z);
         this.scene.add(light);
         this.scene.add(mesh);
+
+        // Save for visualizer
+        light.userData.baseIntensity = 1.5;
+        this.ceilingLights.push(light); // Add to lights array for pulsing
     }
 
     createCabinet(x, y, z, rotation, id, gameInfo) {
@@ -498,7 +510,8 @@ export default class ArcadeHub {
             group.add(btn2);
         }
 
-        group.userData = { gameId: id, isCabinet: true };
+        // Add to cabinets for visualization
+        group.userData = { gameId: id, isCabinet: true, marquee: marq };
         this.scene.add(group);
         this.addCollider(body);
         this.cabinets.push(group);
@@ -555,6 +568,114 @@ export default class ArcadeHub {
         return '#' + '00000'.substring(0, 6 - c.length) + c;
     }
 
+    // --- Ghost Players ---
+
+    createGhostPlayers() {
+        for(let i=0; i<3; i++) {
+            const group = new THREE.Group();
+
+            // Droid body
+            const body = new THREE.Mesh(
+                new THREE.CapsuleGeometry(0.3, 1, 4, 8),
+                new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.2 })
+            );
+            body.position.y = 0.8;
+            group.add(body);
+
+            // Eye
+            const eye = new THREE.Mesh(
+                new THREE.SphereGeometry(0.15, 16, 16),
+                new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00 })
+            );
+            eye.position.set(0, 1.2, 0.2);
+            group.add(eye);
+
+            // Initial pos
+            group.position.set(
+                (Math.random() * 10 - 5),
+                0,
+                (Math.random() * 20 - 10)
+            );
+
+            this.scene.add(group);
+            this.ghostPlayers.push({
+                mesh: group,
+                target: this.getRandomGhostTarget(),
+                state: 'moving', // moving, idle
+                timer: 0
+            });
+        }
+    }
+
+    getRandomGhostTarget() {
+        return new THREE.Vector3(
+            (Math.random() * 14 - 7),
+            0,
+            (Math.random() * 60 - 30)
+        );
+    }
+
+    updateGhostPlayers(dt) {
+        this.ghostPlayers.forEach(ghost => {
+            if (ghost.state === 'moving') {
+                const dir = new THREE.Vector3().subVectors(ghost.target, ghost.mesh.position);
+                const dist = dir.length();
+                if (dist < 0.5) {
+                    ghost.state = 'idle';
+                    ghost.timer = 2 + Math.random() * 3;
+                } else {
+                    dir.normalize();
+                    ghost.mesh.position.add(dir.multiplyScalar(2 * dt));
+                    ghost.mesh.lookAt(ghost.target);
+                }
+            } else if (ghost.state === 'idle') {
+                ghost.timer -= dt;
+                // Idle animation
+                ghost.mesh.position.y = Math.sin(Date.now() * 0.005) * 0.1;
+                if (ghost.timer <= 0) {
+                    ghost.state = 'moving';
+                    ghost.target = this.getRandomGhostTarget();
+                }
+            }
+        });
+    }
+
+    // --- Audio Visualization ---
+
+    updateAudioVisuals(dt) {
+        const soundManager = SoundManager.getInstance();
+        const data = soundManager.getAudioData();
+        if (data.length === 0) return;
+
+        // Calculate average volume (bass focused)
+        let sum = 0;
+        const bassCount = Math.floor(data.length / 4);
+        for(let i=0; i<bassCount; i++) {
+            sum += data[i];
+        }
+        const avg = sum / bassCount; // 0-255
+        const intensity = avg / 255;
+
+        // Pulse Ceiling Lights
+        this.ceilingLights.forEach(light => {
+            if (light.userData.baseIntensity) {
+                light.intensity = light.userData.baseIntensity * (1 + intensity * 0.5);
+            }
+        });
+
+        // Pulse Cabinets
+        this.cabinets.forEach((cab, i) => {
+             // Offset pulse by index for wave effect
+             const offset = i * 10;
+             const val = data[(offset % data.length)];
+             const localIntensity = val / 255;
+
+             if (cab.userData.marquee) {
+                 cab.userData.marquee.material.emissiveIntensity = 0.6 + localIntensity * 2.0;
+             }
+        });
+    }
+
     // --- Update Loop & Movement ---
 
     update(dt) {
@@ -568,6 +689,8 @@ export default class ArcadeHub {
         // Logic
         this.handleMovement(dt);
         this.checkInteractions();
+        this.updateGhostPlayers(dt);
+        this.updateAudioVisuals(dt);
     }
 
     animate() {
