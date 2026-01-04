@@ -22,9 +22,7 @@ export default class SoundManager {
         // Analyser for Visualization
         this.analyser = this.audioCtx.createAnalyser();
         this.analyser.fftSize = 256;
-        this.masterGain.connect(this.analyser); // Connect output to analyser (visualization sees post-gain? Or pre-gain? Usually pre-mute is better but post-gain is easier to sync)
-        // Wait, if I mute, visualizer dies. Better: Source -> Analyser -> MasterGain -> Dest.
-        // But let's keep it simple: Source -> MasterGain -> Analyser -> Dest (Visuals react to heard volume).
+        this.masterGain.connect(this.analyser);
 
         this.bgmGainNode = this.audioCtx.createGain();
         this.bgmGainNode.connect(this.masterGain);
@@ -46,7 +44,10 @@ export default class SoundManager {
             acid: [0, 2, 3, 7, 10], // Minor pentatonic-ish
             glitch: [0, 1, 6, 7, 11], // Chromatic/Dissonant
             ambient: [0, 4, 7, 9, 11], // Major 7th / Pentatonic
-            chiptune: [0, 2, 4, 5, 7, 9, 11] // Major Scale
+            chiptune: [0, 2, 4, 5, 7, 9, 11], // Major Scale
+            synthwave: [0, 3, 5, 7, 10], // Minor Pentatonic / Aeolian
+            industrial: [0, 1, 6, 7, 8], // Locrian/Phrygian dark
+            lofi: [0, 3, 5, 7, 10, 14] // Minor 9th chill
         };
 
         SoundManager.instance = this;
@@ -89,7 +90,7 @@ export default class SoundManager {
     getVolume() { return this.volume; }
 
     setMusicStyle(style) {
-        if (['acid', 'glitch', 'ambient', 'chiptune'].includes(style)) {
+        if (this.scales[style]) {
             this.currentStyle = style;
         }
     }
@@ -107,7 +108,6 @@ export default class SoundManager {
         if (this.muted && type !== 'click') return;
         if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
 
-        // SFX are slightly louder than BGM usually
         const sfxVol = 1.0;
 
         switch (type) {
@@ -118,6 +118,7 @@ export default class SoundManager {
             case 'score': this.playTone(1200, 'triangle', 0.1, sfxVol); break;
             case 'shoot': this.playTone(800, 'sawtooth', 0.1, sfxVol * 0.8, false, true); break;
             case 'gameover': this.playTone(150, 'sawtooth', 0.5, sfxVol, false, true); break;
+            case 'coin': this.playTone(1500, 'sine', 0.1, sfxVol); break;
         }
     }
 
@@ -185,8 +186,6 @@ export default class SoundManager {
     scheduler() {
         if (!this.isPlayingBGM) return;
 
-        // While there are notes that will need to play before the next interval,
-        // schedule them and advance the pointer.
         while (this.nextNoteTime < this.audioCtx.currentTime + this.scheduleAheadTime) {
             this.scheduleNote(this.beatCount, this.nextNoteTime);
             this.advanceNote();
@@ -202,70 +201,187 @@ export default class SoundManager {
         this.beatCount++;
         if (this.beatCount >= 16) {
             this.beatCount = 0;
-            // Potentially change scale/root every bar?
         }
     }
 
     scheduleNote(beatNumber, time) {
         // beatNumber is 0..15 (16th notes)
+        const style = this.currentStyle;
+        const root = 110; // A2
 
-        // 1. Kick / Bass (Rhythm)
-        if (this.currentStyle === 'acid' || this.currentStyle === 'chiptune') {
+        // --- RHYTHM ---
+        if (style === 'acid' || style === 'chiptune' || style === 'synthwave') {
+            // 4-on-the-floor
             if (beatNumber % 4 === 0) {
                 this.playKick(time);
             }
-        } else if (this.currentStyle === 'glitch') {
+        }
+        else if (style === 'industrial') {
+            // Broken beat
+            if (beatNumber === 0 || beatNumber === 10) this.playKick(time, 0.9, true); // Distorted kick
+        }
+        else if (style === 'lofi') {
+            // Slow kick on 1
+            if (beatNumber === 0) this.playKick(time, 0.6);
+        }
+
+        // Snares / HiHats
+        if (style === 'synthwave') {
+            if (beatNumber % 8 === 4) this.playSnare(time, true); // Gated snare
+            if (beatNumber % 2 === 0) this.playHiHat(time);
+        }
+        else if (style === 'industrial') {
+            if (beatNumber % 8 === 4) this.playSnare(time, false, 0.4); // Metallic snare
+            if (beatNumber % 2 === 0) this.playHiHat(time, 0.05, 0.8);
+        }
+        else if (style === 'lofi') {
+            if (beatNumber % 8 === 4) this.playSnare(time, false, 0.2); // Soft snare
+            if (beatNumber % 4 === 2) this.playHiHat(time, 0.05, 0.3); // Soft hat
+        }
+        else if (style === 'glitch') {
             if (Math.random() < 0.3) this.playGlitchNoise(time);
             if (beatNumber % 8 === 0 && Math.random() > 0.5) this.playKick(time);
-        } else if (this.currentStyle === 'ambient') {
-            // Ambient is pad based, minimal drums
+        }
+        else if (style === 'ambient') {
             if (beatNumber === 0) this.playPad(time, 4); // Long drone
         }
 
-        // 2. Lead / Arp
-        const scale = this.scales[this.currentStyle] || this.scales.acid;
-        const root = 220; // A3
+        // --- MELODY / BASS ---
+        const scale = this.scales[style] || this.scales.acid;
 
-        if (this.currentStyle === 'acid') {
-            // 303-ish sequence: active on random 16ths
+        if (style === 'acid') {
             if (Math.random() > 0.4) {
                 const note = scale[Math.floor(Math.random() * scale.length)];
-                const freq = root * Math.pow(2, note / 12);
+                const freq = (root * 2) * Math.pow(2, note / 12);
                 const accent = Math.random() > 0.8;
                 const slide = Math.random() > 0.8;
                 this.playAcidSynth(freq, time, 0.15, accent, slide);
             }
         }
-        else if (this.currentStyle === 'chiptune') {
-            // Arpeggio every beat
+        else if (style === 'chiptune') {
             if (beatNumber % 2 === 0) {
                 const note = scale[Math.floor(Math.random() * scale.length)];
-                // Higher octave
-                const freq = root * 2 * Math.pow(2, note / 12);
+                const freq = (root * 4) * Math.pow(2, note / 12);
                 this.playChiptunePulse(freq, time, 0.1);
             }
         }
-        else if (this.currentStyle === 'glitch') {
-             if (Math.random() > 0.7) {
-                const freq = root * (1 + Math.random());
-                this.playTone(freq, 'sawtooth', 0.05, 0.1);
-             }
+        else if (style === 'synthwave') {
+            // Driving Bass (Eighth notes)
+            if (beatNumber % 2 === 0) {
+                const note = scale[0]; // Root
+                const freq = root * Math.pow(2, note / 12);
+                this.playSawBass(freq, time, 0.12);
+            }
+            // Occasional arp
+            if (beatNumber % 4 === 0 && Math.random() > 0.5) {
+                 const note = scale[Math.floor(Math.random() * scale.length)];
+                 const freq = (root * 4) * Math.pow(2, note / 12);
+                 this.playTone(freq, 'sawtooth', 0.2, 0.1);
+            }
+        }
+        else if (style === 'industrial') {
+            if (beatNumber % 4 === 0) {
+                 const note = scale[Math.floor(Math.random() * scale.length)];
+                 const freq = (root * 0.5) * Math.pow(2, note / 12);
+                 this.playTone(freq, 'sawtooth', 0.1, 0.3);
+            }
+        }
+        else if (style === 'lofi') {
+            // Chord hit once per bar or so
+            if (beatNumber === 0) {
+                // Play a generic minor 9th chord
+                const notes = [0, 3, 7, 10, 14];
+                notes.forEach((n, i) => {
+                    const freq = (root * 2) * Math.pow(2, n/12);
+                    setTimeout(() => { // Strum effect
+                        this.playTone(freq, 'sine', 1.5, 0.15);
+                    }, i * 20);
+                });
+            }
         }
     }
 
     // --- Instruments ---
 
-    playKick(time) {
+    playKick(time, vol = 0.8, distorted = false) {
         const osc = this.audioCtx.createOscillator();
         const gain = this.audioCtx.createGain();
         osc.frequency.setValueAtTime(150, time);
         osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.5);
-        gain.gain.setValueAtTime(0.8, time);
+
+        if (distorted) osc.type = 'square';
+        else osc.type = 'sine';
+
+        gain.gain.setValueAtTime(vol, time);
         gain.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
         osc.connect(gain);
         gain.connect(this.bgmGainNode);
         osc.start(time);
         osc.stop(time + 0.5);
+    }
+
+    playSnare(time, gated = false, vol = 0.2) {
+        const dur = gated ? 0.2 : 0.1;
+
+        // Noise part
+        this.playNoiseOneShot(time, dur, vol);
+
+        // Tonal part
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+        osc.frequency.setValueAtTime(250, time);
+        osc.frequency.exponentialRampToValueAtTime(100, time + 0.1);
+        gain.gain.setValueAtTime(vol, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+        osc.connect(gain);
+        gain.connect(this.bgmGainNode);
+        osc.start(time);
+        osc.stop(time + dur);
+    }
+
+    playHiHat(time, dur = 0.05, vol = 0.1) {
+        // High pass noise
+        const bufferSize = this.audioCtx.sampleRate * dur;
+        const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1);
+
+        const node = this.audioCtx.createBufferSource();
+        node.buffer = buffer;
+
+        const filter = this.audioCtx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 6000;
+
+        const gain = this.audioCtx.createGain();
+        gain.gain.setValueAtTime(vol, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+        node.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.bgmGainNode);
+        node.start(time);
+    }
+
+    playNoiseOneShot(time, duration, vol) {
+        const bufferSize = this.audioCtx.sampleRate * duration;
+        const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+        const node = this.audioCtx.createBufferSource();
+        node.buffer = buffer;
+        const gain = this.audioCtx.createGain();
+        gain.gain.setValueAtTime(vol, time);
+        if (duration > 0.1) {
+             gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+        } else {
+             gain.gain.linearRampToValueAtTime(0, time + duration);
+        }
+
+        node.connect(gain);
+        gain.connect(this.bgmGainNode);
+        node.start(time);
     }
 
     playAcidSynth(freq, time, duration, accent = false, slide = false) {
@@ -280,9 +396,9 @@ export default class SoundManager {
         }
 
         filter.type = 'lowpass';
-        filter.Q.value = accent ? 20 : 5; // Resonance
+        filter.Q.value = accent ? 20 : 5;
         filter.frequency.setValueAtTime(accent ? 800 : 400, time);
-        filter.frequency.exponentialRampToValueAtTime(100, time + duration); // Envelope
+        filter.frequency.exponentialRampToValueAtTime(100, time + duration);
 
         gain.gain.setValueAtTime(accent ? 0.3 : 0.2, time);
         gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
@@ -295,13 +411,35 @@ export default class SoundManager {
         osc.stop(time + duration);
     }
 
+    playSawBass(freq, time, duration) {
+        const osc = this.audioCtx.createOscillator();
+        const filter = this.audioCtx.createBiquadFilter();
+        const gain = this.audioCtx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, time);
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(800, time);
+        filter.frequency.exponentialRampToValueAtTime(200, time + duration);
+
+        gain.gain.setValueAtTime(0.4, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.bgmGainNode);
+        osc.start(time);
+        osc.stop(time + duration);
+    }
+
     playChiptunePulse(freq, time, duration) {
         const osc = this.audioCtx.createOscillator();
         const gain = this.audioCtx.createGain();
         osc.type = 'square';
         osc.frequency.setValueAtTime(freq, time);
         gain.gain.setValueAtTime(0.1, time);
-        gain.gain.setValueAtTime(0, time + duration); // Sharp cut
+        gain.gain.setValueAtTime(0, time + duration);
         osc.connect(gain);
         gain.connect(this.bgmGainNode);
         osc.start(time);
@@ -312,12 +450,10 @@ export default class SoundManager {
         const osc = this.audioCtx.createOscillator();
         const gain = this.audioCtx.createGain();
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(110, time); // A2
+        osc.frequency.setValueAtTime(110, time);
 
-        // Attack
         gain.gain.setValueAtTime(0, time);
         gain.gain.linearRampToValueAtTime(0.2, time + 1);
-        // Release
         gain.gain.linearRampToValueAtTime(0, time + duration);
 
         osc.connect(gain);
@@ -328,19 +464,6 @@ export default class SoundManager {
 
     playGlitchNoise(time) {
         const dur = 0.05 + Math.random() * 0.1;
-        const bufferSize = this.audioCtx.sampleRate * dur;
-        const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
-        const node = this.audioCtx.createBufferSource();
-        node.buffer = buffer;
-
-        const gain = this.audioCtx.createGain();
-        gain.gain.value = 0.2;
-
-        node.connect(gain);
-        gain.connect(this.bgmGainNode);
-        node.start(time);
+        this.playNoiseOneShot(time, dur, 0.2);
     }
 }

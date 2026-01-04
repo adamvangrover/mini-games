@@ -9,7 +9,7 @@ export default class BossMode {
         BossMode.instance = this;
 
         this.isActive = false;
-        this.mode = 'excel'; // 'excel', 'ppt', 'word', 'email', 'chat', 'terminal', 'bsod'
+        this.mode = 'excel'; // 'excel', 'ppt', 'word', 'email', 'chat', 'terminal', 'spotify', 'bsod'
         this.startMenuOpen = false;
         this.notificationOpen = false;
 
@@ -61,6 +61,18 @@ export default class BossMode {
         ];
         this.termInput = "";
         this.adventure = null;
+
+        // Spotify Data
+        this.spotifyPlaylists = [
+            { id: 'focus', name: 'Deep Work Focus', description: 'Beats to study/relax to', style: 'lofi', cover: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=200&auto=format' },
+            { id: 'coding', name: 'Cyberpunk Coding', description: 'Synthwave for hackers', style: 'synthwave', cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=200&auto=format' },
+            { id: 'gym', name: 'Industrial Grind', description: 'Heavy machinery beats', style: 'industrial', cover: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=200&auto=format' },
+            { id: 'nostalgia', name: '8-Bit Memories', description: 'Chiptune classics', style: 'chiptune', cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=200&auto=format' }, // Reusing image
+            { id: 'acid', name: 'Acid Techno', description: '303 lines all night', style: 'acid', cover: 'https://images.unsplash.com/photo-1594623930572-300a3011d9ae?q=80&w=200&auto=format' }
+        ];
+        this.currentPlaylist = this.spotifyPlaylists[0];
+        this.isPlayingSpotify = false;
+
 
         // Fake Typing Logic
         this.typingBuffer = "";
@@ -124,6 +136,7 @@ export default class BossMode {
             { id: 'word', icon: 'fa-file-word', color: 'text-blue-600', label: 'Word' },
             { id: 'email', icon: 'fa-envelope', color: 'text-blue-400', label: 'Outlook' },
             { id: 'chat', icon: 'fa-comments', color: 'text-indigo-600', label: 'Teams' },
+            { id: 'spotify', icon: 'fa-spotify', color: 'text-green-500', label: 'Spotify' },
             { id: 'terminal', icon: 'fa-terminal', color: 'text-gray-400', label: 'Terminal' }
         ];
 
@@ -136,6 +149,7 @@ export default class BossMode {
         else if (this.mode === 'word') appContent = this.getWordContent();
         else if (this.mode === 'email') appContent = this.getEmailContent();
         else if (this.mode === 'chat') appContent = this.getChatContent();
+        else if (this.mode === 'spotify') appContent = this.getSpotifyContent();
         else if (this.mode === 'terminal') appContent = this.getTerminalContent();
 
         this.overlay.innerHTML = `
@@ -693,6 +707,155 @@ export default class BossMode {
         `;
     }
 
+    getSpotifyContent() {
+        return `
+            <div class="bg-[#121212] text-white flex items-center justify-between px-2 py-1 select-none h-8 shadow-sm">
+                <div class="flex items-center gap-4">
+                     <i class="fab fa-spotify text-green-500"></i>
+                     <span class="font-bold text-sm">Spotify</span>
+                </div>
+                <div class="flex gap-3 text-white/80"><i class="fas fa-times cursor-pointer hover:bg-red-500 px-2" id="boss-close-x"></i></div>
+            </div>
+            <div class="flex-1 flex bg-[#121212] overflow-hidden">
+                <!-- Sidebar -->
+                <div class="w-56 bg-black flex flex-col p-4 gap-4">
+                    <div class="flex flex-col gap-4 text-gray-400 text-sm font-bold">
+                        <div class="hover:text-white cursor-pointer flex items-center gap-3"><i class="fas fa-home text-lg"></i> Home</div>
+                        <div class="hover:text-white cursor-pointer flex items-center gap-3"><i class="fas fa-search text-lg"></i> Search</div>
+                        <div class="hover:text-white cursor-pointer flex items-center gap-3"><i class="fas fa-book text-lg"></i> Your Library</div>
+                    </div>
+                    <div class="border-t border-gray-800 my-2"></div>
+                    <div class="flex flex-col gap-2 overflow-y-auto flex-1">
+                        ${this.spotifyPlaylists.map(pl => `
+                            <div class="text-gray-400 text-xs hover:text-white cursor-pointer truncate p-1 rounded ${this.currentPlaylist.id === pl.id ? 'bg-gray-800 text-white' : ''}" onclick="BossMode.instance.selectPlaylist('${pl.id}')">
+                                ${pl.name}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <!-- Main Content -->
+                <div class="flex-1 bg-gradient-to-b from-gray-800 to-[#121212] flex flex-col p-6 overflow-y-auto">
+                    <!-- Playlist Header -->
+                    <div class="flex gap-6 items-end mb-6">
+                        <img src="${this.currentPlaylist.cover}" class="w-48 h-48 shadow-2xl">
+                        <div class="flex flex-col gap-2">
+                            <span class="text-xs font-bold uppercase tracking-widest">Playlist</span>
+                            <h1 class="text-6xl font-black tracking-tight">${this.currentPlaylist.name}</h1>
+                            <p class="text-gray-400 text-sm font-bold">${this.currentPlaylist.description}</p>
+                            <div class="flex items-center gap-2 mt-2">
+                                <span class="text-green-500 font-bold text-xs">Spotify</span>
+                                <span class="text-gray-400 text-xs">• 50 likes • 2h 30min</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="flex items-center gap-8 mb-6">
+                        <div class="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center text-black text-2xl hover:scale-105 transition-transform cursor-pointer shadow-lg" onclick="BossMode.instance.toggleMusic()">
+                            <i class="fas ${this.isPlayingSpotify ? 'fa-pause' : 'fa-play'} ml-1"></i>
+                        </div>
+                        <i class="fas fa-heart text-3xl text-gray-400 hover:text-white cursor-pointer"></i>
+                        <i class="fas fa-ellipsis-h text-3xl text-gray-400 hover:text-white cursor-pointer"></i>
+                    </div>
+
+                    <!-- Tracklist -->
+                    <div class="flex flex-col text-gray-400 text-sm">
+                        <div class="grid grid-cols-[auto_1fr_auto] gap-4 border-b border-gray-700 pb-2 mb-4 uppercase text-xs tracking-wider">
+                            <span>#</span>
+                            <span>Title</span>
+                            <span><i class="far fa-clock"></i></span>
+                        </div>
+                        ${[1,2,3,4,5].map(i => `
+                            <div class="grid grid-cols-[auto_1fr_auto] gap-4 hover:bg-white/10 p-2 rounded group items-center">
+                                <span>${i}</span>
+                                <div class="flex flex-col">
+                                    <span class="text-white font-bold group-hover:underline cursor-pointer">Procedural Track ${i}</span>
+                                    <span class="text-xs">Artist Unknown</span>
+                                </div>
+                                <span>3:42</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+            <!-- Player Bar -->
+            <div class="h-20 bg-[#181818] border-t border-[#282828] px-4 flex items-center justify-between select-none">
+                <div class="flex items-center gap-4 w-1/3">
+                    <img src="${this.currentPlaylist.cover}" class="w-14 h-14">
+                    <div class="flex flex-col justify-center">
+                        <span class="text-sm font-bold text-white hover:underline cursor-pointer">${this.currentPlaylist.name} Mix</span>
+                        <span class="text-xs text-gray-400 hover:underline cursor-pointer">Various Artists</span>
+                    </div>
+                    <i class="far fa-heart text-gray-400 ml-4 hover:text-white cursor-pointer"></i>
+                </div>
+                <div class="flex flex-col items-center w-1/3 gap-1">
+                    <div class="flex items-center gap-6 text-gray-400 text-lg">
+                        <i class="fas fa-random hover:text-white cursor-pointer text-sm"></i>
+                        <i class="fas fa-step-backward hover:text-white cursor-pointer"></i>
+                        <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-black text-sm hover:scale-105 transition-transform cursor-pointer" onclick="BossMode.instance.toggleMusic()">
+                            <i class="fas ${this.isPlayingSpotify ? 'fa-pause' : 'fa-play'}"></i>
+                        </div>
+                        <i class="fas fa-step-forward hover:text-white cursor-pointer" onclick="BossMode.instance.nextTrack()"></i>
+                        <i class="fas fa-redo hover:text-white cursor-pointer text-sm"></i>
+                    </div>
+                    <div class="w-full max-w-md flex items-center gap-2 text-xs text-gray-400">
+                        <span>0:42</span>
+                        <div class="flex-1 h-1 bg-gray-600 rounded-full group cursor-pointer">
+                            <div class="w-1/3 h-full bg-white rounded-full group-hover:bg-green-500"></div>
+                        </div>
+                        <span>3:42</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end w-1/3 gap-3 text-gray-400">
+                     <i class="fas fa-microphone hover:text-white cursor-pointer"></i>
+                     <i class="fas fa-list hover:text-white cursor-pointer"></i>
+                     <i class="fas fa-desktop hover:text-white cursor-pointer"></i>
+                     <div class="flex items-center gap-2 w-24">
+                        <i class="fas fa-volume-up hover:text-white cursor-pointer"></i>
+                        <div class="flex-1 h-1 bg-gray-600 rounded-full">
+                            <div class="w-3/4 h-full bg-white rounded-full hover:bg-green-500"></div>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        `;
+    }
+
+    selectPlaylist(id) {
+        this.currentPlaylist = this.spotifyPlaylists.find(p => p.id === id);
+        if (this.isPlayingSpotify) {
+             this.soundManager.setMusicStyle(this.currentPlaylist.style);
+             this.soundManager.stopBGM();
+             this.soundManager.startBGM();
+        }
+        this.render();
+    }
+
+    toggleMusic() {
+        this.isPlayingSpotify = !this.isPlayingSpotify;
+
+        // Unmute if muted
+        if (this.soundManager.muted) {
+            this.soundManager.toggleMute();
+        }
+
+        if (this.isPlayingSpotify) {
+            this.soundManager.setMusicStyle(this.currentPlaylist.style);
+            this.soundManager.startBGM();
+        } else {
+            this.soundManager.stopBGM();
+        }
+        this.render();
+    }
+
+    nextTrack() {
+        if(this.isPlayingSpotify) {
+             // Just restart BGM to generate new procedural pattern
+             this.soundManager.stopBGM();
+             setTimeout(() => this.soundManager.startBGM(), 100);
+        }
+    }
+
     getTerminalContent() {
         return `
             <div class="bg-gray-900 text-white flex items-center justify-between px-2 py-1 select-none h-8 shadow-sm border-b border-gray-700">
@@ -719,7 +882,7 @@ export default class BossMode {
         if (close) close.onclick = () => this.toggle(false);
 
         // Taskbar App Switcher
-        const modes = ['excel', 'ppt', 'word', 'email', 'chat', 'terminal'];
+        const modes = ['excel', 'ppt', 'word', 'email', 'chat', 'spotify', 'terminal'];
         modes.forEach(m => {
             const btn = document.getElementById(`boss-switch-${m}`);
             if (btn) btn.onclick = () => {
