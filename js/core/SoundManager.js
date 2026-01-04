@@ -47,7 +47,11 @@ export default class SoundManager {
             chiptune: [0, 2, 4, 5, 7, 9, 11], // Major Scale
             synthwave: [0, 3, 5, 7, 10], // Minor Pentatonic / Aeolian
             industrial: [0, 1, 6, 7, 8], // Locrian/Phrygian dark
-            lofi: [0, 3, 5, 7, 10, 14] // Minor 9th chill
+            lofi: [0, 3, 5, 7, 10, 14], // Minor 9th chill
+            dubstep: [0, 1, 3, 5, 6, 7, 10], // Phrygian Dominant-ish
+            dnb: [0, 3, 5, 7, 10], // Minor Pentatonic
+            jazz: [0, 3, 5, 6, 7, 10, 11], // Blues Scale
+            classical: [0, 4, 7, 12, 16, 19] // Major Arpeggio
         };
 
         SoundManager.instance = this;
@@ -224,6 +228,28 @@ export default class SoundManager {
             // Slow kick on 1
             if (beatNumber === 0) this.playKick(time, 0.6);
         }
+        else if (style === 'dubstep') {
+            // Half-time feel (Kick on 1, Snare on 3 equivalent - here beats are 16th notes)
+            // 16th notes: 0..15. Kick on 0. Snare on 8.
+            if (beatNumber === 0) this.playKick(time, 1.0, true);
+            if (beatNumber === 8) this.playSnare(time, true, 0.8); // Big snare
+            if (beatNumber === 14) this.playKick(time, 0.6, true); // Shuffle kick
+        }
+        else if (style === 'dnb') {
+            // Amen break pattern approx: Kick 0, 10. Snare 4, 12.
+            if (beatNumber === 0 || beatNumber === 10) this.playKick(time, 0.8);
+            if (beatNumber === 4 || beatNumber === 12) this.playSnare(time, false, 0.6);
+            if (beatNumber % 2 === 0) this.playHiHat(time, 0.03, 0.4); // Fast hats
+        }
+        else if (style === 'jazz') {
+            // Swing ride: Ding (0), Ding (4), Da (6) Ding (8) ...
+            // Simplified: 0, 4, 8, 12 (Quarter notes) + 14 (Swing 8th)
+            if (beatNumber % 4 === 0) this.playHiHat(time, 0.1, 0.3); // Ride tick
+            if (beatNumber % 8 === 6) this.playHiHat(time, 0.05, 0.2); // Swing skip
+        }
+        else if (style === 'classical') {
+            // No drums
+        }
 
         // Snares / HiHats
         if (style === 'synthwave') {
@@ -299,6 +325,95 @@ export default class SoundManager {
                 });
             }
         }
+        else if (style === 'dubstep') {
+            // Wobble Bass
+            if (beatNumber === 0) {
+                 const freq = (root * 0.5); // Low bass
+                 this.playWobbleBass(freq, time, 0.5); // Wub
+            }
+            if (beatNumber === 8) {
+                 const freq = (root * 0.5) * Math.pow(2, scale[2]/12);
+                 this.playWobbleBass(freq, time, 0.5); // Wub
+            }
+            // High synth
+            if (beatNumber === 12) {
+                this.playTone(root*4, 'sawtooth', 0.1, 0.1);
+            }
+        }
+        else if (style === 'dnb') {
+            // Fast rolling bass
+            if (beatNumber % 4 === 0) {
+                const note = scale[Math.floor(Math.random() * 3)]; // Low notes
+                const freq = (root * 0.5) * Math.pow(2, note/12);
+                this.playSawBass(freq, time, 0.15);
+            }
+        }
+        else if (style === 'jazz') {
+            // Walking Bass (Quarter notes)
+            if (beatNumber % 4 === 0) {
+                 const note = scale[Math.floor(Math.random() * scale.length)];
+                 const freq = (root * 0.5) * Math.pow(2, note/12);
+                 this.playTone(freq, 'sine', 0.2, 0.3); // Double bass ish
+            }
+            // Piano chords (random stabs)
+            if (Math.random() < 0.1) {
+                 const notes = [0, 4, 7, 11]; // Major 7
+                 notes.forEach(n => {
+                      const f = (root * 2) * Math.pow(2, n/12);
+                      this.playTone(f, 'triangle', 0.3, 0.1);
+                 });
+            }
+        }
+        else if (style === 'classical') {
+            // Alberti Bass Arpeggio (16th notes)
+            const arpPattern = [0, 4, 7, 4]; // Root, 5th, Octave, 5th relative indices
+            const noteIdx = arpPattern[beatNumber % 4];
+            const note = scale[noteIdx % scale.length];
+            const freq = (root * 2) * Math.pow(2, note/12);
+            this.playTone(freq, 'sine', 0.2, 0.15);
+
+            // Melody on top (slower)
+            if (beatNumber % 8 === 0) {
+                const melNote = scale[Math.floor(Math.random() * scale.length)];
+                const melFreq = (root * 4) * Math.pow(2, melNote/12);
+                this.playTone(melFreq, 'triangle', 0.4, 0.1);
+            }
+        }
+    }
+
+    playWobbleBass(freq, time, duration) {
+        const osc = this.audioCtx.createOscillator();
+        const filter = this.audioCtx.createBiquadFilter();
+        const gain = this.audioCtx.createGain();
+        const lfo = this.audioCtx.createOscillator();
+        const lfoGain = this.audioCtx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, time);
+
+        filter.type = 'lowpass';
+        filter.Q.value = 10;
+
+        // LFO modulates filter frequency
+        lfo.type = 'sine';
+        lfo.frequency.setValueAtTime(3 + Math.random()*3, time); // 3-6 Hz wobble
+        lfoGain.gain.setValueAtTime(500, time); // Modulation depth
+
+        lfo.connect(lfoGain);
+        lfoGain.connect(filter.frequency);
+        filter.frequency.setValueAtTime(600, time); // Base cutoff
+
+        gain.gain.setValueAtTime(0.5, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.bgmGainNode);
+
+        osc.start(time);
+        lfo.start(time);
+        osc.stop(time + duration);
+        lfo.stop(time + duration);
     }
 
     // --- Instruments ---

@@ -199,6 +199,18 @@ export const TERMINAL_ADVENTURE = {
     }
 };
 
+export const SPOTIFY_PLAYLISTS = [
+    { id: 'focus', name: 'Deep Work Focus', description: 'Beats to study/relax to', style: 'lofi', cover: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=200' },
+    { id: 'coding', name: 'Cyberpunk Coding', description: 'Synthwave for hackers', style: 'synthwave', cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=200' },
+    { id: 'gym', name: 'Industrial Grind', description: 'Heavy machinery beats', style: 'industrial', cover: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=200' },
+    { id: 'nostalgia', name: '8-Bit Memories', description: 'Chiptune classics', style: 'chiptune', cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=200' },
+    { id: 'acid', name: 'Acid Techno', description: '303 lines all night', style: 'acid', cover: 'https://images.unsplash.com/photo-1594623930572-300a3011d9ae?q=80&w=200' },
+    { id: 'dnb', name: 'Liquid DnB', description: 'Fast soul music', style: 'dnb', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=200' },
+    { id: 'dubstep', name: 'WubWubWub', description: 'Drop the bass', style: 'dubstep', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=200' },
+    { id: 'jazz', name: 'Coffee Shop Jazz', description: 'Smooth swing', style: 'jazz', cover: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?q=80&w=200' },
+    { id: 'classical', name: 'Baroque Focus', description: 'Bach to work', style: 'classical', cover: 'https://images.unsplash.com/photo-1507838153414-b4b713384ebd?q=80&w=200' }
+];
+
 export const BROWSER_DATA = {
     bookmarks: [
         { title: "Intranet", url: "http://intranet.corp", icon: "fa-network-wired" },
