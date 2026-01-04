@@ -21,7 +21,7 @@ export default class Store {
             {
                 id: 'skin_default',
                 name: 'Default Hub',
-                description: 'The classic arcade look.',
+                description: 'The classic arcade look. Smells like stale pizza and ozone.',
                 cost: 0,
                 icon: 'fas fa-cube',
                 type: 'hub_skin',
@@ -30,7 +30,7 @@ export default class Store {
             {
                 id: 'skin_retro_future',
                 name: 'Retro Future',
-                description: 'Synthwave sunsets and chrome.',
+                description: 'Synthwave sunsets and chrome. Wearing sunglasses indoors is mandatory.',
                 cost: 500,
                 icon: 'fas fa-sun',
                 type: 'hub_skin',
@@ -39,7 +39,7 @@ export default class Store {
             {
                 id: 'skin_gibson',
                 name: 'The Net',
-                description: 'High-speed data traversal.',
+                description: 'High-speed data traversal. Don\'t get lost in the grid.',
                 cost: 1000,
                 icon: 'fas fa-globe',
                 type: 'hub_skin',
@@ -48,7 +48,7 @@ export default class Store {
             {
                 id: 'skin_stephenson',
                 name: 'The Metaverse',
-                description: 'White noise and pizza delivery.',
+                description: 'White noise and pizza delivery. Not owned by any lizard people.',
                 cost: 1000,
                 icon: 'fas fa-vr-cardboard',
                 type: 'hub_skin',
@@ -59,7 +59,7 @@ export default class Store {
             {
                 id: 'theme_neon_blue',
                 name: 'Neon Blue',
-                description: 'Classic cool blue neon vibes.',
+                description: 'Classic cool blue neon vibes. Easy on the eyes, heavy on the soul.',
                 cost: 0,
                 icon: 'fas fa-palette',
                 type: 'theme',
@@ -68,7 +68,7 @@ export default class Store {
             {
                 id: 'theme_neon_pink',
                 name: 'Hot Pink',
-                description: 'Intense pink for the bold.',
+                description: 'Intense pink for the bold. Warning: May cause retinal burn.',
                 cost: 50,
                 icon: 'fas fa-palette',
                 type: 'theme',
@@ -77,7 +77,7 @@ export default class Store {
             {
                 id: 'theme_cyber_gold',
                 name: 'Cyber Gold',
-                description: 'Luxurious gold aesthetics.',
+                description: 'Luxurious gold aesthetics. For when you have too much money.',
                 cost: 200,
                 icon: 'fas fa-crown',
                 type: 'theme',
@@ -86,7 +86,7 @@ export default class Store {
             {
                 id: 'theme_matrix',
                 name: 'The Matrix',
-                description: 'Digital rain green.',
+                description: 'Digital rain green. There is no spoon.',
                 cost: 150,
                 icon: 'fas fa-terminal',
                 type: 'theme',
@@ -95,7 +95,7 @@ export default class Store {
             {
                 id: 'theme_crimson',
                 name: 'Crimson Tide',
-                description: 'Aggressive red styling.',
+                description: 'Aggressive red styling. Faster, but more dangerous.',
                 cost: 100,
                 icon: 'fas fa-fire',
                 type: 'theme',
@@ -106,7 +106,7 @@ export default class Store {
             {
                 id: 'furniture_couch',
                 name: 'Neon Couch',
-                description: 'Comfy seating with glow.',
+                description: 'Comfy seating with glow. Surprisingly ergonomic for a glowing box.',
                 cost: 200,
                 icon: 'fas fa-couch',
                 type: 'furniture',
@@ -115,7 +115,7 @@ export default class Store {
             {
                 id: 'furniture_table',
                 name: 'Holo Table',
-                description: 'A table from the future.',
+                description: 'A table from the future. Don\'t put your drink on the projector.',
                 cost: 150,
                 icon: 'fas fa-table',
                 type: 'furniture',
@@ -124,7 +124,7 @@ export default class Store {
             {
                 id: 'furniture_lamp',
                 name: 'Lava Lamp',
-                description: 'Groovy lighting.',
+                description: 'Groovy lighting. Mesmerizing blobs of digital goo.',
                 cost: 100,
                 icon: 'fas fa-lightbulb',
                 type: 'furniture',
@@ -133,7 +133,7 @@ export default class Store {
              {
                 id: 'furniture_plant',
                 name: 'Cyber Plant',
-                description: 'Synthetic flora.',
+                description: 'Synthetic flora. No watering required, just voltage.',
                 cost: 120,
                 icon: 'fas fa-seedling',
                 type: 'furniture',
@@ -142,7 +142,7 @@ export default class Store {
              {
                 id: 'furniture_arcade',
                 name: 'Mini Arcade',
-                description: 'Play while you play.',
+                description: 'Play while you play. Recursion depth: 1.',
                 cost: 500,
                 icon: 'fas fa-gamepad',
                 type: 'furniture',
@@ -151,7 +151,7 @@ export default class Store {
             {
                 id: 'furniture_rug',
                 name: 'Pattern Rug',
-                description: 'Tie the room together.',
+                description: 'Tie the room together. Don\'t let anyone pee on it.',
                 cost: 80,
                 icon: 'fas fa-dharmachakra',
                 type: 'furniture',
@@ -161,7 +161,7 @@ export default class Store {
             {
                 id: 'furniture_bed_neon',
                 name: 'Neon Bed',
-                description: 'Sleep in the glow.',
+                description: 'Sleep in the glow. Dreams are now in 4K.',
                 cost: 400,
                 icon: 'fas fa-bed',
                 type: 'furniture',
@@ -171,7 +171,7 @@ export default class Store {
             {
                 id: 'furniture_server',
                 name: 'Data Server',
-                description: 'High-tech computing.',
+                description: 'High-tech computing. Makes cool whirring noises.',
                 cost: 600,
                 icon: 'fas fa-server',
                 type: 'furniture',
@@ -181,7 +181,7 @@ export default class Store {
             {
                 id: 'furniture_art_glitch',
                 name: 'Glitch Art',
-                description: 'Modern digital masterpiece.',
+                description: 'Modern digital masterpiece. It\'s not a bug, it\'s a feature.',
                 cost: 300,
                 icon: 'fas fa-image',
                 type: 'furniture',
@@ -191,7 +191,7 @@ export default class Store {
              {
                 id: 'furniture_jukebox',
                 name: 'Holo Jukebox',
-                description: 'Plays the best synthwave.',
+                description: 'Plays the best synthwave. Still accepts quarters.',
                 cost: 500,
                 icon: 'fas fa-music',
                 type: 'furniture',
@@ -203,7 +203,7 @@ export default class Store {
             {
                 id: 'property_studio',
                 name: 'Cyber Studio',
-                description: 'A cozy starter apartment.',
+                description: 'A cozy starter apartment. Compact living for the digital age.',
                 cost: 0,
                 icon: 'fas fa-home',
                 type: 'property',
@@ -212,7 +212,7 @@ export default class Store {
             {
                 id: 'property_penthouse',
                 name: 'Neon Penthouse',
-                description: 'Luxury living with a view.',
+                description: 'Luxury living with a view. The air up here is cleaner.',
                 cost: 5000,
                 icon: 'fas fa-building',
                 type: 'property',
@@ -221,7 +221,7 @@ export default class Store {
             {
                 id: 'property_moon',
                 name: 'Moon Base',
-                description: 'Quiet, low gravity, expensive.',
+                description: 'Quiet, low gravity, expensive. Commute is terrible.',
                 cost: 10000,
                 icon: 'fas fa-moon',
                 type: 'property',
@@ -232,7 +232,7 @@ export default class Store {
             {
                 id: 'wall_concrete',
                 name: 'Raw Concrete',
-                description: 'Industrial chic.',
+                description: 'Industrial chic. Cold, hard, and fashionable.',
                 cost: 0,
                 icon: 'fas fa-square',
                 type: 'wallpaper',
@@ -241,7 +241,7 @@ export default class Store {
              {
                 id: 'wall_hex',
                 name: 'Hexagon Grid',
-                description: 'Futuristic patterns.',
+                description: 'Futuristic patterns. Bees were onto something.',
                 cost: 200,
                 icon: 'fas fa-border-all',
                 type: 'wallpaper',
@@ -250,7 +250,7 @@ export default class Store {
             {
                 id: 'wall_brick_neon',
                 name: 'Neon Brick',
-                description: 'Classic alleyway vibes.',
+                description: 'Classic alleyway vibes. Watch out for stray cats.',
                 cost: 300,
                 icon: 'fas fa-th',
                 type: 'wallpaper',
@@ -261,7 +261,7 @@ export default class Store {
              {
                 id: 'floor_wood',
                 name: 'Synthetic Wood',
-                description: 'Warm and inviting.',
+                description: 'Warm and inviting. 100% plastic trees.',
                 cost: 0,
                 icon: 'fas fa-grip-lines',
                 type: 'flooring',
@@ -270,7 +270,7 @@ export default class Store {
             {
                 id: 'floor_glass',
                 name: 'Glass Floor',
-                description: 'Don\'t look down.',
+                description: 'Don\'t look down. Seriously, it\'s scary.',
                 cost: 500,
                 icon: 'fas fa-window-maximize',
                 type: 'flooring',
@@ -279,7 +279,7 @@ export default class Store {
             {
                 id: 'floor_grid',
                 name: 'Laser Grid',
-                description: 'Tron-like aesthetics.',
+                description: 'Tron-like aesthetics. Don\'t cross the beams.',
                 cost: 400,
                 icon: 'fas fa-border-none',
                 type: 'flooring',
@@ -291,7 +291,7 @@ export default class Store {
             {
                 id: 'trophy_room_default',
                 name: 'Classic Museum',
-                description: 'The standard exhibition hall.',
+                description: 'The standard exhibition hall. Please do not touch the exhibits.',
                 cost: 0,
                 icon: 'fas fa-columns',
                 type: 'trophy_room',
@@ -300,7 +300,7 @@ export default class Store {
             {
                 id: 'trophy_room_neon',
                 name: 'Neon Grid',
-                description: 'Cyberpunk aesthetic for your wins.',
+                description: 'Cyberpunk aesthetic for your wins. Shiny.',
                 cost: 250,
                 icon: 'fas fa-border-all',
                 type: 'trophy_room',
@@ -309,7 +309,7 @@ export default class Store {
             {
                 id: 'trophy_room_gold',
                 name: 'Vault of Gold',
-                description: 'Luxurious gold plating everywhere.',
+                description: 'Luxurious gold plating everywhere. Heavy.',
                 cost: 1000,
                 icon: 'fas fa-coins',
                 type: 'trophy_room',
@@ -318,7 +318,7 @@ export default class Store {
             {
                 id: 'trophy_theme_nature',
                 name: 'Zen Garden',
-                description: 'Peaceful organic vibes.',
+                description: 'Peaceful organic vibes. Digital nature is healing.',
                 cost: 350,
                 icon: 'fas fa-leaf',
                 type: 'trophy_room',
@@ -329,7 +329,7 @@ export default class Store {
             {
                 id: 'cabinet_default',
                 name: 'Standard Issue',
-                description: 'Factory standard grey.',
+                description: 'Factory standard grey. Boring, but reliable.',
                 cost: 0,
                 icon: 'fas fa-cube',
                 type: 'cabinet',
@@ -338,7 +338,7 @@ export default class Store {
             {
                 id: 'cabinet_retro',
                 name: 'Retro Wood',
-                description: '70s wood grain finish.',
+                description: '70s wood grain finish. Nostalgia included.',
                 cost: 300,
                 icon: 'fas fa-tree',
                 type: 'cabinet',
@@ -347,7 +347,7 @@ export default class Store {
             {
                 id: 'cabinet_carbon',
                 name: 'Carbon Fiber',
-                description: 'High-tech stealth black.',
+                description: 'High-tech stealth black. It goes faster.',
                 cost: 500,
                 icon: 'fas fa-shield-alt',
                 type: 'cabinet',
@@ -356,7 +356,7 @@ export default class Store {
             {
                 id: 'cabinet_gold',
                 name: 'Gold Plated',
-                description: 'Show off your wealth.',
+                description: 'Show off your wealth. Excessive? Maybe.',
                 cost: 1000,
                 icon: 'fas fa-coins',
                 type: 'cabinet',
@@ -367,7 +367,7 @@ export default class Store {
             {
                 id: 'avatar_astronaut',
                 name: 'Astronaut',
-                description: 'Ready for launch.',
+                description: 'Ready for launch. Ground control to Major Tom.',
                 cost: 0,
                 icon: 'fas fa-user-astronaut',
                 type: 'avatar',
@@ -376,7 +376,7 @@ export default class Store {
             {
                 id: 'avatar_robot',
                 name: 'Robot',
-                description: 'Beep boop.',
+                description: 'Beep boop. I am not a robot. Wait...',
                 cost: 100,
                 icon: 'fas fa-robot',
                 type: 'avatar',
@@ -385,7 +385,7 @@ export default class Store {
             {
                 id: 'avatar_alien',
                 name: 'Alien',
-                description: 'From another world.',
+                description: 'From another world. We come in peace.',
                 cost: 150,
                 icon: 'fas fa-spaghetti-monster-flying',
                 type: 'avatar',
@@ -394,7 +394,7 @@ export default class Store {
             {
                 id: 'avatar_ghost',
                 name: 'Ghost',
-                description: 'Spooky!',
+                description: 'Spooky! Boo.',
                 cost: 200,
                 icon: 'fas fa-ghost',
                 type: 'avatar',
@@ -403,7 +403,7 @@ export default class Store {
             {
                 id: 'avatar_ninja',
                 name: 'Ninja',
-                description: 'Silent but deadly.',
+                description: 'Silent but deadly. And very cool.',
                 cost: 250,
                 icon: 'fas fa-user-ninja',
                 type: 'avatar',
@@ -412,7 +412,7 @@ export default class Store {
             {
                 id: 'avatar_wizard',
                 name: 'Wizard',
-                description: 'You are a wizard.',
+                description: 'You are a wizard. Magic missiles not included.',
                 cost: 300,
                 icon: 'fas fa-hat-wizard',
                 type: 'avatar',
@@ -421,7 +421,7 @@ export default class Store {
             {
                 id: 'avatar_dragon',
                 name: 'Dragon',
-                description: 'Fierce creature.',
+                description: 'Fierce creature. Fire hazard.',
                 cost: 500,
                 icon: 'fas fa-dragon',
                 type: 'avatar',
@@ -432,7 +432,7 @@ export default class Store {
             {
                 id: 'deco_stool',
                 name: 'Arcade Stool',
-                description: 'A classic stool for the room.',
+                description: 'A classic stool. Uncomfortable after 30 minutes.',
                 cost: 100,
                 icon: 'fas fa-chair',
                 type: 'decoration',
@@ -441,7 +441,7 @@ export default class Store {
             {
                 id: 'deco_plant',
                 name: 'Neon Plant',
-                description: 'Synthetic flora.',
+                description: 'Synthetic flora. Keeps the air virtual.',
                 cost: 200,
                 icon: 'fas fa-seedling',
                 type: 'decoration',
@@ -450,7 +450,7 @@ export default class Store {
             {
                 id: 'deco_vending',
                 name: 'Vending Machine',
-                description: 'Refreshing snacks.',
+                description: 'Refreshing snacks. Out of order.',
                 cost: 500,
                 icon: 'fas fa-cookie-bite',
                 type: 'decoration',
@@ -459,7 +459,7 @@ export default class Store {
             {
                 id: 'deco_lamp',
                 name: 'Lava Lamp',
-                description: 'Groovy lighting.',
+                description: 'Groovy lighting. Mesmerizing blobs of digital goo.',
                 cost: 150,
                 icon: 'fas fa-lightbulb',
                 type: 'decoration',
@@ -468,7 +468,7 @@ export default class Store {
             {
                 id: 'deco_rug',
                 name: 'Neon Rug',
-                description: 'Tie the room together.',
+                description: 'Tie the room together. Don\'t let anyone pee on it.',
                 cost: 150,
                 icon: 'fas fa-dharmachakra',
                 type: 'decoration',
@@ -477,7 +477,7 @@ export default class Store {
             {
                 id: 'deco_hologram',
                 name: 'Holo Projector',
-                description: 'Futuristic display.',
+                description: 'Futuristic display. Help me Obi-Wan.',
                 cost: 400,
                 icon: 'fas fa-video',
                 type: 'decoration',
@@ -486,7 +486,7 @@ export default class Store {
             {
                 id: 'deco_poster',
                 name: 'Retro Poster',
-                description: 'Vintage arcade art.',
+                description: 'Vintage arcade art. Remember the 90s?',
                 cost: 50,
                 icon: 'fas fa-image',
                 type: 'decoration',
@@ -495,7 +495,7 @@ export default class Store {
             {
                 id: 'deco_mini_cab',
                 name: 'Mini Cabinet',
-                description: 'A tiny arcade machine.',
+                description: 'A tiny arcade machine. Awww.',
                 cost: 300,
                 icon: 'fas fa-gamepad',
                 type: 'decoration',

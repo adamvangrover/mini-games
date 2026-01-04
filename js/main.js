@@ -108,6 +108,8 @@ let is3DView = true;
 let store = null;
 let gameOverCount = 0;
 let dailyChallengeGameId = null;
+let gameStartTime = 0;
+let lastInputTime = 0;
 
 const soundManager = SoundManager.getInstance();
 const saveSystem = SaveSystem.getInstance();
@@ -118,6 +120,18 @@ const adsManager = AdsManager.getInstance();
 function mainLoop(timestamp) {
     const deltaTime = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
+
+    // AFK Check
+    if (currentState === AppState.IN_GAME || currentState === AppState.MENU) {
+        // 5 minutes (300,000 ms)
+        if (performance.now() - lastInputTime > 300000) {
+             if (!saveSystem.data.achievements?.includes('afk-legend')) {
+                 saveSystem.unlockAchievement('afk-legend');
+                 window.miniGameHub.showToast("Achievement Unlocked: AFK Legend!");
+                 SoundManager.getInstance().playSound('score');
+             }
+        }
+    }
 
     switch (currentState) {
         case AppState.IN_GAME:
@@ -157,6 +171,20 @@ async function transitionToState(newState, context = {}) {
     }
 
     if (newState === AppState.MENU) {
+        // Rage Quit Check
+        if (currentState === AppState.IN_GAME && currentGameInstance) {
+            const timePlayed = (performance.now() - gameStartTime) / 1000;
+            if (timePlayed < 5 && timePlayed > 0.5) { // < 5s but > 0.5s to avoid glitches
+                 if (!saveSystem.data.achievements?.includes('rage-quitter')) {
+                     setTimeout(() => { // Delay slightly so it shows in menu
+                        saveSystem.unlockAchievement('rage-quitter');
+                        window.miniGameHub.showToast("Achievement Unlocked: Rage Quitter!");
+                        SoundManager.getInstance().playSound('score');
+                     }, 500);
+                 }
+            }
+        }
+
         currentState = AppState.TRANSITIONING;
         hideOverlay();
         soundManager.setBGMVolume(soundManager.getVolume() || 0.1);
@@ -252,6 +280,7 @@ async function transitionToState(newState, context = {}) {
                 if (!gameInfo.noDpad) {
                     mobileControls = new MobileControls(container);
                 }
+                gameStartTime = performance.now(); // Start Timer
             } else { throw new Error("Game class failed to load"); }
         } catch (err) {
             console.error(`Failed to init ${gameId}:`, err);
@@ -372,8 +401,11 @@ function showGameOver(score, onRetry) {
             </div>
         `;
 
+        const titles = ["GAME OVER", "WASTED", "SEGMENTATION FAULT", "YOU DIED", "404 SKILL NOT FOUND", "BSOD", "BUFFER OVERFLOW", "OUT OF MEMORY", "SYNTAX ERROR", "CONNECTION LOST", "GLITCHED OUT", "STACK OVERFLOW"];
+        const randomTitle = titles[Math.floor(Math.random() * titles.length)];
+
         currentState = AppState.PAUSED;
-        showOverlay('GAME OVER', content);
+        showOverlay(randomTitle, content);
         updateHubStats();
 
         const retryBtn = document.getElementById('overlay-retry-btn');
@@ -541,6 +573,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     store = new Store(saveSystem, 'store-items', ['store-currency', 'total-currency', 'total-currency-hud']);
 
+    // Daily Login Check
+    const loginReward = saveSystem.checkDailyLogin();
+    if (loginReward && loginReward !== 0) {
+        // Delay slightly to let things load
+        setTimeout(() => {
+            window.miniGameHub.showToast(`Daily Login: +${loginReward.reward} Coins! Streak: ${loginReward.streak}`);
+            SoundManager.getInstance().playSound('score');
+            updateHubStats();
+        }, 2000);
+    }
+
     // WebGL Check
     const hubContainer = document.getElementById('arcade-hub-container');
     const hasWebGL = (() => { try { const canvas = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))); } catch (e) { return false; } })();
@@ -705,6 +748,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Boss Mode Logic
     const bossMode = new BossMode();
+
+    // Input tracking for AFK
+    const resetIdle = () => { lastInputTime = performance.now(); };
+    window.addEventListener('mousemove', resetIdle);
+    window.addEventListener('keydown', resetIdle);
+    window.addEventListener('mousedown', resetIdle);
+    window.addEventListener('touchstart', resetIdle);
+    resetIdle();
 
     document.addEventListener('keydown', (e) => {
         // Toggle Boss Mode with Alt+B
