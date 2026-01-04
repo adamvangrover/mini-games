@@ -198,3 +198,17 @@ export const TERMINAL_ADVENTURE = {
         exits: { north: 'start' }
     }
 };
+
+export const BROWSER_DATA = {
+    bookmarks: [
+        { title: "Intranet", url: "http://intranet.corp", icon: "fa-network-wired" },
+        { title: "LinkedIn", url: "http://linkedin.com", icon: "fa-briefcase" },
+        { title: "News", url: "http://news.com", icon: "fa-newspaper" },
+        { title: "StackOverflow", url: "http://stackoverflow.com", icon: "fa-code" }
+    ],
+    history: [
+        { title: "How to look busy", url: "http://google.com/search?q=how+to+look+busy", time: "10:00 AM" },
+        { title: "Generic Corp - Home", url: "http://generic-corp.com", time: "09:30 AM" },
+        { title: "Salary Calculator", url: "http://glassdoor.com", time: "09:00 AM" }
+    ]
+};
