@@ -19,6 +19,7 @@ export default class DuckHunt extends ModeBase {
 
         this.spawnTimer = 0;
         this.game.ammo = 3;
+        document.getElementById('nh-ammo').innerText = "3";
     }
 
     update(dt) {
@@ -26,6 +27,13 @@ export default class DuckHunt extends ModeBase {
         if (this.spawnTimer <= 0) {
             this.spawnDuck();
             this.spawnTimer = 4.0;
+            // Reload if empty? Or just give ammo over time?
+            if(this.game.ammo <= 0) {
+                 this.game.ammo = 3;
+                 document.getElementById('nh-ammo').innerText = "3";
+                 document.getElementById('nh-center-msg').innerText = "RELOAD";
+                 setTimeout(() => document.getElementById('nh-center-msg').innerText = "", 1000);
+            }
         }
 
         // Move ducks
@@ -63,6 +71,10 @@ export default class DuckHunt extends ModeBase {
     }
 
     onShoot(intersects) {
+        if (this.game.ammo <= 0) return;
+        this.game.ammo--;
+        document.getElementById('nh-ammo').innerText = this.game.ammo;
+
         for (let hit of intersects) {
             // Traverse up to find the group
             let obj = hit.object;

@@ -126,10 +126,14 @@ export default class Game {
         this.container.appendChild(this.menu);
 
         this.menu.querySelectorAll('.mode-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => this.startMode(e.target.dataset.mode));
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.startMode(e.target.dataset.mode);
+            });
         });
 
-        this.menu.querySelector('#exit-btn').addEventListener('click', () => {
+        this.menu.querySelector('#exit-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
             if (window.miniGameHub) window.miniGameHub.goBack();
         });
 
