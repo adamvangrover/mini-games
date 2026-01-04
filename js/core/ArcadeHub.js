@@ -322,6 +322,8 @@ export default class ArcadeHub {
         // Extra Stephenson Noise (Static)
         if (this.currentSkin === 'stephenson') {
             this.createStaticNoise();
+        } else {
+            this.createAmbientParticles();
         }
     }
 
@@ -338,6 +340,34 @@ export default class ArcadeHub {
         const material = new THREE.PointsMaterial({ color: 0xffffff, size: 0.05, transparent: true, opacity: 0.3 });
         const particles = new THREE.Points(geometry, material);
         this.scene.add(particles);
+    }
+
+    createAmbientParticles() {
+        // Floating dust/neon motes
+        const particleCount = 200;
+        const geometry = new THREE.BufferGeometry();
+        const vertices = [];
+        const colors = [];
+        const color = new THREE.Color();
+
+        for (let i = 0; i < particleCount; i++) {
+            vertices.push(Math.random() * 60 - 30);
+            vertices.push(Math.random() * 12); // Height
+            vertices.push(Math.random() * 80 - 40);
+
+            // Random neon colors
+            if (Math.random() > 0.5) color.setHex(0x00ffff); // Cyan
+            else color.setHex(0xff00ff); // Magenta
+
+            colors.push(color.r, color.g, color.b);
+        }
+
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+        const material = new THREE.PointsMaterial({ size: 0.1, vertexColors: true, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending });
+        this.ambientParticles = new THREE.Points(geometry, material);
+        this.scene.add(this.ambientParticles);
     }
 
     addCollider(mesh) {
@@ -689,6 +719,18 @@ export default class ArcadeHub {
         // Logic
         this.handleMovement(dt);
         this.checkInteractions();
+
+        // Animate Ambient Particles (From Feature Branch)
+        if (this.ambientParticles) {
+            const positions = this.ambientParticles.geometry.attributes.position.array;
+            for(let i = 0; i < positions.length; i += 3) {
+                positions[i+1] += Math.sin(this.clock.getElapsedTime() + positions[i]) * 0.005;
+                if (positions[i+1] > 12) positions[i+1] = 0;
+            }
+            this.ambientParticles.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // Ghost Players and Audio (From Main Branch)
         this.updateGhostPlayers(dt);
         this.updateAudioVisuals(dt);
     }

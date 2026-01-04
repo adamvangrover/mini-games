@@ -63,6 +63,22 @@ export const AchievementRegistry = {
         icon: 'fa-gamepad',
         xp: 50,
         gameId: 'global'
+    },
+    'rage-quitter': {
+        id: 'rage-quitter',
+        title: 'Rage Quitter',
+        description: 'Quit a game within 5 seconds of starting',
+        icon: 'fa-door-open',
+        xp: 10,
+        gameId: 'global'
+    },
+    'afk-legend': {
+        id: 'afk-legend',
+        title: 'AFK Legend',
+        description: 'Do absolutely nothing for 5 minutes',
+        icon: 'fa-bed',
+        xp: 50,
+        gameId: 'global'
     }
 };
 

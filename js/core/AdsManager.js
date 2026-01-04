@@ -100,12 +100,30 @@ export default class AdsManager {
                 iconColor: "text-yellow-200",
                 buttonText: "Wait for it...",
                 bgGradient: "from-fuchsia-900 to-purple-900"
+            },
+            {
+                title: "You Are The Product",
+                subtitle: "If this service is free, you know what that means.",
+                icon: "fa-user-tag",
+                iconColor: "text-red-400",
+                buttonText: "Accept Fate",
+                bgGradient: "from-gray-900 to-black"
+            },
+            {
+                title: "Synthesize!",
+                subtitle: "Why be organic when you can be chrome?",
+                icon: "fa-robot",
+                iconColor: "text-cyan-400",
+                buttonText: "Upgrade",
+                bgGradient: "from-cyan-900 to-blue-900"
             }
         ];
 
         this.ambientAds = [
             "Glitch Cola: Taste the Static.",
             "Weather Update: 99% chance of Acid Rain in Sector 7.",
+            "Don't forget to blink. It keeps the eyes moist.",
+            "Sponsored by the Committee for Recursive Acronyms.",
             "Lost: One pixel. If found, please return to (0,0).",
             "News: AI takes over toaster industry, toast is now perfectly burnt.",
             "Tip: Pressing buttons makes things happen.",
