@@ -23,7 +23,9 @@ export default class DeerHunt extends ModeBase {
 
         this.spawnTimer = 0;
         this.game.ammo = 6;
-        document.getElementById('nh-ammo').innerText = "6";
+        this.game.maxAmmo = 6;
+        this.game.updateHUD();
+        this.reloadTimer = 0;
     }
 
     createTree() {
@@ -42,6 +44,23 @@ export default class DeerHunt extends ModeBase {
     }
 
     update(dt) {
+        // Reload Logic
+        if (this.game.ammo === 0 && !this.game.isReloading) {
+             this.game.isReloading = true;
+             this.reloadTimer = 2.0;
+             this.game.showMsg("RELOADING...", 2000);
+        }
+
+        if (this.game.isReloading) {
+            this.reloadTimer -= dt;
+            if (this.reloadTimer <= 0) {
+                this.game.ammo = this.game.maxAmmo;
+                this.game.isReloading = false;
+                this.game.updateHUD();
+                this.game.showMsg("");
+            }
+        }
+
         this.spawnTimer -= dt;
         if (this.spawnTimer <= 0) {
             this.spawnTarget();
@@ -90,7 +109,7 @@ export default class DeerHunt extends ModeBase {
     onShoot(intersects) {
         if (this.game.ammo <= 0) return;
         this.game.ammo--;
-        document.getElementById('nh-ammo').innerText = this.game.ammo;
+        this.game.updateHUD();
 
         for (let hit of intersects) {
             let obj = hit.object;
@@ -118,11 +137,7 @@ export default class DeerHunt extends ModeBase {
             const p = new THREE.Mesh(geo, mat);
             p.position.copy(pos);
             this.scene.add(p);
-            // Simple animation in main loop? Or manage here?
-            // To be consistent, let's just use setTimeout cleanup for now or add to a particle manager if available.
-            // But ModeBase doesn't seem to manage particles.
-            // I'll leave them stationary for now or add a simple tween if I can.
-            // Better: use a simple manual tween.
+
             const vel = new THREE.Vector3((Math.random()-0.5)*5, (Math.random()-0.5)*5, (Math.random()-0.5)*5);
             const animateParticle = () => {
                 if(!p.parent) return;
