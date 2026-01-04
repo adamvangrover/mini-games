@@ -19,10 +19,29 @@ export default class SharkAttack extends ModeBase {
 
         this.spawnTimer = 0;
         this.game.ammo = 6;
-        document.getElementById('nh-ammo').innerText = "6";
+        this.game.maxAmmo = 6;
+        this.game.updateHUD();
+        this.reloadTimer = 0;
     }
 
     update(dt) {
+        // Reload Logic
+        if (this.game.ammo === 0 && !this.game.isReloading) {
+             this.game.isReloading = true;
+             this.reloadTimer = 2.0;
+             this.game.showMsg("RELOADING...", 2000);
+        }
+
+        if (this.game.isReloading) {
+            this.reloadTimer -= dt;
+            if (this.reloadTimer <= 0) {
+                this.game.ammo = this.game.maxAmmo;
+                this.game.isReloading = false;
+                this.game.updateHUD();
+                this.game.showMsg("");
+            }
+        }
+
         this.spawnTimer -= dt;
         if (this.spawnTimer <= 0) {
             this.spawnTarget();
@@ -68,12 +87,11 @@ export default class SharkAttack extends ModeBase {
         const x = Math.cos(angle) * radius;
         const z = -Math.sin(angle) * radius; // In front (-z)
 
-        // Randomize z to be all around? No, user code said "semi-circle" but math was `cos(angle)*radius` and `-sin(angle)*radius` which is typical for circle.
-        // Actually `Math.random() * Math.PI` gives 0 to PI.
-        // Cos(0)=1, Sin(0)=0 -> x=R, z=0 (Right)
-        // Cos(PI)=-1, Sin(PI)=0 -> x=-R, z=0 (Left)
-        // Cos(PI/2)=0, Sin(PI/2)=1 -> x=0, z=-R (Front)
-        // So this covers the front arc.
+        // Fix logic for semi-circle front:
+        // We want -z direction primarily.
+        // If angle is 0..PI
+        // x = R*cos(a) -> -R to R
+        // z = -R*sin(a) -> 0 to -R (this is correct, front)
 
         mesh.position.set(x, Math.random() * 4 - 2, z);
 
@@ -89,7 +107,7 @@ export default class SharkAttack extends ModeBase {
     onShoot(intersects) {
         if (this.game.ammo <= 0) return;
         this.game.ammo--;
-        document.getElementById('nh-ammo').innerText = this.game.ammo;
+        this.game.updateHUD();
 
         for (let hit of intersects) {
             let obj = hit.object;

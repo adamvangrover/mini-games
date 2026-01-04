@@ -9,8 +9,9 @@ export default class ClayPigeons extends ModeBase {
         // Spawn timer
         this.spawnTimer = 0;
         this.targets = [];
-        this.game.ammo = 2; // 2 shots per pull
-        document.getElementById('nh-ammo').innerText = "2";
+        this.game.ammo = 2;
+        this.game.maxAmmo = 2;
+        this.game.updateHUD();
     }
 
     update(dt) {
@@ -19,9 +20,8 @@ export default class ClayPigeons extends ModeBase {
             this.spawnTarget();
             this.spawnTimer = 3.0;
             this.game.ammo = 2; // Reload
-            document.getElementById('nh-ammo').innerText = "2";
-            document.getElementById('nh-center-msg').innerText = "PULL!";
-            setTimeout(() => document.getElementById('nh-center-msg').innerText = "", 1000);
+            this.game.updateHUD();
+            this.game.showMsg("PULL!");
         }
 
         // Update targets
@@ -61,7 +61,7 @@ export default class ClayPigeons extends ModeBase {
     onShoot(intersects) {
         if (this.game.ammo <= 0) return;
         this.game.ammo--;
-        document.getElementById('nh-ammo').innerText = this.game.ammo;
+        this.game.updateHUD();
 
         for (let hit of intersects) {
             const target = this.targets.find(t => t.mesh === hit.object);
