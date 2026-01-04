@@ -3,82 +3,112 @@ import ModeBase from './ModeBase.js';
 export default class DeerHunt extends ModeBase {
     init() {
         super.init();
-        // Forest setup
-        this.scene.background = new THREE.Color(0x052005);
-        this.scene.fog = new THREE.FogExp2(0x052005, 0.03);
+        
+        // Camera Setup (Main)
+        this.camera.position.set(0, 1.6, 0);
 
-        const groundGeo = new THREE.PlaneGeometry(100, 100);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x1a3300 });
+        // Forest colors (Main - Darker Neon Theme)
+        this.scene.background = new THREE.Color(0x001100);
+        this.scene.fog = new THREE.FogExp2(0x001100, 0.02);
+
+        // Ground (Main - Larger area)
+        const groundGeo = new THREE.PlaneGeometry(200, 200);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x003300 });
         const ground = new THREE.Mesh(groundGeo, groundMat);
         ground.rotation.x = -Math.PI / 2;
         this.scene.add(ground);
 
-        // Trees
+        // Trees (Using Main's structure but Feature Branch's density)
         for(let i=0; i<50; i++) {
-            const h = 5 + Math.random() * 10;
-            const tree = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.2, 0.8, h, 6),
-                new THREE.MeshStandardMaterial({ color: 0x3d2817 })
-            );
-            tree.position.set(
-                (Math.random()-0.5)*80,
-                h/2,
-                -10 - Math.random()*50
-            );
-            this.scene.add(tree);
-
-            // Leaves
-            const leaves = new THREE.Mesh(
-                new THREE.ConeGeometry(2 + Math.random()*2, 5, 6),
-                new THREE.MeshStandardMaterial({ color: 0x004d00 })
-            );
-            leaves.position.y = h/2 + 2;
-            tree.add(leaves);
+            this.createTree();
         }
 
         this.spawnTimer = 0;
-        this.game.ammo = 5;
-        document.getElementById('nh-ammo').innerText = "5";
+        
+        // Ammo (Main provides more ammo)
+        this.game.ammo = 6;
+        document.getElementById('nh-ammo').innerText = "6";
+    }
+
+    createTree() {
+        // Integrated Feature Branch's detailed tree geometry into Main's helper method
+        const h = 5 + Math.random() * 10;
+        
+        // Trunk
+        const tree = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.2, 0.8, h, 6),
+            new THREE.MeshStandardMaterial({ color: 0x3d2817 })
+        );
+
+        // Position (Hybrid logic: spread wide like Main, but varied z-depth like Feature)
+        const x = (Math.random() - 0.5) * 80;
+        const z = -10 - Math.random() * 60; // Bias towards background
+        
+        // Don't spawn on player
+        if(Math.abs(x) < 5 && Math.abs(z) < 5) return;
+
+        tree.position.set(x, h/2, z);
+        this.scene.add(tree);
+
+        // Leaves (From Feature Branch)
+        const leaves = new THREE.Mesh(
+            new THREE.ConeGeometry(2 + Math.random()*2, 5, 6),
+            new THREE.MeshStandardMaterial({ color: 0x004d00 })
+        );
+        leaves.position.y = h/2 + 2;
+        tree.add(leaves);
     }
 
     update(dt) {
         this.spawnTimer -= dt;
+        
+        // Spawning Logic
         if (this.spawnTimer <= 0) {
-            this.spawnDeer();
-            this.spawnTimer = 5.0 + Math.random() * 5.0;
-            // Auto reload after wave?
+            this.spawnTarget();
+            
+            // Timer (Hybrid: Randomness from Feature, base speed from Main)
+            this.spawnTimer = 2.0 + Math.random() * 3.0;
+
+            // Auto reload mechanic (Preserved from Feature Branch)
             if(this.game.ammo <= 2) {
                  this.game.ammo = 5;
                  document.getElementById('nh-ammo').innerText = "5";
             }
         }
 
-        // Move Deer (run across screen)
+        // Move targets
         for (let i = this.targets.length - 1; i >= 0; i--) {
             const t = this.targets[i];
             t.mesh.position.addScaledVector(t.velocity, dt);
-
-            // Hop effect
+            
+            // mechanics: LookAt (Main) + Hopping (Feature)
+            t.mesh.lookAt(t.mesh.position.clone().add(t.velocity));
             t.mesh.position.y = Math.abs(Math.sin(Date.now() * 0.01)) * 0.5;
 
-            if (t.mesh.position.x > 50 || t.mesh.position.x < -50) {
+            // Remove if out of bounds (Main uses wider bounds)
+            if (Math.abs(t.mesh.position.x) > 60) {
                 this.scene.remove(t.mesh);
                 this.targets.splice(i, 1);
             }
         }
     }
 
-    spawnDeer() {
+    spawnTarget() {
+        // Using the Detailed Geometry from Feature Branch (Legs, Neck, Head)
         const deer = new THREE.Group();
+        
+        // Body
         const body = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 3), new THREE.MeshStandardMaterial({color: 0x8B4513}));
         body.position.y = 1.5;
         deer.add(body);
 
+        // Neck
         const neck = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.5, 0.5), new THREE.MeshStandardMaterial({color: 0x8B4513}));
         neck.position.set(0, 2.5, 1.2);
         neck.rotation.x = -0.5;
         deer.add(neck);
 
+        // Head
         const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 1.0), new THREE.MeshStandardMaterial({color: 0x8B4513}));
         head.position.set(0, 3.2, 1.8);
         deer.add(head);
@@ -92,14 +122,13 @@ export default class DeerHunt extends ModeBase {
         const bl = new THREE.Mesh(legGeo, legMat); bl.position.set(-0.5, 0.75, -1.2); deer.add(bl);
         const br = new THREE.Mesh(legGeo, legMat); br.position.set(0.5, 0.75, -1.2); deer.add(br);
 
-        // Random Side
-        const left = Math.random() > 0.5;
-        deer.position.set(left ? -40 : 40, 0, -20 - Math.random() * 20);
+        // Position & Velocity
+        const side = Math.random() > 0.5 ? 1 : -1;
+        deer.position.set(side * 50, 0, -10 - Math.random() * 30);
 
-        const speed = 5 + Math.random() * 5;
-        const velocity = new THREE.Vector3(left ? speed : -speed, 0, 0);
-
-        deer.rotation.y = left ? Math.PI / 2 : -Math.PI / 2;
+        // Speed (Main is faster/harder)
+        const speed = 8 + Math.random() * 5; 
+        const velocity = new THREE.Vector3(-side * speed, 0, 0);
 
         this.scene.add(deer);
         this.targets.push({ mesh: deer, velocity, active: true });
@@ -112,16 +141,46 @@ export default class DeerHunt extends ModeBase {
 
         for (let hit of intersects) {
             let obj = hit.object;
+            // Traverse up to find the Group
             while(obj.parent && obj.parent !== this.scene) obj = obj.parent;
 
             const target = this.targets.find(t => t.mesh === obj);
             if (target && target.active) {
                 this.scene.remove(target.mesh);
                 target.active = false;
-                this.game.score += 1000;
+                
+                // Scoring (Main)
+                this.game.score += 150;
                 this.game.updateHUD();
+
+                // Blood/Hit particles (Main)
+                this.createExplosion(target.mesh.position, 0xffff00);
                 break;
             }
+        }
+    }
+
+    createExplosion(pos, color) {
+        const count = 10;
+        const geo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+        const mat = new THREE.MeshBasicMaterial({ color: color });
+        
+        for(let i=0; i<count; i++) {
+            const p = new THREE.Mesh(geo, mat);
+            p.position.copy(pos);
+            this.scene.add(p);
+            
+            // Manual tween for particles
+            const vel = new THREE.Vector3((Math.random()-0.5)*5, (Math.random()-0.5)*5, (Math.random()-0.5)*5);
+            
+            const animateParticle = () => {
+                if(!p.parent) return;
+                p.position.addScaledVector(vel, 0.1);
+                p.scale.multiplyScalar(0.9);
+                if(p.scale.x < 0.1) this.scene.remove(p);
+                else requestAnimationFrame(animateParticle);
+            };
+            animateParticle();
         }
     }
 }

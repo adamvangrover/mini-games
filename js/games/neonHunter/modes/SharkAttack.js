@@ -3,10 +3,15 @@ import ModeBase from './ModeBase.js';
 export default class SharkAttack extends ModeBase {
     init() {
         super.init();
-        this.scene.background = new THREE.Color(0x000080); // Deep Blue
-        this.scene.fog = new THREE.FogExp2(0x000080, 0.05);
 
-        // Water surface above?
+        // Camera Setup (Main)
+        this.camera.position.set(0, 1.6, 0);
+
+        // Environment: Deep Blue (Feature Branch has better atmosphere)
+        this.scene.background = new THREE.Color(0x000080);
+        this.scene.fog = new THREE.FogExp2(0x000080, 0.03);
+
+        // Water surface (Feature Branch)
         const waterGeo = new THREE.PlaneGeometry(100, 100);
         const waterMat = new THREE.MeshStandardMaterial({ color: 0x00aaff, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
         const water = new THREE.Mesh(waterGeo, waterMat);
@@ -14,15 +19,15 @@ export default class SharkAttack extends ModeBase {
         water.position.y = 10;
         this.scene.add(water);
 
-        // Ocean floor
-        const floorGeo = new THREE.PlaneGeometry(100, 100);
+        // Ocean floor (Feature Branch)
+        const floorGeo = new THREE.PlaneGeometry(200, 200);
         const floorMat = new THREE.MeshStandardMaterial({ color: 0x000033 });
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
         floor.position.y = -10;
         this.scene.add(floor);
 
-        // Bubbles
+        // Bubbles System (Feature Branch)
         this.bubbles = [];
         const bubbleGeo = new THREE.SphereGeometry(0.1, 4, 4);
         const bubbleMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
@@ -34,12 +39,13 @@ export default class SharkAttack extends ModeBase {
         }
 
         this.spawnTimer = 0;
-        this.game.ammo = 8; // Speargun
+        // Ammo: Start with more (Feature) as sharks are aggressive
+        this.game.ammo = 8;
         document.getElementById('nh-ammo').innerText = "8";
     }
 
     update(dt) {
-        // Bubble anim
+        // Bubble animation (Feature Branch)
         this.bubbles.forEach(b => {
             b.mesh.position.y += dt * b.speed;
             if(b.mesh.position.y > 10) b.mesh.position.y = -10;
@@ -47,9 +53,11 @@ export default class SharkAttack extends ModeBase {
 
         this.spawnTimer -= dt;
         if (this.spawnTimer <= 0) {
-            this.spawnShark();
-            this.spawnTimer = 2.0;
-             if(this.game.ammo <= 0) {
+            this.spawnTarget();
+            this.spawnTimer = 1.5; // Fast pace
+            
+            // Auto Reload (Feature Branch)
+            if(this.game.ammo <= 0) {
                  this.game.ammo = 8;
                  document.getElementById('nh-ammo').innerText = "8";
             }
@@ -59,39 +67,55 @@ export default class SharkAttack extends ModeBase {
         for (let i = this.targets.length - 1; i >= 0; i--) {
             const t = this.targets[i];
             t.mesh.position.addScaledVector(t.velocity, dt);
-            t.mesh.lookAt(t.mesh.position.clone().add(t.velocity));
+            
+            // Logic: Always face player (Main Branch)
+            t.mesh.lookAt(this.camera.position); 
 
-            // Swim motion (tail wag placeholder by rotation?)
+            // Animation: Swim motion (Feature Branch)
             t.mesh.rotation.z = Math.sin(Date.now() * 0.01) * 0.2;
 
-            if (t.mesh.position.z > 5 || Math.abs(t.mesh.position.x) > 30) {
-                this.scene.remove(t.mesh);
-                this.targets.splice(i, 1);
+            // Attack Logic (Main Branch) - Critical for gameplay
+            if (t.mesh.position.distanceTo(this.camera.position) < 2) {
+                this.game.gameOver("EATEN BY SHARK");
+                return;
             }
         }
     }
 
-    spawnShark() {
-        const shark = new THREE.Group();
-        const body = new THREE.Mesh(new THREE.ConeGeometry(1, 4, 8), new THREE.MeshStandardMaterial({color: 0x708090}));
+    spawnTarget() {
+        const mesh = new THREE.Group();
+
+        // Shark Body - Wireframe Style (Main Branch fits "Neon" theme better)
+        const geo = new THREE.ConeGeometry(1, 4, 5);
+        const mat = new THREE.MeshBasicMaterial({ color: 0x00aaff, wireframe: true });
+        const body = new THREE.Mesh(geo, mat);
         body.rotation.x = -Math.PI / 2;
-        shark.add(body);
+        mesh.add(body);
 
-        const fin = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1, 4), new THREE.MeshStandardMaterial({color: 0x708090}));
-        fin.position.set(0, 0.5, -0.5);
-        fin.rotation.x = -0.5;
-        shark.add(fin);
+        // Fin
+        const fGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0,0,0), new THREE.Vector3(0,1,1), new THREE.Vector3(0,0,2)
+        ]);
+        const fin = new THREE.Mesh(fGeo, new THREE.MeshBasicMaterial({color: 0x00ffff, side: THREE.DoubleSide}));
+        fin.position.y = 0.5;
+        mesh.add(fin);
 
-        shark.position.set((Math.random()-0.5) * 40, (Math.random()-0.5)*10, -40);
+        // Spawning Logic: Semi-circle around player (Main Branch)
+        // This ensures sharks come FROM the distance TOWARDS the player
+        const angle = Math.random() * Math.PI; // Front 180 deg
+        const radius = 40; // Further out
+        const x = Math.cos(angle) * radius;
+        const z = -Math.sin(angle) * radius; // In front (-z)
 
-        const velocity = new THREE.Vector3(
-            (Math.random()-0.5) * 5,
-            0,
-            5 + Math.random() * 5
-        );
+        mesh.position.set(x, Math.random() * 4 - 2, z);
 
-        this.scene.add(shark);
-        this.targets.push({ mesh: shark, velocity, active: true });
+        // Velocity: Calculate vector towards player (Main Branch)
+        const dir = new THREE.Vector3(0, 1.6, 0).sub(mesh.position).normalize();
+        const speed = 8 + Math.random() * 5;
+        const velocity = dir.multiplyScalar(speed);
+
+        this.scene.add(mesh);
+        this.targets.push({ mesh, velocity, active: true });
     }
 
     onShoot(intersects) {
@@ -107,28 +131,38 @@ export default class SharkAttack extends ModeBase {
             if (target && target.active) {
                 this.scene.remove(target.mesh);
                 target.active = false;
-                this.game.score += 300;
+                
+                this.game.score += 500;
                 this.game.updateHUD();
 
-                // Blood cloud (red particles)
-                this.createBlood(target.mesh.position);
+                // Hybrid FX: Use Main's particle system, but Feature's "Blood" color
+                this.createExplosion(target.mesh.position, 0x880000);
                 break;
             }
         }
     }
 
-    createBlood(pos) {
-        const count = 20;
-        const geo = new THREE.SphereGeometry(0.2, 4, 4);
-        const mat = new THREE.MeshBasicMaterial({ color: 0x880000, transparent: true, opacity: 0.8 });
-
+    createExplosion(pos, color) {
+        // Robust particle system (Main Branch)
+        const count = 15;
+        const geo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+        const mat = new THREE.MeshBasicMaterial({ color: color });
+        
         for(let i=0; i<count; i++) {
-            const part = new THREE.Mesh(geo, mat);
-            part.position.copy(pos);
-            part.position.add(new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5)));
-            this.scene.add(part);
+            const p = new THREE.Mesh(geo, mat);
+            p.position.copy(pos);
+            this.scene.add(p);
 
-            setTimeout(() => this.scene.remove(part), 1000);
+            const vel = new THREE.Vector3((Math.random()-0.5)*5, (Math.random()-0.5)*5, (Math.random()-0.5)*5);
+            
+            const animateParticle = () => {
+                if(!p.parent) return;
+                p.position.addScaledVector(vel, 0.1);
+                p.scale.multiplyScalar(0.9);
+                if(p.scale.x < 0.1) this.scene.remove(p);
+                else requestAnimationFrame(animateParticle);
+            };
+            animateParticle();
         }
     }
 }

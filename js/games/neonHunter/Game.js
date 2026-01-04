@@ -34,7 +34,8 @@ export default class Game {
         this.initThree();
         this.createMenu();
 
-        window.addEventListener('resize', this.onResize.bind(this));
+        this.boundResize = this.onResize.bind(this);
+        window.addEventListener('resize', this.boundResize);
     }
 
     initThree() {
@@ -171,7 +172,12 @@ export default class Game {
             case 'shark': this.activeModeInstance = new SharkAttack(this); break;
         }
 
-        this.activeModeInstance.init();
+        if (this.activeModeInstance) {
+             this.activeModeInstance.init();
+        } else {
+             console.error("Mode not implemented:", mode);
+             this.gameOver(0);
+        }
 
         // Lock pointer
         if (!('ontouchstart' in window)) {
@@ -222,7 +228,8 @@ export default class Game {
     }
 
     updateHUD() {
-        document.getElementById('nh-score').innerText = this.score;
+        const scoreEl = document.getElementById('nh-score');
+        if(scoreEl) scoreEl.innerText = this.score;
         // Ammo update by mode
     }
 
@@ -242,6 +249,7 @@ export default class Game {
     }
 
     onResize() {
+        if (!this.container || !this.camera || !this.renderer) return;
         // Keep low res buffer, stretch via CSS
         // Aspect ratio update
         this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
@@ -249,10 +257,18 @@ export default class Game {
     }
 
     shutdown() {
-        window.removeEventListener('resize', this.onResize.bind(this));
+        window.removeEventListener('resize', this.boundResize);
         if (this.menu) this.menu.remove();
         if (this.hud) this.hud.remove();
         if (this.crosshair) this.crosshair.remove();
         this.container.innerHTML = '';
+
+        // Clean up Three.js
+        if(this.renderer) {
+            this.renderer.dispose();
+        }
+        if(this.scene) {
+            this.scene.clear();
+        }
     }
 }
