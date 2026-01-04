@@ -87,6 +87,14 @@ const gameRegistry = {
     'sudoku-game': { name: 'Neon Sudoku', description: 'Classic Number Puzzle', icon: 'fa-solid fa-border-none', category: 'Logic Puzzles', importFn: () => import('./games/sudoku.js'), noDpad: true },
     'neon-zip-game': { name: 'Neon Zip', description: 'Connect the Dots', icon: 'fa-solid fa-bolt', category: 'Logic Puzzles', importFn: () => import('./games/neonZip.js'), noDpad: true },
     'neon-word-game': { name: 'Neon Word', description: 'Word Guessing', icon: 'fa-solid fa-font', category: 'Logic Puzzles', importFn: () => import('./games/neonWord.js'), noDpad: true },
+    'neon-chess-game': { name: 'Suicide Chess', description: 'Lose All Pieces', icon: 'fa-solid fa-chess-knight', category: 'Logic Puzzles', importFn: () => import('./games/neonChess.js'), noDpad: true },
+    'classic-chess-game': { name: 'Classic Chess', description: 'Expert Edition', icon: 'fa-solid fa-chess-king', category: 'Logic Puzzles', importFn: () => import('./games/chess/ClassicChessGame.js'), noDpad: true },
+
+    // Classics & Board Games
+    'neon-chance-game': { name: 'Games of Chance', description: 'Coin Flip & Dice', icon: 'fa-solid fa-dice', category: 'Classics', importFn: () => import('./games/neonChance.js'), noDpad: true },
+    'neon-rps-game': { name: 'Neon RPS+LS', description: 'Big Bang Mode', icon: 'fa-solid fa-hand-spock', category: 'Classics', importFn: () => import('./games/neonRPS.js'), noDpad: true },
+    'neon-trivia-game': { name: 'Neon Trivia', description: 'Test Your Knowledge', icon: 'fa-solid fa-question', category: 'Classics', importFn: () => import('./games/neonTrivia.js'), noDpad: true },
+    'neon-trail-game': { name: 'Neon Trail', description: 'Survive the Journey', icon: 'fa-solid fa-wagon-covered', category: 'Classics', importFn: () => import('./games/neonTrail.js'), wide: true, noDpad: true },
 
     // System Modules
     'trophy-room': { name: 'Trophy Room', description: 'Achievement Gallery', icon: 'fa-solid fa-trophy', category: 'System', importFn: () => import('./core/TrophyRoom.js'), wide: true, noDpad: true },
