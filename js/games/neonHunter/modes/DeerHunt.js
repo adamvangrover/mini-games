@@ -27,7 +27,9 @@ export default class DeerHunt extends ModeBase {
         
         // Ammo (Main provides more ammo)
         this.game.ammo = 6;
-        document.getElementById('nh-ammo').innerText = "6";
+        this.game.maxAmmo = 6;
+        this.game.updateHUD();
+        this.reloadTimer = 0;
     }
 
     createTree() {
@@ -60,6 +62,23 @@ export default class DeerHunt extends ModeBase {
     }
 
     update(dt) {
+        // Reload Logic
+        if (this.game.ammo === 0 && !this.game.isReloading) {
+             this.game.isReloading = true;
+             this.reloadTimer = 2.0;
+             this.game.showMsg("RELOADING...", 2000);
+        }
+
+        if (this.game.isReloading) {
+            this.reloadTimer -= dt;
+            if (this.reloadTimer <= 0) {
+                this.game.ammo = this.game.maxAmmo;
+                this.game.isReloading = false;
+                this.game.updateHUD();
+                this.game.showMsg("");
+            }
+        }
+
         this.spawnTimer -= dt;
         
         // Spawning Logic
@@ -137,7 +156,7 @@ export default class DeerHunt extends ModeBase {
     onShoot(intersects) {
         if (this.game.ammo <= 0) return;
         this.game.ammo--;
-        document.getElementById('nh-ammo').innerText = this.game.ammo;
+        this.game.updateHUD();
 
         for (let hit of intersects) {
             let obj = hit.object;

@@ -20,12 +20,33 @@ export default class Safari extends ModeBase {
 
         this.spawnTimer = 0;
         
-        // Ammo: Compromise (Start with more because charging animals are dangerous)
+        // Ammo Setup (Hybrid)
+        // Architecture: Main (using updateHUD and maxAmmo)
+        // Value: Feature (8 rounds instead of 6 due to difficulty)
         this.game.ammo = 8;
-        document.getElementById('nh-ammo').innerText = "8";
+        this.game.maxAmmo = 8;
+        this.game.updateHUD();
+        this.reloadTimer = 0;
     }
 
     update(dt) {
+        // Reload Logic (Main Branch: Timed reload adds tension)
+        if (this.game.ammo === 0 && !this.game.isReloading) {
+             this.game.isReloading = true;
+             this.reloadTimer = 2.0;
+             if(this.game.showMsg) this.game.showMsg("RELOADING...", 2000);
+        }
+
+        if (this.game.isReloading) {
+            this.reloadTimer -= dt;
+            if (this.reloadTimer <= 0) {
+                this.game.ammo = this.game.maxAmmo;
+                this.game.isReloading = false;
+                this.game.updateHUD();
+                if(this.game.showMsg) this.game.showMsg("");
+            }
+        }
+
         this.spawnTimer -= dt;
         
         // Spawning Logic
@@ -35,11 +56,8 @@ export default class Safari extends ModeBase {
             // Timer: Fast paced (Hybrid)
             this.spawnTimer = 2.0;
             
-            // Auto Reload mechanic (Feature Branch)
-            if(this.game.ammo <= 0) {
-                 this.game.ammo = 8;
-                 document.getElementById('nh-ammo').innerText = "8";
-            }
+            // NOTE: Removed "Auto Reload mechanic" from Feature branch here
+            // because it conflicts with the Timed Reload logic above.
         }
 
         // Move Animals
@@ -98,7 +116,7 @@ export default class Safari extends ModeBase {
     onShoot(intersects) {
         if (this.game.ammo <= 0) return;
         this.game.ammo--;
-        document.getElementById('nh-ammo').innerText = this.game.ammo;
+        this.game.updateHUD();
 
         for (let hit of intersects) {
             let obj = hit.object;

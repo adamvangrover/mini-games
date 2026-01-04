@@ -39,28 +39,48 @@ export default class SharkAttack extends ModeBase {
         }
 
         this.spawnTimer = 0;
-        // Ammo: Start with more (Feature) as sharks are aggressive
+        
+        // Ammo: Hybrid Approach
+        // Value: 8 (Feature - Sharks are hard)
+        // Architecture: MaxAmmo/HUD (Main - Better UI)
         this.game.ammo = 8;
-        document.getElementById('nh-ammo').innerText = "8";
+        this.game.maxAmmo = 8;
+        this.game.updateHUD();
+        this.reloadTimer = 0;
     }
 
     update(dt) {
-        // Bubble animation (Feature Branch)
+        // Bubble animation (Feature Branch - Visuals)
         this.bubbles.forEach(b => {
             b.mesh.position.y += dt * b.speed;
             if(b.mesh.position.y > 10) b.mesh.position.y = -10;
         });
+
+        // Reload Logic (Main Branch - Gameplay Mechanics)
+        // Replaces the simple "if ammo <= 0 then reset" logic from Feature branch
+        if (this.game.ammo === 0 && !this.game.isReloading) {
+             this.game.isReloading = true;
+             this.reloadTimer = 2.0;
+             if(this.game.showMsg) this.game.showMsg("RELOADING...", 2000);
+        }
+
+        if (this.game.isReloading) {
+            this.reloadTimer -= dt;
+            if (this.reloadTimer <= 0) {
+                this.game.ammo = this.game.maxAmmo;
+                this.game.isReloading = false;
+                this.game.updateHUD();
+                if(this.game.showMsg) this.game.showMsg("");
+            }
+        }
 
         this.spawnTimer -= dt;
         if (this.spawnTimer <= 0) {
             this.spawnTarget();
             this.spawnTimer = 1.5; // Fast pace
             
-            // Auto Reload (Feature Branch)
-            if(this.game.ammo <= 0) {
-                 this.game.ammo = 8;
-                 document.getElementById('nh-ammo').innerText = "8";
-            }
+            // NOTE: "Auto Reload" block from Feature Branch removed here 
+            // to avoid conflict with the Timed Reload logic above.
         }
 
         // Move Sharks
@@ -107,6 +127,12 @@ export default class SharkAttack extends ModeBase {
         const x = Math.cos(angle) * radius;
         const z = -Math.sin(angle) * radius; // In front (-z)
 
+        // Fix logic for semi-circle front (Main Branch comments preserved for clarity):
+        // We want -z direction primarily.
+        // If angle is 0..PI
+        // x = R*cos(a) -> -R to R
+        // z = -R*sin(a) -> 0 to -R (this is correct, front)
+
         mesh.position.set(x, Math.random() * 4 - 2, z);
 
         // Velocity: Calculate vector towards player (Main Branch)
@@ -121,7 +147,7 @@ export default class SharkAttack extends ModeBase {
     onShoot(intersects) {
         if (this.game.ammo <= 0) return;
         this.game.ammo--;
-        document.getElementById('nh-ammo').innerText = this.game.ammo;
+        this.game.updateHUD();
 
         for (let hit of intersects) {
             let obj = hit.object;
