@@ -10,6 +10,7 @@ async function verifyGameImports() {
         'lumina-game': () => import('../js/games/lumina.js'),
         'prism-realms-game': () => import('../js/games/prismRealms.js'),
         'rage-quit-game': () => import('../js/games/rageQuit.js'),
+        'all-in-hole-game': () => import('../js/games/allInHole.js'),
 
         // New Games
         'tower-defense-game': () => import('../js/games/towerDefense.js'),

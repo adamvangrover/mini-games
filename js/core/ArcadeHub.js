@@ -1,5 +1,6 @@
 import SaveSystem from './SaveSystem.js';
 import InputManager from './InputManager.js';
+import SoundManager from './SoundManager.js';
 
 export default class ArcadeHub {
     constructor(container, gameRegistry, onGameSelect, onFallback) {
@@ -20,6 +21,8 @@ export default class ArcadeHub {
         this.cabinets = [];
         this.colliders = []; 
         this.walls = [];
+        this.ceilingLights = [];
+        this.ghostPlayers = [];
         
         // State
         this.isHovering = false;
@@ -62,6 +65,7 @@ export default class ArcadeHub {
             // --- Scene Setup ---
             const saveSystem = SaveSystem.getInstance();
             const theme = saveSystem.getEquippedItem('theme') || 'blue';
+            this.currentSkin = saveSystem.getEquippedItem('hub_skin') || 'default';
 
             // Theme Colors
             const themeColors = {
@@ -71,11 +75,20 @@ export default class ArcadeHub {
                 green: { bg: 0x001000, fog: 0x001000, grid: 0x00ff00, light: 0x00ff00 },
                 red:  { bg: 0x100000, fog: 0x100000, grid: 0xff0000, light: 0xff0000 }
             };
-            const colors = themeColors[theme] || themeColors.blue;
+            let colors = themeColors[theme] || themeColors.blue;
+
+            // Apply Skin Overrides
+            if (this.currentSkin === 'retro_future') {
+                colors = { bg: 0x2d004d, fog: 0x2d004d, grid: 0xff00ff, light: 0x00ffff };
+            } else if (this.currentSkin === 'gibson') {
+                colors = { bg: 0x000000, fog: 0x000000, grid: 0x00ff00, light: 0x00ff00 };
+            } else if (this.currentSkin === 'stephenson') {
+                colors = { bg: 0x808080, fog: 0x808080, grid: 0xffffff, light: 0xffffff };
+            }
 
             this.scene = new THREE.Scene();
             this.scene.background = new THREE.Color(colors.bg);
-            this.scene.fog = new THREE.FogExp2(colors.fog, 0.02);
+            this.scene.fog = new THREE.FogExp2(colors.fog, this.currentSkin === 'gibson' ? 0.04 : 0.02);
 
             // --- Camera Setup ---
             this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -112,6 +125,7 @@ export default class ArcadeHub {
             this.organizeLayout();
             this.createTeleporter();
             this.createNavMarker();
+            this.createGhostPlayers();
 
             // --- Event Listeners ---
             window.addEventListener('resize', this.onResize.bind(this));
@@ -218,6 +232,7 @@ export default class ArcadeHub {
         const light = new THREE.PointLight(color, intensity, distance);
         light.position.set(x, y, z);
         this.scene.add(light);
+        this.ceilingLights.push(light);
 
         // Glow mesh
         const geometry = new THREE.SphereGeometry(0.2, 8, 8);
@@ -225,16 +240,42 @@ export default class ArcadeHub {
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(x, y, z);
         this.scene.add(mesh);
+
+        // Save base intensity for visualizer
+        light.userData.baseIntensity = intensity;
     }
 
     createRoom(colors) {
+        let floorColor = 0x111111;
+        let floorMetalness = 0.6;
+        let floorRoughness = 0.1;
+        let wallColor = 0x222222;
+        let isWireframe = false;
+
+        if (this.currentSkin === 'retro_future') {
+            floorColor = 0x1a0b2e;
+            wallColor = 0x3d0066;
+        } else if (this.currentSkin === 'gibson') {
+            floorColor = 0x000000;
+            wallColor = 0x001100;
+            floorMetalness = 0.9;
+            floorRoughness = 0.0;
+            isWireframe = true;
+        } else if (this.currentSkin === 'stephenson') {
+            floorColor = 0x333333;
+            wallColor = 0x555555;
+            floorMetalness = 0.2;
+            floorRoughness = 0.8;
+        }
+
         // Floor
         const floorGeo = new THREE.PlaneGeometry(60, 80);
         const floorMat = new THREE.MeshStandardMaterial({
-            color: 0x111111,
-            roughness: 0.1,
-            metalness: 0.6,
-            side: THREE.FrontSide
+            color: floorColor,
+            roughness: floorRoughness,
+            metalness: floorMetalness,
+            side: THREE.FrontSide,
+            wireframe: isWireframe
         });
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
@@ -243,20 +284,29 @@ export default class ArcadeHub {
         this.floor = floor; // Reference
 
         // Grid on floor
-        const gridHelper = new THREE.GridHelper(60, 30, colors.grid, 0x222222);
+        const gridHelper = new THREE.GridHelper(60, 30, colors.grid, this.currentSkin === 'gibson' ? 0x003300 : 0x222222);
         gridHelper.position.y = 0.02;
         this.scene.add(gridHelper);
 
         // Ceiling
         const ceilGeo = new THREE.PlaneGeometry(60, 80);
-        const ceilMat = new THREE.MeshStandardMaterial({ color: 0x050505, emissive: 0x050505 });
+        const ceilMat = new THREE.MeshStandardMaterial({
+            color: this.currentSkin === 'gibson' ? 0x000000 : 0x050505,
+            emissive: this.currentSkin === 'gibson' ? 0x000000 : 0x050505,
+            wireframe: isWireframe
+        });
         const ceil = new THREE.Mesh(ceilGeo, ceilMat);
         ceil.rotation.x = Math.PI / 2;
         ceil.position.y = 10;
         this.scene.add(ceil);
 
         // Walls
-        const wallMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+        const wallMat = new THREE.MeshStandardMaterial({
+            color: wallColor,
+            roughness: 0.8,
+            wireframe: isWireframe
+        });
+
         const createWall = (w, h, d, x, y, z) => {
             const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
             mesh.position.set(x, y, z);
@@ -268,6 +318,56 @@ export default class ArcadeHub {
         createWall(60, 10, 1, 0, 5, 40);  // Front
         createWall(1, 10, 80, -30, 5, 0); // Left
         createWall(1, 10, 80, 30, 5, 0);  // Right
+
+        // Extra Stephenson Noise (Static)
+        if (this.currentSkin === 'stephenson') {
+            this.createStaticNoise();
+        } else {
+            this.createAmbientParticles();
+        }
+    }
+
+    createStaticNoise() {
+        // Simple particle system for static
+        const geometry = new THREE.BufferGeometry();
+        const vertices = [];
+        for (let i = 0; i < 5000; i++) {
+            vertices.push(Math.random() * 60 - 30);
+            vertices.push(Math.random() * 10);
+            vertices.push(Math.random() * 80 - 40);
+        }
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        const material = new THREE.PointsMaterial({ color: 0xffffff, size: 0.05, transparent: true, opacity: 0.3 });
+        const particles = new THREE.Points(geometry, material);
+        this.scene.add(particles);
+    }
+
+    createAmbientParticles() {
+        // Floating dust/neon motes
+        const particleCount = 200;
+        const geometry = new THREE.BufferGeometry();
+        const vertices = [];
+        const colors = [];
+        const color = new THREE.Color();
+
+        for (let i = 0; i < particleCount; i++) {
+            vertices.push(Math.random() * 60 - 30);
+            vertices.push(Math.random() * 12); // Height
+            vertices.push(Math.random() * 80 - 40);
+
+            // Random neon colors
+            if (Math.random() > 0.5) color.setHex(0x00ffff); // Cyan
+            else color.setHex(0xff00ff); // Magenta
+
+            colors.push(color.r, color.g, color.b);
+        }
+
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+        const material = new THREE.PointsMaterial({ size: 0.1, vertexColors: true, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending });
+        this.ambientParticles = new THREE.Points(geometry, material);
+        this.scene.add(this.ambientParticles);
     }
 
     addCollider(mesh) {
@@ -333,6 +433,10 @@ export default class ArcadeHub {
         light.position.set(x, y - 1, z);
         this.scene.add(light);
         this.scene.add(mesh);
+
+        // Save for visualizer
+        light.userData.baseIntensity = 1.5;
+        this.ceilingLights.push(light); // Add to lights array for pulsing
     }
 
     createCabinet(x, y, z, rotation, id, gameInfo) {
@@ -382,12 +486,62 @@ export default class ArcadeHub {
         panel.rotation.x = 0.2;
         group.add(panel);
 
-        const joy = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
-        joy.position.set(-0.3, 1.25, 0.65);
-        joy.rotation.x = 0.2;
-        group.add(joy);
+        if (id === 'neon-hunter' || id === 'neon-hunter-ex') {
+            // Add Guns for Neon Hunter (Light Gun Arcade Style)
+            const gunGeo = new THREE.BoxGeometry(0.1, 0.1, 0.3);
+            const gunMat1 = new THREE.MeshStandardMaterial({ color: 0xff00ff, roughness: 0.3, metalness: 0.8 }); // Pink Gun
+            const gunMat2 = new THREE.MeshStandardMaterial({ color: 0x00ffff, roughness: 0.3, metalness: 0.8 }); // Cyan Gun
 
-        group.userData = { gameId: id, isCabinet: true };
+            // Gun 1 (Left)
+            const gun1 = new THREE.Mesh(gunGeo, gunMat1);
+            gun1.position.set(-0.3, 1.25, 0.75); // Sticking out a bit more
+            gun1.rotation.x = -0.2; // Pointing slightly down/resting
+            group.add(gun1);
+
+            // Gun 2 (Right)
+            const gun2 = new THREE.Mesh(gunGeo, gunMat2);
+            gun2.position.set(0.3, 1.25, 0.75);
+            gun2.rotation.x = -0.2;
+            group.add(gun2);
+
+            // Cords (Holster/Cable)
+            const cordGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.4);
+            const cordMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+
+            const cord1 = new THREE.Mesh(cordGeo, cordMat);
+            cord1.position.set(-0.3, 1.15, 0.65);
+            cord1.rotation.x = 0.8;
+            group.add(cord1);
+
+            const cord2 = new THREE.Mesh(cordGeo, cordMat);
+            cord2.position.set(0.3, 1.15, 0.65);
+            cord2.rotation.x = 0.8;
+            group.add(cord2);
+
+        } else {
+            // Standard Joystick Setup
+            const joy = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
+            joy.position.set(-0.3, 1.25, 0.65);
+            joy.rotation.x = 0.2;
+            group.add(joy);
+
+            // Standard Buttons
+            const btnGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.05);
+            const btnMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x003300 });
+
+            const btn1 = new THREE.Mesh(btnGeo, btnMat);
+            btn1.position.set(0.1, 1.16, 0.65);
+            btn1.rotation.x = 0.2;
+            group.add(btn1);
+
+            const btn2 = new THREE.Mesh(btnGeo, btnMat);
+            btn2.position.set(0.3, 1.16, 0.65);
+            btn2.rotation.x = 0.2;
+            group.add(btn2);
+        }
+
+        // Add to cabinets for visualization
+        group.userData = { gameId: id, isCabinet: true, marquee: marq };
         this.scene.add(group);
         this.addCollider(body);
         this.cabinets.push(group);
@@ -444,6 +598,114 @@ export default class ArcadeHub {
         return '#' + '00000'.substring(0, 6 - c.length) + c;
     }
 
+    // --- Ghost Players ---
+
+    createGhostPlayers() {
+        for(let i=0; i<3; i++) {
+            const group = new THREE.Group();
+
+            // Droid body
+            const body = new THREE.Mesh(
+                new THREE.CapsuleGeometry(0.3, 1, 4, 8),
+                new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.2 })
+            );
+            body.position.y = 0.8;
+            group.add(body);
+
+            // Eye
+            const eye = new THREE.Mesh(
+                new THREE.SphereGeometry(0.15, 16, 16),
+                new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00 })
+            );
+            eye.position.set(0, 1.2, 0.2);
+            group.add(eye);
+
+            // Initial pos
+            group.position.set(
+                (Math.random() * 10 - 5),
+                0,
+                (Math.random() * 20 - 10)
+            );
+
+            this.scene.add(group);
+            this.ghostPlayers.push({
+                mesh: group,
+                target: this.getRandomGhostTarget(),
+                state: 'moving', // moving, idle
+                timer: 0
+            });
+        }
+    }
+
+    getRandomGhostTarget() {
+        return new THREE.Vector3(
+            (Math.random() * 14 - 7),
+            0,
+            (Math.random() * 60 - 30)
+        );
+    }
+
+    updateGhostPlayers(dt) {
+        this.ghostPlayers.forEach(ghost => {
+            if (ghost.state === 'moving') {
+                const dir = new THREE.Vector3().subVectors(ghost.target, ghost.mesh.position);
+                const dist = dir.length();
+                if (dist < 0.5) {
+                    ghost.state = 'idle';
+                    ghost.timer = 2 + Math.random() * 3;
+                } else {
+                    dir.normalize();
+                    ghost.mesh.position.add(dir.multiplyScalar(2 * dt));
+                    ghost.mesh.lookAt(ghost.target);
+                }
+            } else if (ghost.state === 'idle') {
+                ghost.timer -= dt;
+                // Idle animation
+                ghost.mesh.position.y = Math.sin(Date.now() * 0.005) * 0.1;
+                if (ghost.timer <= 0) {
+                    ghost.state = 'moving';
+                    ghost.target = this.getRandomGhostTarget();
+                }
+            }
+        });
+    }
+
+    // --- Audio Visualization ---
+
+    updateAudioVisuals(dt) {
+        const soundManager = SoundManager.getInstance();
+        const data = soundManager.getAudioData();
+        if (data.length === 0) return;
+
+        // Calculate average volume (bass focused)
+        let sum = 0;
+        const bassCount = Math.floor(data.length / 4);
+        for(let i=0; i<bassCount; i++) {
+            sum += data[i];
+        }
+        const avg = sum / bassCount; // 0-255
+        const intensity = avg / 255;
+
+        // Pulse Ceiling Lights
+        this.ceilingLights.forEach(light => {
+            if (light.userData.baseIntensity) {
+                light.intensity = light.userData.baseIntensity * (1 + intensity * 0.5);
+            }
+        });
+
+        // Pulse Cabinets
+        this.cabinets.forEach((cab, i) => {
+             // Offset pulse by index for wave effect
+             const offset = i * 10;
+             const val = data[(offset % data.length)];
+             const localIntensity = val / 255;
+
+             if (cab.userData.marquee) {
+                 cab.userData.marquee.material.emissiveIntensity = 0.6 + localIntensity * 2.0;
+             }
+        });
+    }
+
     // --- Update Loop & Movement ---
 
     update(dt) {
@@ -457,6 +719,20 @@ export default class ArcadeHub {
         // Logic
         this.handleMovement(dt);
         this.checkInteractions();
+
+        // Animate Ambient Particles (From Feature Branch)
+        if (this.ambientParticles) {
+            const positions = this.ambientParticles.geometry.attributes.position.array;
+            for(let i = 0; i < positions.length; i += 3) {
+                positions[i+1] += Math.sin(this.clock.getElapsedTime() + positions[i]) * 0.005;
+                if (positions[i+1] > 12) positions[i+1] = 0;
+            }
+            this.ambientParticles.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // Ghost Players and Audio (From Main Branch)
+        this.updateGhostPlayers(dt);
+        this.updateAudioVisuals(dt);
     }
 
     animate() {
