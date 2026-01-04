@@ -18,8 +18,10 @@ export default class DuckHunt extends ModeBase {
         this.scene.add(grass);
 
         this.spawnTimer = 0;
+        
+        // Ammo Setup (Main Branch - Abstracted HUD)
         this.game.ammo = 3;
-        this.game.maxAmmo = 3;
+        this.game.maxAmmo = 3; 
         this.game.updateHUD();
     }
 
@@ -28,14 +30,13 @@ export default class DuckHunt extends ModeBase {
         if (this.spawnTimer <= 0) {
             this.spawnDuck();
             this.spawnTimer = 4.0;
-            // Ducks fly away if missed? Or endless?
-            // Original reload logic? Duck hunt usually gives 3 shots per round.
-            // For simplicity here, we reload when spawning new wave or just set ammo to 3 occasionally?
-            // Let's reload every spawn for now to keep it playable.
-            if(this.game.ammo === 0) {
-                this.game.ammo = 3;
-                this.game.updateHUD();
-                this.game.showMsg("RELOADED");
+            
+            // Reload Logic (Main Branch - Uses Helper Methods)
+            // Reloads automatically when a new duck spawns if you are out of ammo
+            if(this.game.ammo <= 0) {
+                 this.game.ammo = 3;
+                 this.game.updateHUD();
+                 if(this.game.showMsg) this.game.showMsg("RELOADED");
             }
         }
 
@@ -76,6 +77,8 @@ export default class DuckHunt extends ModeBase {
     onShoot(intersects) {
         if (this.game.ammo <= 0) return;
         this.game.ammo--;
+        
+        // UI Update (Main Branch)
         this.game.updateHUD();
 
         for (let hit of intersects) {

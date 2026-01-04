@@ -3,32 +3,38 @@ import ModeBase from './ModeBase.js';
 export default class Safari extends ModeBase {
     init() {
         super.init();
+
+        // Camera Setup (Main)
         this.camera.position.set(0, 1.6, 0);
 
-        // Safari colors
-        this.scene.background = new THREE.Color(0x221100);
-        this.scene.fog = new THREE.FogExp2(0x221100, 0.015);
+        // Environment: Golden Savannah (Feature Branch visuals are better for "Safari")
+        this.scene.background = new THREE.Color(0xFFD700); 
+        this.scene.fog = new THREE.FogExp2(0xFFD700, 0.02);
 
-        // Ground
+        // Ground: Larger size (Main) but Savannah color (Feature)
         const groundGeo = new THREE.PlaneGeometry(200, 200);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0xccaa00 });
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0xDAA520 });
         const ground = new THREE.Mesh(groundGeo, groundMat);
         ground.rotation.x = -Math.PI / 2;
         this.scene.add(ground);
 
         this.spawnTimer = 0;
-        this.game.ammo = 6;
-        this.game.maxAmmo = 6;
+        
+        // Ammo Setup (Hybrid)
+        // Architecture: Main (using updateHUD and maxAmmo)
+        // Value: Feature (8 rounds instead of 6 due to difficulty)
+        this.game.ammo = 8;
+        this.game.maxAmmo = 8;
         this.game.updateHUD();
         this.reloadTimer = 0;
     }
 
     update(dt) {
-        // Reload Logic
+        // Reload Logic (Main Branch: Timed reload adds tension)
         if (this.game.ammo === 0 && !this.game.isReloading) {
              this.game.isReloading = true;
              this.reloadTimer = 2.0;
-             this.game.showMsg("RELOADING...", 2000);
+             if(this.game.showMsg) this.game.showMsg("RELOADING...", 2000);
         }
 
         if (this.game.isReloading) {
@@ -37,23 +43,36 @@ export default class Safari extends ModeBase {
                 this.game.ammo = this.game.maxAmmo;
                 this.game.isReloading = false;
                 this.game.updateHUD();
-                this.game.showMsg("");
+                if(this.game.showMsg) this.game.showMsg("");
             }
         }
 
         this.spawnTimer -= dt;
+        
+        // Spawning Logic
         if (this.spawnTimer <= 0) {
             this.spawnTarget();
-            this.spawnTimer = 1.0; // Faster spawns
+            
+            // Timer: Fast paced (Hybrid)
+            this.spawnTimer = 2.0;
+            
+            // NOTE: Removed "Auto Reload mechanic" from Feature branch here
+            // because it conflicts with the Timed Reload logic above.
         }
 
-        // Move targets
+        // Move Animals
         for (let i = this.targets.length - 1; i >= 0; i--) {
             const t = this.targets[i];
+            
+            // Movement (Feature Branch: Charging Z-axis)
             t.mesh.position.addScaledVector(t.velocity, dt);
-            t.mesh.lookAt(t.mesh.position.clone().add(t.velocity));
+            
+            // Animation: Bobbing effect
+            t.mesh.position.y = 2 + Math.sin(Date.now() * 0.01) * 0.2;
 
-            if (Math.abs(t.mesh.position.x) > 80) {
+            // Bounds check (Feature Branch logic for Z-axis)
+            // If it passes the camera (z > 5) or is too far back
+            if (t.mesh.position.z > 5 || t.mesh.position.z < -80) {
                 this.scene.remove(t.mesh);
                 this.targets.splice(i, 1);
             }
@@ -61,28 +80,37 @@ export default class Safari extends ModeBase {
     }
 
     spawnTarget() {
-        const mesh = new THREE.Group();
+        // Rhino or Elephant Geometry (From Feature Branch)
+        const isRhino = Math.random() > 0.5;
+        const animal = new THREE.Group();
 
-        // Zebra/Animal body
-        const geo = new THREE.BoxGeometry(1.5, 1, 3);
-        const mat = new THREE.MeshLambertMaterial({ color: 0xffffff }); // White (Zebraish)
-        const body = new THREE.Mesh(geo, mat);
-        mesh.add(body);
+        const color = isRhino ? 0x808080 : 0x708090;
+        const body = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 4), new THREE.MeshStandardMaterial({color}));
+        body.position.y = 0; // Centered in group
+        animal.add(body);
 
-        // Head
-        const hGeo = new THREE.BoxGeometry(0.8, 0.8, 1);
-        const head = new THREE.Mesh(hGeo, mat);
-        head.position.set(0, 1, 1.5);
-        mesh.add(head);
+        if (isRhino) {
+            const horn = new THREE.Mesh(new THREE.ConeGeometry(0.2, 1, 8), new THREE.MeshStandardMaterial({color: 0xffffff}));
+            horn.position.set(0, 0.5, 2.2);
+            horn.rotation.x = 0.5;
+            animal.add(horn);
+        } else {
+            // Elephant trunk
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 2, 8), new THREE.MeshStandardMaterial({color}));
+            trunk.position.set(0, 0, 2.5);
+            trunk.rotation.x = 0.5;
+            animal.add(trunk);
+        }
 
-        const side = Math.random() > 0.5 ? 1 : -1;
-        mesh.position.set(side * 60, 0.5, -10 - Math.random() * 40);
+        // Position: Spawn far away coming towards player (Feature Logic)
+        animal.position.set((Math.random()-0.5) * 60, 2, -60);
 
-        const speed = 20 + Math.random() * 10; // Faster
-        const velocity = new THREE.Vector3(-side * speed, 0, 0);
+        // Velocity: Towards Z+ (Player)
+        const speed = 10 + Math.random() * 5;
+        const velocity = new THREE.Vector3(0, 0, speed); 
 
-        this.scene.add(mesh);
-        this.targets.push({ mesh, velocity, active: true });
+        this.scene.add(animal);
+        this.targets.push({ mesh: animal, velocity, active: true });
     }
 
     onShoot(intersects) {
@@ -98,9 +126,12 @@ export default class Safari extends ModeBase {
             if (target && target.active) {
                 this.scene.remove(target.mesh);
                 target.active = false;
+                
+                // Score (Main Branch is more generous)
                 this.game.score += 300;
                 this.game.updateHUD();
 
+                // Explosion FX (Main Branch)
                 this.createExplosion(target.mesh.position, 0xff0000);
                 break;
             }
@@ -108,6 +139,7 @@ export default class Safari extends ModeBase {
     }
 
     createExplosion(pos, color) {
+        // Particle System (From Main Branch)
         const count = 10;
         const geo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
         const mat = new THREE.MeshBasicMaterial({ color: color });

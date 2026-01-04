@@ -444,10 +444,59 @@ export default class ArcadeHub {
         panel.rotation.x = 0.2;
         group.add(panel);
 
-        const joy = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
-        joy.position.set(-0.3, 1.25, 0.65);
-        joy.rotation.x = 0.2;
-        group.add(joy);
+        if (id === 'neon-hunter' || id === 'neon-hunter-ex') {
+            // Add Guns for Neon Hunter (Light Gun Arcade Style)
+            const gunGeo = new THREE.BoxGeometry(0.1, 0.1, 0.3);
+            const gunMat1 = new THREE.MeshStandardMaterial({ color: 0xff00ff, roughness: 0.3, metalness: 0.8 }); // Pink Gun
+            const gunMat2 = new THREE.MeshStandardMaterial({ color: 0x00ffff, roughness: 0.3, metalness: 0.8 }); // Cyan Gun
+
+            // Gun 1 (Left)
+            const gun1 = new THREE.Mesh(gunGeo, gunMat1);
+            gun1.position.set(-0.3, 1.25, 0.75); // Sticking out a bit more
+            gun1.rotation.x = -0.2; // Pointing slightly down/resting
+            group.add(gun1);
+
+            // Gun 2 (Right)
+            const gun2 = new THREE.Mesh(gunGeo, gunMat2);
+            gun2.position.set(0.3, 1.25, 0.75);
+            gun2.rotation.x = -0.2;
+            group.add(gun2);
+
+            // Cords (Holster/Cable)
+            const cordGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.4);
+            const cordMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+
+            const cord1 = new THREE.Mesh(cordGeo, cordMat);
+            cord1.position.set(-0.3, 1.15, 0.65);
+            cord1.rotation.x = 0.8;
+            group.add(cord1);
+
+            const cord2 = new THREE.Mesh(cordGeo, cordMat);
+            cord2.position.set(0.3, 1.15, 0.65);
+            cord2.rotation.x = 0.8;
+            group.add(cord2);
+
+        } else {
+            // Standard Joystick Setup
+            const joy = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
+            joy.position.set(-0.3, 1.25, 0.65);
+            joy.rotation.x = 0.2;
+            group.add(joy);
+
+            // Standard Buttons
+            const btnGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.05);
+            const btnMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x003300 });
+
+            const btn1 = new THREE.Mesh(btnGeo, btnMat);
+            btn1.position.set(0.1, 1.16, 0.65);
+            btn1.rotation.x = 0.2;
+            group.add(btn1);
+
+            const btn2 = new THREE.Mesh(btnGeo, btnMat);
+            btn2.position.set(0.3, 1.16, 0.65);
+            btn2.rotation.x = 0.2;
+            group.add(btn2);
+        }
 
         group.userData = { gameId: id, isCabinet: true };
         this.scene.add(group);
