@@ -212,6 +212,10 @@ export default class SoundManager {
         this.rhythmTimeout = setTimeout(() => this.startRhythm(), 2000);
     }
 
+    stopAll() {
+        this.stopBGM();
+    }
+
     stopBGM() {
         this.isPlayingBGM = false;
         if (this.bgmOscillators) {
