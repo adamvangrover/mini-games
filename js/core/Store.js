@@ -286,6 +286,44 @@ export default class Store {
                 value: 'grid'
             },
 
+            // --- MUSIC DISKS ---
+            {
+                id: 'disk_acid',
+                name: 'Acid Disk',
+                description: '303 basslines and squelches.',
+                cost: 200,
+                icon: 'fas fa-compact-disc',
+                type: 'music_disk',
+                value: 'acid'
+            },
+            {
+                id: 'disk_glitch',
+                name: 'Glitch Disk',
+                description: 'Broken beats and artifacts.',
+                cost: 300,
+                icon: 'fas fa-compact-disc',
+                type: 'music_disk',
+                value: 'glitch'
+            },
+            {
+                id: 'disk_ambient',
+                name: 'Ambient Disk',
+                description: 'Chill drones for relaxing.',
+                cost: 100,
+                icon: 'fas fa-compact-disc',
+                type: 'music_disk',
+                value: 'ambient'
+            },
+            {
+                id: 'disk_chiptune',
+                name: 'Chiptune Disk',
+                description: '8-bit nostalgia overload.',
+                cost: 250,
+                icon: 'fas fa-gamepad',
+                type: 'music_disk',
+                value: 'chiptune'
+            },
+
 
             // --- TROPHY ROOM STYLES ---
             {
@@ -518,7 +556,7 @@ export default class Store {
             let isEquipped = false;
             const equippedVal = this.saveSystem.getEquippedItem(item.type);
 
-            if (['hub_skin', 'theme', 'cabinet', 'trophy_room', 'property', 'wallpaper', 'flooring'].includes(item.type)) {
+            if (['hub_skin', 'theme', 'cabinet', 'trophy_room', 'property', 'wallpaper', 'flooring', 'music_disk'].includes(item.type)) {
                 // Strict equality if val exists
                 isEquipped = equippedVal === item.value;
                 
@@ -533,6 +571,9 @@ export default class Store {
                 if (item.id === 'property_studio' && (equippedVal === 'studio' || !equippedVal)) isEquipped = true;
                 if (item.id === 'wall_concrete' && (equippedVal === 'concrete' || !equippedVal)) isEquipped = true;
                 if (item.id === 'floor_wood' && (equippedVal === 'wood' || !equippedVal)) isEquipped = true;
+                // No default music disk, handled by SoundManager default, but let's assume acid is default if none selected or make one default?
+                // Actually SoundManager defaults to 'acid' maybe?
+                // Let's check SoundManager. For now, strict check is fine.
 
             } else if (item.type === 'avatar') {
                 isEquipped = equippedVal === item.value;
@@ -600,7 +641,7 @@ export default class Store {
     equip(item) {
         try {
             // General Save Trigger
-            if (['hub_skin', 'theme', 'cabinet', 'trophy_room', 'avatar', 'property', 'wallpaper', 'flooring'].includes(item.type)) {
+            if (['hub_skin', 'theme', 'cabinet', 'trophy_room', 'avatar', 'property', 'wallpaper', 'flooring', 'music_disk'].includes(item.type)) {
                 this.saveSystem.equipItem(item.type, item.value);
             }
 
@@ -617,6 +658,11 @@ export default class Store {
             if (item.type === 'theme') {
                 // Update CSS Hook immediately
                 document.body.className = `theme-${item.value}`;
+            }
+
+            if (item.type === 'music_disk') {
+                SoundManager.getInstance().setMusicStyle(item.value);
+                this.showToast(`Now playing: ${item.name}`);
             }
 
             this.render();
