@@ -133,9 +133,18 @@ export default class SoundManager {
 
     getVolume() { return this.volume; }
 
+    nextMusicStyle() {
+        const styles = Object.keys(this.scales);
+        let idx = styles.indexOf(this.currentStyle);
+        idx = (idx + 1) % styles.length;
+        this.setMusicStyle(styles[idx]);
+        return styles[idx];
+    }
+
     setMusicStyle(style) {
         if (this.scales[style]) {
             this.currentStyle = style;
+            this.saveSystem.setEquippedItem('music_disk', style); // Persist preference
 
             // Tempo & Effects Defaults
             this.delayGain.gain.setTargetAtTime(0, this.audioCtx.currentTime, 0.1); // Reset FX

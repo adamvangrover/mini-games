@@ -70,6 +70,13 @@ export default class BossMode {
         this.wordStealthMode = false;
         this.fakeText = "The localized projections regarding the Q3 overflow indicate a substantial misalignment with the core competencies of the stakeholders. ".split('');
         this.fakeTextPointer = 0;
+
+        // Chat App State
+        this.chatMessages = [
+            { sender: 'The Boss', text: 'Where are those Q3 reports?', time: '09:00', avatar: 'B' },
+            { sender: 'HR', text: 'Reminder: Mandatory fun event at 5pm.', time: '09:15', avatar: 'HR' },
+            { sender: 'IT Support', text: 'Did you try turning it off and on again?', time: '10:30', avatar: 'IT' }
+        ];
         
         // Games
         this.snakeGame = null;
@@ -502,6 +509,7 @@ export default class BossMode {
             { id: 'excel', icon: 'fa-file-excel', color: 'text-green-500' },
             { id: 'word', icon: 'fa-file-word', color: 'text-blue-500' },
             { id: 'ppt', icon: 'fa-file-powerpoint', color: 'text-orange-500' },
+            { id: 'teams', icon: 'fa-users', color: 'text-indigo-500' },
             { id: 'spotify', icon: 'fa-spotify', color: 'text-green-400' },
             { id: 'dcf', icon: 'fa-chart-line', color: 'text-cyan-400' },
             { id: 'terminal', icon: 'fa-terminal', color: 'text-gray-400' }
@@ -545,7 +553,8 @@ export default class BossMode {
             'spotify': { title: 'Spotify Premium', w: 800, h: 500, color: 'bg-[#121212]', icon: 'fa-spotify' },
             'dcf': { title: 'DCF Valuator Pro', w: 800, h: 600, color: 'bg-[#0f172a]', icon: 'fa-chart-line' },
             'mission': { title: 'Mission Control', w: 600, h: 400, color: 'bg-[#1e293b]', icon: 'fa-microchip' },
-            'market': { title: 'Market Radar', w: 500, h: 350, color: 'bg-[#0f172a]', icon: 'fa-satellite-dish' }
+            'market': { title: 'Market Radar', w: 500, h: 350, color: 'bg-[#0f172a]', icon: 'fa-satellite-dish' },
+            'teams': { title: 'Teams - Chat', w: 700, h: 500, color: 'bg-[#4f46e5]', icon: 'fa-users' }
         };
         return map[id] || { title: 'App', w: 600, h: 400, color: 'bg-gray-800', icon: 'fa-window-maximize' };
     }
@@ -611,6 +620,7 @@ export default class BossMode {
         if(win.app === 'ppt') this.renderPPT(contentArea);
         if(win.app === 'terminal') this.renderTerminal(contentArea);
         if(win.app === 'spotify') this.renderSpotify(contentArea);
+        if(win.app === 'teams') this.renderTeams(contentArea);
         if(win.app === 'dcf') new DCFApp(contentArea); // Use Class for complex logic
         if(win.app === 'mission') {
             const tpl = document.getElementById('tpl-mission');
@@ -768,6 +778,53 @@ export default class BossMode {
     renderPPT(c) { c.innerHTML = `<div class="h-full flex bg-[#d0cec9]"><div class="w-40 bg-gray-100 border-r p-2 overflow-y-auto">${this.currentPPT.slides.map((s,i)=>`<div class="bg-white aspect-video shadow mb-2 p-1 text-[8px] cursor-pointer" onclick="BossMode.instance.currentSlide=${i};BossMode.instance.renderPPT(this.parentElement.parentElement)">Slide ${i+1}</div>`).join('')}</div><div class="flex-1 flex items-center justify-center"><div class="bg-white aspect-[16/9] w-3/4 shadow-xl p-8"><h1 class="text-3xl font-bold mb-4">${this.currentPPT.slides[this.currentSlide].title}</h1><ul>${this.currentPPT.slides[this.currentSlide].bullets.map(b=>`<li>${b}</li>`).join('')}</ul></div></div></div>`; }
     renderTerminal(c) { 
         c.innerHTML = `<div class="bg-black text-gray-300 font-mono text-sm h-full p-2 overflow-y-auto" onclick="this.querySelector('input').focus()"><div id="term-output">${this.termHistory.map(l=>`<div>${l}</div>`).join('')}</div><div class="flex"><span>C:\\Users\\${this.user.name.replace(' ','')}></span><input class="bg-transparent border-none outline-none text-gray-300 flex-1 ml-2" autofocus onkeydown="if(event.key==='Enter') BossMode.instance.runTerminalCommand(this.value)"></div></div>`;
+    }
+
+    renderTeams(c) {
+        c.innerHTML = `
+            <div class="h-full flex bg-[#f0f0f0] text-gray-800">
+                <div class="w-64 bg-white border-r flex flex-col">
+                    <div class="p-3 border-b font-bold text-indigo-600 flex items-center gap-2"><i class="fas fa-comment-dots"></i> Chats</div>
+                    <div class="flex-1 overflow-y-auto">
+                        <div class="p-3 bg-indigo-50 border-l-4 border-indigo-500 cursor-pointer">
+                            <div class="font-bold text-sm">The Boss</div>
+                            <div class="text-xs text-gray-500 truncate">Where are those Q3 reports?</div>
+                        </div>
+                        <div class="p-3 hover:bg-gray-100 cursor-pointer">
+                            <div class="font-bold text-sm">HR Department</div>
+                            <div class="text-xs text-gray-500 truncate">Mandatory Fun Event...</div>
+                        </div>
+                         <div class="p-3 hover:bg-gray-100 cursor-pointer">
+                            <div class="font-bold text-sm">IT Support</div>
+                            <div class="text-xs text-gray-500 truncate">Ticket #402 Closed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-1 flex flex-col">
+                    <div class="p-3 bg-white border-b flex justify-between items-center shadow-sm">
+                        <div class="font-bold flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center">B</div> The Boss</div>
+                        <div class="text-xs text-green-500"><i class="fas fa-circle text-[8px]"></i> Online</div>
+                    </div>
+                    <div class="flex-1 p-4 flex flex-col gap-3 overflow-y-auto bg-[#f5f5f5]">
+                        ${this.chatMessages.map(m => `
+                            <div class="flex gap-2 ${m.sender === 'Me' ? 'flex-row-reverse' : ''}">
+                                <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center font-bold text-xs shrink-0">${m.avatar}</div>
+                                <div class="flex flex-col max-w-[70%]">
+                                    <div class="text-[10px] text-gray-500 mb-1 ${m.sender === 'Me' ? 'text-right' : ''}">${m.sender} • ${m.time}</div>
+                                    <div class="p-2 rounded shadow-sm text-sm ${m.sender === 'Me' ? 'bg-indigo-100 text-indigo-900 rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none'}">
+                                        ${m.text}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="p-3 bg-white border-t flex gap-2">
+                        <input class="flex-1 bg-gray-100 rounded px-3 py-2 text-sm outline-none border border-transparent focus:border-indigo-300" placeholder="Type a new message..." onkeydown="if(event.key==='Enter') { BossMode.instance.chatMessages.push({sender:'Me', text:this.value, time:'Now', avatar:'ME'}); BossMode.instance.renderTeams(this.closest('.window-content')); }">
+                        <button class="text-indigo-600 hover:bg-indigo-50 p-2 rounded"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     renderSpotify(c) {

@@ -573,9 +573,72 @@ function hideShopOverlay() {
     updateHubStats();
 }
 
+// --- Daily Quests Overlay ---
+
+function showQuestOverlay() {
+    const quests = saveSystem.getDailyQuests();
+    const content = `
+        <div class="flex flex-col gap-4">
+            <h3 class="text-xl text-yellow-400 font-bold text-center mb-2">DAILY MISSIONS</h3>
+            <div class="flex flex-col gap-3 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+                ${quests.map((q, idx) => {
+                    const isComplete = q.progress >= q.target;
+                    const isClaimed = q.claimed;
+                    const width = Math.min(100, (q.progress / q.target) * 100);
+
+                    return `
+                    <div class="bg-slate-800 p-3 rounded border border-slate-700 relative overflow-hidden group">
+                        <div class="flex justify-between items-center mb-1 relative z-10">
+                            <span class="font-bold text-white">${q.description}</span>
+                            <span class="text-xs text-slate-400">${q.progress}/${q.target}</span>
+                        </div>
+                        <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden relative z-10">
+                            <div class="bg-gradient-to-r from-fuchsia-600 to-cyan-500 h-full" style="width: ${width}%"></div>
+                        </div>
+                        <div class="mt-2 flex justify-between items-center relative z-10">
+                            <span class="text-yellow-400 text-sm font-bold"><i class="fas fa-coins"></i> ${q.reward}</span>
+                            ${isClaimed
+                                ? '<span class="text-green-500 text-xs font-bold">CLAIMED</span>'
+                                : isComplete
+                                    ? `<button class="claim-quest-btn px-3 py-1 bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-xs rounded" data-id="${q.id}">CLAIM</button>`
+                                    : '<span class="text-slate-500 text-xs">IN PROGRESS</span>'
+                            }
+                        </div>
+                        ${isComplete && !isClaimed ? '<div class="absolute inset-0 bg-yellow-500/10 animate-pulse"></div>' : ''}
+                    </div>
+                    `;
+                }).join('')}
+            </div>
+            <p class="text-center text-xs text-slate-500 mt-2">Quests reset daily at midnight.</p>
+        </div>
+    `;
+
+    showOverlay('JOB BOARD', content);
+
+    // Bind Claim Buttons
+    document.querySelectorAll('.claim-quest-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            const id = e.target.dataset.id;
+            const reward = saveSystem.claimQuestReward(id);
+            if (reward > 0) {
+                soundManager.playSound('coin');
+                window.miniGameHub.showToast(`Quest Complete! +${reward} Coins`);
+                updateHubStats();
+                // Refresh overlay
+                showQuestOverlay();
+            }
+        };
+    });
+}
+
 // --- Initialization ---
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Listen for Generic Interactions
+    window.addEventListener('open-quest-board', () => {
+        showQuestOverlay();
+    });
+
     // Apply Saved Theme
     const savedTheme = saveSystem.getEquippedItem('theme');
     if (savedTheme) {
@@ -811,6 +874,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Global Cursor Trail ---
+    const cursorTrail = [];
+    const maxTrail = 10;
+
+    // Create trail elements pool
+    for(let i=0; i<maxTrail; i++) {
+        const dot = document.createElement('div');
+        dot.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 6px; height: 6px;
+            background: cyan; border-radius: 50%; pointer-events: none;
+            z-index: 9998; opacity: 0; transition: transform 0.1s, opacity 0.2s;
+            box-shadow: 0 0 5px cyan;
+        `;
+        document.body.appendChild(dot);
+        cursorTrail.push(dot);
+    }
+
+    let currentTrailIdx = 0;
+    window.addEventListener('mousemove', (e) => {
+        if (currentState === AppState.IN_GAME && !currentGameInstance.noCursorHide) return; // Hide in some games?
+
+        const dot = cursorTrail[currentTrailIdx];
+        dot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        dot.style.opacity = '1';
+
+        // Fade out previous ones
+        cursorTrail.forEach((d, i) => {
+            if (i !== currentTrailIdx) {
+                const op = parseFloat(d.style.opacity || 0);
+                if (op > 0) d.style.opacity = (op - 0.1).toString();
+            }
+        });
+
+        currentTrailIdx = (currentTrailIdx + 1) % maxTrail;
+    });
+
+
     document.body.addEventListener('click', (e) => {
         if (e.target.classList.contains('back-btn')) transitionToState(AppState.MENU);
 
@@ -842,6 +942,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         setTimeout(() => clickFx.remove(), 400);
+
+        // Button Juice
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+            soundManager.playSound('click');
+        }
     });
 
     lastTime = performance.now();
