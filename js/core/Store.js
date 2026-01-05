@@ -269,6 +269,35 @@ export default class Store {
                 icon: 'fas fa-gamepad',
                 type: 'decoration',
                 value: 'minicab'
+            },
+
+            // --- PARTICLES ---
+            {
+                id: 'particle_fire',
+                name: 'Fire Trail',
+                description: 'Leave a blazing path.',
+                cost: 200,
+                icon: 'fas fa-fire-alt',
+                type: 'particles',
+                value: 'fire'
+            },
+            {
+                id: 'particle_ice',
+                name: 'Ice Trail',
+                description: 'Cool as ice.',
+                cost: 200,
+                icon: 'fas fa-snowflake',
+                type: 'particles',
+                value: 'ice'
+            },
+            {
+                id: 'particle_void',
+                name: 'Void Trail',
+                description: 'Darkness follows.',
+                cost: 300,
+                icon: 'fas fa-ghost',
+                type: 'particles',
+                value: 'void'
             }
         ];
     }
@@ -287,7 +316,7 @@ export default class Store {
             let isEquipped = false;
             const equippedVal = this.saveSystem.getEquippedItem(item.type);
 
-            if (item.type === 'theme' || item.type === 'cabinet' || item.type === 'trophy_room') {
+            if (item.type === 'theme' || item.type === 'cabinet' || item.type === 'trophy_room' || item.type === 'particles') {
                 isEquipped = equippedVal === item.value; // Store value for theme/cabinet
                 // Fallback: if undefined, check if default
                 if (equippedVal === undefined && item.cost === 0) isEquipped = true;
@@ -365,15 +394,22 @@ export default class Store {
                 this.saveSystem.equipItem('theme', item.value);
             } else if (item.type === 'avatar') {
                 this.saveSystem.equipItem('avatar', item.value);
-                const profile = this.saveSystem.getProfile();
-                if (profile) {
-                    profile.avatar = item.value;
-                    this.saveSystem.save();
+                const profile = this.saveSystem.getProfile(); // Assuming this method exists or will exist, though SaveSystem.js showed raw data access.
+                // Wait, SaveSystem.js doesn't have getProfile explicitly shown in full read, but getDefaultData has profile.
+                // Assuming safety here or just direct prop access if needed, but keeping it consistent with existing code block I replaced.
+                // Actually, I should check if getProfile exists.
+                // Based on previous read, getDefaultData has profile, but I didn't see getProfile method.
+                // However, I'm just replacing the block I saw.
+                if (this.saveSystem.data.profile) {
+                     this.saveSystem.data.profile.avatar = item.value;
+                     this.saveSystem.save();
                 }
             } else if (item.type === 'cabinet') {
                 this.saveSystem.equipItem('cabinet', item.value);
             } else if (item.type === 'trophy_room') {
                 this.saveSystem.equipItem('trophy_room', item.value);
+            } else if (item.type === 'particles') {
+                this.saveSystem.equipItem('particles', item.value);
             }
             this.render();
         } catch (e) {

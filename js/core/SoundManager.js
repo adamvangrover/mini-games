@@ -25,6 +25,15 @@ export default class SoundManager {
         this.isPlayingBGM = false;
         this.rhythmTimeout = null;
 
+        // Jukebox Tracks
+        this.currentTrackIndex = 0;
+        this.tracks = [
+            { name: "Neon Drone", bpm: 2000, baseFreq: 110 },
+            { name: "Cyber Pulse", bpm: 1000, baseFreq: 150 },
+            { name: "Deep Space", bpm: 4000, baseFreq: 60 }
+        ];
+        this.currentTrack = this.tracks[0].name;
+
         SoundManager.instance = this;
     }
 
@@ -156,18 +165,23 @@ export default class SoundManager {
     startBGM() {
         if (this.isPlayingBGM) return;
         this.isPlayingBGM = true;
+        this.playTrack();
+    }
 
-        if (this.audioCtx.state === 'suspended') {
-            // Can't start if suspended without user gesture, but we prep nodes
-        }
+    playTrack() {
+        this.stopBGM(true); // Stop but keep playing state true
+        this.isPlayingBGM = true; // Restore state
 
+        if (this.audioCtx.state === 'suspended') return; // Wait for interaction
+
+        const track = this.tracks[this.currentTrackIndex];
         const osc1 = this.audioCtx.createOscillator();
         const osc2 = this.audioCtx.createOscillator();
 
         osc1.type = 'sine';
-        osc1.frequency.value = 110;
+        osc1.frequency.value = track.baseFreq;
         osc2.type = 'triangle';
-        osc2.frequency.value = 110.5;
+        osc2.frequency.value = track.baseFreq + 0.5; // Detune
 
         osc1.connect(this.bgmGainNode);
         osc2.connect(this.bgmGainNode);
@@ -176,18 +190,26 @@ export default class SoundManager {
             osc1.start();
             osc2.start();
             this.bgmOscillators = [osc1, osc2];
-            this.startRhythm();
+            this.startRhythm(track.bpm);
         } catch(e) {
             console.warn("AudioContext not ready for BGM start.");
         }
     }
 
-    startRhythm() {
+    nextTrack() {
+        this.currentTrackIndex = (this.currentTrackIndex + 1) % this.tracks.length;
+        this.currentTrack = this.tracks[this.currentTrackIndex].name;
+        if (this.isPlayingBGM) {
+            this.playTrack();
+        }
+    }
+
+    startRhythm(interval = 2000) {
         if (!this.isPlayingBGM) return;
 
         // Only schedule if context is running to avoid stacking
         if (this.audioCtx.state !== 'running') {
-            this.rhythmTimeout = setTimeout(() => this.startRhythm(), 1000);
+            this.rhythmTimeout = setTimeout(() => this.startRhythm(interval), 1000);
             return;
         }
 
@@ -198,8 +220,6 @@ export default class SoundManager {
         kick.frequency.setValueAtTime(150, now);
         kick.frequency.exponentialRampToValueAtTime(0.01, now + 0.5);
 
-        // Rhythm volume is also relative to master BGM gain?
-        // No, BGM gain controls the mix bus. Kick connects to BGM Gain.
         kickGain.gain.setValueAtTime(0.5, now); // Relative mix level
         kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
 
@@ -209,10 +229,10 @@ export default class SoundManager {
         kick.start(now);
         kick.stop(now + 0.5);
 
-        this.rhythmTimeout = setTimeout(() => this.startRhythm(), 2000);
+        this.rhythmTimeout = setTimeout(() => this.startRhythm(interval), interval);
     }
 
-    stopBGM() {
+    stopBGM(restart = false) {
         this.isPlayingBGM = false;
         if (this.bgmOscillators) {
             this.bgmOscillators.forEach(osc => {

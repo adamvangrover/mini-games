@@ -119,6 +119,9 @@
         <button id="shop-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Store">
             <i class="fas fa-store"></i>
         </button>
+        <button id="quests-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Daily Quests">
+            <i class="fas fa-scroll"></i>
+        </button>
         <button id="mute-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Mute/Unmute">
             <i class="fas fa-volume-up"></i>
         </button>
@@ -160,21 +163,14 @@
         </p>
     </div>
 
-    <!-- Game Containers -->
-    <div id="clicker-game" class="hidden game-container"></div>
-    <div id="maze-game" class="hidden game-container"></div>
-    <div id="runner-game" class="hidden game-container"></div>
-    <div id="typing-game" class="hidden game-container"></div>
-    <div id="snake-game" class="hidden game-container"></div>
-    <div id="pong-game" class="hidden game-container"></div>
-    <div id="space-game" class="hidden game-container"></div>
-    <div id="tetris-game" class="hidden game-container"></div>
-    <div id="breakout-game" class="hidden game-container"></div>
-    <div id="rpg-game" class="hidden game-container"></div>
-    <div id="eclipse-game" class="hidden game-container"></div>
-    <div id="eclipse-puzzle-game" class="hidden game-container"></div>
-    <div id="eclipse-logic-puzzle-game" class="hidden game-container"></div>
-    <div id="matterhorn-game" class="hidden game-container"></div>
+    <noscript>
+        <div class="fixed inset-0 bg-black text-white flex items-center justify-center z-[99999]">
+            <div class="text-center p-8 border border-fuchsia-500 rounded-lg">
+                <h1 class="text-3xl font-bold mb-4 text-fuchsia-400">JAVASCRIPT REQUIRED</h1>
+                <p>This arcade requires JavaScript to run.</p>
+            </div>
+        </div>
+    </noscript>
 
     <!-- Main Module Entry -->
     <script type="module" src="js/main.js"></script>

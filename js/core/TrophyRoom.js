@@ -10,11 +10,16 @@ import InputManager from './InputManager.js';
 export default class TrophyRoom {
     /**
      * @param {HTMLElement} container - The DOM element to append the renderer to.
-     * @param {Function} onBack - Callback function to return to the main menu/hub.
      */
-    constructor(container, onBack) {
+    constructor(container) {
         this.container = container;
-        this.onBack = onBack;
+        // Back callback can be accessed via global hub if needed, but standard game flow uses shutdown
+    }
+
+    async init(container) {
+        if (container) this.container = container;
+        if (!this.container) throw new Error("TrophyRoom initialized without container");
+
         this.saveSystem = SaveSystem.getInstance();
         this.inputManager = InputManager.getInstance();
 
@@ -36,19 +41,21 @@ export default class TrophyRoom {
         this.isDragging = false;
         this.previousMousePosition = { x: 0, y: 0 };
         this.navTarget = null;
+        this.boundAnimate = this.animate.bind(this);
+        this.boundOnResize = this.onResize.bind(this);
+        this.boundOnMouseMove = this.onMouseMove.bind(this);
+        this.boundOnMouseDown = this.onMouseDown.bind(this);
+        this.boundOnMouseUp = this.onMouseUp.bind(this);
+        this.boundOnClick = this.onClick.bind(this);
+        this.boundOnTouchStart = this.onTouchStart.bind(this);
+        this.boundOnTouchMove = this.onTouchMove.bind(this);
 
-        if (this.container) {
-            this.init(this.container);
-        }
-    }
-
-    init() {
-        if (!this.container) {
-            console.error("TrophyRoom: Container not provided.");
-            return;
-        }
 
         try {
+            if (typeof THREE === 'undefined') {
+                throw new Error("Three.js not loaded");
+            }
+
             // Scene Setup
             this.scene = new THREE.Scene();
             this.scene.background = new THREE.Color(0x0a0a1a);
@@ -66,6 +73,11 @@ export default class TrophyRoom {
 
             // Clear container
             this.container.innerHTML = '';
+            this.container.style.position = 'absolute'; // Ensure it fills
+            this.container.style.top = '0';
+            this.container.style.left = '0';
+            this.container.style.width = '100%';
+            this.container.style.height = '100%';
             this.container.appendChild(this.renderer.domElement);
 
             // Add Interaction Overlay
@@ -89,32 +101,32 @@ export default class TrophyRoom {
             this.renderTrophies();
 
             // Listeners
-            window.addEventListener('resize', this.onResize.bind(this));
+            window.addEventListener('resize', this.boundOnResize);
 
             // Mouse/Touch
-            this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this));
-            window.addEventListener('mousemove', this.onMouseMove.bind(this));
-            window.addEventListener('mouseup', this.onMouseUp.bind(this));
-            this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
+            this.renderer.domElement.addEventListener('mousedown', this.boundOnMouseDown);
+            window.addEventListener('mousemove', this.boundOnMouseMove);
+            window.addEventListener('mouseup', this.boundOnMouseUp);
+            this.renderer.domElement.addEventListener('click', this.boundOnClick);
 
-            this.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
-            window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
-            window.addEventListener('touchend', this.onMouseUp.bind(this));
+            this.renderer.domElement.addEventListener('touchstart', this.boundOnTouchStart, { passive: false });
+            window.addEventListener('touchmove', this.boundOnTouchMove, { passive: false });
+            window.addEventListener('touchend', this.boundOnMouseUp);
 
 
             // Add "Back" button overlay
             const btn = document.createElement('button');
             btn.id = 'trophy-back-btn';
             btn.innerHTML = '<i class="fas fa-arrow-left"></i> Return to Hub';
-            btn.className = 'absolute top-6 left-6 glass-panel px-6 py-3 rounded-full text-white hover:text-cyan-400 z-50 font-bold uppercase tracking-wider transition-all border border-white/10 hover:border-cyan-500 shadow-lg';
-            btn.onclick = () => this.exit();
+            btn.className = 'absolute top-6 left-6 glass-panel px-6 py-3 rounded-full text-white hover:text-cyan-400 z-50 font-bold uppercase tracking-wider transition-all border border-white/10 hover:border-cyan-500 shadow-lg pointer-events-auto';
+            btn.onclick = () => window.miniGameHub.goBack();
             this.container.appendChild(btn);
 
             this.animate();
 
         } catch (e) {
             console.error("TrophyRoom: Failed to initialize WebGL.", e);
-            if(this.container) this.container.innerHTML = '<div class="text-white text-center p-10">Error: WebGL not supported.</div>';
+            if(this.container) this.container.innerHTML = '<div class="text-white text-center p-10">Error: WebGL not supported or Three.js missing.</div>';
             this.isActive = false;
         }
     }
@@ -267,12 +279,13 @@ export default class TrophyRoom {
     // --- Interaction & Movement ---
 
     onMouseMove(event) {
+        if (!this.isActive) return;
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
         if (this.isDragging) {
              const deltaX = event.clientX - this.previousMousePosition.x;
-             const deltaY = event.clientY - this.previousMousePosition.y;
+             // const deltaY = event.clientY - this.previousMousePosition.y;
 
              this.player.rotation.y -= deltaX * 0.003;
 
@@ -281,6 +294,7 @@ export default class TrophyRoom {
     }
 
     onMouseDown(event) {
+        if (!this.isActive) return;
         this.isDragging = true;
         this.previousMousePosition = { x: event.clientX, y: event.clientY };
     }
@@ -290,6 +304,7 @@ export default class TrophyRoom {
     }
 
     onTouchStart(event) {
+        if (!this.isActive) return;
         if(event.touches.length === 1) {
              this.isDragging = true;
              this.previousMousePosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
@@ -297,6 +312,7 @@ export default class TrophyRoom {
     }
 
     onTouchMove(event) {
+        if (!this.isActive) return;
         if(this.isDragging && event.touches.length === 1) {
              const deltaX = event.touches[0].clientX - this.previousMousePosition.x;
              this.player.rotation.y -= deltaX * 0.005;
@@ -305,6 +321,7 @@ export default class TrophyRoom {
     }
 
     onClick(event) {
+        if(!this.isActive) return;
         if(this.isDragging) return;
 
         // Raycast
@@ -330,7 +347,7 @@ export default class TrophyRoom {
 
     animate() {
         if (!this.isActive) return;
-        requestAnimationFrame(this.animate.bind(this));
+        requestAnimationFrame(this.boundAnimate);
 
         const dt = 0.016; // Approx
 
@@ -418,17 +435,23 @@ export default class TrophyRoom {
          }
     }
 
-    exit() {
+    shutdown() {
         this.isActive = false;
+
+        // Remove Listeners
+        window.removeEventListener('resize', this.boundOnResize);
+        window.removeEventListener('mousemove', this.boundOnMouseMove);
+        window.removeEventListener('mouseup', this.boundOnMouseUp);
+        window.removeEventListener('touchmove', this.boundOnTouchMove);
+        window.removeEventListener('touchend', this.boundOnMouseUp);
+
+        if (this.renderer && this.renderer.domElement) {
+             this.renderer.domElement.remove();
+        }
+
         // Cleanup DOM
+        if (this.overlay) this.overlay.remove();
         const btn = document.getElementById('trophy-back-btn');
         if (btn) btn.remove();
-        if (this.overlay) this.overlay.remove();
-
-        window.removeEventListener('resize', this.onResize.bind(this));
-        window.removeEventListener('mousemove', this.onMouseMove.bind(this));
-
-        // Callback
-        if (this.onBack) this.onBack();
     }
 }

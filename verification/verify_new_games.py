@@ -1,64 +1,66 @@
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
+import time
 
-def verify_games():
+def verify_new_games():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context(viewport={'width': 1280, 'height': 720})
+        page = context.new_page()
 
-        # 1. Load the Hub
-        print("Loading Main Menu...")
-        page.goto("http://localhost:8000/index.html")
-        page.wait_for_timeout(2000)
+        try:
+            print("Navigating...")
+            page.goto("http://localhost:8000")
 
-        # Switch to grid view if needed
-        if "3D View" in page.content():
-            # We are in 2D view already? Or toggle says "3D View"?
-            # If default is 3D, toggle says "Grid View".
-            # The code says default is 3D.
-            # Let's try to click "Grid View" if it exists, or just force the grid visible via JS
-            pass
+            # Wait for loader
+            expect(page.locator("#app-loader")).to_be_hidden(timeout=10000)
+            time.sleep(2)
 
-        # Click toggle view button to ensure Grid is visible
-        # Button ID: view-toggle-btn
-        page.click('#view-toggle-btn')
-        page.wait_for_timeout(1000)
+            # Switch to Grid View
+            print("Switching to Grid View...")
+            page.click("#view-toggle-btn")
+            time.sleep(1)
 
-        # Screenshot Menu
-        page.screenshot(path="verification/menu.png")
-        print("Menu screenshot taken.")
+            # Check for New Games
+            games_to_check = [
+                "Neon Zip",
+                "Exiled Spark",
+                "Neon Tap",
+                "Neon Swipe",
+                "Neon Rhythm"
+            ]
 
-        # 2. Test Neon Golf
-        print("Testing Neon Golf...")
-        # Find Neon Golf card
-        # Logic: transitionToState(AppState.IN_GAME, { gameId: 'neon-golf' })
-        page.evaluate("window.miniGameHub.transitionToState('IN_GAME', { gameId: 'neon-golf' })")
-        page.wait_for_timeout(1000)
-        page.screenshot(path="verification/neon_golf.png")
-        print("Neon Golf screenshot taken.")
+            for game in games_to_check:
+                print(f"Checking for {game}...")
+                card = page.get_by_text(game)
+                expect(card).to_be_visible()
 
-        # Go Back
-        page.evaluate("window.miniGameHub.goBack()")
-        page.wait_for_timeout(1000)
+            # Test entering one (Neon Tap)
+            print("Entering Neon Tap...")
+            page.get_by_text("Neon Tap").click()
+            time.sleep(1)
 
-        # 3. Test Neon Hoops
-        print("Testing Neon Hoops...")
-        page.evaluate("window.miniGameHub.transitionToState('IN_GAME', { gameId: 'neon-hoops' })")
-        page.wait_for_timeout(1000)
-        page.screenshot(path="verification/neon_hoops.png")
-        print("Neon Hoops screenshot taken.")
+            expect(page.locator("#neon-tap-game canvas")).to_be_visible()
 
-        # Go Back
-        page.evaluate("window.miniGameHub.goBack()")
-        page.wait_for_timeout(1000)
+            # Test Back
+            print("Testing Back Button...")
+            page.get_by_text("BACK").click()
+            time.sleep(1)
+            expect(page.locator("#menu-grid")).to_be_visible()
 
-        # 4. Test Neon Shooter
-        print("Testing Neon Shooter...")
-        page.evaluate("window.miniGameHub.transitionToState('IN_GAME', { gameId: 'neon-shooter' })")
-        page.wait_for_timeout(2000) # Give Three.js time to init
-        page.screenshot(path="verification/neon_shooter.png")
-        print("Neon Shooter screenshot taken.")
+            # Test Jukebox Keybind (N)
+            print("Testing Jukebox Keybind...")
+            # We can't easily verify sound, but we can verify no crash on keypress
+            page.keyboard.press("n")
+            time.sleep(0.5)
 
-        browser.close()
+            print("Verification Successful!")
+
+        except Exception as e:
+            print(f"Failed: {e}")
+            page.screenshot(path="verification/error_new_games.png")
+            raise e
+        finally:
+            browser.close()
 
 if __name__ == "__main__":
-    verify_games()
+    verify_new_games()

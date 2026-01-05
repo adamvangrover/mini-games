@@ -91,6 +91,8 @@ export default class ArcadeHub {
 
             // --- Environment ---
             this.createRoom(colors);
+            this.createDrones();
+            this.createDigitalRain();
             this.organizeLayout();
             this.createTeleporter();
 
@@ -147,10 +149,19 @@ export default class ArcadeHub {
         floor.receiveShadow = true;
         this.scene.add(floor);
 
-        // Grid on floor
+        // Holographic Floor Grid (Enhanced)
         const gridHelper = new THREE.GridHelper(60, 30, colors.grid, 0x222222);
         gridHelper.position.y = 0.02;
         this.scene.add(gridHelper);
+
+        // Moving Floor Pulse (Animation)
+        this.floorPulse = new THREE.Mesh(
+            new THREE.PlaneGeometry(60, 0.5),
+            new THREE.MeshBasicMaterial({ color: colors.grid, transparent: true, opacity: 0.5, side: THREE.DoubleSide })
+        );
+        this.floorPulse.rotation.x = -Math.PI / 2;
+        this.floorPulse.position.y = 0.03;
+        this.scene.add(this.floorPulse);
 
         // Ceiling
         const ceilGeo = new THREE.PlaneGeometry(60, 80);
@@ -323,6 +334,51 @@ export default class ArcadeHub {
         this.teleporterTrigger = trigger;
     }
 
+    createDrones() {
+        this.drones = [];
+        const droneGeo = new THREE.OctahedronGeometry(0.3);
+        const droneMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true });
+
+        for(let i=0; i<3; i++) {
+            const drone = new THREE.Mesh(droneGeo, droneMat);
+            drone.position.set(Math.random()*20 - 10, 3 + Math.random()*2, Math.random()*20 - 10);
+            this.scene.add(drone);
+            this.drones.push({
+                mesh: drone,
+                speed: 0.5 + Math.random(),
+                offset: Math.random() * 100
+            });
+        }
+    }
+
+    createDigitalRain() {
+        const geometry = new THREE.BufferGeometry();
+        const count = 1000;
+        const positions = new Float32Array(count * 3);
+        const speeds = new Float32Array(count);
+
+        for (let i = 0; i < count; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 60; // x
+            positions[i * 3 + 1] = Math.random() * 20; // y
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 60; // z
+            speeds[i] = 0.1 + Math.random() * 0.3;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        // Simple Points Material
+        const material = new THREE.PointsMaterial({
+            color: 0x00ff00,
+            size: 0.1,
+            transparent: true,
+            opacity: 0.6
+        });
+
+        this.rainSystem = new THREE.Points(geometry, material);
+        this.rainSpeeds = speeds;
+        this.scene.add(this.rainSystem);
+    }
+
     createCabinet(x, y, z, rotation, id, gameInfo) {
         const group = new THREE.Group();
         group.position.set(x, y, z);
@@ -394,6 +450,37 @@ export default class ArcadeHub {
 
     update(dt) {
         if (!this.isActive || !this.scene) return;
+
+        const time = this.clock.getElapsedTime();
+
+        // Animate Drones
+        if (this.drones) {
+            this.drones.forEach(d => {
+                d.mesh.rotation.y += dt;
+                d.mesh.rotation.x += dt * 0.5;
+                d.mesh.position.y = 3 + Math.sin(time + d.offset) * 0.5;
+                d.mesh.position.x += Math.cos(time * 0.5 + d.offset) * dt * d.speed;
+                // Bounce bounds
+                if (d.mesh.position.x > 15 || d.mesh.position.x < -15) d.speed *= -1;
+            });
+        }
+
+        // Animate Floor Pulse
+        if (this.floorPulse) {
+            this.floorPulse.position.z = (time * 5) % 80 - 40;
+        }
+
+        // Animate Rain
+        if (this.rainSystem) {
+            const positions = this.rainSystem.geometry.attributes.position.array;
+            for (let i = 0; i < 1000; i++) {
+                positions[i * 3 + 1] -= this.rainSpeeds[i];
+                if (positions[i * 3 + 1] < 0) {
+                    positions[i * 3 + 1] = 20;
+                }
+            }
+            this.rainSystem.geometry.attributes.position.needsUpdate = true;
+        }
 
         // Render
         if (this.renderer && this.camera) {

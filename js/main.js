@@ -8,6 +8,7 @@ import Store from './core/Store.js';
 import MobileControls from './core/MobileControls.js';
 import TrophyRoom from './core/TrophyRoom.js';
 import AdsManager from './core/AdsManager.js';
+import ParticleSystem from './core/ParticleSystem.js';
 
 // Import New/Refactored Games
 import NeonCityGame from './games/neonCity.js';
@@ -35,6 +36,14 @@ import AvatarStation from './games/avatarStation.js';
 import TechTree from './games/techTree.js';
 import DevConsole from './core/DevConsole.js';
 import PlaceholderGame from './games/PlaceholderGame.js';
+import NeonGalaga from './games/neonGalaga.js';
+import NeonRacer from './games/neonRacer.js';
+import CyberSolitaire from './games/solitaire.js';
+import NeonZip from './games/neonZip.js';
+import ExiledSpark from './games/exiledSpark.js';
+import NeonRhythm from './games/neonRhythm.js';
+import NeonTap from './games/neonTap.js';
+import NeonSwipe from './games/neonSwipe.js';
 
 // Game Registry using Dynamic Imports
 const gameRegistry = {
@@ -64,6 +73,10 @@ const gameRegistry = {
     'neon-jump': { name: 'Neon Jump', description: 'Jump to the Stars', icon: 'fa-solid fa-arrow-up', category: 'Action', importFn: () => import('./games/neonJump.js') },
     'neon-slice': { name: 'Neon Slice', description: 'Slice the Shapes', icon: 'fa-solid fa-scissors', category: 'Action', importFn: () => import('./games/neonSlice.js') },
     'neon-galaga-game': { name: 'Neon Galaga', description: 'Space Warfare', icon: 'fa-solid fa-jet-fighter', category: 'Action', importFn: () => import('./games/neonGalaga.js') },
+    'neon-racer': { name: 'Neon Racer', description: 'Endless Drive', icon: 'fa-solid fa-road', category: 'Action', importFn: () => import('./games/neonRacer.js') },
+    'neon-tap-game': { name: 'Neon Tap', description: 'Reflex Test', icon: 'fa-solid fa-bullseye', category: 'Action', importFn: () => import('./games/neonTap.js') },
+    'neon-swipe-game': { name: 'Neon Swipe', description: 'Memory Swipe', icon: 'fa-solid fa-arrows-up-down-left-right', category: 'Action', importFn: () => import('./games/neonSwipe.js') },
+    'neon-rhythm-game': { name: 'Neon Rhythm', description: 'Feel the Beat', icon: 'fa-solid fa-music', category: 'Action', importFn: () => import('./games/neonRhythm.js') },
 
     // Simulation
     'work-game': { name: 'The Grind 98', description: 'Life Simulator', icon: 'fa-solid fa-briefcase', category: 'Simulation', importFn: () => import('./games/work.js'), wide: true },
@@ -87,6 +100,7 @@ const gameRegistry = {
 
     // RPG & Logic
     'rpg-game': { name: 'RPG Battle', description: 'Turn-Based Combat', icon: 'fa-solid fa-khanda', category: 'RPG & Logic', importFn: () => import('./games/rpg.js') },
+    'exiled-spark': { name: 'Exiled Spark', description: 'Text RPG Adventure', icon: 'fa-solid fa-terminal', category: 'RPG & Logic', importFn: () => import('./games/exiledSpark.js'), wide: true },
     'eclipse-game': { name: 'Eclipse', description: 'Strategy Board', icon: 'fa-solid fa-sun', category: 'RPG & Logic', importFn: () => import('./games/eclipse.js') },
     'eclipse-puzzle-game': { name: 'Eclipse Puzzle', description: 'Pattern Matching', icon: 'fa-solid fa-puzzle-piece', category: 'RPG & Logic', importFn: () => import('./games/eclipsePuzzle.js') },
     'eclipse-logic-puzzle-game': { name: 'Logic Puzzle', description: 'Deduction Grid', icon: 'fa-solid fa-lightbulb', category: 'RPG & Logic', importFn: () => import('./games/eclipseLogicPuzzle.js') },
@@ -96,6 +110,8 @@ const gameRegistry = {
     'neon-mines-game': { name: 'Neon Mines', description: 'Avoid Mines', icon: 'fa-solid fa-bomb', category: 'Logic Puzzles', importFn: () => import('./games/neonMines.js') },
     'neon-picross-game': { name: 'Neon Picross', description: 'Picture Cross', icon: 'fa-solid fa-pencil-alt', category: 'Logic Puzzles', importFn: () => import('./games/neonPicross.js') },
     'sudoku-game': { name: 'Neon Sudoku', description: 'Classic Number Puzzle', icon: 'fa-solid fa-border-none', category: 'Logic Puzzles', importFn: () => import('./games/sudoku.js') },
+    'cyber-solitaire': { name: 'Cyber Solitaire', description: 'Neon Card Game', icon: 'fa-solid fa-diamond', category: 'Logic Puzzles', importFn: () => import('./games/solitaire.js'), wide: true },
+    'neon-zip-game': { name: 'Neon Zip', description: 'Flow Puzzle', icon: 'fa-solid fa-link', category: 'Logic Puzzles', importFn: () => import('./games/neonZip.js') },
 
     // System Modules
     'trophy-room': { name: 'Trophy Room', description: 'Achievement Gallery', icon: 'fa-solid fa-trophy', category: 'System', importFn: () => import('./core/TrophyRoom.js'), wide: true },
@@ -120,6 +136,7 @@ const soundManager = SoundManager.getInstance();
 const saveSystem = SaveSystem.getInstance();
 const inputManager = InputManager.getInstance();
 const adsManager = AdsManager.getInstance();
+const particleSystem = ParticleSystem.getInstance();
 
 // Centralized Game Loop
 function mainLoop(timestamp) {
@@ -139,6 +156,24 @@ function mainLoop(timestamp) {
             }
             break;
     }
+
+    // Global Particle System for Trails (if equipped)
+    const particleType = saveSystem.getEquippedItem('particles');
+    if (particleType) {
+        // Logic to track mouse for trails
+        // We need mouse pos. InputManager tracks keys, but maybe not global mouse pos perfectly for this.
+        // Let's rely on simple tracking via event listener cache if possible or add it here.
+        // But for now, let's just update the system.
+        // Actually, we need to draw it too if we are in MENU (2D Grid) or specific 2D overlays.
+        // 3D Hub handles its own rendering.
+        // If Grid View:
+        if (currentState === AppState.MENU && !is3DView) {
+             // Draw particles on top? We need a canvas.
+             // This might be complex to layer over DOM.
+             // Simplification: Skip trails in menu for now to avoid complexity of overlay canvas.
+        }
+    }
+
     requestAnimationFrame(mainLoop);
 }
 
@@ -184,50 +219,13 @@ async function transitionToState(newState, context = {}) {
     }
 
     if (newState === AppState.TROPHY_ROOM) {
-        currentState = AppState.TRANSITIONING;
-        if (arcadeHub) arcadeHub.pause();
-        document.getElementById("menu").classList.add("hidden");
-        document.querySelectorAll(".game-container").forEach(el => el.classList.add("hidden"));
-
-        let trContainer = document.getElementById('trophy-room-container');
-        if (!trContainer) {
-            trContainer = document.createElement('div');
-            trContainer.id = 'trophy-room-container';
-            trContainer.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; z-index:15;";
-            document.body.appendChild(trContainer);
-        }
-        trContainer.innerHTML = '';
-        trContainer.style.display = 'block';
-
-        // IMPORTANT: The verification script looks for an element with ID 'trophy-room' to check visibility.
-        // Since Trophy Room is a special state, we must ensure it matches the verification expectation
-        // or update the verification script. Here we alias the ID for the session.
-        // However, 'trophy-room' is the gameId, so the container ID should ideally match.
-        // The previous logic used 'trophy-room-container', but verification checks 'trophy-room'.
-        // Let's create a wrapper or just use the expected ID if possible, but 'trophy-room' might be reserved in registry.
-        // We will add the ID dynamically to satisfy the check if it doesn't conflict.
-
-        trContainer.classList.add('game-container');
-        trContainer.classList.remove('hidden');
-
-        try {
-            const module = await import('./core/TrophyRoom.js');
-            requestAnimationFrame(() => {
-                new module.default(trContainer, () => {
-                    trContainer.style.display = 'none';
-                    transitionToState(AppState.MENU);
-               });
-           });
-        } catch (err) {
-            new PlaceholderGame().init(trContainer);
-        }
-        currentState = AppState.TROPHY_ROOM;
+        // Redirect to IN_GAME state with trophy-room ID
+        transitionToState(AppState.IN_GAME, { gameId: 'trophy-room' });
         return;
     }
 
     if (newState === AppState.IN_GAME) {
         const { gameId } = context;
-        if (gameId === 'trophy-room') { transitionToState(AppState.TROPHY_ROOM); return; }
 
         currentState = AppState.TRANSITIONING;
         if (arcadeHub) arcadeHub.pause();
@@ -256,7 +254,7 @@ async function transitionToState(newState, context = {}) {
                 currentGameInstance = new GameClass();
                 if (currentGameInstance.init) await currentGameInstance.init(container);
 
-                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'lumina-game', 'prism-realms-game', 'trophy-room', 'hall-of-fame', 'avatar-station', 'tech-tree', 'sudoku-game', 'zen-garden-game', 'neon-zip-game'];
+                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'lumina-game', 'prism-realms-game', 'trophy-room', 'hall-of-fame', 'avatar-station', 'tech-tree', 'sudoku-game', 'zen-garden-game', 'neon-zip-game', 'cyber-solitaire'];
                 if (!noDpadGames.includes(gameId)) {
                     mobileControls = new MobileControls(container);
                 }
@@ -298,6 +296,11 @@ function showGameOver(score, onRetry) {
 
         const coinsEarned = Math.floor((score / 10) * multiplier);
         if(coinsEarned > 0) saveSystem.addCurrency(coinsEarned);
+
+        // Quest Hook: Game Played
+        updateQuestHook('play', 1);
+        // Quest Hook: Score (Simplified, accumulative)
+        updateQuestHook('score', score);
 
         const content = `
             <p class="mb-4 text-xl">Final Score: <span class="text-yellow-400 font-bold">${score}</span></p>
@@ -457,9 +460,16 @@ function populateMenuGrid() {
     if(!grid) return;
     grid.innerHTML = '';
 
-    if (!dailyChallengeGameId) {
-        const keys = Object.keys(gameRegistry);
+    // Daily Challenge Logic
+    const today = new Date().toDateString();
+    const savedDaily = saveSystem.getDailyChallenge();
+
+    if (savedDaily && savedDaily.dateString === today && gameRegistry[savedDaily.gameId]) {
+        dailyChallengeGameId = savedDaily.gameId;
+    } else {
+        const keys = Object.keys(gameRegistry).filter(k => !['trophy-room', 'hall-of-fame', 'avatar-station', 'tech-tree'].includes(k)); // Exclude system apps
         dailyChallengeGameId = keys[Math.floor(Math.random() * keys.length)];
+        saveSystem.setDailyChallenge(dailyChallengeGameId, today);
     }
 
     const theme = saveSystem.getEquippedItem('theme') || 'blue';
@@ -528,7 +538,68 @@ function hideShopOverlay() {
     updateHubStats();
 }
 
+function showQuestsOverlay() {
+    const quests = saveSystem.getDailyQuests();
+    const content = `
+        <div class="flex flex-col gap-4">
+            <h3 class="text-xl font-bold text-fuchsia-400 mb-2">Daily Objectives</h3>
+            ${quests.map((q, i) => `
+                <div class="bg-slate-800 p-4 rounded-lg border ${q.claimed ? 'border-green-600 opacity-50' : 'border-slate-600'} relative overflow-hidden">
+                    <div class="flex justify-between items-center relative z-10">
+                        <div>
+                            <div class="font-bold text-white">${q.description}</div>
+                            <div class="text-xs text-slate-400">Reward: ${q.reward} Coins</div>
+                        </div>
+                        ${q.claimed ? '<span class="text-green-400 font-bold">CLAIMED</span>' :
+                          (q.current >= q.target ? `<button class="claim-quest-btn px-3 py-1 bg-yellow-500 text-black font-bold rounded hover:bg-yellow-400" data-index="${i}">CLAIM</button>` :
+                          `<span class="text-slate-500">${q.current}/${q.target}</span>`)}
+                    </div>
+                    <div class="absolute bottom-0 left-0 h-1 bg-slate-700 w-full">
+                        <div class="h-full bg-fuchsia-500 transition-all" style="width: ${(q.current / q.target) * 100}%"></div>
+                    </div>
+                </div>
+            `).join('')}
+            ${quests.length === 0 ? '<p class="text-slate-500 italic">No active quests.</p>' : ''}
+        </div>
+    `;
+
+    showOverlay('DAILY QUESTS', content);
+
+    document.querySelectorAll('.claim-quest-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            const index = parseInt(e.target.getAttribute('data-index'));
+            if (saveSystem.claimQuest(index)) {
+                soundManager.playSound('powerup');
+                showQuestsOverlay(); // Refresh
+                updateHubStats();
+                saveSystem.save(); // Ensure save
+            }
+        };
+    });
+}
+
+function initDailyQuests() {
+    const today = new Date().toDateString();
+    let quests = saveSystem.getDailyQuests();
+
+    if (quests.length === 0 || quests[0].dateString !== today) {
+        // Generate new quests
+        quests = [
+            { type: 'play', description: 'Play 3 Games', target: 3, current: 0, reward: 50, claimed: false, dateString: today },
+            { type: 'score', description: 'Score 100 Points', target: 100, current: 0, reward: 100, claimed: false, dateString: today }, // Generic score tracking logic needed
+            { type: 'click', description: 'Click 50 Times', target: 50, current: 0, reward: 25, claimed: false, dateString: today } // Generic interaction
+        ];
+        saveSystem.setDailyQuests(quests);
+    }
+}
+
+// Hook into actions to update quests
+function updateQuestHook(type, amount=1) {
+    saveSystem.updateQuestProgress(type, amount);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    initDailyQuests();
     updateHubStats();
     populateMenuGrid();
 
@@ -568,6 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('view-toggle-btn')?.addEventListener('click', toggleView);
     document.getElementById('shop-btn-menu')?.addEventListener('click', showShopOverlay);
     document.getElementById('shop-btn-hud')?.addEventListener('click', showShopOverlay);
+    document.getElementById('quests-btn-hud')?.addEventListener('click', showQuestsOverlay);
     document.getElementById('store-close-btn')?.addEventListener('click', hideShopOverlay);
     document.getElementById('overlay-close-btn')?.addEventListener('click', () => {
         if (currentState === AppState.PAUSED) togglePause(); else hideOverlay();
@@ -577,6 +649,86 @@ document.addEventListener('DOMContentLoaded', () => {
     const openSettings = () => showSettingsOverlay();
     document.getElementById('settings-btn')?.addEventListener('click', openSettings);
     document.getElementById('settings-btn-hud')?.addEventListener('click', openSettings);
+
+    // Jukebox (Hidden Feature / Keybind)
+    document.addEventListener('keydown', (e) => {
+        // Toggle Jukebox (N)
+        if (e.key === 'n' || e.key === 'N') {
+            if (soundManager.nextTrack) {
+                soundManager.nextTrack();
+                const track = soundManager.currentTrack || "Track 1";
+                // Simple toast if global helper available, else log
+                console.log("Playing: " + track);
+            }
+        }
+
+        // Boss Mode (Alt + B)
+        if (e.altKey && (e.key === 'b' || e.key === 'B')) {
+            const bossOverlay = document.getElementById('boss-mode-overlay');
+            if (bossOverlay) {
+                bossOverlay.classList.toggle('hidden');
+                if (!bossOverlay.classList.contains('hidden')) {
+                    if(soundManager) soundManager.toggleMute(); // Mute immediately
+                    if(currentState === AppState.IN_GAME) togglePause();
+                } else {
+                    if(soundManager) soundManager.toggleMute(); // Unmute? Or user choice? Let's just mute on entry.
+                }
+            } else {
+                createBossOverlay();
+            }
+        }
+    });
+
+function createBossOverlay() {
+    const div = document.createElement('div');
+    div.id = 'boss-mode-overlay';
+    div.className = 'fixed inset-0 z-[99999] bg-white text-black font-sans p-0';
+    div.innerHTML = `
+        <div class="w-full h-full bg-white flex flex-col">
+            <div class="bg-green-700 text-white p-2 text-xs flex gap-4">
+                <span>File</span><span>Edit</span><span>View</span><span>Insert</span><span>Format</span><span>Data</span><span>Tools</span><span>Help</span>
+            </div>
+            <div class="bg-gray-100 border-b border-gray-300 p-2 flex gap-2">
+                <div class="bg-white border border-gray-400 px-2">Arial</div>
+                <div class="bg-white border border-gray-400 px-2">10</div>
+                <div class="font-bold">B</div>
+                <div class="italic">I</div>
+            </div>
+            <div class="flex-1 overflow-auto p-4">
+                <table class="w-full border-collapse border border-gray-300 text-xs">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 w-10"></th>
+                            <th class="border border-gray-300 px-2">A</th>
+                            <th class="border border-gray-300 px-2">B</th>
+                            <th class="border border-gray-300 px-2">C</th>
+                            <th class="border border-gray-300 px-2">D</th>
+                            <th class="border border-gray-300 px-2">E</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Array(20).fill(0).map((_, i) => `
+                        <tr>
+                            <td class="bg-gray-100 border border-gray-300 text-center">${i+1}</td>
+                            <td class="border border-gray-300 px-2">${i === 0 ? 'Q1 Financial Projections' : Math.floor(Math.random() * 10000)}</td>
+                            <td class="border border-gray-300 px-2">${i === 0 ? 'Growth' : (Math.random() * 10).toFixed(2) + '%'}</td>
+                            <td class="border border-gray-300 px-2">${i === 0 ? 'Revenue' : '$' + Math.floor(Math.random() * 50000)}</td>
+                            <td class="border border-gray-300 px-2">${i === 0 ? 'Expenses' : '$' + Math.floor(Math.random() * 20000)}</td>
+                            <td class="border border-gray-300 px-2"></td>
+                        </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <div class="bg-gray-200 p-1 text-xs border-t border-gray-300">
+                Sheet1 | Sheet2 | Sheet3
+            </div>
+        </div>
+    `;
+    document.body.appendChild(div);
+    if(soundManager) soundManager.toggleMute();
+    if(currentState === AppState.IN_GAME) togglePause();
+}
 
     const updateMuteIcon = () => {
         const btn = document.getElementById('mute-btn-hud');
@@ -637,6 +789,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.addEventListener('click', (e) => {
         if (e.target.classList.contains('back-btn')) transitionToState(AppState.MENU);
+        updateQuestHook('click', 1);
+    });
+
+    // Particle Trail Event
+    document.addEventListener('mousemove', (e) => {
+        const pType = saveSystem.getEquippedItem('particles');
+        if (pType && currentState === AppState.MENU && !is3DView) {
+            // We need a canvas to draw this.
+            // Since we don't have a global overlay canvas for trails yet, we will skip implementation to avoid breaking layout.
+            // Future expansion: Add #trail-canvas to index.html
+        }
     });
 
     lastTime = performance.now();

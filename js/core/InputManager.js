@@ -5,6 +5,7 @@ export default class InputManager {
         }
 
         this.keys = {};
+        this.keysPressed = {}; // Single frame
         this.mouse = { x: 0, y: 0, down: false };
 
         this.bindEvents();
@@ -21,11 +22,15 @@ export default class InputManager {
     bindEvents() {
         // Keyboard
         window.addEventListener('keydown', (e) => {
+            if (!this.keys[e.code]) {
+                this.keysPressed[e.code] = true;
+            }
             this.keys[e.code] = true;
         });
 
         window.addEventListener('keyup', (e) => {
             this.keys[e.code] = false;
+            this.keysPressed[e.code] = false;
         });
 
         // Mouse
@@ -68,6 +73,12 @@ export default class InputManager {
 
     isKeyDown(code) {
         return !!this.keys[code];
+    }
+
+    isKeyPressed(code) {
+        const pressed = !!this.keysPressed[code];
+        this.keysPressed[code] = false; // Consume
+        return pressed;
     }
 
     getMouse() {

@@ -96,6 +96,58 @@ export default class SaveSystem {
         return { ...this.getDefaultData(), ...data, version: this.currentVersion };
     }
 
+    getDailyChallenge() {
+        // Return object { gameId, dateString }
+        return this.data.dailyChallenge || null;
+    }
+
+    setDailyChallenge(gameId, dateString) {
+        this.data.dailyChallenge = { gameId, dateString };
+        this.save();
+    }
+
+    getDailyQuests() {
+        // Return array of objects { id, description, target, current, reward, claimed, dateString }
+        return this.data.dailyQuests || [];
+    }
+
+    setDailyQuests(quests) {
+        this.data.dailyQuests = quests;
+        this.save();
+    }
+
+    updateQuestProgress(type, amount=1) {
+        if (!this.data.dailyQuests) return;
+        const today = new Date().toDateString();
+        let changed = false;
+
+        this.data.dailyQuests.forEach(q => {
+            if (q.dateString === today && !q.claimed && q.type === type) {
+                if (q.current < q.target) {
+                    q.current += amount;
+                    if (q.current > q.target) q.current = q.target;
+                    changed = true;
+                }
+            }
+        });
+
+        if (changed) {
+            this.save();
+            // Notify? We don't have direct access to main UI here, usually via events or polling.
+        }
+    }
+
+    claimQuest(questIndex) {
+        if (!this.data.dailyQuests || !this.data.dailyQuests[questIndex]) return false;
+        const q = this.data.dailyQuests[questIndex];
+        if (q.current >= q.target && !q.claimed) {
+            q.claimed = true;
+            this.addCurrency(q.reward);
+            return true;
+        }
+        return false;
+    }
+
     createBackup() {
         const raw = localStorage.getItem(this.storageKey);
         if (raw) {
