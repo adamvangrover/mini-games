@@ -39,9 +39,11 @@ const gameRegistry = {
     'neon-jump': { name: 'Neon Jump', description: 'Jump to the Stars', icon: 'fa-solid fa-arrow-up', category: 'Action', importFn: () => import('./games/neonJump.js') },
     'neon-slice': { name: 'Neon Slice', description: 'Slice the Shapes', icon: 'fa-solid fa-scissors', category: 'Action', importFn: () => import('./games/neonSlice.js') },
     'neon-galaga-game': { name: 'Neon Galaga', description: 'Space Warfare', icon: 'fa-solid fa-jet-fighter', category: 'Action', importFn: () => import('./games/neonGalaga.js') },
+    'neon-survivor': { name: 'Neon Survivor', description: 'Survive the Swarm', icon: 'fa-solid fa-skull', category: 'Action', importFn: () => import('./games/neonSurvivor.js') },
 
     // Simulation
     'work-game': { name: 'The Grind 98', description: 'Life Simulator', icon: 'fa-solid fa-briefcase', category: 'Simulation', importFn: () => import('./games/work.js'), wide: true },
+    'neon-factory': { name: 'Neon Factory', description: 'Build & Automate', icon: 'fa-solid fa-industry', category: 'Simulation', importFn: () => import('./games/neonFactory.js'), wide: true },
     'life-sim-game': { name: 'Neon Life', description: 'Live Your Best Life', icon: 'fa-solid fa-user-astronaut', category: 'Simulation', importFn: () => import('./games/lifeSim.js'), wide: true },
     'zen-garden-game': { name: 'Zen Garden', description: 'Relax & Create', icon: 'fa-solid fa-spa', category: 'Simulation', importFn: () => import('./games/zenGarden.js'), wide: true },
 
@@ -77,6 +79,9 @@ const gameRegistry = {
     'sudoku-game': { name: 'Neon Sudoku', description: 'Classic Number Puzzle', icon: 'fa-solid fa-border-none', category: 'Logic Puzzles', importFn: () => import('./games/sudoku.js') },
     'neon-zip-game': { name: 'Neon Zip', description: 'Connect the Dots', icon: 'fa-solid fa-bolt', category: 'Logic Puzzles', importFn: () => import('./games/neonZip.js') },
     'neon-word-game': { name: 'Neon Word', description: 'Word Guessing', icon: 'fa-solid fa-font', category: 'Logic Puzzles', importFn: () => import('./games/neonWord.js') },
+    'neon-drop': { name: 'Neon Drop', description: 'Merge Shapes', icon: 'fa-solid fa-circle-arrow-down', category: 'Logic Puzzles', importFn: () => import('./games/neonDrop.js') },
+    'neon-rogue': { name: 'Neon Rogue', description: 'Card Battler', icon: 'fa-solid fa-cards', category: 'Logic Puzzles', importFn: () => import('./games/neonRogue.js'), wide: true },
+    'neon-pinball': { name: 'Neon Pinball', description: 'Cyber Flipper', icon: 'fa-solid fa-circle-dot', category: 'Quick Minigames', importFn: () => import('./games/neonPinball.js') },
 
     // System Modules
     'trophy-room': { name: 'Trophy Room', description: 'Achievement Gallery', icon: 'fa-solid fa-trophy', category: 'System', importFn: () => import('./core/TrophyRoom.js'), wide: true },
@@ -239,7 +244,7 @@ async function transitionToState(newState, context = {}) {
                 currentGameInstance = new GameClass();
                 if (currentGameInstance.init) await currentGameInstance.init(container);
 
-                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'lumina-game', 'prism-realms-game', 'trophy-room', 'hall-of-fame', 'avatar-station', 'tech-tree', 'sudoku-game', 'zen-garden-game', 'neon-zip-game', 'solitaire-game', 'neon-word-game', 'neon-whack-game'];
+                const noDpadGames = ['neon-flow-game', 'clicker-game', 'neon-2048', 'neon-memory', 'neon-mines-game', 'neon-picross-game', 'neon-flap', 'neon-slice', 'neon-jump', 'neon-stack', 'lumina-game', 'prism-realms-game', 'trophy-room', 'hall-of-fame', 'avatar-station', 'tech-tree', 'sudoku-game', 'zen-garden-game', 'neon-zip-game', 'solitaire-game', 'neon-word-game', 'neon-whack-game', 'neon-factory', 'neon-rogue', 'neon-drop', 'neon-pinball'];
                 if (!noDpadGames.includes(gameId)) {
                     mobileControls = new MobileControls(container);
                 }
