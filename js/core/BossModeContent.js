@@ -82,6 +82,35 @@ export const EMAILS = [
         subject: "Fantasy Football",
         time: "09:00 AM",
         body: "Hey, are you in for the league this year? Buy-in is $20. Winner takes all. Loser has to clean the microwave."
+    },
+    // New Emails
+    {
+        id: 13,
+        from: "Building Mgmt",
+        subject: "Office Refrigerator",
+        time: "08:30 AM",
+        body: "To the person who left a tuna sandwich in the fridge since 2018: It has gained sentience and is now demanding voting rights. Please remove it immediately."
+    },
+    {
+        id: 14,
+        from: "HR",
+        subject: "Time Travel Policy",
+        time: "Next Week",
+        body: "It has come to our attention that some employees are using the experimental time machine to extend their lunch breaks. This is time theft, literally. Stop it."
+    },
+    {
+        id: 15,
+        from: "The Void",
+        subject: "...",
+        time: "Unknown",
+        body: "If you gaze long enough into the abyss, the abyss gazes also into you. Also, you're out of staples."
+    },
+    {
+        id: 16,
+        from: "Social Committee",
+        subject: "Hawaiian Shirt Friday",
+        time: "Thursday",
+        body: "Tomorrow is Hawaiian Shirt Friday. Participation is mandatory. Anyone not having fun will be reported to HR."
     }
 ];
 
@@ -109,6 +138,15 @@ export const DOCUMENTS = [
     {
         title: "Grocery_List.docx",
         content: "- Milk\n- Eggs\n- Bread\n- Survival Rations\n- Anti-Radiation Pills\n- Gummy Bears"
+    },
+    // New Documents
+    {
+        title: "Conspiracy_Theories.docx",
+        content: "CONFIDENTIAL\n\n1. The birds are drones.\n2. The moon is a hologram projected by Big Cheese.\n3. The office plants are recording our conversations.\n4. 'Casual Friday' is a psy-op to lower our defenses.\n5. The internet is just a series of tubes."
+    },
+    {
+        title: "Resignation_Letter_Draft.docx",
+        content: "To whom it may concern,\n\nI quit.\n\nI'm going to live in the woods and befriend a bear.\n\nRegards,\n[Your Name Here]"
     }
 ];
 
@@ -208,7 +246,12 @@ export const SPOTIFY_PLAYLISTS = [
     { id: 'dnb', name: 'Liquid DnB', description: 'Fast soul music', style: 'dnb', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=200' },
     { id: 'dubstep', name: 'WubWubWub', description: 'Drop the bass', style: 'dubstep', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=200' },
     { id: 'jazz', name: 'Coffee Shop Jazz', description: 'Smooth swing', style: 'jazz', cover: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?q=80&w=200' },
-    { id: 'classical', name: 'Baroque Focus', description: 'Bach to work', style: 'classical', cover: 'https://images.unsplash.com/photo-1507838153414-b4b713384ebd?q=80&w=200' }
+    { id: 'classical', name: 'Baroque Focus', description: 'Bach to work', style: 'classical', cover: 'https://images.unsplash.com/photo-1507838153414-b4b713384ebd?q=80&w=200' },
+    // New Playlists
+    { id: 'funk', name: 'Funky Town', description: 'Get down tonight', style: 'funk', cover: 'https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=200' },
+    { id: 'metal', name: 'Heavy Metal', description: 'Tear it up', style: 'metal', cover: 'https://images.unsplash.com/photo-1534293630906-897db67e6c46?q=80&w=200' },
+    { id: 'blues', name: 'Delta Blues', description: 'Soulful sounds', style: 'blues', cover: 'https://images.unsplash.com/photo-1471478331149-c72f16e3c7d2?q=80&w=200' },
+    { id: 'edm', name: 'Club Mix', description: 'Dance until dawn', style: 'edm', cover: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=200' }
 ];
 
 export const BROWSER_DATA = {
