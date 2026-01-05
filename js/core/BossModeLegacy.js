@@ -123,9 +123,9 @@ export default class BossModeLegacy {
 
                     <div class="absolute top-4 left-4 grid grid-cols-1 gap-4 w-20" id="desktop-icons">
                         ${this.createDesktopIcon('Recycle Bin', 'fa-trash-alt', 'text-gray-200')}
-                        ${this.createDesktopIcon('Quarterly_Report', 'fa-file-excel', 'text-green-500', "BossMode.instance.launchApp('excel')")}
-                        ${this.createDesktopIcon('Meeting_Notes', 'fa-file-word', 'text-blue-500', "BossMode.instance.launchApp('word')")}
-                        ${this.createDesktopIcon('Intranet', 'fa-globe', 'text-blue-300', "BossMode.instance.launchApp('edge')")}
+                        ${this.createDesktopIcon('Quarterly_Report', 'fa-file-excel', 'text-green-500', "BossMode.instance.legacyOS.launchApp('excel')")}
+                        ${this.createDesktopIcon('Meeting_Notes', 'fa-file-word', 'text-blue-500', "BossMode.instance.legacyOS.launchApp('word')")}
+                        ${this.createDesktopIcon('Intranet', 'fa-globe', 'text-blue-300', "BossMode.instance.legacyOS.launchApp('edge')")}
                         ${this.createDesktopIcon('Confidential', 'fa-folder', 'text-yellow-400', "alert('Access Denied')")}
                     </div>
 
@@ -162,10 +162,11 @@ export default class BossModeLegacy {
     }
 
     createDesktopIcon(name, icon, color, action = null) {
-        // We use a custom data attribute to handle clicks instead of onclick string if possible,
-        // but for compatibility with existing string-based handlers in v0 logic, we rely on the Proxy in BossMode.js
+        // Fix for scoped calls: Use BossMode.instance.legacyOS for legacy-specific methods
+        const safeAction = action ? action.replace('BossMode.instance.launchApp', 'BossMode.instance.legacyOS.launchApp') : '';
+
         return `
-            <div class="flex flex-col items-center gap-1 group cursor-pointer w-20 text-white drop-shadow-md hover:bg-white/10 rounded p-2 transition-colors" onclick="${action ? action : ''}">
+            <div class="flex flex-col items-center gap-1 group cursor-pointer w-20 text-white drop-shadow-md hover:bg-white/10 rounded p-2 transition-colors" onclick="${safeAction}">
                 <i class="fas ${icon} text-3xl ${color} group-hover:scale-110 transition-transform filter drop-shadow-lg"></i>
                 <span class="text-[11px] text-center leading-tight line-clamp-2 text-shadow-sm font-medium bg-black/20 rounded px-1">${name}</span>
             </div>
@@ -190,7 +191,7 @@ export default class BossModeLegacy {
         return `
             <div class="h-10 bg-[#c0c0c0] border-t-2 border-white flex items-center justify-between px-1 z-[10001] select-none shadow-lg shrink-0 text-black">
                 <div class="flex items-center gap-1 h-full">
-                     <div class="h-8 px-2 border-2 border-white border-b-black border-r-black bg-[#c0c0c0] flex items-center justify-center cursor-pointer gap-1 active:border-t-black active:border-l-black active:border-b-white active:border-r-white" onclick="BossMode.instance.toggleStartMenu()">
+                     <div class="h-8 px-2 border-2 border-white border-b-black border-r-black bg-[#c0c0c0] flex items-center justify-center cursor-pointer gap-1 active:border-t-black active:border-l-black active:border-b-white active:border-r-white" onclick="BossMode.instance.legacyOS.toggleStartMenu()">
                         <i class="fab fa-windows text-black text-lg"></i>
                         <span class="font-bold">Start</span>
                     </div>
@@ -198,7 +199,7 @@ export default class BossModeLegacy {
                     <div class="w-1 h-6 border-l border-gray-400 border-r border-white mx-1"></div>
 
                     ${apps.map(app => `
-                        <div class="h-8 w-8 flex items-center justify-center cursor-pointer transition-all relative group ${this.activeApp === app.id ? 'bg-[#d0d0d0] border-2 border-black border-t-gray-600 border-l-gray-600' : 'hover:bg-white/10'}" onclick="BossMode.instance.launchApp('${app.id}')">
+                        <div class="h-8 w-8 flex items-center justify-center cursor-pointer transition-all relative group ${this.activeApp === app.id ? 'bg-[#d0d0d0] border-2 border-black border-t-gray-600 border-l-gray-600' : 'hover:bg-white/10'}" onclick="BossMode.instance.legacyOS.launchApp('${app.id}')">
                             <i class="fas ${app.icon} ${app.color} text-lg"></i>
                         </div>
                     `).join('')}
@@ -267,7 +268,7 @@ export default class BossModeLegacy {
                         <span class="text-xs">${title}</span>
                     </div>
                     <div class="flex items-center gap-1">
-                        <button class="w-4 h-4 bg-[#c0c0c0] border border-white border-b-black border-r-black flex items-center justify-center text-[10px] font-bold text-black hover:bg-white" onclick="BossMode.instance.closeWindow()">X</button>
+                        <button class="w-4 h-4 bg-[#c0c0c0] border border-white border-b-black border-r-black flex items-center justify-center text-[10px] font-bold text-black hover:bg-white" onclick="BossMode.instance.legacyOS.closeWindow()">X</button>
                     </div>
                 </div>
                 <div class="flex-1 overflow-hidden flex flex-col relative bg-white border border-gray-500">
@@ -285,7 +286,7 @@ export default class BossModeLegacy {
                 </div>
                 <div class="pl-8 py-1 flex flex-col gap-1">
                     ${['excel','word','ppt','email','chat','edge','terminal','minesweeper'].map(app => `
-                        <div class="px-2 py-1 hover:bg-[#000080] hover:text-white cursor-pointer flex items-center gap-2" onclick="BossMode.instance.launchApp('${app}')">
+                        <div class="px-2 py-1 hover:bg-[#000080] hover:text-white cursor-pointer flex items-center gap-2" onclick="BossMode.instance.legacyOS.launchApp('${app}')">
                             <i class="fas fa-caret-right text-xs"></i>
                             <span class="capitalize">${app}</span>
                         </div>
@@ -308,8 +309,8 @@ export default class BossModeLegacy {
     getExcelContent() {
         return `<div class="flex flex-col h-full">
             <div class="bg-[#c0c0c0] p-1 flex gap-2 border-b border-gray-400">
-                <button onclick="BossMode.instance.generateExcelData()">Reset</button>
-                <button onclick="BossMode.instance.generateDCF()">DCF</button>
+                <button onclick="BossMode.instance.legacyOS.generateExcelData()">Reset</button>
+                <button onclick="BossMode.instance.legacyOS.generateDCF()">DCF</button>
             </div>
             <div class="flex items-center gap-2 p-1 bg-white border-b border-gray-400">
                 <div id="boss-cell-addr" class="w-10 border border-gray-400 text-center bg-gray-100">A1</div>
@@ -326,12 +327,12 @@ export default class BossModeLegacy {
     // For brevity, I will use placeholders for the less critical apps in this file block
 
     getWordContent() { return `<div class="p-8 h-full overflow-y-auto bg-gray-200"><div class="bg-white shadow-md p-8 min-h-full font-serif" contenteditable="true">${this.docContent}</div></div>`; }
-    getPPTContent() { return `<div class="flex h-full"><div class="w-32 bg-gray-200 border-r p-2">${this.slides.map((s,i)=>`<div class="bg-white mb-2 p-1 text-[8px] cursor-pointer" onclick="BossMode.instance.setSlide(${i})">Slide ${i+1}</div>`).join('')}</div><div class="flex-1 p-8 bg-gray-100 flex items-center justify-center"><div class="bg-white w-full aspect-video p-8 shadow-lg"><h1>${this.slides[this.currentSlide].title}</h1><ul>${this.slides[this.currentSlide].bullets.map(b=>`<li>${b}</li>`).join('')}</ul></div></div></div>`; }
-    getEmailContent() { return `<div class="flex h-full"><div class="w-48 bg-white border-r overflow-y-auto">${this.emails.map(e=>`<div class="p-2 border-b hover:bg-blue-100 cursor-pointer" onclick="BossMode.instance.selectEmail(${e.id})"><b>${e.from}</b><br>${e.subject}</div>`).join('')}</div><div class="flex-1 p-4 bg-white">${this.selectedEmail?`<b>Subject: ${this.selectedEmail.subject}</b><hr class="my-2"><pre class="font-sans">${this.selectedEmail.body}</pre>`:''}</div></div>`; }
-    getChatContent() { return `<div class="flex flex-col h-full"><div class="flex-1 p-2 overflow-y-auto bg-white" id="chat-msgs">${(this.chatHistory[this.activeChannel]||[]).map(m=>`<div><b>${m.user}:</b> ${m.text}</div>`).join('')}</div><div class="p-2 border-t"><input id="chat-input" class="w-full border p-1" onkeydown="if(event.key==='Enter') BossMode.instance.sendChat()"></div></div>`; }
-    getTerminalContent() { return `<div class="bg-black text-gray-300 font-mono h-full p-2 overflow-y-auto"><div id="term-output">${this.termHistory.map(l=>`<div>${l}</div>`).join('')}</div><div class="flex"><span>></span><input id="term-input" class="bg-black text-gray-300 border-none outline-none flex-1 ml-1" autofocus onkeydown="if(event.key==='Enter') BossMode.instance.runTerminalCommand(this.value)"></div></div>`; }
+    getPPTContent() { return `<div class="flex h-full"><div class="w-32 bg-gray-200 border-r p-2">${this.slides.map((s,i)=>`<div class="bg-white mb-2 p-1 text-[8px] cursor-pointer" onclick="BossMode.instance.legacyOS.setSlide(${i})">Slide ${i+1}</div>`).join('')}</div><div class="flex-1 p-8 bg-gray-100 flex items-center justify-center"><div class="bg-white w-full aspect-video p-8 shadow-lg"><h1>${this.slides[this.currentSlide].title}</h1><ul>${this.slides[this.currentSlide].bullets.map(b=>`<li>${b}</li>`).join('')}</ul></div></div></div>`; }
+    getEmailContent() { return `<div class="flex h-full"><div class="w-48 bg-white border-r overflow-y-auto">${this.emails.map(e=>`<div class="p-2 border-b hover:bg-blue-100 cursor-pointer" onclick="BossMode.instance.legacyOS.selectEmail(${e.id})"><b>${e.from}</b><br>${e.subject}</div>`).join('')}</div><div class="flex-1 p-4 bg-white">${this.selectedEmail?`<b>Subject: ${this.selectedEmail.subject}</b><hr class="my-2"><pre class="font-sans">${this.selectedEmail.body}</pre>`:''}</div></div>`; }
+    getChatContent() { return `<div class="flex flex-col h-full"><div class="flex-1 p-2 overflow-y-auto bg-white" id="chat-msgs">${(this.chatHistory[this.activeChannel]||[]).map(m=>`<div><b>${m.user}:</b> ${m.text}</div>`).join('')}</div><div class="p-2 border-t"><input id="chat-input" class="w-full border p-1" onkeydown="if(event.key==='Enter') BossMode.instance.legacyOS.sendChat()"></div></div>`; }
+    getTerminalContent() { return `<div class="bg-black text-gray-300 font-mono h-full p-2 overflow-y-auto"><div id="term-output">${this.termHistory.map(l=>`<div>${l}</div>`).join('')}</div><div class="flex"><span>></span><input id="term-input" class="bg-black text-gray-300 border-none outline-none flex-1 ml-1" autofocus onkeydown="if(event.key==='Enter') BossMode.instance.legacyOS.runTerminalCommand(this.value)"></div></div>`; }
     getEdgeContent() { return `<div class="h-full bg-white flex flex-col"><div class="bg-gray-200 p-1 border-b">Address: <input value="http://intranet.corp" class="w-1/2"></div><div class="p-4"><h1>Intranet</h1><p>Welcome to the corporate portal.</p><ul><li><a href="#">HR Policies</a></li><li><a href="#">Cafeteria Menu</a></li></ul></div></div>`; }
-    getSpotifyContent() { return `<div class="bg-[#222] text-[#0f0] font-mono h-full p-2 flex flex-col"><div class="border border-[#0f0] p-2 mb-2 text-center text-xl">${this.currentTrack}</div><div class="flex gap-2 justify-center text-2xl"><button onclick="BossMode.instance.toggleMusic()">[ ${this.isPlayingMusic?'PAUSE':'PLAY'} ]</button></div><div class="mt-4 border-t border-[#0f0] pt-2">PLAYLIST:<br>1. Acid Mix<br>2. Glitch<br>3. Ambient</div></div>`; }
+    getSpotifyContent() { return `<div class="bg-[#222] text-[#0f0] font-mono h-full p-2 flex flex-col"><div class="border border-[#0f0] p-2 mb-2 text-center text-xl">${this.currentTrack}</div><div class="flex gap-2 justify-center text-2xl"><button onclick="BossMode.instance.legacyOS.toggleMusic()">[ ${this.isPlayingMusic?'PAUSE':'PLAY'} ]</button></div><div class="mt-4 border-t border-[#0f0] pt-2">PLAYLIST:<br>1. Acid Mix<br>2. Glitch<br>3. Ambient</div></div>`; }
 
     // --- Logic Implementations (Simplified) ---
     generateExcelData() { this.excelData = {"A1":{value:"Data"},"B1":{value:100}}; if(this.activeApp==='excel') this.updateExcelGrid(); }
