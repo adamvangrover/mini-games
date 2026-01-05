@@ -129,7 +129,7 @@ export default class BossMode {
             <!-- Hacker OS Container -->
             <div id="os-hacker-container" class="absolute inset-0 z-[10006] hidden bg-black font-mono text-green-500 p-4 overflow-hidden"></div>
 
-            <div id="boss-bsod-container" class="absolute inset-0 z-[10050] hidden bg-[#0078d7]"></div>
+            <div id="boss-bsod-container" class="absolute inset-0 z-[10050] hidden bg-[#0078d7] cursor-none flex flex-col items-start justify-center p-20 text-white font-mono"></div>
         `;
 
         document.body.appendChild(this.overlay);
@@ -171,6 +171,8 @@ export default class BossMode {
             .hacker-text { text-shadow: 0 0 5px #0f0; }
             .blink { animation: blink 1s step-end infinite; }
             @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+            /* BSOD */
+            .bsod-text { font-family: 'Courier New', Courier, monospace; }
         `;
         document.head.appendChild(style);
     }
@@ -276,6 +278,7 @@ export default class BossMode {
             // Stop Loops
             if (this.snakeGame) clearInterval(this.snakeGame.interval);
             if (this.flightGame) clearInterval(this.flightGame.interval);
+            if (this.matrixInterval) clearInterval(this.matrixInterval);
             if (this.legacyOS && this.legacyOS.isPlayingMusic) this.legacyOS.toggleMusic();
         }
     }
@@ -303,10 +306,15 @@ export default class BossMode {
         const loginLayer = document.getElementById('os-login-layer');
         loginLayer.classList.remove('hidden');
         loginLayer.style.backgroundImage = `url('${this.wallpapers[this.wallpaperIndex]}')`;
+
+        // Theme Integration
+        const theme = this.saveSystem.getEquippedItem('theme') || 'blue';
+        const ringColor = theme === 'pink' ? 'border-pink-500' : (theme === 'gold' ? 'border-yellow-500' : 'border-white/20');
+
         loginLayer.innerHTML = `
             <div class="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center text-white">
-                <div class="w-32 h-32 rounded-full bg-gray-200 border-4 border-white/20 flex items-center justify-center mb-6 shadow-2xl">
-                    <span class="text-4xl text-gray-500 font-bold">JD</span>
+                <div class="w-32 h-32 rounded-full bg-gray-200 border-4 ${ringColor} flex items-center justify-center mb-6 shadow-2xl">
+                    <span class="text-4xl text-gray-500 font-bold">${this.user.avatar}</span>
                 </div>
                 <div class="text-3xl font-bold mb-6">${this.user.name}</div>
                 <div class="flex gap-2">
@@ -353,11 +361,17 @@ export default class BossMode {
     }
 
     selectOS(os) {
-        // Check Unlock (Legacy already had this, adding for Hacker if needed, but keeping free for now)
         if (os === 'legacy') {
             const unlocked = this.saveSystem.getEquippedItem('os_license') === 'legacy' || this.saveSystem.isItemUnlocked('os_legacy');
             if (!unlocked) {
                 window.miniGameHub.showToast("Legacy OS License Required. Purchase from Store.");
+                return;
+            }
+        }
+        if (os === 'hacker') {
+            const unlocked = this.saveSystem.getEquippedItem('os_license') === 'terminal' || this.saveSystem.isItemUnlocked('os_terminal');
+            if (!unlocked) {
+                window.miniGameHub.showToast("Terminal OS License Required. Purchase from Store.");
                 return;
             }
         }
@@ -369,7 +383,11 @@ export default class BossMode {
         const container = document.getElementById('os-legacy-container');
         container.classList.remove('hidden');
         import('./BossModeLegacy.js').then(module => {
-            this.legacyOS = new module.default(container);
+            if (!this.legacyOS) {
+                 this.legacyOS = new module.default(container);
+            } else {
+                 this.legacyOS.render();
+            }
         });
     }
 
@@ -377,7 +395,7 @@ export default class BossMode {
         const container = document.getElementById('os-hacker-container');
         container.classList.remove('hidden');
         container.innerHTML = `
-            <div class="h-full flex flex-col font-mono text-green-500 text-sm">
+            <div class="h-full flex flex-col font-mono text-green-500 text-sm z-10 relative">
                 <div class="flex-1 overflow-y-auto p-4" id="hacker-output">
                     <div>> CONNECTED TO MAINFRAME [${new Date().toISOString()}]</div>
                     <div>> AUTH: ROOT ACCESS GRANTED</div>
@@ -390,8 +408,9 @@ export default class BossMode {
                     <input id="hacker-input" class="bg-transparent border-none outline-none text-green-400 flex-1" autofocus onkeydown="if(event.key==='Enter') BossMode.instance.runHackerCommand(this.value)">
                 </div>
             </div>
-            <div class="absolute top-2 right-2 text-green-800 text-[10px]">UNSECURE CONNECTION</div>
-            <div class="absolute bottom-2 right-2 text-red-500 cursor-pointer hover:text-red-400 border border-red-500 px-2" onclick="BossMode.instance.toggle(false)">[EXIT]</div>
+            <div id="matrix-bg" class="absolute inset-0 z-0 opacity-20 pointer-events-none"></div>
+            <div class="absolute top-2 right-2 text-green-800 text-[10px] z-20">UNSECURE CONNECTION</div>
+            <div class="absolute bottom-2 right-2 text-red-500 cursor-pointer hover:text-red-400 border border-red-500 px-2 z-20" onclick="BossMode.instance.toggle(false)">[EXIT]</div>
         `;
         document.getElementById('hacker-input').focus();
     }
@@ -413,7 +432,7 @@ export default class BossMode {
 
         switch(cmd.toLowerCase().trim()) {
             case 'help':
-                append("COMMANDS: help, clear, ls, scan, decrypt, matrix, exit");
+                append("COMMANDS: help, clear, ls, scan, decrypt, matrix, bsod, exit");
                 break;
             case 'clear':
                 output.innerHTML = '';
@@ -437,16 +456,88 @@ export default class BossMode {
                 this.toggle(false);
                 break;
             case 'matrix':
-                 // Easter egg visual
-                 const canvas = document.createElement('canvas');
-                 canvas.style.position = 'absolute'; canvas.style.inset='0'; canvas.style.zIndex='-1';
-                 document.getElementById('os-hacker-container').appendChild(canvas);
-                 // (Simplified matrix rain could go here, but avoiding complex logic insertion)
-                 append("WAKE UP NEO...");
+                 append("INITIATING MATRIX PROTOCOL...");
+                 this.startMatrixEffect();
+                 break;
+            case 'bsod':
+                 this.triggerBSOD();
                  break;
             default:
                 append(`UNKNOWN COMMAND: ${cmd}`, 'text-red-500');
         }
+    }
+
+    startMatrixEffect() {
+        const bg = document.getElementById('matrix-bg');
+        if (!bg) return;
+
+        // Remove existing canvas if any
+        bg.innerHTML = '';
+        const canvas = document.createElement('canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        bg.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+
+        const chars = "0101010101アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        if (this.matrixInterval) clearInterval(this.matrixInterval);
+
+        this.matrixInterval = setInterval(() => {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0f0';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }, 33);
+    }
+
+    triggerBSOD() {
+        const bsod = document.getElementById('boss-bsod-container');
+        if (!bsod) return;
+
+        this.soundManager.playSound('glitch'); // Ensure this sound exists or use something jarring
+
+        bsod.classList.remove('hidden');
+        bsod.innerHTML = `
+            <div class="bsod-text text-8xl mb-10">:(</div>
+            <div class="bsod-text text-2xl mb-8">Your PC ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.</div>
+            <div class="bsod-text text-xl mb-4">20% complete</div>
+            <div class="mt-8 flex gap-4 items-center">
+                <div class="bg-white p-2"><img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=NEVER_GONNA_GIVE_YOU_UP" width="80" height="80"></div>
+                <div class="text-sm">
+                    For more information about this issue and possible fixes, visit https://www.windows.com/stopcode
+                    <br><br>
+                    If you call a support person, give them this info:
+                    <br>
+                    Stop code: CRITICAL_PROCESS_DIED
+                </div>
+            </div>
+        `;
+
+        // Hide other layers
+        document.getElementById('os-desktop-layer').classList.add('hidden');
+        document.getElementById('os-hacker-container').classList.add('hidden');
+        document.getElementById('os-legacy-container').classList.add('hidden');
+
+        // Auto Reboot
+        setTimeout(() => {
+            bsod.classList.add('hidden');
+            this.systemState = 'boot';
+            this.runBootSequence();
+        }, 5000);
     }
 
     logout() {
@@ -460,9 +551,13 @@ export default class BossMode {
         document.getElementById('os-hacker-container').classList.add('hidden');
 
         if(this.legacyOS) {
+             // We don't destroy legacy fully, just hide, or destroy if memory is issue
              this.legacyOS.destroy();
              this.legacyOS = null;
         }
+
+        // Stop any running effects
+        if (this.matrixInterval) clearInterval(this.matrixInterval);
 
         this.renderLogin();
     }
@@ -472,11 +567,14 @@ export default class BossMode {
         desk.classList.remove('hidden');
         
         // Update Wallpaper
+        const wpItem = this.saveSystem.getEquippedItem('wallpaper'); // e.g., 'hex', 'concrete'
+        // Simple map for now, or use store values if they were URLs. Since they are IDs, we map them or use index.
+        // For now, respect the internal cycler, but if store item is set, use a specific logic?
+        // Let's stick to the internal wallpaper array for simplicity unless extended later.
         document.getElementById('boss-wallpaper').style.backgroundImage = `url('${this.wallpapers[this.wallpaperIndex]}')`;
         
         this.renderIcons();
         this.renderTaskbar();
-        // Windows are rendered dynamically via WindowManager, not full re-render
     }
 
     renderIcons() {
@@ -515,10 +613,14 @@ export default class BossMode {
             { id: 'terminal', icon: 'fa-terminal', color: 'text-gray-400' }
         ];
 
+        // Theme Colors
+        const theme = this.saveSystem.getEquippedItem('theme') || 'blue';
+        const barColor = theme === 'pink' ? 'bg-pink-900/90 border-pink-700' : (theme === 'gold' ? 'bg-yellow-900/90 border-yellow-700' : 'bg-[#0f172a]/90 border-gray-700');
+
         const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 
         container.innerHTML = `
-            <div class="h-10 bg-[#0f172a]/90 backdrop-blur border-t border-gray-700 flex items-center px-2 gap-2 shadow-lg text-white">
+            <div class="h-10 ${barColor} backdrop-blur border-t flex items-center px-2 gap-2 shadow-lg text-white">
                 <div class="h-8 w-8 hover:bg-white/10 rounded flex items-center justify-center cursor-pointer" onclick="BossMode.instance.toggleStartMenu()">
                     <i class="fab fa-windows text-blue-500 text-lg"></i>
                 </div>
@@ -694,15 +796,16 @@ export default class BossMode {
             <div class="flex flex-col h-full text-black">
                 <div class="bg-[#f3f2f1] px-2 py-1 flex gap-2 border-b border-[#e1dfdd] text-[11px] items-center shrink-0">
                     <button class="flex items-center hover:bg-gray-200 p-1 rounded gap-1" onclick="BossMode.instance.generateFakeExcelData(BossMode.instance.currentExcel); BossMode.instance.loadExcelData(BossMode.instance.currentExcel)"><i class="fas fa-sync text-green-600"></i> Refresh</button>
+                    <button class="flex items-center hover:bg-gray-200 p-1 rounded gap-1" onclick="BossMode.instance.triggerBSOD()"><i class="fas fa-bomb text-red-600"></i> Crash</button>
                 </div>
                 <div class="flex items-center gap-2 p-1 border-b border-[#e1dfdd] bg-white shrink-0">
                     <div class="bg-white border border-gray-300 w-10 text-center text-xs font-bold text-gray-600" id="boss-cell-addr">A1</div>
-                    <div class="flex-1 border border-gray-300 flex items-center px-2"><input id="boss-formula-input" class="w-full text-xs outline-none font-mono h-6" value=""></div>
+                    <div class="flex-1 border border-gray-300 flex items-center px-2"><input id="boss-formula-input" class="w-full text-xs outline-none font-mono h-6" value="" onkeydown="if(event.key==='Enter') BossMode.instance.applyFormula(this.value)"></div>
                 </div>
                 <div class="flex-1 overflow-auto bg-[#e1dfdd] relative" id="boss-grid-container">
                     <div id="boss-grid" class="grid bg-[#c8c6c4] gap-[1px]"></div>
                 </div>
-                <div id="clippy-container" class="absolute bottom-8 right-8 cursor-pointer hover:scale-110 transition-transform">
+                <div id="clippy-container" class="absolute bottom-8 right-8 cursor-pointer hover:scale-110 transition-transform" onclick="BossMode.instance.clippyInteract()">
                     <div id="clippy-bubble" class="absolute -top-16 -left-32 w-40 bg-[#ffffe1] border border-black p-2 text-[10px] rounded shadow-lg hidden"></div>
                     <div class="text-4xl">📎</div>
                 </div>
@@ -745,16 +848,30 @@ export default class BossMode {
                 const d = this.excelData[id];
                 el.textContent = d.value || d.v || '';
                 el.style.fontWeight = (d.bold || d.b) ? 'bold' : 'normal';
+
+                // Clear snake styles if not running
+                if (!this.snakeGame) {
+                     el.style.backgroundColor = 'white';
+                     el.style.color = 'black';
+                }
             });
         }
         // Snake Render Logic (Shared state)
         if(this.snakeGame) {
+             // Clear Grid First (Naively)
+             document.querySelectorAll('[id^="cell-"]').forEach(el => {
+                 el.style.backgroundColor = 'white';
+             });
+
              this.snakeGame.snake.forEach(s => {
                  const id = `${String.fromCharCode(65+s.c)}${s.r}`;
                  document.querySelectorAll(`[id="cell-${id}"]`).forEach(el => { el.style.backgroundColor = '#217346'; el.style.color='transparent'; });
              });
              const f = this.snakeGame.food;
-             document.querySelectorAll(`[id="cell-${String.fromCharCode(65+f.c)}${f.r}"]`).forEach(el => el.textContent='🍎');
+             document.querySelectorAll(`[id="cell-${String.fromCharCode(65+f.c)}${f.r}"]`).forEach(el => {
+                 el.textContent='🍎';
+                 el.style.backgroundColor = 'white';
+             });
         }
     }
     
@@ -763,19 +880,99 @@ export default class BossMode {
         this.selectedCell = id;
         // In a real multi-window app, we'd find the active window's input. 
         // For this demo, we assume the user is interacting with the frontmost Excel.
-        const activeWin = document.getElementById(`window-content-${this.activeWindowId}`);
-        if(activeWin) {
-            const inp = activeWin.querySelector('#boss-formula-input');
-            const addr = activeWin.querySelector('#boss-cell-addr');
-            if(addr) addr.textContent = id;
-            if(inp) inp.value = this.excelData[id]?.value || '';
-            // Highlight logic omitted for brevity in merge
+        const activeWin = document.getElementById(`win-content-${this.activeWindowId}`);
+        // Fallback search
+        const inp = document.querySelector('#boss-formula-input');
+        const addr = document.querySelector('#boss-cell-addr');
+
+        if(addr) addr.textContent = id;
+        if(inp) inp.value = this.excelData[id]?.value || '';
+    }
+
+    applyFormula(val) {
+        if (val.toUpperCase() === '=SNAKE') {
+            this.startSnake();
+            return;
+        }
+        if (val.toUpperCase() === '=BSOD') {
+            this.triggerBSOD();
+            return;
+        }
+        if(this.selectedCell) {
+            this.excelData[this.selectedCell] = { value: val };
+            this.updateExcelGrid();
         }
     }
+
+    startSnake() {
+        if (this.snakeGame) return;
+        this.snakeGame = {
+            snake: [{c:5,r:5}, {c:4,r:5}, {c:3,r:5}],
+            dir: {c:1, r:0},
+            food: {c:10, r:10},
+            score: 0,
+            interval: setInterval(() => this.updateSnake(), 200)
+        };
+        this.showClippy("I see you're playing a game. Don't tell HR.");
+    }
+
+    updateSnake() {
+        if (!this.snakeGame) return;
+        const head = { ...this.snakeGame.snake[0] };
+        head.c += this.snakeGame.dir.c;
+        head.r += this.snakeGame.dir.r;
+
+        // Bounds
+        if (head.c < 0 || head.c >= 15 || head.r < 1 || head.r > 30) {
+            this.endSnake();
+            return;
+        }
+
+        // Self Collision
+        if (this.snakeGame.snake.some(s => s.c === head.c && s.r === head.r)) {
+            this.endSnake();
+            return;
+        }
+
+        this.snakeGame.snake.unshift(head);
+
+        // Eat Food
+        if (head.c === this.snakeGame.food.c && head.r === this.snakeGame.food.r) {
+            this.snakeGame.score++;
+            this.snakeGame.food = {
+                c: Math.floor(Math.random() * 15),
+                r: Math.floor(Math.random() * 29) + 1
+            };
+        } else {
+            this.snakeGame.snake.pop();
+        }
+
+        this.updateExcelGrid();
+    }
     
+    endSnake() {
+        clearInterval(this.snakeGame.interval);
+        this.snakeGame = null;
+        alert("GAME OVER");
+        this.updateExcelGrid();
+    }
+
+    clippyInteract() {
+        this.showClippy("It looks like you're clicking on me. Would you like some help?");
+    }
+
+    showClippy(msg) {
+        const bubble = document.getElementById('clippy-bubble');
+        if (bubble) {
+            bubble.textContent = msg;
+            bubble.classList.remove('hidden');
+            setTimeout(() => bubble.classList.add('hidden'), 4000);
+        }
+    }
+
     // --- Word, PPT, Terminal Renderers (Simplified) ---
     renderWord(c) { c.innerHTML = `<div class="h-full bg-[#f3f2f1] flex flex-col"><div class="bg-white p-2 border-b flex gap-2"><button class="hover:bg-gray-100 p-1 font-bold w-6">B</button><button class="hover:bg-gray-100 p-1 italic w-6">I</button><div class="border-l mx-2"></div><button class="hover:bg-gray-100 p-1 text-xs" onclick="BossMode.instance.toggleWordStealth()"><i class="fas fa-user-secret"></i> Stealth</button></div><div class="flex-1 overflow-y-auto p-8 flex justify-center"><div class="bg-white w-[21cm] min-h-[29.7cm] shadow-xl p-[2cm] text-black font-serif text-sm outline-none" contenteditable="true" id="word-doc-content"><p class="text-center font-bold text-lg mb-4 underline">${this.currentWord.title}</p>${this.currentWord.content.replace(/\n/g,'<br>')}</div></div></div>`; }
-    renderPPT(c) { c.innerHTML = `<div class="h-full flex bg-[#d0cec9]"><div class="w-40 bg-gray-100 border-r p-2 overflow-y-auto">${this.currentPPT.slides.map((s,i)=>`<div class="bg-white aspect-video shadow mb-2 p-1 text-[8px] cursor-pointer" onclick="BossMode.instance.currentSlide=${i};BossMode.instance.renderPPT(this.parentElement.parentElement)">Slide ${i+1}</div>`).join('')}</div><div class="flex-1 flex items-center justify-center"><div class="bg-white aspect-[16/9] w-3/4 shadow-xl p-8"><h1 class="text-3xl font-bold mb-4">${this.currentPPT.slides[this.currentSlide].title}</h1><ul>${this.currentPPT.slides[this.currentSlide].bullets.map(b=>`<li>${b}</li>`).join('')}</ul></div></div></div>`; }
+    renderPPT(c) { c.innerHTML = `<div class="h-full flex bg-[#d0cec9]"><div class="w-40 bg-gray-100 border-r p-2 overflow-y-auto">${this.currentPPT?.slides.map((s,i)=>`<div class="bg-white aspect-video shadow mb-2 p-1 text-[8px] cursor-pointer" onclick="BossMode.instance.currentSlide=${i};BossMode.instance.renderPPT(this.parentElement.parentElement)">Slide ${i+1}</div>`).join('') || ''}</div><div class="flex-1 flex items-center justify-center"><div class="bg-white aspect-[16/9] w-3/4 shadow-xl p-8"><h1 class="text-3xl font-bold mb-4">${this.currentPPT?.slides[this.currentSlide || 0]?.title || 'Slide'}</h1><ul>${this.currentPPT?.slides[this.currentSlide || 0]?.bullets.map(b=>`<li>${b}</li>`).join('') || ''}</ul></div></div></div>`; }
     renderTerminal(c) { 
         c.innerHTML = `<div class="bg-black text-gray-300 font-mono text-sm h-full p-2 overflow-y-auto" onclick="this.querySelector('input').focus()"><div id="term-output">${this.termHistory.map(l=>`<div>${l}</div>`).join('')}</div><div class="flex"><span>C:\\Users\\${this.user.name.replace(' ','')}></span><input class="bg-transparent border-none outline-none text-gray-300 flex-1 ml-2" autofocus onkeydown="if(event.key==='Enter') BossMode.instance.runTerminalCommand(this.value)"></div></div>`;
     }
@@ -914,8 +1111,10 @@ export default class BossMode {
     // --- Logic Handlers ---
     runTerminalCommand(cmd) {
         this.termHistory.push(`C:\\Users\\${this.user.name.replace(' ','')}> ${cmd}`);
-        // ... (Include logic from previous step: help, ls, matrix, etc.)
-        if(cmd === 'matrix') { /* Matrix logic */ }
+        if (cmd === 'bsod') {
+            this.triggerBSOD();
+            return;
+        }
         // Force update of terminal window(s)
         const wins = document.querySelectorAll('.os-window');
         wins.forEach(w => { if(w.innerHTML.includes('Terminal')) this.renderTerminal(w.querySelector('.window-content')); });
@@ -950,10 +1149,15 @@ export default class BossMode {
         const container = document.getElementById('boss-startmenu-container');
         this.startMenuOpen = !this.startMenuOpen;
 
+        // Theme Colors for Start Menu
+        const theme = this.saveSystem.getEquippedItem('theme') || 'blue';
+        const menuColor = theme === 'pink' ? 'bg-pink-900/95 border-pink-700' : (theme === 'gold' ? 'bg-yellow-900/95 border-yellow-700' : 'bg-[#0f172a]/95 border-gray-700');
+        const headerColor = theme === 'pink' ? 'from-pink-900 to-rose-900' : (theme === 'gold' ? 'from-yellow-800 to-amber-900' : 'from-blue-900 to-slate-900');
+
         if (this.startMenuOpen) {
             container.innerHTML = `
-                <div class="w-64 bg-[#0f172a]/95 backdrop-blur border border-gray-700 rounded-t-lg shadow-2xl flex flex-col overflow-hidden text-gray-300">
-                     <div class="p-4 bg-gradient-to-r from-blue-900 to-slate-900 border-b border-gray-700 flex items-center gap-3">
+                <div class="w-64 ${menuColor} backdrop-blur border rounded-t-lg shadow-2xl flex flex-col overflow-hidden text-gray-300">
+                     <div class="p-4 bg-gradient-to-r ${headerColor} border-b border-gray-700 flex items-center gap-3">
                           <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs">JD</div>
                           <div class="font-bold text-white">${this.user.name}</div>
                      </div>
