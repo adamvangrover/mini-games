@@ -59,6 +59,9 @@ export default class TrophyRoom {
         this.focusedTrophy = null; // When inspecting a specific item
         this.cameraTargetPos = new THREE.Vector3();
 
+        // Expose for verification
+        window.trophyRoomInstance = this;
+
         if (this.container) {
             this.init();
         }
@@ -103,6 +106,7 @@ export default class TrophyRoom {
             // --- Environment & Content ---
             this.createRoom(themeConfig);
             this.renderTrophies();
+            this.renderDecorations(); // New!
             this.createNavMarker();
 
             // --- Event Listeners ---
@@ -390,6 +394,152 @@ export default class TrophyRoom {
             this.scene.add(cupGroup);
             this.interactables.push(cupGroup);
         });
+    }
+
+    renderDecorations() {
+        const decorations = [
+            { id: 'deco_stool', type: 'stool', pos: [-6, 0, 5], rot: 0 },
+            { id: 'deco_plant', type: 'plant', pos: [12, 0, -10], rot: 0 },
+            { id: 'deco_vending', type: 'vending', pos: [14, 0, 5], rot: -Math.PI/2 },
+            { id: 'deco_lamp', type: 'lamp', pos: [-12, 0, -10], rot: 0 },
+            { id: 'deco_rug', type: 'rug', pos: [0, 0.02, 0], rot: 0 },
+            { id: 'deco_hologram', type: 'hologram', pos: [0, 0, -20], rot: 0 },
+            { id: 'deco_poster', type: 'poster', pos: [-29, 8, 0], rot: Math.PI/2 },
+            { id: 'deco_mini_cab', type: 'minicab', pos: [10, 0, 10], rot: -Math.PI/4 }
+        ];
+
+        decorations.forEach(deco => {
+            // Checks if owned OR simply unlocked in system (Store usually handles unlocking)
+            if (this.saveSystem.isItemUnlocked(deco.id)) {
+                const mesh = this.createDecorationMesh(deco.type);
+                if (mesh) {
+                    mesh.position.set(deco.pos[0], mesh.position.y + deco.pos[1], deco.pos[2]);
+                    mesh.rotation.y = deco.rot;
+                    // Tag it so we verify it later
+                    mesh.userData.type = 'decoration';
+                    mesh.userData.decoId = deco.id;
+                    this.scene.add(mesh);
+                }
+            }
+        });
+    }
+
+    createDecorationMesh(type) {
+        const group = new THREE.Group();
+
+        if (type === 'stool') {
+            const seat = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.8, 0.8, 0.2, 16),
+                new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.5 })
+            );
+            seat.position.y = 1.0;
+            group.add(seat);
+            const leg = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.1, 0.1, 1.0, 8),
+                new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8 })
+            );
+            leg.position.y = 0.5;
+            group.add(leg);
+            const base = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.5, 0.5, 0.1, 16),
+                new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8 })
+            );
+            base.position.y = 0.05;
+            group.add(base);
+        }
+        else if (type === 'plant') {
+             const pot = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.8, 0.6, 1.0, 8),
+                new THREE.MeshStandardMaterial({ color: 0x8B4513 }) // Brown
+             );
+             pot.position.y = 0.5;
+             group.add(pot);
+             const leaves = new THREE.Mesh(
+                 new THREE.ConeGeometry(1.5, 3, 8),
+                 new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.8 })
+             );
+             leaves.position.y = 2.0;
+             group.add(leaves);
+        }
+        else if (type === 'vending') {
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(3, 6, 2),
+                new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.5 })
+            );
+            body.position.y = 3;
+            group.add(body);
+            const glass = new THREE.Mesh(
+                new THREE.PlaneGeometry(2.5, 4),
+                new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 0.2, opacity: 0.8, transparent: true })
+            );
+            glass.position.set(0, 3.5, 1.01);
+            group.add(glass);
+        }
+        else if (type === 'lamp') {
+            const post = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.1, 0.1, 5, 8),
+                new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.8 })
+            );
+            post.position.y = 2.5;
+            group.add(post);
+            const shade = new THREE.Mesh(
+                new THREE.ConeGeometry(1.5, 1, 32, 1, true),
+                new THREE.MeshStandardMaterial({ color: 0xff00ff, emissive: 0xff00ff, emissiveIntensity: 0.5, side: THREE.DoubleSide })
+            );
+            shade.position.y = 4.5;
+            group.add(shade);
+            const bulb = new THREE.PointLight(0xff00ff, 1, 10);
+            bulb.position.y = 4.0;
+            group.add(bulb);
+        }
+        else if (type === 'rug') {
+            const rug = new THREE.Mesh(
+                new THREE.CircleGeometry(4, 32),
+                new THREE.MeshStandardMaterial({ color: 0x990099, roughness: 1.0 })
+            );
+            rug.rotation.x = -Math.PI/2;
+            group.add(rug);
+        }
+        else if (type === 'hologram') {
+            const base = new THREE.Mesh(
+                new THREE.CylinderGeometry(1, 1.2, 0.5, 16),
+                new THREE.MeshStandardMaterial({ color: 0x333333 })
+            );
+            base.position.y = 0.25;
+            group.add(base);
+            // Hologram Beam
+            const beam = new THREE.Mesh(
+                new THREE.ConeGeometry(2, 4, 32, 1, true),
+                new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.2, side: THREE.DoubleSide })
+            );
+            beam.position.y = 2.5;
+            beam.rotation.x = Math.PI; // Point up
+            group.add(beam);
+        }
+        else if (type === 'poster') {
+            const poster = new THREE.Mesh(
+                new THREE.PlaneGeometry(3, 4),
+                new THREE.MeshBasicMaterial({ color: 0xffaa00 })
+            );
+            group.add(poster);
+        }
+        else if (type === 'minicab') {
+             const cab = new THREE.Mesh(
+                 new THREE.BoxGeometry(1.5, 3, 1.5),
+                 new THREE.MeshStandardMaterial({ color: 0xff0055 })
+             );
+             cab.position.y = 1.5;
+             group.add(cab);
+             const screen = new THREE.Mesh(
+                 new THREE.PlaneGeometry(1.2, 1.2),
+                 new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+             );
+             screen.position.set(0, 2.2, 0.76);
+             screen.rotation.x = -0.2;
+             group.add(screen);
+        }
+
+        return group;
     }
 
     createNavMarker() {
