@@ -9,6 +9,7 @@ import MobileControls from './core/MobileControls.js';
 import AdsManager from './core/AdsManager.js';
 import BossMode from './core/BossMode.js';
 import DevConsole from './core/DevConsole.js';
+import ToastManager from './core/ToastManager.js'; // Imported statically for reliability
 import PlaceholderGame from './games/PlaceholderGame.js';
 
 // --- Game Registry ---
@@ -21,8 +22,8 @@ const gameRegistry = {
     'aetheria-classic': { name: 'Aetheria (Classic)', description: 'Standalone Version', icon: 'fa-solid fa-wind', category: '3D Immersive', importFn: () => import('./games/aetheriaClassic.js'), wide: true },
     'matterhorn-game': { name: 'Matterhorn Ascent', description: '3D Alpine Adventure', icon: 'fa-solid fa-mountain', category: '3D Immersive', importFn: () => import('./games/matterhorn.js'), wide: true },
     'lumina-game': { name: 'Lumina', description: 'Purify the Glitch', icon: 'fa-solid fa-cube', category: '3D Immersive', importFn: () => import('./games/lumina.js'), wide: true, noDpad: true },
-    'neon-hunter': { name: 'Neon Hunter 64', description: 'Retro 3D Hunting', icon: 'fa-solid fa-crosshairs', category: '3D Immersive', importFn: () => import('./games/neonHunter.js'), wide: true, noDpad: true },
-    'neon-hunter-ex': { name: 'Neon Hunter EX', description: 'Enhanced Edition', icon: 'fa-solid fa-gun', category: '3D Immersive', importFn: () => import('./games/neonHunterEx.js'), wide: true, noDpad: true },
+    'neon-hunter': { name: 'Neon Hunter 64', description: 'Retro 3D Hunting', icon: 'fa-solid fa-crosshairs', category: '3D Immersive', importFn: () => import('./games/neonHunter.js'), wide: true }, // Removed noDpad (usually needed for shooters)
+    'neon-hunter-ex': { name: 'Neon Hunter EX', description: 'Enhanced Edition', icon: 'fa-solid fa-gun', category: '3D Immersive', importFn: () => import('./games/neonHunterEx.js'), wide: true },
     'prism-realms-game': { name: 'Prism Realms', description: 'Shadowfall FPS', icon: 'fa-solid fa-ghost', category: '3D Immersive', importFn: () => import('./games/prismRealms.js'), wide: true, noDpad: true },
     'rage-quit-game': { name: 'Rage Quit 3D', description: 'Clinical Trial', icon: 'fa-solid fa-person-falling-burst', category: '3D Immersive', importFn: () => import('./games/rageQuit.js'), wide: true, noDpad: true },
     'all-in-hole-game': { name: 'All In Hole', description: 'Swallow the World', icon: 'fa-solid fa-circle-notch', category: '3D Immersive', importFn: () => import('./games/allInHole.js'), wide: true, noDpad: true },
@@ -70,9 +71,9 @@ const gameRegistry = {
     'neon-stack': { name: 'Neon Stack', description: 'Stack the Blocks', icon: 'fa-solid fa-layer-group', category: 'Quick Minigames', importFn: () => import('./games/neonStack.js'), noDpad: true },
     'neon-whack-game': { name: 'Neon Whack', description: 'Whack the Moles', icon: 'fa-solid fa-hammer', category: 'Quick Minigames', importFn: () => import('./games/neonWhack.js'), noDpad: true },
 
-    // Arcade Classics
-    'solitaire-game': { name: 'Cyber Solitaire', description: 'Classic Card Game', icon: 'fa-solid fa-diamond', category: 'Arcade Classics', importFn: () => import('./games/solitaire.js'), wide: true, noDpad: true },
-    'mahjong-game': { name: 'Mahjong', description: 'Classic Tile Matching', icon: 'fa-solid fa-layer-group', category: 'Arcade Classics', importFn: () => import('./games/mahjong.js'), wide: true, noDpad: true },
+    // Card & Board
+    'solitaire-game': { name: 'Cyber Solitaire', description: 'Classic Card Game', icon: 'fa-solid fa-diamond', category: 'Classics', importFn: () => import('./games/solitaire.js'), wide: true, noDpad: true },
+    'mahjong-game': { name: 'Mahjong', description: 'Classic Tile Matching', icon: 'fa-solid fa-layer-group', category: 'Classics', importFn: () => import('./games/mahjong.js'), wide: true, noDpad: true },
 
     // RPG & Logic
     'rpg-game': { name: 'RPG Battle', description: 'Turn-Based Combat', icon: 'fa-solid fa-khanda', category: 'RPG & Logic', importFn: () => import('./games/rpg.js') },
@@ -95,7 +96,7 @@ const gameRegistry = {
     'neon-chess-game': { name: 'Suicide Chess', description: 'Lose All Pieces', icon: 'fa-solid fa-chess-knight', category: 'Logic Puzzles', importFn: () => import('./games/neonChess.js'), noDpad: true },
     'classic-chess-game': { name: 'Classic Chess', description: 'Expert Edition', icon: 'fa-solid fa-chess-king', category: 'Logic Puzzles', importFn: () => import('./games/chess/ClassicChessGame.js'), noDpad: true },
 
-    // Classics & Board Games
+    // Classics & Board Games (Merged into Classics above or Logic, ensuring consistency)
     'neon-chance-game': { name: 'Games of Chance', description: 'Coin Flip & Dice', icon: 'fa-solid fa-dice', category: 'Classics', importFn: () => import('./games/neonChance.js'), noDpad: true },
     'neon-rps-game': { name: 'Neon RPS+LS', description: 'Big Bang Mode', icon: 'fa-solid fa-hand-spock', category: 'Classics', importFn: () => import('./games/neonRPS.js'), noDpad: true },
     'neon-trivia-game': { name: 'Neon Trivia', description: 'Test Your Knowledge', icon: 'fa-solid fa-question', category: 'Classics', importFn: () => import('./games/neonTrivia.js'), noDpad: true },
@@ -108,7 +109,6 @@ const gameRegistry = {
     'avatar-station': { name: 'Avatar Station', description: 'Customize Identity', icon: 'fa-solid fa-user-gear', category: 'System', importFn: () => import('./games/avatarStation.js'), noDpad: true },
     'tech-tree': { name: 'Tech Tree', description: 'System Upgrades', icon: 'fa-solid fa-network-wired', category: 'System', importFn: () => import('./games/techTree.js'), wide: true, noDpad: true },
 };
-
 
 
 // --- Global State ---
@@ -130,6 +130,11 @@ const saveSystem = SaveSystem.getInstance();
 const inputManager = InputManager.getInstance();
 const adsManager = AdsManager.getInstance();
 
+// Local Helper for Toasts
+function showToast(msg) {
+    ToastManager.getInstance().show(msg);
+}
+
 // --- Game Loop ---
 function mainLoop(timestamp) {
     const deltaTime = (timestamp - lastTime) / 1000;
@@ -141,8 +146,8 @@ function mainLoop(timestamp) {
         if (performance.now() - lastInputTime > 300000) {
              if (!saveSystem.data.achievements?.includes('afk-legend')) {
                  saveSystem.unlockAchievement('afk-legend');
-                 window.miniGameHub.showToast("Achievement Unlocked: AFK Legend!");
-                 SoundManager.getInstance().playSound('score');
+                 showToast("Achievement Unlocked: AFK Legend!");
+                 soundManager.playSound('score');
              }
         }
     }
@@ -171,7 +176,6 @@ function mainLoop(timestamp) {
 
 // --- State Management ---
 
-
 async function transitionToState(newState, context = {}) {
     if (currentState === AppState.TRANSITIONING) return;
 
@@ -179,7 +183,10 @@ async function transitionToState(newState, context = {}) {
         if (currentGameInstance && currentGameInstance.shutdown) {
             try { await currentGameInstance.shutdown(); } catch (e) { console.error("Error shutting down:", e); }
         }
-        if (mobileControls) { mobileControls.destroy(); mobileControls = null; }
+        if (mobileControls) {
+            mobileControls.destroy();
+            mobileControls = null;
+        }
         currentGameInstance = null;
         document.querySelectorAll(".game-container").forEach(el => el.classList.add("hidden"));
     }
@@ -192,8 +199,8 @@ async function transitionToState(newState, context = {}) {
                  if (!saveSystem.data.achievements?.includes('rage-quitter')) {
                      setTimeout(() => { // Delay slightly so it shows in menu
                         saveSystem.unlockAchievement('rage-quitter');
-                        window.miniGameHub.showToast("Achievement Unlocked: Rage Quitter!");
-                        SoundManager.getInstance().playSound('score');
+                        showToast("Achievement Unlocked: Rage Quitter!");
+                        soundManager.playSound('score');
                      }, 500);
                  }
             }
@@ -254,6 +261,7 @@ async function transitionToState(newState, context = {}) {
                 });
             });
         } catch (err) {
+            console.error("Trophy Room Load Error", err);
             new PlaceholderGame().init(trContainer);
         }
         currentState = AppState.TROPHY_ROOM;
@@ -263,6 +271,14 @@ async function transitionToState(newState, context = {}) {
     if (newState === AppState.IN_GAME) {
         const { gameId } = context;
         if (gameId === 'trophy-room') { transitionToState(AppState.TROPHY_ROOM); return; }
+
+        // --- Guard against invalid ID ---
+        if (!gameRegistry[gameId]) {
+            console.error(`Game ID ${gameId} not found in registry.`);
+            showToast("Error: Game not found.");
+            transitionToState(AppState.MENU);
+            return;
+        }
 
         currentState = AppState.TRANSITIONING;
         if (arcadeHub) arcadeHub.pause();
@@ -313,16 +329,19 @@ async function transitionToState(newState, context = {}) {
     }
 }
 
-// --- Menu Grid Logic (Merged) ---
+// --- Menu Grid Logic ---
 function populateMenuGrid() {
     const grid = document.getElementById('menu-grid');
     if (!grid) return;
     grid.innerHTML = '';
 
     // Initialize Daily Challenge if needed
+    // FIX: Ensure we don't pick a 'System' module (like Trophy Room) as the daily challenge
     if (!dailyChallengeGameId) {
-        const keys = Object.keys(gameRegistry);
-        dailyChallengeGameId = keys[Math.floor(Math.random() * keys.length)];
+        const validGameKeys = Object.keys(gameRegistry).filter(key => gameRegistry[key].category !== 'System');
+        if (validGameKeys.length > 0) {
+            dailyChallengeGameId = validGameKeys[Math.floor(Math.random() * validGameKeys.length)];
+        }
     }
 
     // Determine Theme Colors
@@ -432,10 +451,26 @@ function showGameOver(score, onRetry) {
         };
 
         if (menuBtn) menuBtn.onclick = () => {
+            const goToMenu = () => transitionToState(AppState.MENU);
+            
             if (Math.random() < 0.3) {
-                adsManager.showAd(() => transitionToState(AppState.MENU));
+                // Try to show ad, but have a fallback in case AdBlock blocks the callback
+                let adProcessed = false;
+                const safeTransition = () => {
+                    if (!adProcessed) {
+                        adProcessed = true;
+                        goToMenu();
+                    }
+                };
+
+                try {
+                    adsManager.showAd(safeTransition);
+                    setTimeout(safeTransition, 3000); // Failsafe if ad doesn't trigger callback
+                } catch(e) {
+                    safeTransition();
+                }
             } else {
-                transitionToState(AppState.MENU);
+                goToMenu();
             }
         };
     };
@@ -592,7 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginReward && loginReward !== 0) {
         // Delay slightly to let things load
         setTimeout(() => {
-            window.miniGameHub.showToast(`Daily Login: +${loginReward.reward} Coins! Streak: ${loginReward.streak}`);
+            showToast(`Daily Login: +${loginReward.reward} Coins! Streak: ${loginReward.streak}`);
             SoundManager.getInstance().playSound('score');
             updateHubStats();
         }, 2000);
@@ -714,10 +749,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const touchEndX = e.changedTouches[0].screenX;
             const diff = touchStartX - touchEndX;
             if (Math.abs(diff) > 50) {
-                 // Simple scroll support if needed, or trigger category switch
-                 // For now, let's just allow native scrolling but prevent default if it's horizontal
-                 // Actually, native scrolling is better for grid.
-                 // But let's add logic to switch "3D View" to "Grid View" on swipe up if on mobile landing
+                 // Simple scroll support if needed
             }
         }, {passive: true});
     }
@@ -745,7 +777,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => loader.remove(), 1000);
 
             // Show Welcome Toast
-            window.miniGameHub.showToast("Welcome to Neon Arcade!");
+            showToast("Welcome to Neon Arcade!");
         };
 
         // Add listeners to loader and body to catch first interaction
@@ -846,7 +878,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     lastTime = performance.now();
     requestAnimationFrame(mainLoop);
-    // soundManager.startBGM(); // Moved to interaction handler
     new DevConsole();
     if (saveSystem.getSetting('crt')) {
         const crt = document.createElement('div');
@@ -863,7 +894,7 @@ window.miniGameHub = {
     saveSystem,
     showGameOver,
     inputManager,
-    showToast: (msg) => { import('./core/ToastManager.js').then(m => m.default.getInstance().show(msg)); },
+    showToast, // Uses the safely imported local function
     gameRegistry,
     goBack: () => transitionToState(AppState.MENU),
     getCurrentGame: () => currentGameInstance
