@@ -40,6 +40,10 @@ h1, h2, h3 {
     display: none !important;
 }
 
+.font-hand {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;
+}
+
 /* --- Boss Mode --- */
 #boss-mode-overlay * {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -374,4 +378,31 @@ canvas {
     --secondary-neon: #ff4500;
     --primary-glow: 0 0 10px #f00, 0 0 20px #f00;
     --secondary-glow: 0 0 10px #ff4500, 0 0 20px #ff4500;
+}
+
+/* --- Easter Eggs --- */
+.post-it-note {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 100px;
+    height: 100px;
+    background: #fef9c3;
+    color: #000;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 12px;
+    padding: 10px;
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+    transform: rotate(-5deg);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: transform 0.3s;
+    cursor: help;
+    pointer-events: auto;
+}
+.post-it-note:hover {
+    transform: rotate(0deg) scale(1.1);
 }

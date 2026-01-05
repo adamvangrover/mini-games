@@ -726,6 +726,13 @@ document.addEventListener('DOMContentLoaded', () => {
         crt.className = 'crt-effect';
         document.body.appendChild(crt);
     }
+
+    // Boss Mode Hint (Easter Egg)
+    const postIt = document.createElement('div');
+    postIt.className = 'post-it-note';
+    postIt.innerHTML = "Boss coming?<br><br><b>Alt + B</b>";
+    postIt.title = "Look busy!";
+    document.body.appendChild(postIt);
 });
 
 // Expose Global API for Debugging

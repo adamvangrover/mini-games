@@ -222,4 +222,9 @@ export default class SoundManager {
         this.bgmOscillators = [];
         if (this.rhythmTimeout) clearTimeout(this.rhythmTimeout);
     }
+
+    stopAll() {
+        this.stopBGM();
+        // Future: stop specific SFX loops if implemented
+    }
 }
