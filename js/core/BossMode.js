@@ -13,7 +13,7 @@ export default class BossMode {
         // --- Core System State ---
         this.isActive = false;
         this.systemState = 'boot'; // 'boot', 'login', 'desktop', 'bsod'
-        this.currentOS = 'modern'; // 'modern', 'legacy', 'terminal'
+        this.currentOS = 'modern'; // 'modern', 'legacy', 'hacker'
         
         // --- Window Management ---
         this.windows = []; // Array of active window objects
@@ -119,6 +119,9 @@ export default class BossMode {
             <!-- Legacy OS Container -->
             <div id="os-legacy-container" class="absolute inset-0 z-[10005] hidden bg-teal-800"></div>
 
+            <!-- Hacker OS Container -->
+            <div id="os-hacker-container" class="absolute inset-0 z-[10006] hidden bg-black font-mono text-green-500 p-4 overflow-hidden"></div>
+
             <div id="boss-bsod-container" class="absolute inset-0 z-[10050] hidden bg-[#0078d7]"></div>
         `;
 
@@ -157,6 +160,10 @@ export default class BossMode {
             .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
             .custom-scroll::-webkit-scrollbar-track { background: #020617; }
             .custom-scroll::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+            /* Hacker OS */
+            .hacker-text { text-shadow: 0 0 5px #0f0; }
+            .blink { animation: blink 1s step-end infinite; }
+            @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
         `;
         document.head.appendChild(style);
     }
@@ -246,6 +253,8 @@ export default class BossMode {
             } else {
                 if (this.currentOS === 'legacy') {
                     if (!this.legacyOS) this.startLegacyOS();
+                } else if (this.currentOS === 'hacker') {
+                    this.renderHackerOS();
                 } else {
                     document.getElementById('os-desktop-layer').classList.remove('hidden');
                     this.renderDesktop();
@@ -294,7 +303,7 @@ export default class BossMode {
                 </div>
                 <div class="text-3xl font-bold mb-6">${this.user.name}</div>
                 <div class="flex gap-2">
-                    <input type="password" placeholder="PIN" class="bg-white/20 border border-white/30 rounded px-4 py-2 text-center text-white placeholder-gray-300 outline-none w-48 backdrop-blur" onkeydown="if(event.key==='Enter') BossMode.instance.login()">
+                    <input id="boss-login-input" type="password" placeholder="PIN" class="bg-white/20 border border-white/30 rounded px-4 py-2 text-center text-white placeholder-gray-300 outline-none w-48 backdrop-blur" onkeydown="if(event.key==='Enter') BossMode.instance.login()">
                     <button class="bg-white/20 hover:bg-white/40 border border-white/30 rounded px-4 transition-all" onclick="BossMode.instance.login()"><i class="fas fa-arrow-right"></i></button>
                 </div>
             </div>
@@ -306,6 +315,7 @@ export default class BossMode {
             <div class="absolute bottom-8 left-8 flex gap-4 text-white/50 text-xs font-mono bg-black/50 p-2 rounded">
                 <div class="cursor-pointer hover:text-white flex flex-col items-center gap-1 ${this.currentOS==='modern'?'text-white font-bold':''}" onclick="BossMode.instance.selectOS('modern')"><i class="fab fa-windows text-xl"></i>Modern</div>
                 <div class="cursor-pointer hover:text-white flex flex-col items-center gap-1 ${this.currentOS==='legacy'?'text-white font-bold':''}" onclick="BossMode.instance.selectOS('legacy')"><i class="fas fa-save text-xl"></i>Legacy</div>
+                <div class="cursor-pointer hover:text-white flex flex-col items-center gap-1 ${this.currentOS==='hacker'?'text-green-400 font-bold':''}" onclick="BossMode.instance.selectOS('hacker')"><i class="fas fa-terminal text-xl"></i>Hacker</div>
             </div>
         `;
         setTimeout(() => {
@@ -330,15 +340,17 @@ export default class BossMode {
             setTimeout(() => this.openApp('mission'), 500);
         } else if (this.currentOS === 'legacy') {
             this.startLegacyOS();
+        } else if (this.currentOS === 'hacker') {
+            this.renderHackerOS();
         }
     }
 
     selectOS(os) {
-        // Check Unlock
+        // Check Unlock (Legacy already had this, adding for Hacker if needed, but keeping free for now)
         if (os === 'legacy') {
             const unlocked = this.saveSystem.getEquippedItem('os_license') === 'legacy' || this.saveSystem.isItemUnlocked('os_legacy');
             if (!unlocked) {
-                alert("Legacy OS License Required. Purchase from Store.");
+                window.miniGameHub.showToast("Legacy OS License Required. Purchase from Store.");
                 return;
             }
         }
@@ -354,6 +366,82 @@ export default class BossMode {
         });
     }
 
+    renderHackerOS() {
+        const container = document.getElementById('os-hacker-container');
+        container.classList.remove('hidden');
+        container.innerHTML = `
+            <div class="h-full flex flex-col font-mono text-green-500 text-sm">
+                <div class="flex-1 overflow-y-auto p-4" id="hacker-output">
+                    <div>> CONNECTED TO MAINFRAME [${new Date().toISOString()}]</div>
+                    <div>> AUTH: ROOT ACCESS GRANTED</div>
+                    <br>
+                    <div>Type 'help' for available commands.</div>
+                    <div class="text-green-800">----------------------------------------</div>
+                </div>
+                <div class="border-t border-green-800 p-2 flex">
+                    <span class="mr-2">></span>
+                    <input id="hacker-input" class="bg-transparent border-none outline-none text-green-400 flex-1" autofocus onkeydown="if(event.key==='Enter') BossMode.instance.runHackerCommand(this.value)">
+                </div>
+            </div>
+            <div class="absolute top-2 right-2 text-green-800 text-[10px]">UNSECURE CONNECTION</div>
+            <div class="absolute bottom-2 right-2 text-red-500 cursor-pointer hover:text-red-400 border border-red-500 px-2" onclick="BossMode.instance.toggle(false)">[EXIT]</div>
+        `;
+        document.getElementById('hacker-input').focus();
+    }
+
+    runHackerCommand(cmd) {
+        const output = document.getElementById('hacker-output');
+        const input = document.getElementById('hacker-input');
+        input.value = '';
+
+        const append = (txt, color='text-green-500') => {
+            const div = document.createElement('div');
+            div.className = color;
+            div.textContent = txt;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        };
+
+        append(`> ${cmd}`, 'text-white');
+
+        switch(cmd.toLowerCase().trim()) {
+            case 'help':
+                append("COMMANDS: help, clear, ls, scan, decrypt, matrix, exit");
+                break;
+            case 'clear':
+                output.innerHTML = '';
+                break;
+            case 'ls':
+                append("DRIVE C: [ENCRYPTED]");
+                append("DRIVE D: /secrets/plans.txt");
+                append("DRIVE E: /music/mix.mp3");
+                break;
+            case 'scan':
+                append("SCANNING NETWORK...");
+                setTimeout(() => append("FOUND 3 VULNERABILITIES."), 1000);
+                setTimeout(() => append("[1] PORT 8080 OPEN"), 1500);
+                setTimeout(() => append("[2] SQL INJECTION POSSIBLE"), 2000);
+                break;
+            case 'decrypt':
+                append("DECRYPTING...", "blink");
+                setTimeout(() => append("ACCESS DENIED. NEED KEY."), 2000);
+                break;
+            case 'exit':
+                this.toggle(false);
+                break;
+            case 'matrix':
+                 // Easter egg visual
+                 const canvas = document.createElement('canvas');
+                 canvas.style.position = 'absolute'; canvas.style.inset='0'; canvas.style.zIndex='-1';
+                 document.getElementById('os-hacker-container').appendChild(canvas);
+                 // (Simplified matrix rain could go here, but avoiding complex logic insertion)
+                 append("WAKE UP NEO...");
+                 break;
+            default:
+                append(`UNKNOWN COMMAND: ${cmd}`, 'text-red-500');
+        }
+    }
+
     logout() {
         this.soundManager.playSound('click');
         localStorage.removeItem('boss_mode_loggedin');
@@ -361,8 +449,9 @@ export default class BossMode {
 
         // Hide desktops
         document.getElementById('os-desktop-layer').classList.add('hidden');
-        const legacy = document.getElementById('os-legacy-container');
-        legacy.classList.add('hidden');
+        document.getElementById('os-legacy-container').classList.add('hidden');
+        document.getElementById('os-hacker-container').classList.add('hidden');
+
         if(this.legacyOS) {
              this.legacyOS.destroy();
              this.legacyOS = null;
@@ -407,7 +496,7 @@ export default class BossMode {
 
     renderTaskbar() {
         const container = document.getElementById('boss-taskbar-container');
-        // Re-render taskbar to update active states
+        // Re-render taskbar to update active active states
         const apps = [
             { id: 'mission', icon: 'fa-microchip', color: 'text-blue-400' },
             { id: 'excel', icon: 'fa-file-excel', color: 'text-green-500' },

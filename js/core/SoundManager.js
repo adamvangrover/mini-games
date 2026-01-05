@@ -82,12 +82,16 @@ export default class SoundManager {
             dubstep: [0, 1, 3, 5, 6, 7, 10], // Phrygian Dominant-ish
             dnb: [0, 3, 5, 7, 10], // Minor Pentatonic
             jazz: [0, 3, 5, 6, 7, 10, 11], // Blues Scale
-            classical: [0, 4, 7, 12, 16, 19] // Major Arpeggio
-            jazzy: [0, 3, 5, 7, 10, 11], // Blues scale 2
+            classical: [0, 4, 7, 12, 16, 19], // Major Arpeggio
             rock: [0, 3, 5, 7, 10],
             reggae: [0, 4, 7, 11], // Major 7 chords
             country: [0, 2, 4, 7, 9], // Major Pentatonic
-            classically: [0, 2, 4, 5, 7, 9, 11] // Major 2
+
+            // New Genres
+            funk: [0, 2, 3, 5, 7, 9, 10], // Dorian mode
+            metal: [0, 1, 3, 5, 6, 7, 10], // Phrygian Dominant (Exotic/Dark)
+            blues: [0, 3, 5, 6, 7, 10], // Blues Scale
+            edm: [0, 3, 5, 7, 10] // Minor Pentatonic (safe for dance)
         };
 
         SoundManager.instance = this;
@@ -142,6 +146,10 @@ export default class SoundManager {
             else if (style === 'reggae') { this.tempo = 70; this.delayGain.gain.setTargetAtTime(0.4, this.audioCtx.currentTime, 0.1); this.delayNode.delayTime.value = 0.4; }
             else if (style === 'jazz') this.tempo = 130;
             else if (style === 'rock') this.tempo = 140;
+            else if (style === 'metal') this.tempo = 160;
+            else if (style === 'funk') this.tempo = 110;
+            else if (style === 'edm') this.tempo = 128;
+            else if (style === 'blues') this.tempo = 90;
             else this.tempo = 120;
         }
     }
@@ -303,9 +311,25 @@ export default class SoundManager {
         const root = 110; // A2
 
         // --- RHYTHM ---
-        if (style === 'acid' || style === 'chiptune' || style === 'synthwave' || style === 'rock' || style === 'country') {
-            // 4-on-the-floor (or simple backbeat)
+        if (style === 'acid' || style === 'chiptune' || style === 'synthwave' || style === 'rock' || style === 'country' || style === 'edm') {
+            // 4-on-the-floor
             if (beatNumber % 4 === 0) this.playKick(time);
+        }
+        else if (style === 'metal') {
+            // Double kick possibilities
+            if (beatNumber % 4 === 0) this.playKick(time, 1.0, true); // Hard kick
+            if (beatNumber % 4 === 2 && Math.random() > 0.6) this.playKick(time, 0.8, true); // Double bass
+        }
+        else if (style === 'funk') {
+            // Syncopated kick
+            if (beatNumber === 0) this.playKick(time);
+            if (beatNumber === 10) this.playKick(time);
+            if (beatNumber === 13) this.playKick(time, 0.6);
+        }
+        else if (style === 'blues') {
+            // Shuffle feel (approximate with 16ths: 0, 3, 4, 7, 8...)
+            // Simple slow kick on 1 and 3
+            if (beatNumber === 0 || beatNumber === 8) this.playKick(time, 0.7);
         }
         else if (style === 'jazz') {
             // Swing ride pattern handled in hihats, soft kicks
@@ -313,8 +337,7 @@ export default class SoundManager {
             if (beatNumber === 10) this.playKick(time, 0.4);
         }
         else if (style === 'reggae') {
-            // One Drop (Kick on 3) or Steppers (Four on floor)
-            // Let's do One Drop: Kick on count 3 (beat 8 in 16ths)
+            // One Drop: Kick on 3 (beat 8 in 16ths)
             if (beatNumber === 8) this.playKick(time, 0.9);
         }
         else if (style === 'dnb') {
@@ -329,32 +352,27 @@ export default class SoundManager {
             if (beatNumber === 0) this.playKick(time, 0.6);
         }
         else if (style === 'dubstep') {
-            // Half-time feel (Kick on 1, Snare on 3 equivalent - here beats are 16th notes)
-            // 16th notes: 0..15. Kick on 0. Snare on 8.
             if (beatNumber === 0) this.playKick(time, 1.0, true);
             if (beatNumber === 8) this.playSnare(time, true, 0.8); // Big snare
-            if (beatNumber === 14) this.playKick(time, 0.6, true); // Shuffle kick
-        }
-        else if (style === 'dnb') {
-            // Amen break pattern approx: Kick 0, 10. Snare 4, 12.
-            if (beatNumber === 0 || beatNumber === 10) this.playKick(time, 0.8);
-            if (beatNumber === 4 || beatNumber === 12) this.playSnare(time, false, 0.6);
-            if (beatNumber % 2 === 0) this.playHiHat(time, 0.03, 0.4); // Fast hats
-        }
-        else if (style === 'jazz') {
-            // Swing ride: Ding (0), Ding (4), Da (6) Ding (8) ...
-            // Simplified: 0, 4, 8, 12 (Quarter notes) + 14 (Swing 8th)
-            if (beatNumber % 4 === 0) this.playHiHat(time, 0.1, 0.3); // Ride tick
-            if (beatNumber % 8 === 6) this.playHiHat(time, 0.05, 0.2); // Swing skip
-        }
-        else if (style === 'classical') {
-            // No drums
+            if (beatNumber === 14) this.playKick(time, 0.6, true);
         }
 
-        // Snares / HiHats
-        if (style === 'rock' || style === 'country' || style === 'synthwave') {
-            if (beatNumber % 8 === 4) this.playSnare(time, false);
+        // --- SNARES / HIHATS ---
+
+        // Basic backbeat
+        if (['rock', 'country', 'synthwave', 'edm', 'metal'].includes(style)) {
+            if (beatNumber % 8 === 4) this.playSnare(time, style === 'metal');
             if (beatNumber % 2 === 0) this.playHiHat(time);
+        }
+        else if (style === 'funk') {
+            if (beatNumber === 4 || beatNumber === 12) this.playSnare(time);
+            // 16th note hihats
+            if (Math.random() > 0.2) this.playHiHat(time, 0.03, beatNumber % 4 === 0 ? 0.4 : 0.2);
+        }
+        else if (style === 'blues') {
+            if (beatNumber === 4 || beatNumber === 12) this.playSnare(time, false, 0.4);
+            if (beatNumber % 4 === 0) this.playHiHat(time, 0.1, 0.3); // Ride-ish
+            if (beatNumber % 4 === 3) this.playHiHat(time, 0.05, 0.2); // Swing
         }
         else if (style === 'jazz') {
             // Ride cymbal pattern: Ding, ding-a-ding
@@ -362,35 +380,13 @@ export default class SoundManager {
             if (beatNumber % 4 === 3) this.playHiHat(time, 0.05, 0.3); // swing note
             if (beatNumber % 8 === 4) this.playSnare(time, false, 0.3); // brush snare
         }
-        else if (style === 'reggae') {
-            if (beatNumber % 8 === 4) this.playSnare(time, false, 0.8); // Rimshot-ish
-            if (beatNumber % 2 === 0) this.playHiHat(time, 0.05, 0.5);
-        }
-        else if (style === 'classical') {
-            // No drums usually, maybe pizzicato strings?
-        }
         else if (style === 'dnb') {
             if (beatNumber === 4 || beatNumber === 12) this.playSnare(time, true, 0.8);
             if (beatNumber % 2 === 0) this.playHiHat(time, 0.05, 0.7);
             if (Math.random() > 0.7) this.playHiHat(time + 0.1, 0.02, 0.5);
         }
-        else if (style === 'industrial') {
-            if (beatNumber % 8 === 4) this.playSnare(time, false, 0.4);
-            if (beatNumber % 2 === 0) this.playHiHat(time, 0.05, 0.8);
-        }
-        else if (style === 'lofi') {
-            if (beatNumber % 8 === 4) this.playSnare(time, false, 0.2);
-            if (beatNumber % 4 === 2) this.playHiHat(time, 0.05, 0.3);
-        }
-        else if (style === 'glitch') {
-            if (Math.random() < 0.3) this.playGlitchNoise(time);
-            if (beatNumber % 8 === 0 && Math.random() > 0.5) this.playKick(time);
-        }
-        else if (style === 'ambient') {
-            if (beatNumber === 0) this.playPad(time, 4);
-        }
 
-        // --- MELODY / BASS ---
+        // --- MELODY / HARMONY ---
         const scale = this.scales[style] || this.scales.acid;
 
         if (style === 'acid') {
@@ -400,44 +396,97 @@ export default class SoundManager {
                 this.playAcidSynth(freq, time, 0.15, Math.random() > 0.8, Math.random() > 0.8);
             }
         }
+        else if (style === 'metal') {
+            // Chugging on low open string
+            if (beatNumber % 2 === 0) {
+                 this.playTone(root/2, 'sawtooth', 0.1, 0.5); // Palm mute chug
+            }
+            // Occasional power chord stab
+            if (beatNumber === 0 || beatNumber === 6) {
+                 const note = scale[Math.floor(Math.random() * 3)];
+                 const freq = root * Math.pow(2, note / 12);
+                 this.playTone(freq, 'sawtooth', 0.2, 0.4);
+                 this.playTone(freq * 1.5, 'sawtooth', 0.2, 0.4); // 5th
+            }
+        }
+        else if (style === 'funk') {
+            // Slap bass
+            if (beatNumber === 0 || beatNumber === 2) {
+                const note = scale[0];
+                const freq = (root * 0.5) * Math.pow(2, note/12);
+                this.playTone(freq, 'square', 0.2, 0.6);
+            }
+            if (beatNumber === 10 || beatNumber === 14) {
+                 const note = scale[Math.floor(Math.random()*scale.length)];
+                 const freq = (root * 0.5) * Math.pow(2, note/12);
+                 this.playTone(freq, 'square', 0.1, 0.5); // Pop
+            }
+            // Wah guitar chords (high)
+            if (beatNumber === 4 || beatNumber === 12) {
+                 const note = scale[Math.floor(Math.random()*scale.length)];
+                 const freq = (root * 4) * Math.pow(2, note/12);
+                 this.playTone(freq, 'triangle', 0.1, 0.2);
+            }
+        }
+        else if (style === 'edm') {
+            // Sidechain pads/bass
+            if (beatNumber === 2 || beatNumber === 6 || beatNumber === 10 || beatNumber === 14) {
+                 const note = scale[Math.floor(Math.random()*3)];
+                 const freq = root * Math.pow(2, note/12);
+                 this.playSawBass(freq, time, 0.2); // Off-beat bass
+            }
+            // Lead
+            if (Math.random() < 0.3) {
+                 const note = scale[Math.floor(Math.random() * scale.length)];
+                 const freq = (root * 4) * Math.pow(2, note/12);
+                 this.playTone(freq, 'sawtooth', 0.1, 0.2);
+            }
+        }
+        else if (style === 'blues') {
+            // Walking bass
+            if (beatNumber % 4 === 0) {
+                 const note = scale[Math.floor(Math.random() * scale.length)];
+                 const freq = (root * 0.5) * Math.pow(2, note/12);
+                 this.playTone(freq, 'sine', 0.4, 0.5);
+            }
+            // Organ licks
+            if (Math.random() < 0.2) {
+                 const note = scale[Math.floor(Math.random() * scale.length)];
+                 const freq = (root * 2) * Math.pow(2, note/12);
+                 this.playTone(freq, 'sine', 0.5, 0.3);
+            }
+        }
         else if (style === 'jazz') {
-             // Walking Bass
              if (beatNumber % 4 === 0) {
                  const note = scale[Math.floor(Math.random() * scale.length)];
                  const freq = (root * 0.5) * Math.pow(2, note / 12);
-                 this.playTone(freq, 'sine', 0.4, 0.6); // Double bass
+                 this.playTone(freq, 'sine', 0.4, 0.6);
              }
-             // Piano clusters
              if (Math.random() < 0.1) {
                  const note = scale[Math.floor(Math.random() * scale.length)];
                  const freq = (root * 2) * Math.pow(2, note / 12);
                  this.playTone(freq, 'triangle', 0.5, 0.2);
-                 this.playTone(freq * 1.25, 'triangle', 0.5, 0.2); // Major 3rd
              }
         }
         else if (style === 'rock') {
-            // Root notes 8th
             if (beatNumber % 2 === 0) {
                 const note = scale[0];
                 const freq = (root * 0.5) * Math.pow(2, note / 12);
                 this.playSawBass(freq, time, 0.2);
             }
-            // Guitar power chords
             if (beatNumber % 8 === 0 || beatNumber % 8 === 3) {
-                 const note = scale[Math.floor(Math.random() * 3)]; // Low scale notes
+                 const note = scale[Math.floor(Math.random() * 3)];
                  const freq = root * Math.pow(2, note / 12);
-                 this.playTone(freq, 'sawtooth', 0.3, 0.4); // Distorted
-                 this.playTone(freq * 1.5, 'sawtooth', 0.3, 0.4); // 5th
+                 this.playTone(freq, 'sawtooth', 0.3, 0.4);
+                 this.playTone(freq * 1.5, 'sawtooth', 0.3, 0.4);
             }
         }
         else if (style === 'reggae') {
-            // Bass line (deep sine)
             if (beatNumber % 4 === 0 && Math.random() > 0.3) {
                 const note = scale[Math.floor(Math.random() * scale.length)];
                 const freq = (root * 0.5) * Math.pow(2, note / 12);
                 this.playTone(freq, 'sine', 0.4, 0.8);
             }
-            // Skank (Chops) on 2 and 4 (beat 4 and 12)
             if (beatNumber === 4 || beatNumber === 12) {
                  const freq = root * 2;
                  this.playTone(freq, 'triangle', 0.1, 0.3);
@@ -446,18 +495,24 @@ export default class SoundManager {
             }
         }
         else if (style === 'country') {
-            // Root-Fifth Bass
             if (beatNumber % 4 === 0) {
-                 const note = (beatNumber % 8 === 0) ? scale[0] : scale[3]; // Root then 5th
+                 const note = (beatNumber % 8 === 0) ? scale[0] : scale[3];
                  const freq = (root * 0.5) * Math.pow(2, note / 12);
                  this.playTone(freq, 'sine', 0.3, 0.5);
             }
         }
         else if (style === 'classical') {
-            // Arpeggios (16th notes)
-            const note = scale[beatNumber % scale.length];
-            const freq = (root * 2) * Math.pow(2, note / 12);
-            this.playTone(freq, 'sine', 0.2, 0.15); // Harpsichord-ish?
+            const arpPattern = [0, 4, 7, 4];
+            const noteIdx = arpPattern[beatNumber % 4];
+            const note = scale[noteIdx % scale.length];
+            const freq = (root * 2) * Math.pow(2, note/12);
+            this.playTone(freq, 'sine', 0.2, 0.15);
+
+            if (beatNumber % 8 === 0) {
+                const melNote = scale[Math.floor(Math.random() * scale.length)];
+                const melFreq = (root * 4) * Math.pow(2, melNote/12);
+                this.playTone(melFreq, 'triangle', 0.4, 0.1);
+            }
         }
         else if (style === 'dnb') {
             if (beatNumber === 0) {
@@ -509,58 +564,24 @@ export default class SoundManager {
             }
         }
         else if (style === 'dubstep') {
-            // Wobble Bass
             if (beatNumber === 0) {
-                 const freq = (root * 0.5); // Low bass
-                 this.playWobbleBass(freq, time, 0.5); // Wub
+                 const freq = (root * 0.5);
+                 this.playWobbleBass(freq, time, 0.5);
             }
             if (beatNumber === 8) {
                  const freq = (root * 0.5) * Math.pow(2, scale[2]/12);
-                 this.playWobbleBass(freq, time, 0.5); // Wub
+                 this.playWobbleBass(freq, time, 0.5);
             }
-            // High synth
             if (beatNumber === 12) {
                 this.playTone(root*4, 'sawtooth', 0.1, 0.1);
             }
         }
-        else if (style === 'dnb') {
-            // Fast rolling bass
-            if (beatNumber % 4 === 0) {
-                const note = scale[Math.floor(Math.random() * 3)]; // Low notes
-                const freq = (root * 0.5) * Math.pow(2, note/12);
-                this.playSawBass(freq, time, 0.15);
-            }
+        else if (style === 'glitch') {
+            if (Math.random() < 0.3) this.playGlitchNoise(time);
+            if (beatNumber % 8 === 0 && Math.random() > 0.5) this.playKick(time);
         }
-        else if (style === 'jazz') {
-            // Walking Bass (Quarter notes)
-            if (beatNumber % 4 === 0) {
-                 const note = scale[Math.floor(Math.random() * scale.length)];
-                 const freq = (root * 0.5) * Math.pow(2, note/12);
-                 this.playTone(freq, 'sine', 0.2, 0.3); // Double bass ish
-            }
-            // Piano chords (random stabs)
-            if (Math.random() < 0.1) {
-                 const notes = [0, 4, 7, 11]; // Major 7
-                 notes.forEach(n => {
-                      const f = (root * 2) * Math.pow(2, n/12);
-                      this.playTone(f, 'triangle', 0.3, 0.1);
-                 });
-            }
-        }
-        else if (style === 'classical') {
-            // Alberti Bass Arpeggio (16th notes)
-            const arpPattern = [0, 4, 7, 4]; // Root, 5th, Octave, 5th relative indices
-            const noteIdx = arpPattern[beatNumber % 4];
-            const note = scale[noteIdx % scale.length];
-            const freq = (root * 2) * Math.pow(2, note/12);
-            this.playTone(freq, 'sine', 0.2, 0.15);
-
-            // Melody on top (slower)
-            if (beatNumber % 8 === 0) {
-                const melNote = scale[Math.floor(Math.random() * scale.length)];
-                const melFreq = (root * 4) * Math.pow(2, melNote/12);
-                this.playTone(melFreq, 'triangle', 0.4, 0.1);
-            }
+        else if (style === 'ambient') {
+            if (beatNumber === 0) this.playPad(time, 4);
         }
     }
 
