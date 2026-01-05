@@ -606,7 +606,7 @@ export default class ArcadeHub {
 
             // Droid body
             const body = new THREE.Mesh(
-                new THREE.CapsuleGeometry(0.3, 1, 4, 8),
+                new THREE.CylinderGeometry(0.3, 0.3, 1, 8),
                 new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.2 })
             );
             body.position.y = 0.8;
