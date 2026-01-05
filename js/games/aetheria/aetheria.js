@@ -178,6 +178,7 @@ export default class AetheriaGameAdapter {
         
         if (this.renderer) {
             this.renderer.dispose();
+            if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
             // Remove canvas from DOM
             if (this.renderer.domElement && this.renderer.domElement.parentNode) {
                 this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);

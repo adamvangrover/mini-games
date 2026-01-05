@@ -118,6 +118,7 @@ export default class SpaceShooterGame {
         }
         if (this.renderer) {
             this.renderer.dispose();
+            if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
         }
     }
 

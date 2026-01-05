@@ -381,6 +381,7 @@ export default class PrismRealms {
         // Cleanup Three.js
         if(this.renderer) {
             this.renderer.dispose();
+            if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
             this.renderer.domElement.remove();
         }
 

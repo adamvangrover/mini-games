@@ -1,4 +1,3 @@
-import pytest
 from playwright.sync_api import sync_playwright
 import time
 
@@ -8,7 +7,11 @@ def test_client_side_compatibility():
         page = browser.new_page()
 
         # Navigate to the page
-        page.goto("http://localhost:8000/index.html")
+        try:
+            page.goto("http://localhost:8000/index.html")
+        except Exception as e:
+            print(f"Failed to load page: {e}")
+            raise e
 
         # 1. Handle the "Click to Start" loader
         try:
@@ -23,7 +26,8 @@ def test_client_side_compatibility():
         # 2. Verify LocalStorage is working (Simulate Local Session)
         page.evaluate("localStorage.setItem('test_key', 'test_value')")
         val = page.evaluate("localStorage.getItem('test_key')")
-        assert val == 'test_value', "LocalStorage should be writable/readable"
+        if val != 'test_value':
+            raise Exception("LocalStorage should be writable/readable")
         print("✅ LocalStorage check passed.")
 
         # 3. Check for Absolute Paths that would break GitHub Pages
@@ -58,8 +62,10 @@ def test_client_side_compatibility():
         else:
              print("✅ No absolute 'href' paths found.")
 
-        assert len(elements_with_src) == 0, "Found absolute src paths incompatible with GitHub Pages subdirectories."
-        assert len(elements_with_href) == 0, "Found absolute href paths incompatible with GitHub Pages subdirectories."
+        if len(elements_with_src) > 0:
+            raise Exception("Found absolute src paths incompatible with GitHub Pages subdirectories.")
+        if len(elements_with_href) > 0:
+            raise Exception("Found absolute href paths incompatible with GitHub Pages subdirectories.")
 
         # 4. Check for mixed content (http vs https) if we were on https
         # Since we are on localhost, this is less critical, but good to check we use https for CDNs

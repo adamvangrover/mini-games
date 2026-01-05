@@ -721,6 +721,7 @@ export default class Clubhouse {
                 this.container.removeChild(this.renderer.domElement);
             }
             this.renderer.dispose();
+            if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
         }
 
         const ui = document.getElementById('clubhouse-ui');

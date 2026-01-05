@@ -671,7 +671,19 @@ export default class Game {
         window.removeEventListener('mousedown', this.boundOnMouseDown);
         window.removeEventListener('mousemove', this.boundOnMouseMove);
         window.removeEventListener('keydown', this.boundOnKeyDown);
+
+        if (this.renderer) {
+            if (this.container.contains(this.renderer.domElement)) {
+                this.container.removeChild(this.renderer.domElement);
+            }
+            this.renderer.dispose();
+            if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
+            this.renderer = null;
+        }
+
         this.container.innerHTML = '';
+        this.scene = null;
+        this.camera = null;
     }
 }
 

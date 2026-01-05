@@ -893,6 +893,7 @@ export default class Lumina {
         // Three.js cleanup
         if(this.scene) this.scene.clear();
         if(this.renderer) this.renderer.dispose();
+            if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
         if(this.container) this.container.innerHTML = '';
     }
 }

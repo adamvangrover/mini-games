@@ -242,6 +242,7 @@ class GameController {
         this.started = false;
         this.input.unbind();
         if(this.renderer) this.renderer.dispose();
+            if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
         // Additional cleanup if needed
     }
 

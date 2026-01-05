@@ -288,6 +288,7 @@ export default class Game {
 
         if(this.renderer) {
             this.renderer.dispose();
+            if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
         }
         if(this.scene) {
             this.scene.clear();
