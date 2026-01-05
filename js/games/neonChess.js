@@ -292,11 +292,11 @@ export default class NeonChess {
 
         if (type === 'p') {
             // Move 1
-            if (!this.board[r+forward][c]) {
+            if (this.board[r+forward] && !this.board[r+forward][c]) {
                 moves.push({r: r+forward, c: c, fromR: r, fromC: c, capture: false});
                 // Move 2
                 if ((color === 'white' && r === 6) || (color === 'black' && r === 1)) {
-                     if (!this.board[r+(forward*2)][c]) {
+                     if (this.board[r+(forward*2)] && !this.board[r+(forward*2)][c]) {
                          moves.push({r: r+(forward*2), c: c, fromR: r, fromC: c, capture: false});
                      }
                 }
@@ -335,7 +335,7 @@ export default class NeonChess {
     }
 
     draw() {
-        if (!this.ctx || !this.cellSize) return;
+        if (!this.ctx || !this.cellSize || !this.board || this.board.length !== 8) return;
         const ctx = this.ctx;
         const w = this.canvas.width;
         const h = this.canvas.height;

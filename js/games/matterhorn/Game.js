@@ -131,6 +131,7 @@ class GameController {
         // Clean up Three.js
         if (this.renderer) {
             this.renderer.dispose();
+            if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
         }
         if (this.scene) {
             this.scene.traverse(object => {

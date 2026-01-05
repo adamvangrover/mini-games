@@ -336,4 +336,26 @@ export default class CityGame {
             this.renderer.render(this.scene, this.camera);
         }
     }
+
+    shutdown() {
+        if (this.renderer) {
+            if (this.container.contains(this.renderer.domElement)) {
+                this.container.removeChild(this.renderer.domElement);
+            }
+            this.renderer.dispose();
+            if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
+            this.renderer = null;
+        }
+
+        if (this.ui && this.ui.shutdown) this.ui.shutdown();
+        this.container.innerHTML = '';
+
+        this.scene = null;
+        this.camera = null;
+        this.world = null;
+        this.player = null;
+        this.npcs = [];
+        this.cars = [];
+        this.interactables = [];
+    }
 }

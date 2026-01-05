@@ -439,6 +439,7 @@ export default class AetheriaClassic {
         window.removeEventListener('resize', this._resize);
         if (this.renderer) {
             this.renderer.dispose();
+            if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
         }
     }
 }

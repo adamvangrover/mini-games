@@ -572,6 +572,7 @@ export default class RageQuitGame {
 
         if (this.renderer) {
             this.renderer.dispose();
+            if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
             if(this.renderer.domElement && this.renderer.domElement.parentNode)
                 this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
         }

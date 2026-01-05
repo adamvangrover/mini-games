@@ -509,10 +509,12 @@ class Game {
         document.removeEventListener('pointermove', this.onPointerMove);
         if(this.renderer) {
             this.renderer.dispose();
+            if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
             this.container.removeChild(this.renderer.domElement);
         }
         if(this.cakeRenderer) {
             this.cakeRenderer.dispose();
+            if (this.cakeRenderer.forceContextLoss) this.cakeRenderer.forceContextLoss();
         }
         // Physics cleanup
         // ...

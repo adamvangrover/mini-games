@@ -294,5 +294,6 @@ export default class NeonShooter {
 
         // Dispose Three.js
         if(this.renderer) this.renderer.dispose();
+            if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
     }
 }
