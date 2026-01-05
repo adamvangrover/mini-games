@@ -5,7 +5,7 @@ export default class SaveSystem {
         }
 
         this.storageKey = 'miniGameHub_v1';
-        this.currentVersion = 1.2; // Schema Version
+        this.currentVersion = 1.3; // Schema Version
         this.data = this.load();
 
         SaveSystem.instance = this;
@@ -92,6 +92,13 @@ export default class SaveSystem {
             data.version = 1.2;
         }
 
+        // Migration 1.2 -> 1.3 (Add Daily Quests)
+        if (data.version < 1.3) {
+            console.log("SaveSystem: Migrating to 1.3...");
+            data.dailyQuests = { date: 0, quests: [] };
+            data.version = 1.3;
+        }
+
         // Always merge with default to ensure all fields exist (Schema Enforcement)
         return { ...this.getDefaultData(), ...data, version: this.currentVersion };
     }
@@ -150,6 +157,10 @@ export default class SaveSystem {
                 coinMultiplier: 1,
                 xpBoost: 1,
                 startHealth: 0
+            },
+            dailyQuests: {
+                date: 0,
+                quests: []
             }
         };
     }
@@ -422,5 +433,72 @@ export default class SaveSystem {
             reward: totalReward,
             streak: this.data.login.streak
         };
+    }
+
+    // --- Daily Quests System ---
+
+    getDailyQuests() {
+        const now = new Date();
+        const getDayIndex = (d) => Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 86400000);
+        const today = getDayIndex(now);
+
+        if (!this.data.dailyQuests || this.data.dailyQuests.date !== today) {
+            this.generateDailyQuests(today);
+        }
+        return this.data.dailyQuests.quests;
+    }
+
+    generateDailyQuests(dateIndex) {
+        const questTypes = [
+            { id: 'play_games', desc: 'Play 3 different games', target: 3, reward: 50 },
+            { id: 'earn_coins', desc: 'Earn 100 coins', target: 100, reward: 75 },
+            { id: 'high_score', desc: 'Set a new High Score', target: 1, reward: 100 },
+            { id: 'clicker', desc: 'Click 500 times in Clicker', target: 500, reward: 50 },
+            { id: 'spend', desc: 'Spend 50 coins in Store', target: 50, reward: 25 },
+            { id: 'boss_mode', desc: 'Find the Boss Mode', target: 1, reward: 200 } // Special
+        ];
+
+        // Shuffle and pick 3
+        const shuffled = questTypes.sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, 3).map(q => ({
+            ...q,
+            progress: 0,
+            claimed: false
+        }));
+
+        this.data.dailyQuests = {
+            date: dateIndex,
+            quests: selected
+        };
+        this.save();
+    }
+
+    updateQuestProgress(type, amount = 1) {
+        if (!this.data.dailyQuests) return;
+        let updated = false;
+
+        // Special logic for generic 'play_games' or 'earn_coins' could be handled here or by caller passing specific ID
+        // But our IDs are specific enough.
+
+        this.data.dailyQuests.quests.forEach(q => {
+            if (q.id === type && !q.claimed && q.progress < q.target) {
+                q.progress += amount;
+                if (q.progress > q.target) q.progress = q.target;
+                updated = true;
+            }
+        });
+
+        if (updated) this.save();
+    }
+
+    claimQuestReward(questId) {
+        const quest = this.data.dailyQuests.quests.find(q => q.id === questId);
+        if (quest && quest.progress >= quest.target && !quest.claimed) {
+            quest.claimed = true;
+            this.addCurrency(quest.reward);
+            this.save();
+            return quest.reward;
+        }
+        return 0;
     }
 }

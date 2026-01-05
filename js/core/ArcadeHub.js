@@ -23,6 +23,7 @@ export default class ArcadeHub {
         this.walls = [];
         this.ceilingLights = [];
         this.ghostPlayers = [];
+        this.interactables = []; // New generic interactables system
         
         // State
         this.isHovering = false;
@@ -127,6 +128,11 @@ export default class ArcadeHub {
             this.createNavMarker();
             this.createGhostPlayers();
 
+            // --- New Interactables ---
+            this.createJukebox(15, 0, 20); // Near entrance, right side
+            this.createVendingMachine(-15, 0, 20); // Near entrance, left side
+            this.createJobBoard(0, 0, 15); // Center aisle
+
             // --- Event Listeners ---
             window.addEventListener('resize', this.onResize.bind(this));
 
@@ -149,6 +155,163 @@ export default class ArcadeHub {
             if (this.onFallback) this.onFallback();
         }
     }
+
+    // --- Interactables Creation ---
+
+    createJukebox(x, y, z) {
+        const group = new THREE.Group();
+        group.position.set(x, y, z);
+        // Face the player entering
+        group.rotation.y = -Math.PI / 4;
+
+        // Main Body
+        const bodyGeo = new THREE.BoxGeometry(2, 4, 1.5);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x330033, metalness: 0.8, roughness: 0.2 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 2;
+        group.add(body);
+
+        // Neon Tubes
+        const tubeGeo = new THREE.CylinderGeometry(0.1, 0.1, 4);
+        const tubeMat = new THREE.MeshStandardMaterial({ color: 0xff00ff, emissive: 0xff00ff, emissiveIntensity: 2 });
+        const leftTube = new THREE.Mesh(tubeGeo, tubeMat);
+        leftTube.position.set(-1.1, 2, 0.8);
+        group.add(leftTube);
+
+        const rightTube = new THREE.Mesh(tubeGeo, tubeMat);
+        rightTube.position.set(1.1, 2, 0.8);
+        group.add(rightTube);
+
+        // Label
+        const canvas = document.createElement('canvas');
+        canvas.width = 256; canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'black'; ctx.fillRect(0,0,256,128);
+        ctx.font = 'bold 30px Arial'; ctx.fillStyle = '#00ffff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('JUKEBOX', 128, 64);
+        const label = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.75), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas) }));
+        label.position.set(0, 3, 0.8);
+        group.add(label);
+
+        // Interact Data
+        group.userData = {
+            isInteractable: true,
+            type: 'JUKEBOX',
+            tooltip: 'Change Music'
+        };
+
+        this.scene.add(group);
+        this.addCollider(body);
+        this.interactables.push(group);
+
+        // Add a floating note particle system around it
+        // (Simplified for now, maybe add later)
+    }
+
+    createVendingMachine(x, y, z) {
+        const group = new THREE.Group();
+        group.position.set(x, y, z);
+        group.rotation.y = Math.PI / 4;
+
+        // Body
+        const bodyGeo = new THREE.BoxGeometry(2, 4, 1.5);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x003366, metalness: 0.5 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 2;
+        group.add(body);
+
+        // Glass Front
+        const glassGeo = new THREE.PlaneGeometry(1.6, 2.5);
+        const glassMat = new THREE.MeshStandardMaterial({ color: 0xaaddff, transparent: true, opacity: 0.3, metalness: 0.9, roughness: 0.1 });
+        const glass = new THREE.Mesh(glassGeo, glassMat);
+        glass.position.set(0, 2.2, 0.76);
+        group.add(glass);
+
+        // Products (Low poly cans)
+        for(let i=0; i<3; i++) {
+            for(let j=0; j<3; j++) {
+                const can = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.1, 0.1, 0.3, 8),
+                    new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff })
+                );
+                can.rotation.x = Math.PI / 2;
+                can.position.set(-0.5 + i*0.5, 1.5 + j*0.5, 0.5);
+                group.add(can);
+            }
+        }
+
+        // Label
+        const canvas = document.createElement('canvas');
+        canvas.width = 256; canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#111'; ctx.fillRect(0,0,256,64);
+        ctx.font = 'bold 24px Arial'; ctx.fillStyle = '#00ff00'; ctx.textAlign = 'center'; ctx.fillText('SPEED BOOST', 128, 40);
+        const label = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.4), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas) }));
+        label.position.set(0, 3.7, 0.76);
+        group.add(label);
+
+        group.userData = {
+            isInteractable: true,
+            type: 'VENDING',
+            tooltip: 'Get Energy Drink'
+        };
+
+        this.scene.add(group);
+        this.addCollider(body);
+        this.interactables.push(group);
+    }
+
+    createJobBoard(x, y, z) {
+        const group = new THREE.Group();
+        group.position.set(x, y, z);
+
+        // Stand
+        const pole = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.1, 0.1, 2, 8),
+            new THREE.MeshStandardMaterial({ color: 0x555 })
+        );
+        pole.position.y = 1;
+        group.add(pole);
+
+        // Board
+        const board = new THREE.Mesh(
+            new THREE.BoxGeometry(2, 1.5, 0.1),
+            new THREE.MeshStandardMaterial({ color: 0x8B4513 }) // Wood
+        );
+        board.position.y = 2.5;
+        group.add(board);
+
+        // Papers attached
+        const paperGeo = new THREE.PlaneGeometry(0.4, 0.5);
+        const paperMat = new THREE.MeshBasicMaterial({ color: 0xffffee });
+        for(let i=0; i<3; i++) {
+            const paper = new THREE.Mesh(paperGeo, paperMat);
+            paper.position.set(-0.6 + i*0.6, 2.5, 0.06);
+            paper.rotation.z = (Math.random() - 0.5) * 0.2;
+            group.add(paper);
+        }
+
+        // Holographic Title
+        const canvas = document.createElement('canvas');
+        canvas.width = 256; canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'rgba(0,0,0,0)'; ctx.fillRect(0,0,256,64);
+        ctx.font = 'bold 36px Arial'; ctx.fillStyle = '#ffff00'; ctx.shadowBlur=10; ctx.shadowColor='#ffff00'; ctx.textAlign = 'center'; ctx.fillText('QUESTS', 128, 45);
+        const title = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.4), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, side: THREE.DoubleSide }));
+        title.position.set(0, 3.4, 0);
+        group.add(title);
+
+        group.userData = {
+            isInteractable: true,
+            type: 'JOB_BOARD',
+            tooltip: 'Daily Quests'
+        };
+
+        this.scene.add(group);
+        this.addCollider(board); // Small collider
+        this.interactables.push(group);
+    }
+
 
     // --- UI: Virtual Joystick ---
 
@@ -627,6 +790,14 @@ export default class ArcadeHub {
                 (Math.random() * 20 - 10)
             );
 
+            // Make interactable
+            group.userData = {
+                isInteractable: true,
+                type: 'GHOST',
+                tooltip: 'Chat',
+                name: 'Ghost ' + i
+            };
+
             this.scene.add(group);
             this.ghostPlayers.push({
                 mesh: group,
@@ -839,11 +1010,14 @@ export default class ArcadeHub {
         let hovered = false;
         if (intersects.length > 0) {
             let obj = intersects[0].object;
-            while(obj.parent && !obj.userData.gameId && !obj.userData.isTeleporter) {
+            // Traverse up to find user data
+            while(obj.parent && !obj.userData.gameId && !obj.userData.isTeleporter && !obj.userData.isInteractable) {
                 obj = obj.parent;
             }
-            if (obj.userData && (obj.userData.gameId || obj.userData.isTeleporter)) {
+            if (obj.userData && (obj.userData.gameId || obj.userData.isTeleporter || obj.userData.isInteractable)) {
                 hovered = true;
+
+                // Optional: Show Tooltip here if needed using obj.userData.tooltip
             }
         }
         document.body.style.cursor = hovered ? 'pointer' : (this.isDragging ? 'grabbing' : 'default');
@@ -890,25 +1064,91 @@ export default class ArcadeHub {
             let obj = intersects[0].object;
 
             let interactiveObj = obj;
-            while(interactiveObj.parent && !interactiveObj.userData.gameId && !interactiveObj.userData.isTeleporter) {
+            while(interactiveObj.parent && !interactiveObj.userData.gameId && !interactiveObj.userData.isTeleporter && !interactiveObj.userData.isInteractable) {
                 interactiveObj = interactiveObj.parent;
             }
 
-            if (interactiveObj.userData && (interactiveObj.userData.gameId || interactiveObj.userData.isTeleporter)) {
+            // Handle Interactions
+            if (interactiveObj.userData) {
                 const dist = this.player.position.distanceTo(interactiveObj.position);
-                if (dist < 4.0) {
-                    const targetId = interactiveObj.userData.gameId || 'TROPHY_ROOM';
-                    if (this.onGameSelect) this.onGameSelect(targetId);
-                } else {
-                    const dir = new THREE.Vector3().subVectors(this.player.position, interactiveObj.position).normalize().multiplyScalar(2.0);
-                    this.navTarget = new THREE.Vector3().addVectors(interactiveObj.position, dir);
-                    this.navTarget.y = this.player.position.y;
+                const isCloseEnough = dist < 4.5;
+
+                // 1. Games & Teleporter
+                if (interactiveObj.userData.gameId || interactiveObj.userData.isTeleporter) {
+                    if (isCloseEnough) {
+                        const targetId = interactiveObj.userData.gameId || 'TROPHY_ROOM';
+                        if (this.onGameSelect) this.onGameSelect(targetId);
+                    } else {
+                        // Walk to it
+                        const dir = new THREE.Vector3().subVectors(this.player.position, interactiveObj.position).normalize().multiplyScalar(2.0);
+                        this.navTarget = new THREE.Vector3().addVectors(interactiveObj.position, dir);
+                        this.navTarget.y = this.player.position.y;
+                    }
+                    return;
                 }
-                return;
+
+                // 2. New Interactables
+                if (interactiveObj.userData.isInteractable) {
+                    if (isCloseEnough) {
+                        this.handleGenericInteraction(interactiveObj);
+                    } else {
+                        // Walk to it
+                        const dir = new THREE.Vector3().subVectors(this.player.position, interactiveObj.position).normalize().multiplyScalar(2.5);
+                        this.navTarget = new THREE.Vector3().addVectors(interactiveObj.position, dir);
+                        this.navTarget.y = this.player.position.y;
+                    }
+                    return;
+                }
             }
 
+            // Default: Move to point
             this.navTarget = point;
             this.navTarget.y = this.player.position.y;
+        }
+    }
+
+    handleGenericInteraction(obj) {
+        const type = obj.userData.type;
+        const soundManager = SoundManager.getInstance();
+
+        if (type === 'JUKEBOX') {
+            const newStyle = soundManager.nextMusicStyle();
+            window.miniGameHub.showToast(`Music changed to: ${newStyle.toUpperCase()}`);
+            soundManager.playSound('click');
+            // Little bounce effect
+            if(obj.scale.y === 1) {
+                obj.scale.set(1.1, 1.1, 1.1);
+                setTimeout(() => obj.scale.set(1, 1, 1), 200);
+            }
+        } else if (type === 'VENDING') {
+            if (this.player.speed >= 14.0) {
+                window.miniGameHub.showToast("You're already maxed out!");
+                return;
+            }
+            soundManager.playSound('powerup'); // Assuming this exists or falls back
+            window.miniGameHub.showToast("Speed Boost Acquired!");
+            this.player.speed = 14.0;
+            // Reset after 10s
+            setTimeout(() => {
+                this.player.speed = 8.0;
+                window.miniGameHub.showToast("Speed Boost Wore Off");
+            }, 10000);
+        } else if (type === 'JOB_BOARD') {
+            soundManager.playSound('click');
+            // Trigger overlay via main.js global handler (we'll emit an event or call a method)
+            window.dispatchEvent(new CustomEvent('open-quest-board'));
+        } else if (type === 'GHOST') {
+            const lines = [
+                "Have you tried the Konami code?",
+                "The boss is watching...",
+                "I lost all my coins in Neon Hunter.",
+                "Press Shift to sprint!",
+                "There is a secret in the Trophy Room.",
+                "Alt+B protects you from work."
+            ];
+            const randomLine = lines[Math.floor(Math.random() * lines.length)];
+            window.miniGameHub.showToast(`Ghost: "${randomLine}"`);
+            soundManager.playSound('hover');
         }
     }
 
