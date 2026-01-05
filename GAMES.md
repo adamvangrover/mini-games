@@ -189,3 +189,19 @@ This file provides detailed instructions and walkthroughs for each game in the M
     *   No more than two of the same symbol can be placed adjacent to each other (horizontally or vertically).
 4.  The puzzle is solved when the entire grid is filled correctly according to the rules.
 5.  Some cells may be pre-filled as clues.
+
+---
+
+## 🔡 Neon Word
+
+**Objective:** Guess the hidden word in 6 tries.
+
+**How to Play:**
+1.  **Select Difficulty:** Choose from Easy (4 letters) to Expert (7 letters).
+2.  **Make a Guess:** Type a word and press Enter.
+3.  **Feedback:**
+    *   **Green:** Correct letter in the correct spot.
+    *   **Yellow:** Correct letter in the wrong spot.
+    *   **Gray:** Letter is not in the word.
+4.  **Hints:** Stuck? Click "NEED A HINT?" to reveal the definition of the word.
+5.  **Streak:** Build your winning streak by solving puzzles consecutively!

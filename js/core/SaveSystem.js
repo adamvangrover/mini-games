@@ -379,4 +379,48 @@ export default class SaveSystem {
     getXP() {
         return this.data.xp || 0;
     }
+
+    checkDailyLogin() {
+        if (!this.data.login) {
+            this.data.login = {
+                lastLogin: 0,
+                streak: 0
+            };
+        }
+
+        const now = new Date();
+        // Use time zone offset to ensure we are comparing local calendar days properly
+        // Or simply compare year/month/date integers
+        const getDayIndex = (d) => Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 86400000);
+
+        const currentDayIndex = getDayIndex(now);
+        const lastLoginDate = new Date(this.data.login.lastLogin);
+        const lastLoginDayIndex = this.data.login.lastLogin === 0 ? -1 : getDayIndex(lastLoginDate);
+
+        if (currentDayIndex === lastLoginDayIndex) {
+            // Already logged in today
+            return 0;
+        } else if (currentDayIndex === lastLoginDayIndex + 1) {
+            // Consecutive login
+            this.data.login.streak++;
+        } else {
+            // Streak broken
+            this.data.login.streak = 1;
+        }
+
+        this.data.login.lastLogin = now.getTime();
+
+        // Reward Calculation
+        const baseReward = 50;
+        const streakBonus = Math.min(this.data.login.streak * 10, 200);
+        const totalReward = baseReward + streakBonus;
+
+        this.addCurrency(totalReward);
+        this.save();
+
+        return {
+            reward: totalReward,
+            streak: this.data.login.streak
+        };
+    }
 }

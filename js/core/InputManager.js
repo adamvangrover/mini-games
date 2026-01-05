@@ -5,6 +5,7 @@ export default class InputManager {
         }
 
         this.keys = {};
+        this.keysPressed = {}; // Single frame
         this.mouse = { x: 0, y: 0, down: false };
 
         this.bindEvents();
@@ -21,11 +22,18 @@ export default class InputManager {
     bindEvents() {
         // Keyboard
         window.addEventListener('keydown', (e) => {
+            if (e.repeat) return; // Ignore auto-repeat for pressed state
             this.keys[e.code] = true;
+            this.keys[e.key] = true; // Support key names too
+            this.keysPressed[e.code] = true;
+            this.keysPressed[e.key] = true;
         });
 
         window.addEventListener('keyup', (e) => {
             this.keys[e.code] = false;
+            this.keys[e.key] = false;
+            this.keysPressed[e.code] = false;
+            this.keysPressed[e.key] = false;
         });
 
         // Mouse
@@ -68,6 +76,20 @@ export default class InputManager {
 
     isKeyDown(code) {
         return !!this.keys[code];
+    }
+
+    isKeyPressed(code) {
+        // This relies on manual clearing at end of frame or checking diff,
+        // but for now, let's just alias to isKeyDown or implement frame-based clearing if we had a central update.
+        // Since InputManager doesn't have an update() call in main loop,
+        // we can't reliably auto-clear.
+        // However, for games like this, `isKeyDown` usually suffices if we debounce in game logic.
+        // OR we can implement a "consume" method.
+
+        // Actually, the best way without central update is:
+        const val = !!this.keysPressed[code];
+        if(val) this.keysPressed[code] = false; // Auto consume
+        return val;
     }
 
     getMouse() {

@@ -1,4 +1,6 @@
 import SaveSystem from './SaveSystem.js';
+import SoundManager from './SoundManager.js';
+import ParticleSystem from './ParticleSystem.js';
 
 export default class AdsManager {
     constructor() {
@@ -100,12 +102,30 @@ export default class AdsManager {
                 iconColor: "text-yellow-200",
                 buttonText: "Wait for it...",
                 bgGradient: "from-fuchsia-900 to-purple-900"
+            },
+            {
+                title: "You Are The Product",
+                subtitle: "If this service is free, you know what that means.",
+                icon: "fa-user-tag",
+                iconColor: "text-red-400",
+                buttonText: "Accept Fate",
+                bgGradient: "from-gray-900 to-black"
+            },
+            {
+                title: "Synthesize!",
+                subtitle: "Why be organic when you can be chrome?",
+                icon: "fa-robot",
+                iconColor: "text-cyan-400",
+                buttonText: "Upgrade",
+                bgGradient: "from-cyan-900 to-blue-900"
             }
         ];
 
         this.ambientAds = [
             "Glitch Cola: Taste the Static.",
             "Weather Update: 99% chance of Acid Rain in Sector 7.",
+            "Don't forget to blink. It keeps the eyes moist.",
+            "Sponsored by the Committee for Recursive Acronyms.",
             "Lost: One pixel. If found, please return to (0,0).",
             "News: AI takes over toaster industry, toast is now perfectly burnt.",
             "Tip: Pressing buttons makes things happen.",
@@ -143,31 +163,31 @@ export default class AdsManager {
 
         overlay.innerHTML = `
             <div id="ad-content-box" class="relative w-full max-w-4xl h-full max-h-[80vh] bg-slate-900 border-2 border-fuchsia-500 rounded-lg overflow-hidden flex flex-col transition-colors duration-500 shadow-[0_0_50px_rgba(255,0,255,0.2)]">
-                <div class="absolute top-2 right-2 z-10">
+                <!-- Close/Timer -->
+                <div class="absolute top-2 right-2 z-20">
                     <div id="ad-timer" class="w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center font-bold border border-white backdrop-blur">5</div>
                     <button id="ad-close-btn" class="hidden px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-700 border border-slate-600 transition-colors">
                         <i class="fas fa-times"></i> Close
                     </button>
                 </div>
 
-                <div id="ad-inner-body" class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-indigo-900 to-purple-900 w-full h-full relative overflow-hidden">
-                    <!-- Background Pattern -->
-                    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle, #ffffff 1px, transparent 1px); background-size: 20px 20px;"></div>
+                <!-- Main Content Area -->
+                <div id="ad-inner-body" class="flex-1 flex flex-col items-center justify-center relative overflow-hidden w-full h-full">
+                    <!-- Standard Ad Elements -->
+                    <div id="ad-standard-wrapper" class="flex flex-col items-center text-center p-8 relative z-10">
+                         <div id="ad-icon-container" class="mb-6 animate-bounce"></div>
+                         <h2 id="ad-title" class="text-4xl font-bold text-white mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-display tracking-wide">TITLE</h2>
+                         <p id="ad-subtitle" class="text-xl text-cyan-300 mb-8 max-w-md drop-shadow font-light">Subtitle text goes here.</p>
+                         <button id="ad-action-btn" class="px-8 py-3 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full text-white font-bold shadow-lg border border-white/20 transition-all hover:scale-105 active:scale-95">ACTION</button>
+                    </div>
 
-                    <!-- Content -->
-                    <div class="relative z-10 flex flex-col items-center">
-                        <div id="ad-icon-container" class="mb-6 animate-bounce">
-                            <!-- Icon Injected Here -->
-                        </div>
-                        <h2 id="ad-title" class="text-4xl font-bold text-white mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-display tracking-wide">TITLE</h2>
-                        <p id="ad-subtitle" class="text-xl text-cyan-300 mb-8 max-w-md drop-shadow font-light">Subtitle text goes here.</p>
-                        <button id="ad-action-btn" class="px-8 py-3 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full text-white font-bold shadow-lg border border-white/20 transition-all hover:scale-105 active:scale-95">
-                            ACTION
-                        </button>
+                    <!-- Mini-Game Area (Hidden by default) -->
+                    <div id="ad-minigame-wrapper" class="absolute inset-0 z-10 hidden bg-slate-900">
+                        <!-- Canvas or DOM elements for minigame go here -->
                     </div>
                 </div>
 
-                <div class="h-1 bg-slate-800 w-full absolute bottom-0 left-0">
+                <div class="h-1 bg-slate-800 w-full absolute bottom-0 left-0 z-20">
                     <div id="ad-progress" class="h-full bg-cyan-400 w-0 transition-all duration-100 ease-linear shadow-[0_0_10px_cyan]"></div>
                 </div>
             </div>
@@ -181,6 +201,10 @@ export default class AdsManager {
         this.progressBar = overlay.querySelector('#ad-progress');
         this.contentBox = overlay.querySelector('#ad-content-box');
         this.innerBody = overlay.querySelector('#ad-inner-body');
+
+        // Wrappers
+        this.standardWrapper = overlay.querySelector('#ad-standard-wrapper');
+        this.minigameWrapper = overlay.querySelector('#ad-minigame-wrapper');
 
         // Cache dynamic elements
         this.adIconContainer = overlay.querySelector('#ad-icon-container');
@@ -196,8 +220,6 @@ export default class AdsManager {
 
         const ticker = document.createElement('div');
         ticker.id = 'news-ticker';
-        // Placed at bottom, visible but not intrusive.
-        // pointer-events-none so it doesn't block clicks (unless we want it to be interactive later)
         ticker.className = 'fixed bottom-0 left-0 w-full bg-slate-900/90 border-t border-fuchsia-500/30 text-cyan-400 py-1 px-4 z-[40] font-mono text-xs overflow-hidden hidden pointer-events-none select-none';
 
         ticker.innerHTML = `
@@ -211,7 +233,6 @@ export default class AdsManager {
             </div>
         `;
 
-        // Add CSS animation for marquee if not in style.css
         if (!document.getElementById('ticker-style')) {
             const style = document.createElement('style');
             style.id = 'ticker-style';
@@ -231,7 +252,6 @@ export default class AdsManager {
         this.tickerEl = ticker;
         this.tickerContent = ticker.querySelector('#ticker-content');
 
-        // Start Ambient Cycle
         this.startAmbientCycle();
     }
 
@@ -239,7 +259,7 @@ export default class AdsManager {
 
     areAdsEnabled() {
         const setting = this.saveSystem.getSetting('adsEnabled');
-        return setting !== false; // Default to true if undefined
+        return setting !== false; // Default to true
     }
 
     toggleAds(enabled) {
@@ -261,10 +281,20 @@ export default class AdsManager {
             return;
         }
 
-        // Pick random template
+        // Random chance for interactive ad (30%)
+        if (Math.random() < 0.3) {
+            this.showInteractiveAd(callback);
+            return;
+        }
+
+        // Standard Ad
         const template = this.interstitials[Math.floor(Math.random() * this.interstitials.length)];
 
-        // Update UI
+        // UI Setup
+        this.standardWrapper.classList.remove('hidden');
+        this.minigameWrapper.classList.add('hidden');
+        this.minigameWrapper.innerHTML = ''; // Clean up
+
         this.innerBody.className = `flex-1 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br ${template.bgGradient} w-full h-full relative overflow-hidden`;
 
         this.adIconContainer.innerHTML = `<i class="fas ${template.icon} text-6xl ${template.iconColor} drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]"></i>`;
@@ -276,7 +306,7 @@ export default class AdsManager {
         this.isActive = true;
         this.adContainer.classList.remove('hidden');
 
-        // Reset State
+        // Reset State - ensuring timer is visible for standard ads (Regression fix)
         this.timerEl.classList.remove('hidden');
         this.closeBtn.classList.add('hidden');
         this.progressBar.style.width = '0%';
@@ -302,9 +332,195 @@ export default class AdsManager {
         }, 1000);
     }
 
+    showInteractiveAd(callback) {
+        this.onAdComplete = callback;
+        this.isActive = true;
+        this.adContainer.classList.remove('hidden');
+
+        // Hide standard UI, Show MiniGame UI
+        this.standardWrapper.classList.add('hidden');
+        this.minigameWrapper.classList.remove('hidden');
+        this.innerBody.className = "flex-1 flex flex-col w-full h-full relative overflow-hidden bg-slate-900"; // Reset bg
+
+        // Hide normal timer/close for now (controlled by minigame)
+        this.timerEl.classList.add('hidden');
+        this.closeBtn.classList.add('hidden');
+        this.progressBar.style.width = '0%';
+
+        // Failsafe Timer (15s) - Prevents getting stuck
+        setTimeout(() => {
+            if (this.isActive && this.closeBtn.classList.contains('hidden')) {
+                this.closeBtn.classList.remove('hidden');
+            }
+        }, 15000);
+
+        // Pick Game
+        const games = ['glitchScrub', 'targetPractice'];
+        const game = games[Math.floor(Math.random() * games.length)];
+
+        if (game === 'glitchScrub') {
+            this._runGlitchScrub(() => this._finishInteractiveAd());
+        } else {
+            this._runTargetPractice(() => this._finishInteractiveAd());
+        }
+    }
+
+    _finishInteractiveAd() {
+        // Show reward/close
+        this.closeBtn.classList.remove('hidden');
+
+        // Reward
+        this.saveSystem.addCurrency(20);
+        SoundManager.getInstance().playSound('powerup');
+
+        // Show brief success msg
+        const success = document.createElement('div');
+        success.className = 'absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-50 animate-fade-in';
+        success.innerHTML = `
+            <div class="text-4xl text-green-400 font-bold mb-2">AD CLEARED!</div>
+            <div class="text-xl text-white">+20 Coins</div>
+        `;
+        this.minigameWrapper.appendChild(success);
+
+        // Auto close after 1.5s
+        setTimeout(() => {
+            this.closeAd();
+        }, 1500);
+    }
+
+    // --- Mini-Game: Glitch Scrub ---
+    _runGlitchScrub(onWin) {
+        this.minigameWrapper.innerHTML = `
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                 <div class="text-center opacity-50">
+                    <i class="fas fa-eraser text-6xl text-cyan-400 mb-4 animate-pulse"></i>
+                    <h2 class="text-2xl font-bold text-white">SCRUB THE GLITCH!</h2>
+                    <p class="text-sm text-gray-400">Move mouse to clean screen</p>
+                 </div>
+            </div>
+            <canvas id="scrub-canvas" class="absolute inset-0 cursor-crosshair z-10"></canvas>
+        `;
+
+        const canvas = this.minigameWrapper.querySelector('#scrub-canvas');
+        const ctx = canvas.getContext('2d');
+        const rect = this.minigameWrapper.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+
+        // Fill with "Glitch" noise
+        ctx.fillStyle = '#1e1b4b'; // Deep blue base
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw static
+        for (let i = 0; i < 5000; i++) {
+            ctx.fillStyle = Math.random() > 0.5 ? '#ff00ff' : '#00ffff';
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            const s = Math.random() * 5 + 2;
+            ctx.fillRect(x, y, s, s);
+        }
+
+        // Logic
+        let scrubAmount = 0;
+        const targetScrub = 200; // Arbitrary units of movement
+
+        const handleMove = (e) => {
+            if (!this.isActive) return;
+            const r = canvas.getBoundingClientRect();
+            // Handle both mouse and touch
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const x = clientX - r.left;
+            const y = clientY - r.top;
+
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(x, y, 40, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Spawn particles
+            if (Math.random() > 0.5) {
+                ParticleSystem.getInstance().emit(clientX, clientY, '#00ffff', 2);
+            }
+
+            scrubAmount++;
+            const pct = Math.min(100, (scrubAmount / targetScrub) * 100);
+            this.progressBar.style.width = `${pct}%`;
+
+            if (scrubAmount >= targetScrub) {
+                // Win
+                canvas.removeEventListener('mousemove', handleMove);
+                canvas.removeEventListener('touchmove', handleMove);
+                onWin();
+            }
+        };
+
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('touchmove', handleMove);
+    }
+
+    // --- Mini-Game: Target Practice ---
+    _runTargetPractice(onWin) {
+        this.minigameWrapper.innerHTML = `
+             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-0">
+                 <h2 class="text-2xl font-bold text-white mb-2 shadow-black drop-shadow-md">DESTROY TARGETS!</h2>
+                 <div class="text-cyan-400 font-mono text-xl"><span id="tp-count">5</span> REMAINING</div>
+            </div>
+            <div id="tp-play-area" class="absolute inset-0 z-10 overflow-hidden cursor-crosshair"></div>
+        `;
+
+        const area = this.minigameWrapper.querySelector('#tp-play-area');
+        const countEl = this.minigameWrapper.querySelector('#tp-count');
+        let targetsLeft = 5;
+
+        const spawnTarget = () => {
+            if (!this.isActive || targetsLeft <= 0) return;
+
+            const t = document.createElement('div');
+            t.className = 'absolute w-16 h-16 rounded-full bg-red-500 border-4 border-white shadow-[0_0_15px_red] flex items-center justify-center text-white cursor-pointer animate-pulse active:scale-95 transition-transform hover:scale-110';
+            t.innerHTML = '<i class="fas fa-bullseye"></i>';
+
+            // Random Pos
+            const maxX = area.clientWidth - 80;
+            const maxY = area.clientHeight - 80;
+            t.style.left = `${Math.random() * maxX}px`;
+            t.style.top = `${Math.random() * maxY}px`;
+
+            const hitTarget = (e) => {
+                e.stopPropagation(); // prevent drag issues
+                e.preventDefault(); // Prevent double firing on some touch devices
+                SoundManager.getInstance().playSound('shoot');
+
+                // Particles
+                const rect = t.getBoundingClientRect();
+                ParticleSystem.getInstance().emit(rect.left + 32, rect.top + 32, '#ff0000', 10);
+
+                t.remove();
+                targetsLeft--;
+                countEl.textContent = targetsLeft;
+
+                if (targetsLeft <= 0) {
+                    onWin();
+                } else {
+                    spawnTarget(); // Spawn next
+                }
+            };
+
+            // Use pointerdown to handle both mouse and touch efficiently
+            t.onpointerdown = hitTarget;
+
+            area.appendChild(t);
+        };
+
+        // Start chain
+        spawnTarget();
+    }
+
     closeAd() {
         this.isActive = false;
         this.adContainer.classList.add('hidden');
+        this.minigameWrapper.innerHTML = ''; // Clean up listeners implicitly
         if (this.onAdComplete) {
             this.onAdComplete();
             this.onAdComplete = null;
@@ -316,14 +532,8 @@ export default class AdsManager {
     startAmbientCycle() {
         if (this.tickerInterval) clearInterval(this.tickerInterval);
         if (!this.areAdsEnabled()) return;
-
-        // Show ticker
         if (this.tickerEl) this.tickerEl.classList.remove('hidden');
-
-        // Initial update
         this.updateTicker();
-
-        // Rotate every 15s (matching animation approx)
         this.tickerInterval = setInterval(() => {
             if (!this.areAdsEnabled()) return;
             this.updateTicker();
@@ -337,13 +547,55 @@ export default class AdsManager {
     updateTicker() {
         if (!this.tickerContent) return;
         const text = this.ambientAds[Math.floor(Math.random() * this.ambientAds.length)];
-
-        // Reset animation logic to prevent jumpiness
-        // We can just update text, CSS animation loops continuously.
-        // Or better: fade out/in? For now, just swap text.
-        // To make it sync with scroll, we'd need JS animation.
-        // Let's rely on CSS loop and just change text. It might change mid-scroll but that's "glitchy" and cool.
-
         this.tickerContent.textContent = text;
+    }
+
+    // --- Popup System (Immersive Ads) ---
+    createPopup(title, content, bgColor = "bg-slate-800") {
+        const popup = document.createElement('div');
+        const x = Math.random() * (window.innerWidth - 300);
+        const y = Math.random() * (window.innerHeight - 200);
+
+        popup.className = `fixed z-[200] w-80 rounded-lg shadow-2xl border border-white/20 overflow-hidden flex flex-col animate-bounce`;
+        popup.style.left = `${x}px`;
+        popup.style.top = `${y}px`;
+
+        popup.innerHTML = `
+            <div class="h-8 ${bgColor} border-b border-white/10 flex items-center justify-between px-3 cursor-move">
+                <span class="text-white font-bold text-xs truncate">${title}</span>
+                <button class="text-white/50 hover:text-white transition-colors close-btn">&times;</button>
+            </div>
+            <div class="bg-black/90 p-4 text-white text-sm">
+                ${content}
+            </div>
+        `;
+
+        document.body.appendChild(popup);
+
+        // Basic Drag Logic
+        const header = popup.querySelector('div');
+        let isDragging = false;
+        let startX, startY, initialLeft, initialTop;
+
+        header.onmousedown = (e) => {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            initialLeft = popup.offsetLeft;
+            initialTop = popup.offsetTop;
+            popup.style.zIndex = 201; // Bring to front
+        };
+
+        window.onmousemove = (e) => {
+            if (!isDragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            popup.style.left = `${initialLeft + dx}px`;
+            popup.style.top = `${initialTop + dy}px`;
+        };
+
+        window.onmouseup = () => { isDragging = false; };
+        popup.querySelector('.close-btn').onclick = () => popup.remove();
+        setTimeout(() => popup.remove(), 10000);
     }
 }

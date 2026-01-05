@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
     <!-- Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
@@ -17,12 +18,13 @@
 
     <link rel="stylesheet" href="css/style.css">
 
-    <!-- Import Map for Module-based Games (Prism Realms) -->
+    <!-- Import Map for Module-based Games (Prism Realms, All In Hole) -->
     <script type="importmap">
         {
             "imports": {
                 "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+                "cannon-es": "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.js"
             }
         }
     </script>
@@ -122,6 +124,9 @@
         <button id="mute-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Mute/Unmute">
             <i class="fas fa-volume-up"></i>
         </button>
+        <button id="boss-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Work Mode (Alt+B)">
+            <i class="fas fa-briefcase"></i>
+        </button>
         <button id="settings-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Data/Settings">
             <i class="fas fa-cog"></i>
         </button>
@@ -175,6 +180,13 @@
     <div id="eclipse-puzzle-game" class="hidden game-container"></div>
     <div id="eclipse-logic-puzzle-game" class="hidden game-container"></div>
     <div id="matterhorn-game" class="hidden game-container"></div>
+
+    <!-- Boss Mode Overlay (Dynamic content handled by JS, this is fallback/initial structure) -->
+    <!-- Ideally, we remove the static one so JS can fully control it, but keeping it for now in case of JS failure -->
+    <!-- The BossMode.js script will clear this anyway -->
+    <div id="boss-mode-overlay" class="hidden fixed inset-0 z-[10000] bg-white font-sans text-xs text-black flex flex-col cursor-default select-none overflow-hidden">
+        <!-- JS will populate this -->
+    </div>
 
     <!-- Main Module Entry -->
     <script type="module" src="js/main.js"></script>

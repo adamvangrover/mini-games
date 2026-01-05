@@ -40,6 +40,14 @@ h1, h2, h3 {
     display: none !important;
 }
 
+/* --- Boss Mode --- */
+#boss-mode-overlay * {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+#boss-mode-overlay i {
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Brands';
+}
+
 /* --- Glassmorphism --- */
 .glass-panel {
     background: rgba(15, 23, 42, 0.6);
