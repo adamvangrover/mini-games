@@ -336,7 +336,6 @@ function populateMenuGrid() {
     grid.innerHTML = '';
 
     // Initialize Daily Challenge if needed
-    // FIX: Ensure we don't pick a 'System' module (like Trophy Room) as the daily challenge
     if (!dailyChallengeGameId) {
         const validGameKeys = Object.keys(gameRegistry).filter(key => gameRegistry[key].category !== 'System');
         if (validGameKeys.length > 0) {
