@@ -1,4 +1,3 @@
-
 export class MinesweeperApp {
     constructor(container) {
         this.container = container;
@@ -21,7 +20,7 @@ export class MinesweeperApp {
                 <div class="grid grid-cols-9 gap-[1px] bg-gray-500 border-l-2 border-t-2 border-gray-500 border-r-2 border-b-2 border-white" id="ms-grid"></div>
             </div>
         `;
-        // Attach instance
+        // Attach instance for inline handlers
         this.container.minesweeper = this;
         this.reset();
     }
@@ -174,7 +173,7 @@ export class Wolf3DApp {
         if(!canvas) return;
         const ctx = canvas.getContext('2d');
 
-        // Simple Raycaster State
+        // Simple Raycaster State (DDA Algorithm)
         const mapWidth = 24;
         const mapHeight = 24;
         const map = [
@@ -204,6 +203,7 @@ export class Wolf3DApp {
         const onKey = (e) => keys[e.code] = e.type === 'keydown';
         document.addEventListener('keydown', onKey);
         document.addEventListener('keyup', onKey);
+        
         this.cleanup = () => {
              document.removeEventListener('keydown', onKey);
              document.removeEventListener('keyup', onKey);
@@ -288,8 +288,7 @@ export class Wolf3DApp {
                 if(map[mapY][mapX] === 2) color = '#33AA33';
                 if(map[mapY][mapX] === 3) color = '#3333AA';
                 if(side === 1) {
-                    // Darken for side
-                    // Simple logic to darken color hex?
+                    // Simple logic to darken color hex
                     color = (color === '#AA3333') ? '#772222' : (color === '#33AA33' ? '#227722' : '#222277');
                 }
 
