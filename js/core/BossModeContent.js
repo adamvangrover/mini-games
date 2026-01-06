@@ -267,3 +267,18 @@ export const BROWSER_DATA = {
         { title: "Salary Calculator", url: "http://glassdoor.com", time: "09:00 AM" }
     ]
 };
+
+export const ERA_CONTENT = {
+    '90s': {
+        wallpapers: [
+            'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?q=80&w=1920', // Retro pattern
+            'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1920'  // Cyber 90s
+        ]
+    },
+    '00s': {
+        wallpapers: [
+            'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1920', // Space/Tech
+            'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=1920'  // Bliss-like
+        ]
+    }
+};
