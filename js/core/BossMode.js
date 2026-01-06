@@ -2,7 +2,9 @@ import SaveSystem from './SaveSystem.js';
 import SoundManager from './SoundManager.js';
 import AdsManager from './AdsManager.js';
 // Fallback if file missing, we define defaults inside constructor
-import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, SPOTIFY_PLAYLISTS } from './BossModeContent.js';
+import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, SPOTIFY_PLAYLISTS, ERA_CONTENT } from './BossModeContent.js';
+// Dynamic imports for Apps
+import { MarketplaceApp, GrokApp } from './BossModeApps.js';
 
 export default class BossMode {
     constructor() {
@@ -13,7 +15,7 @@ export default class BossMode {
         // --- Core System State ---
         this.isActive = false;
         this.systemState = 'boot'; // 'boot', 'login', 'desktop', 'bsod'
-        this.currentOS = 'modern'; // 'modern', 'legacy', 'hacker'
+        this.currentOS = 'modern'; // 'modern', 'legacy', 'hacker', 'mac', 'linux', 'win98', 'win2000', 'xp', 'y2k', 'grok'
         this.skin = 'windows'; // 'windows', 'mac', 'ubuntu', 'android'
         
         // --- Window Management ---
@@ -190,6 +192,7 @@ export default class BossMode {
             .dock-item:hover { transform: translateY(-5px) scale(1.1); transition: all 0.2s; }
             .app-dot { width: 4px; height: 4px; background: #00f0ff; border-radius: 50%; position: absolute; bottom: -6px; opacity: 0; }
             .app-dot.running { opacity: 1; }
+            .image-pixelated { image-rendering: pixelated; }
             @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
             @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
             /* Scrollbars */
@@ -289,7 +292,7 @@ export default class BossMode {
             } else if (this.systemState === 'login') {
                 this.renderLogin();
             } else {
-                if (this.currentOS === 'legacy') {
+                if (['legacy', 'win98', 'win2000', 'xp', 'mac', 'linux', 'y2k'].includes(this.currentOS)) {
                     if (!this.legacyOS) this.startLegacyOS();
                 } else if (this.currentOS === 'hacker') {
                     this.renderHackerOS();
@@ -340,6 +343,17 @@ export default class BossMode {
         const theme = this.saveSystem.getEquippedItem('theme') || 'blue';
         const ringColor = theme === 'pink' ? 'border-pink-500' : (theme === 'gold' ? 'border-yellow-500' : 'border-white/20');
 
+        // Available OS Options (Unlocked check is inside selectOS, but we should visualize it)
+        const osOptions = [
+             { id: 'modern', icon: 'fab fa-windows', label: 'Modern' },
+             { id: 'legacy', icon: 'fab fa-windows', label: 'Win95' },
+             { id: 'win98', icon: 'fab fa-windows', label: 'Win98' },
+             { id: 'xp', icon: 'fab fa-windows', label: 'WinXP' },
+             { id: 'mac', icon: 'fab fa-apple', label: 'Mac OS' },
+             { id: 'linux', icon: 'fab fa-linux', label: 'Linux' },
+             { id: 'hacker', icon: 'fas fa-terminal', label: 'Hacker' }
+        ];
+
         loginLayer.innerHTML = `
             <div class="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center text-white">
                 <div class="w-32 h-32 rounded-full bg-gray-200 border-4 ${ringColor} flex items-center justify-center mb-6 shadow-2xl">
@@ -365,10 +379,14 @@ export default class BossMode {
                 <i class="fas fa-power-off cursor-pointer hover:text-red-400" onclick="BossMode.instance.toggle(false)"></i>
             </div>
             <!-- OS Selector -->
-            <div class="absolute bottom-8 left-8 flex gap-4 text-white/50 text-xs font-mono bg-black/50 p-2 rounded">
-                <div class="cursor-pointer hover:text-white flex flex-col items-center gap-1 ${this.currentOS==='modern'?'text-white font-bold':''}" onclick="BossMode.instance.selectOS('modern')"><i class="fab fa-windows text-xl"></i>Modern</div>
-                <div class="cursor-pointer hover:text-white flex flex-col items-center gap-1 ${this.currentOS==='legacy'?'text-white font-bold':''}" onclick="BossMode.instance.selectOS('legacy')"><i class="fas fa-save text-xl"></i>Legacy</div>
-                <div class="cursor-pointer hover:text-white flex flex-col items-center gap-1 ${this.currentOS==='hacker'?'text-green-400 font-bold':''}" onclick="BossMode.instance.selectOS('hacker')"><i class="fas fa-terminal text-xl"></i>Hacker</div>
+            <div class="absolute bottom-8 left-8 text-white/50 text-xs font-mono bg-black/50 p-2 rounded w-[600px] overflow-x-auto">
+                <div class="flex gap-4">
+                    ${osOptions.map(opt => `
+                        <div class="cursor-pointer hover:text-white flex flex-col items-center gap-1 min-w-[50px] ${this.currentOS===opt.id?'text-white font-bold':''}" onclick="BossMode.instance.selectOS('${opt.id}')">
+                            <i class="${opt.icon} text-xl"></i>${opt.label}
+                        </div>
+                    `).join('')}
+                </div>
             </div>
         `;
         setTimeout(() => {
@@ -388,32 +406,31 @@ export default class BossMode {
 
         document.getElementById('os-login-layer').classList.add('hidden');
 
-        if (this.currentOS === 'modern') {
-            document.getElementById('os-desktop-layer').classList.remove('hidden');
-            this.renderDesktop();
-            setTimeout(() => this.openApp('mission'), 500);
-        } else if (this.currentOS === 'legacy') {
+        if (['legacy', 'win98', 'win2000', 'xp', 'mac', 'linux', 'y2k'].includes(this.currentOS)) {
             this.startLegacyOS();
         } else if (this.currentOS === 'hacker') {
             this.renderHackerOS();
+        } else {
+            // Modern
+            document.getElementById('os-desktop-layer').classList.remove('hidden');
+            this.renderDesktop();
+            setTimeout(() => this.openApp('mission'), 500);
         }
     }
 
     selectOS(os) {
-        if (os === 'legacy') {
-            const unlocked = this.saveSystem.getEquippedItem('os_license') === 'legacy' || this.saveSystem.isItemUnlocked('os_legacy');
-            if (!unlocked) {
-                window.miniGameHub.showToast("Legacy OS License Required. Purchase from Store.");
-                return;
-            }
-        }
-        if (os === 'hacker') {
-            const unlocked = this.saveSystem.getEquippedItem('os_license') === 'terminal' || this.saveSystem.isItemUnlocked('os_terminal');
-            if (!unlocked) {
-                window.miniGameHub.showToast("Terminal OS License Required. Purchase from Store.");
-                return;
-            }
-        }
+        // Validation Logic
+        const checkUnlock = (itemId, settingId) => {
+            return this.saveSystem.getEquippedItem('os_license') === itemId || this.saveSystem.isItemUnlocked(itemId) || this.saveSystem.isItemUnlocked(settingId);
+        };
+
+        if (os === 'legacy' && !checkUnlock('legacy', 'os_legacy')) return this.toastLocked('Win95 License');
+        if (os === 'win98' && !checkUnlock('win98', 'os_win98')) return this.toastLocked('Win98 Upgrade');
+        if (os === 'xp' && !checkUnlock('xp', 'os_xp')) return this.toastLocked('WinXP License');
+        if (os === 'mac' && !checkUnlock('mac', 'os_mac')) return this.toastLocked('Mac OS License');
+        if (os === 'linux' && !checkUnlock('linux', 'os_linux')) return this.toastLocked('Linux Distro');
+        if (os === 'hacker' && !checkUnlock('terminal', 'os_terminal')) return this.toastLocked('Terminal License');
+
         this.currentOS = os;
         this.renderLogin();
     }
@@ -435,9 +452,15 @@ export default class BossMode {
         container.classList.remove('hidden');
         import('./BossModeLegacy.js').then(module => {
             if (!this.legacyOS) {
-                 this.legacyOS = new module.default(container);
+                 this.legacyOS = new module.default(container, { skin: this.currentOS });
             } else {
-                 this.legacyOS.render();
+                 // Re-init with new skin if changed
+                 if (this.legacyOS.skin !== this.currentOS) {
+                     this.legacyOS.destroy();
+                     this.legacyOS = new module.default(container, { skin: this.currentOS });
+                 } else {
+                     this.legacyOS.render();
+                 }
             }
         });
     }
@@ -559,7 +582,7 @@ export default class BossMode {
         const bsod = document.getElementById('boss-bsod-container');
         if (!bsod) return;
 
-        this.soundManager.playSound('glitch'); // Ensure this sound exists or use something jarring
+        this.soundManager.playSound('glitch');
 
         bsod.classList.remove('hidden');
         bsod.innerHTML = `
@@ -793,6 +816,10 @@ export default class BossMode {
             { id: 'teams', icon: 'fa-users', color: 'text-indigo-500' },
             { id: 'spotify', icon: 'fa-spotify', color: 'text-green-400' },
             { id: 'terminal', icon: 'fa-terminal', color: 'text-gray-400' }
+            { id: 'dcf', icon: 'fa-chart-line', color: 'text-cyan-400' },
+            { id: 'terminal', icon: 'fa-terminal', color: 'text-gray-400' },
+            { id: 'marketplace', icon: 'fa-shopping-bag', color: 'text-red-500' },
+            { id: 'grok', icon: 'fa-brain', color: 'text-purple-500' }
         ];
 
         const theme = this.saveSystem.getEquippedItem('theme') || 'blue';
@@ -838,6 +865,10 @@ export default class BossMode {
             'minesweeper': { title: 'Minesweeper', w: 300, h: 350, color: 'bg-gray-200 text-black', icon: 'fa-bomb' },
             'mission': { title: 'Mission Control', w: 600, h: 400, color: 'bg-[#1e293b]', icon: 'fa-microchip' },
             'teams': { title: 'Teams - Chat', w: 700, h: 500, color: 'bg-[#4f46e5]', icon: 'fa-users' }
+            'market': { title: 'Market Radar', w: 500, h: 350, color: 'bg-[#0f172a]', icon: 'fa-satellite-dish' },
+            'teams': { title: 'Teams - Chat', w: 700, h: 500, color: 'bg-[#4f46e5]', icon: 'fa-users' },
+            'marketplace': { title: 'Spicy Marketplace', w: 400, h: 600, color: 'bg-black', icon: 'fa-shopping-bag' },
+            'grok': { title: 'Grok xAI v1.0', w: 500, h: 400, color: 'bg-gray-800', icon: 'fa-brain' }
         };
         const cfg = map[id] || { title: 'App', w: 600, h: 400, color: 'bg-gray-800', icon: 'fa-window-maximize' };
 
@@ -969,6 +1000,9 @@ export default class BossMode {
         if(win.app === 'spotify') this.renderSpotify(contentArea);
         if(win.app === 'teams') this.renderTeams(contentArea);
         if(win.app === 'dcf') new DCFApp(contentArea);
+        if(win.app === 'dcf') new DCFApp(contentArea); // Use Class for complex logic
+        if(win.app === 'marketplace') new MarketplaceApp(contentArea);
+        if(win.app === 'grok') new GrokApp(contentArea);
         if(win.app === 'mission') {
             const tpl = document.getElementById('tpl-mission');
             if(tpl) contentArea.appendChild(tpl.content.cloneNode(true));
