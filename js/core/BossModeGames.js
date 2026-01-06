@@ -1,124 +1,127 @@
-
 export class MinesweeperApp {
     constructor(container) {
         this.container = container;
-        this.gridSize = 9;
+        this.width = 9;
+        this.height = 9;
         this.mines = 10;
         this.grid = [];
-        this.render();
+        this.gameOver = false;
+        this.init();
     }
 
-    render() {
+    init() {
         this.container.innerHTML = `
-            <div class="h-full flex flex-col bg-[#c0c0c0] border-2 border-white border-r-gray-500 border-b-gray-500 p-1">
-                <div class="flex justify-between mb-2 bg-[#c0c0c0] border-2 border-gray-500 border-r-white border-b-white p-1 inset-shadow">
-                    <div class="bg-black text-red-600 font-mono text-xl px-1 border border-gray-500 inset-shadow">010</div>
-                    <button class="w-6 h-6 border-2 border-white border-r-gray-500 border-b-gray-500 active:border-gray-500 active:border-r-white active:border-b-white bg-[#c0c0c0] flex items-center justify-center text-sm" onclick="this.closest('.os-window').minesweeper.reset()">😊</button>
-                    <div class="bg-black text-red-600 font-mono text-xl px-1 border border-gray-500 inset-shadow">000</div>
+            <div class="flex flex-col h-full bg-[#c0c0c0] border-l-2 border-t-2 border-white border-r-2 border-b-2 border-gray-500 p-1">
+                <div class="flex justify-between items-center bg-[#c0c0c0] border-l-2 border-t-2 border-gray-500 border-r-2 border-b-2 border-white p-1 mb-1">
+                    <div class="bg-black text-red-600 font-mono text-xl px-1 border-2 border-gray-500 border-r-white border-b-white inset-shadow">010</div>
+                    <div class="w-6 h-6 bg-[#c0c0c0] border-2 border-white border-r-gray-500 border-b-gray-500 active:border-t-gray-500 active:border-l-gray-500 active:border-b-white active:border-r-white flex items-center justify-center cursor-pointer" onclick="this.closest('.window-content').minesweeper.reset()">😊</div>
+                    <div class="bg-black text-red-600 font-mono text-xl px-1 border-2 border-gray-500 border-r-white border-b-white inset-shadow">000</div>
                 </div>
-                <div id="ms-grid" class="grid grid-cols-9 bg-gray-400 border-4 border-gray-400 gap-[1px]"></div>
+                <div class="grid grid-cols-9 gap-[1px] bg-gray-500 border-l-2 border-t-2 border-gray-500 border-r-2 border-b-2 border-white" id="ms-grid"></div>
             </div>
         `;
-        // Attach instance to DOM for onclick handlers
-        this.container.closest('.os-window').minesweeper = this;
+        // Attach instance for inline handlers
+        this.container.minesweeper = this;
         this.reset();
     }
 
     reset() {
+        this.grid = [];
+        this.gameOver = false;
         const gridEl = this.container.querySelector('#ms-grid');
         gridEl.innerHTML = '';
-        this.grid = [];
 
-        for (let i = 0; i < this.gridSize * this.gridSize; i++) {
-            this.grid.push({ mine: false, revealed: false, flagged: false, count: 0 });
-            const cell = document.createElement('div');
-            cell.className = "w-5 h-5 bg-[#c0c0c0] border-2 border-white border-r-gray-500 border-b-gray-500 text-[10px] font-bold flex items-center justify-center cursor-default select-none";
-            cell.dataset.idx = i;
-            cell.onmousedown = (e) => this.handleClick(e, i);
-            gridEl.appendChild(cell);
-        }
+        // Generate Mines
+        let minesPlaced = 0;
+        const cells = new Array(this.width * this.height).fill(0).map(() => ({ mine: false, revealed: false, flagged: false, count: 0 }));
 
-        // Place mines
-        let placed = 0;
-        while(placed < this.mines) {
-            const idx = Math.floor(Math.random() * this.grid.length);
-            if(!this.grid[idx].mine) {
-                this.grid[idx].mine = true;
-                placed++;
+        while(minesPlaced < this.mines) {
+            const idx = Math.floor(Math.random() * cells.length);
+            if(!cells[idx].mine) {
+                cells[idx].mine = true;
+                minesPlaced++;
             }
         }
 
-        // Calc counts
-        for(let i=0; i<this.grid.length; i++) {
-            if(this.grid[i].mine) continue;
-            const neighbors = this.getNeighbors(i);
-            this.grid[i].count = neighbors.filter(n => this.grid[n].mine).length;
+        // Calc Counts
+        for(let i=0; i<cells.length; i++) {
+            if(cells[i].mine) continue;
+            const x = i % this.width;
+            const y = Math.floor(i / this.width);
+            let count = 0;
+            for(let dy=-1; dy<=1; dy++) {
+                for(let dx=-1; dx<=1; dx++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if(nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
+                        if(cells[ny * this.width + nx].mine) count++;
+                    }
+                }
+            }
+            cells[i].count = count;
         }
+        this.grid = cells;
+        this.renderGrid();
     }
 
-    getNeighbors(idx) {
-        const neighbors = [];
-        const x = idx % this.gridSize;
-        const y = Math.floor(idx / this.gridSize);
-        for(let dx=-1; dx<=1; dx++) {
+    renderGrid() {
+        const gridEl = this.container.querySelector('#ms-grid');
+        gridEl.innerHTML = '';
+        this.grid.forEach((cell, i) => {
+            const div = document.createElement('div');
+            div.className = `w-6 h-6 text-xs font-bold flex items-center justify-center select-none cursor-default ${cell.revealed ? 'border border-gray-400 bg-[#c0c0c0]' : 'bg-[#c0c0c0] border-t-2 border-l-2 border-white border-r-2 border-b-2 border-gray-500'}`;
+
+            div.onmousedown = (e) => {
+                if(this.gameOver) return;
+                if(e.button === 2) { // Right click
+                    cell.flagged = !cell.flagged;
+                    this.renderGrid();
+                } else {
+                    if(cell.flagged) return;
+                    this.reveal(i);
+                }
+            };
+
+            if(cell.revealed) {
+                if(cell.mine) {
+                    div.textContent = '💣';
+                    div.className = 'w-6 h-6 bg-red-500 border border-gray-400 flex items-center justify-center';
+                } else if(cell.count > 0) {
+                    div.textContent = cell.count;
+                    const colors = ['blue', 'green', 'red', 'navy', 'maroon', 'teal', 'black', 'gray'];
+                    div.style.color = colors[cell.count-1];
+                }
+            } else if(cell.flagged) {
+                div.textContent = '🚩';
+                div.classList.add('text-red-600');
+            }
+
+            gridEl.appendChild(div);
+        });
+    }
+
+    reveal(i) {
+        const cell = this.grid[i];
+        if(cell.revealed) return;
+        cell.revealed = true;
+        if(cell.mine) {
+            this.gameOver = true;
+            alert('GAME OVER');
+        } else if(cell.count === 0) {
+            // Flood fill
+            const x = i % this.width;
+            const y = Math.floor(i / this.width);
             for(let dy=-1; dy<=1; dy++) {
-                if(dx===0 && dy===0) continue;
-                const nx = x+dx, ny=y+dy;
-                if(nx>=0 && nx<this.gridSize && ny>=0 && ny<this.gridSize) {
-                    neighbors.push(ny * this.gridSize + nx);
+                for(let dx=-1; dx<=1; dx++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if(nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
+                        this.reveal(ny * this.width + nx);
+                    }
                 }
             }
         }
-        return neighbors;
-    }
-
-    handleClick(e, idx) {
-        if(e.button === 2) {
-            this.grid[idx].flagged = !this.grid[idx].flagged;
-            this.updateCell(idx);
-        } else {
-            this.reveal(idx);
-        }
-    }
-
-    reveal(idx) {
-        const cell = this.grid[idx];
-        if(cell.revealed || cell.flagged) return;
-        cell.revealed = true;
-        this.updateCell(idx);
-
-        if(cell.mine) {
-            alert("GAME OVER");
-            this.revealAll();
-        } else if(cell.count === 0) {
-            this.getNeighbors(idx).forEach(n => this.reveal(n));
-        }
-    }
-
-    revealAll() {
-        this.grid.forEach((c,i) => { c.revealed = true; this.updateCell(i); });
-    }
-
-    updateCell(idx) {
-        const cell = this.grid[idx];
-        const el = this.container.querySelector(`[data-idx="${idx}"]`);
-        if(!el) return;
-
-        if(cell.revealed) {
-            el.className = "w-5 h-5 border border-gray-400 bg-gray-200 text-[10px] font-bold flex items-center justify-center cursor-default";
-            if(cell.mine) {
-                el.textContent = '💣';
-                el.style.backgroundColor = 'red';
-            } else if(cell.count > 0) {
-                el.textContent = cell.count;
-                const colors = ['blue', 'green', 'red', 'purple', 'maroon', 'turquoise', 'black', 'gray'];
-                el.style.color = colors[cell.count-1];
-            }
-        } else if(cell.flagged) {
-            el.textContent = '🚩';
-        } else {
-            el.textContent = '';
-        }
+        this.renderGrid();
     }
 }
 
@@ -127,9 +130,23 @@ export class NotepadApp {
         this.container = container;
         this.render();
     }
+
     render() {
         this.container.innerHTML = `
-            <textarea class="w-full h-full resize-none p-1 font-mono text-sm outline-none border-none" spellcheck="false">Welcome to Notepad.</textarea>
+            <div class="flex flex-col h-full bg-white text-black font-mono text-sm">
+                <div class="flex gap-2 p-1 border-b border-gray-200 text-xs bg-gray-50">
+                    <span class="hover:bg-blue-100 px-1 cursor-pointer">File</span>
+                    <span class="hover:bg-blue-100 px-1 cursor-pointer">Edit</span>
+                    <span class="hover:bg-blue-100 px-1 cursor-pointer">Format</span>
+                    <span class="hover:bg-blue-100 px-1 cursor-pointer">View</span>
+                    <span class="hover:bg-blue-100 px-1 cursor-pointer">Help</span>
+                </div>
+                <textarea class="flex-1 p-1 outline-none resize-none border-none text-black bg-white font-mono" spellcheck="false">
+Welcome to Notepad.
+This is a simple text editor.
+Do not forget to save your work (actually, you can't save).
+                </textarea>
+            </div>
         `;
     }
 }
@@ -144,127 +161,146 @@ export class Wolf3DApp {
 
     render() {
         this.container.innerHTML = `
-            <div class="w-full h-full bg-black relative flex items-center justify-center overflow-hidden">
-                <canvas id="wolf-canvas" class="image-pixelated w-full h-full object-contain"></canvas>
-                <div class="absolute bottom-2 left-2 text-white font-mono text-xs pointer-events-none">ARROWS to Move</div>
+            <div class="relative w-full h-full bg-black overflow-hidden flex items-center justify-center">
+                <canvas id="wolf-canvas" width="320" height="200" class="image-pixelated w-full h-full object-contain"></canvas>
+                <div class="absolute bottom-2 left-2 text-red-600 font-mono text-xs">AMMO: 99  HEALTH: 100%  LIVES: 3</div>
             </div>
         `;
     }
 
     initGame() {
-        const canvas = this.container.querySelector('canvas');
+        const canvas = this.container.querySelector('#wolf-canvas');
         if(!canvas) return;
-
-        // Low res for retro feel
-        canvas.width = 320;
-        canvas.height = 200;
         const ctx = canvas.getContext('2d');
 
-        // Simple Raycaster State
-        const mapSize = 16;
+        // Simple Raycaster State (DDA Algorithm)
+        const mapWidth = 24;
+        const mapHeight = 24;
         const map = [
-            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-            1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,1,0,0,0,0,2,0,0,0,1,
-            1,0,0,0,0,0,1,0,0,0,0,2,0,0,0,1,
-            1,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,3,3,3,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,3,0,3,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,3,0,0,0,0,0,4,4,4,4,0,0,0,1,
-            1,0,0,0,0,0,0,0,4,0,0,4,0,0,0,1,
-            1,0,0,5,0,0,0,0,4,0,0,0,0,0,0,1,
-            1,0,0,5,0,0,0,0,4,4,0,4,0,0,0,1,
-            1,0,0,5,0,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,2,2,2,2,2,0,0,0,0,3,0,3,0,3,0,0,0,0,0,1],
+            [1,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,2,0,0,0,2,0,0,0,0,3,0,0,0,3,0,0,0,0,0,1],
+            [1,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,2,2,0,2,2,0,0,0,0,3,0,3,0,3,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ];
 
-        let pX = 8, pY = 8, pA = 0;
-        const fov = Math.PI / 3;
+        let posX = 22, posY = 12;
+        let dirX = -1, dirY = 0;
+        let planeX = 0, planeY = 0.66;
+
+        // Input
+        const keys = {};
+        const onKey = (e) => keys[e.code] = e.type === 'keydown';
+        document.addEventListener('keydown', onKey);
+        document.addEventListener('keyup', onKey);
+        
+        this.cleanup = () => {
+             document.removeEventListener('keydown', onKey);
+             document.removeEventListener('keyup', onKey);
+             this.running = false;
+        };
 
         const loop = () => {
             if(!this.running) return;
 
-            // Draw Ceiling/Floor
-            ctx.fillStyle = '#383838'; // Ceiling
-            ctx.fillRect(0, 0, 320, 100);
-            ctx.fillStyle = '#707070'; // Floor
-            ctx.fillRect(0, 100, 320, 100);
+            // Movement
+            const rotSpeed = 0.05;
+            const moveSpeed = 0.08;
 
-            // Raycast
-            for(let x=0; x<320; x+=2) { // Skip pixels for performance/retro look
-                const rayAngle = (pA - fov/2.0) + (x/320.0) * fov;
-                const eyeX = Math.cos(rayAngle);
-                const eyeY = Math.sin(rayAngle);
+            if (keys['ArrowRight']) {
+                const oldDirX = dirX;
+                dirX = dirX * Math.cos(-rotSpeed) - dirY * Math.sin(-rotSpeed);
+                dirY = oldDirX * Math.sin(-rotSpeed) + dirY * Math.cos(-rotSpeed);
+                const oldPlaneX = planeX;
+                planeX = planeX * Math.cos(-rotSpeed) - planeY * Math.sin(-rotSpeed);
+                planeY = oldPlaneX * Math.sin(-rotSpeed) + planeY * Math.cos(-rotSpeed);
+            }
+            if (keys['ArrowLeft']) {
+                const oldDirX = dirX;
+                dirX = dirX * Math.cos(rotSpeed) - dirY * Math.sin(rotSpeed);
+                dirY = oldDirX * Math.sin(rotSpeed) + dirY * Math.cos(rotSpeed);
+                const oldPlaneX = planeX;
+                planeX = planeX * Math.cos(rotSpeed) - planeY * Math.sin(rotSpeed);
+                planeY = oldPlaneX * Math.sin(rotSpeed) + planeY * Math.cos(rotSpeed);
+            }
+            if (keys['ArrowUp']) {
+                if(map[Math.floor(posY)][Math.floor(posX + dirX * moveSpeed)] === 0) posX += dirX * moveSpeed;
+                if(map[Math.floor(posY + dirY * moveSpeed)][Math.floor(posX)] === 0) posY += dirY * moveSpeed;
+            }
+            if (keys['ArrowDown']) {
+                if(map[Math.floor(posY)][Math.floor(posX - dirX * moveSpeed)] === 0) posX -= dirX * moveSpeed;
+                if(map[Math.floor(posY - dirY * moveSpeed)][Math.floor(posX)] === 0) posY -= dirY * moveSpeed;
+            }
 
-                let distToWall = 0;
-                let hitWall = false;
-                let texture = 0;
+            // Draw
+            ctx.fillStyle = '#333';
+            ctx.fillRect(0, 0, canvas.width, canvas.height / 2); // Ceiling
+            ctx.fillStyle = '#666';
+            ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2); // Floor
 
-                let testX = pX;
-                let testY = pY;
+            for(let x = 0; x < canvas.width; x++) {
+                const cameraX = 2 * x / canvas.width - 1;
+                const rayDirX = dirX + planeX * cameraX;
+                const rayDirY = dirY + planeY * cameraX;
 
-                while(!hitWall && distToWall < 20) {
-                    distToWall += 0.1;
-                    testX = Math.floor(pX + eyeX * distToWall);
-                    testY = Math.floor(pY + eyeY * distToWall);
+                let mapX = Math.floor(posX);
+                let mapY = Math.floor(posY);
 
-                    if(testX < 0 || testX >= mapSize || testY < 0 || testY >= mapSize) {
-                        hitWall = true;
-                        distToWall = 20;
-                    } else {
-                        if(map[testY * mapSize + testX] > 0) {
-                            hitWall = true;
-                            texture = map[testY * mapSize + testX];
-                        }
-                    }
+                let sideDistX, sideDistY;
+                const deltaDistX = Math.abs(1 / rayDirX);
+                const deltaDistY = Math.abs(1 / rayDirY);
+                let perpWallDist;
+                let stepX, stepY;
+                let hit = 0;
+                let side;
+
+                if (rayDirX < 0) { stepX = -1; sideDistX = (posX - mapX) * deltaDistX; }
+                else { stepX = 1; sideDistX = (mapX + 1.0 - posX) * deltaDistX; }
+                if (rayDirY < 0) { stepY = -1; sideDistY = (posY - mapY) * deltaDistY; }
+                else { stepY = 1; sideDistY = (mapY + 1.0 - posY) * deltaDistY; }
+
+                while (hit === 0) {
+                    if (sideDistX < sideDistY) { sideDistX += deltaDistX; mapX += stepX; side = 0; }
+                    else { sideDistY += deltaDistY; mapY += stepY; side = 1; }
+                    if (map[mapY] && map[mapY][mapX] > 0) hit = 1;
                 }
 
-                // Calculate Height
-                const ceiling = 100.0 - 200.0 / distToWall;
-                const floor = 200.0 - ceiling;
-                const h = floor - ceiling;
+                if (side === 0) perpWallDist = (mapX - posX + (1 - stepX) / 2) / rayDirX;
+                else perpWallDist = (mapY - posY + (1 - stepY) / 2) / rayDirY;
 
-                // Color based on texture (Blue, Green, Red walls)
-                let color = '#fff';
-                if(texture === 1) color = `rgb(0,0,${255-distToWall*10})`; // Blue
-                if(texture === 2) color = `rgb(0,${255-distToWall*10},0)`; // Green
-                if(texture === 3) color = `rgb(${255-distToWall*10},0,0)`; // Red
-                if(texture === 4) color = `rgb(${255-distToWall*10},${255-distToWall*10},0)`; // Yellow
-                if(texture === 5) color = `rgb(${255-distToWall*10},0,${255-distToWall*10})`; // Magenta
+                const lineHeight = Math.floor(canvas.height / perpWallDist);
+                let drawStart = -lineHeight / 2 + canvas.height / 2;
+                if(drawStart < 0) drawStart = 0;
+                let drawEnd = lineHeight / 2 + canvas.height / 2;
+                if(drawEnd >= canvas.height) drawEnd = canvas.height - 1;
+
+                let color = '#AA3333';
+                if(map[mapY][mapX] === 2) color = '#33AA33';
+                if(map[mapY][mapX] === 3) color = '#3333AA';
+                if(side === 1) {
+                    // Simple logic to darken color hex
+                    color = (color === '#AA3333') ? '#772222' : (color === '#33AA33' ? '#227722' : '#222277');
+                }
 
                 ctx.fillStyle = color;
-                ctx.fillRect(x, ceiling, 2, h);
+                ctx.fillRect(x, drawStart, 1, drawEnd - drawStart);
             }
-
             requestAnimationFrame(loop);
         };
-
-        loop();
-
-        // Controls
-        this.keyHandler = (e) => {
-            if(!this.running) return;
-            const speed = 0.2;
-            const rotSpeed = 0.1;
-            if(e.key === 'ArrowUp') {
-                pX += Math.cos(pA) * speed;
-                pY += Math.sin(pA) * speed;
-            }
-            if(e.key === 'ArrowDown') {
-                pX -= Math.cos(pA) * speed;
-                pY -= Math.sin(pA) * speed;
-            }
-            if(e.key === 'ArrowLeft') pA -= rotSpeed;
-            if(e.key === 'ArrowRight') pA += rotSpeed;
-        };
-        document.addEventListener('keydown', this.keyHandler);
+        requestAnimationFrame(loop);
     }
 
     destroy() {
-        this.running = false;
-        document.removeEventListener('keydown', this.keyHandler);
+        if(this.cleanup) this.cleanup();
     }
 }

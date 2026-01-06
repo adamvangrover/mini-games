@@ -2,7 +2,7 @@ import SaveSystem from './SaveSystem.js';
 import SoundManager from './SoundManager.js';
 import AdsManager from './AdsManager.js';
 // Fallback if file missing, we define defaults inside constructor
-import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, SPOTIFY_PLAYLISTS, ERA_CONTENT } from './BossModeContent.js';
+import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, SPOTIFY_PLAYLISTS } from './BossModeContent.js';
 // Dynamic imports for Apps
 import { MarketplaceApp, GrokApp } from './BossModeApps.js';
 import { MinesweeperApp, Wolf3DApp, NotepadApp } from './BossModeGames.js';
@@ -134,19 +134,15 @@ export default class BossMode {
             <div id="os-desktop-layer" class="absolute inset-0 flex flex-col hidden">
                 <div id="boss-wallpaper" class="absolute inset-0 bg-cover bg-center transition-[background-image] duration-500 z-0"></div>
                 
-                <!-- Desktop Icons Container -->
                 <div id="boss-desktop-icons" class="absolute inset-0 z-0 w-full h-full pointer-events-none"></div>
 
                 <div id="boss-windows-container" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
                 
-                <!-- OS Specific UI Elements (Docks, Taskbars, Start Menus) -->
                 <div id="boss-os-ui" class="absolute inset-0 pointer-events-none z-[9999]"></div>
             </div>
 
-            <!-- Legacy OS Container -->
             <div id="os-legacy-container" class="absolute inset-0 z-[10005] hidden bg-teal-800"></div>
 
-            <!-- Hacker OS Container -->
             <div id="os-hacker-container" class="absolute inset-0 z-[10006] hidden bg-black font-mono text-green-500 p-4 overflow-hidden"></div>
 
             <div id="boss-bsod-container" class="absolute inset-0 z-[10050] hidden bg-[#0078d7] cursor-none flex flex-col items-start justify-center p-20 text-white font-mono"></div>
@@ -373,8 +369,7 @@ export default class BossMode {
                     <button id="boss-login-submit" class="bg-white/20 hover:bg-white/40 border border-white/30 rounded px-4 transition-all" onclick="BossMode.instance.login()"><i class="fas fa-arrow-right"></i></button>
                 </div>
 
-                 <!-- Skin Selector for Modern OS -->
-                <div class="mt-8 flex gap-4 bg-black/30 p-2 rounded-lg backdrop-blur-md">
+                 <div class="mt-8 flex gap-4 bg-black/30 p-2 rounded-lg backdrop-blur-md">
                      <div class="flex flex-col items-center cursor-pointer hover:text-blue-300 opacity-70 hover:opacity-100 ${this.skin==='windows'?'text-blue-400 opacity-100 font-bold':''}" onclick="BossMode.instance.changeSkin('windows')"><i class="fab fa-windows text-2xl"></i><span class="text-[9px]">Windows</span></div>
                      <div class="flex flex-col items-center cursor-pointer hover:text-gray-300 opacity-70 hover:opacity-100 ${this.skin==='mac'?'text-white opacity-100 font-bold':''}" onclick="BossMode.instance.changeSkin('mac')"><i class="fab fa-apple text-2xl"></i><span class="text-[9px]">macOS</span></div>
                      <div class="flex flex-col items-center cursor-pointer hover:text-orange-300 opacity-70 hover:opacity-100 ${this.skin==='ubuntu'?'text-orange-500 opacity-100 font-bold':''}" onclick="BossMode.instance.changeSkin('ubuntu')"><i class="fab fa-ubuntu text-2xl"></i><span class="text-[9px]">Ubuntu</span></div>
@@ -386,7 +381,6 @@ export default class BossMode {
                 <i class="fas fa-wifi"></i>
                 <i class="fas fa-power-off cursor-pointer hover:text-red-400" onclick="BossMode.instance.toggle(false)"></i>
             </div>
-            <!-- OS Selector -->
             <div class="absolute bottom-8 left-8 text-white/50 text-xs font-mono bg-black/50 p-2 rounded w-[600px] overflow-x-auto">
                 <div class="flex gap-4">
                     ${osOptions.map(opt => `
@@ -697,7 +691,6 @@ export default class BossMode {
          const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 
          ui.innerHTML = `
-             <!-- Top Bar -->
              <div class="absolute top-0 left-0 right-0 h-7 bg-white/20 backdrop-blur-md flex items-center justify-between px-4 text-white text-xs pointer-events-auto shadow-sm">
                  <div class="flex items-center gap-4 font-bold">
                      <i class="fab fa-apple text-sm"></i>
@@ -715,7 +708,6 @@ export default class BossMode {
                  </div>
              </div>
 
-             <!-- Dock -->
              <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-white/20 backdrop-blur-xl border border-white/20 rounded-2xl p-2 flex items-end gap-2 shadow-2xl pointer-events-auto">
                  ${this.createDockIcon('finder', 'fa-smile', 'text-blue-500')}
                  ${this.createDockIcon('email', 'fa-envelope', 'text-blue-600', "BossMode.instance.openApp('email')")}
@@ -737,7 +729,6 @@ export default class BossMode {
         const time = new Date().toLocaleDateString([], {weekday: 'short', hour: '2-digit', minute:'2-digit'});
 
         ui.innerHTML = `
-            <!-- Top Bar -->
             <div class="absolute top-0 left-0 right-0 h-7 bg-[#1c1c1c] text-white flex items-center justify-between px-3 text-xs pointer-events-auto shadow-sm">
                  <div class="font-bold cursor-pointer hover:bg-white/10 px-2 rounded">Activities</div>
                  <div class="absolute left-1/2 transform -translate-x-1/2 font-bold cursor-pointer hover:bg-white/10 px-2 rounded">${time}</div>
@@ -748,8 +739,7 @@ export default class BossMode {
                  </div>
             </div>
 
-             <!-- Side Dock -->
-            <div class="absolute left-0 top-7 bottom-0 w-14 bg-[#1c1c1c]/90 flex flex-col items-center py-2 gap-2 pointer-events-auto z-[10001]">
+             <div class="absolute left-0 top-7 bottom-0 w-14 bg-[#1c1c1c]/90 flex flex-col items-center py-2 gap-2 pointer-events-auto z-[10001]">
                  ${this.createDockIcon('excel', 'fa-file-excel', 'text-green-500', "BossMode.instance.openApp('excel')", 'ubuntu')}
                  ${this.createDockIcon('word', 'fa-file-word', 'text-blue-500', "BossMode.instance.openApp('word')", 'ubuntu')}
                  ${this.createDockIcon('browser', 'fab fa-firefox', 'text-orange-500', "BossMode.instance.openApp('browser')", 'ubuntu')}
@@ -1154,7 +1144,7 @@ export default class BossMode {
             </div>
         `;
     }
-    
+
     toggleDCFMode() { this.excelMode = 'dcf'; this.generateDCFData(); this.refreshActiveExcel(); }
     toggleVBAMode() { this.excelMode = this.excelMode === 'vba' ? 'standard' : 'vba'; this.refreshActiveExcel(); }
     toggleTrackerMode() { this.excelMode = this.excelMode === 'tracker' ? 'standard' : 'tracker'; this.refreshActiveExcel(); }
@@ -1347,7 +1337,7 @@ export default class BossMode {
         const selectedEmail = this.fileSystem.emails.find(e => e.id === this.selectedEmailId) || this.fileSystem.emails[0];
 
         const listHTML = this.fileSystem.emails.map(email => `
-            <div class="p-3 border-b border-gray-200 cursor-pointer hover:bg-[#cde4f7] ${this.selectedEmailId === email.id ? 'bg-[#cde4f7] border-l-4 border-l-[#0078d4]' : 'bg-white'}"
+            <div class="p-3 border-b border-gray-200 cursor-pointer hover:bg-[#cde4f7] ${this.selectedEmailId === email.id ? 'bg-[#cde4f7] border-l-4 border-l-[#0078d4]' : 'bg-white'}" 
                  onclick="BossMode.instance.openEmail(${email.id})">
                 <div class="flex justify-between mb-1">
                     <span class="font-bold text-gray-800 truncate">${email.from}</span>
@@ -1360,7 +1350,6 @@ export default class BossMode {
 
         c.innerHTML = `
             <div class="h-full flex flex-col bg-white text-black font-sans text-xs">
-                <!-- Ribbon -->
                 <div class="bg-[#0078d4] text-white p-2 flex gap-4 items-center h-10 shadow-sm">
                     <div class="font-bold text-sm ml-2">Outlook</div>
                     <div class="h-4 w-[1px] bg-white/30"></div>
@@ -1377,7 +1366,6 @@ export default class BossMode {
                 </div>
 
                 <div class="flex-1 flex overflow-hidden">
-                    <!-- Sidebar -->
                     <div class="w-48 bg-[#f0f0f0] border-r border-gray-300 flex flex-col py-2">
                         <div class="px-4 py-1 font-bold text-gray-600 mb-2">Favorites</div>
                         <div class="px-4 py-1 hover:bg-[#dadada] cursor-pointer flex items-center gap-2 font-bold"><i class="fas fa-inbox text-blue-500"></i> Inbox <span class="ml-auto bg-blue-100 text-blue-600 px-1 rounded-full text-[9px]">${this.fileSystem.emails.length}</span></div>
@@ -1388,12 +1376,10 @@ export default class BossMode {
                         <div class="px-4 py-1 hover:bg-[#dadada] cursor-pointer flex items-center gap-2"><i class="fas fa-folder"></i> HR Stuff</div>
                     </div>
 
-                    <!-- Email List -->
                     <div class="w-64 border-r border-gray-300 overflow-y-auto bg-white">
                         ${listHTML}
                     </div>
 
-                    <!-- Reading Pane -->
                     <div class="flex-1 bg-white flex flex-col h-full overflow-hidden relative">
                         ${selectedEmail ? `
                             <div class="p-4 border-b border-gray-200">
@@ -1435,7 +1421,6 @@ export default class BossMode {
     renderBrowser(c) {
         c.innerHTML = `
             <div class="flex flex-col h-full bg-white text-black text-xs font-sans">
-                <!-- Tab Bar -->
                 <div class="bg-[#dee1e6] flex items-end px-2 pt-2 gap-1 h-8">
                     <div class="bg-white rounded-t-lg px-3 py-1 flex items-center gap-2 text-[10px] max-w-[150px] shadow-sm">
                         <img src="https://www.google.com/favicon.ico" class="w-3 h-3">
@@ -1449,7 +1434,6 @@ export default class BossMode {
                     <div class="p-1 hover:bg-[#cfd2d7] rounded-full cursor-pointer ml-1"><i class="fas fa-plus"></i></div>
                 </div>
 
-                <!-- Address Bar -->
                 <div class="bg-white p-1.5 flex items-center gap-2 border-b shadow-sm">
                     <div class="flex gap-2 text-gray-500 px-1">
                         <i class="fas fa-arrow-left hover:bg-gray-100 p-1 rounded cursor-pointer"></i>
@@ -1464,7 +1448,6 @@ export default class BossMode {
                     <div class="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px]">JD</div>
                 </div>
 
-                <!-- Content -->
                 <div class="flex-1 bg-gray-50 p-8 overflow-y-auto">
                     <h1 class="text-2xl font-light text-blue-800 mb-6">Corporate Portal</h1>
                     <div class="grid grid-cols-2 gap-4">
@@ -1488,15 +1471,6 @@ export default class BossMode {
                 </div>
             </div>
         `;
-    }
-
-    // --- Minesweeper App ---
-    renderMinesweeper(c) {
-        // Fallback or wrapper for class-based app if needed,
-        // but we prefer new MinesweeperApp(c) in createWindowDOM.
-        // However, user's snippet provided a render method which we can keep as alternative or remove.
-        // I'll keep it but createWindowDOM uses the Class version.
-        new MinesweeperApp(c);
     }
 
     refreshActiveApp(id) {
@@ -1606,13 +1580,11 @@ export default class BossMode {
         const chats = CHATS['general'] || [];
         c.innerHTML = `
             <div class="h-full flex bg-[#f5f5f5] text-[#242424] font-sans text-xs">
-                <!-- Sidebar -->
                 <div class="w-16 bg-[#38394e] flex flex-col items-center py-4 gap-4 text-gray-400 text-lg">
                     <i class="fas fa-bell hover:text-[#9ea2ff] cursor-pointer"></i>
                     <i class="fas fa-comment-alt text-[#9ea2ff] cursor-pointer"></i>
                     <i class="fas fa-users hover:text-[#9ea2ff] cursor-pointer"></i>
                 </div>
-                <!-- List -->
                 <div class="w-64 bg-white border-r border-gray-200 flex flex-col">
                     <div class="p-3 border-b border-gray-200 font-bold flex justify-between items-center">
                         <span>Chat</span>
@@ -1633,7 +1605,6 @@ export default class BossMode {
                         `).join('')}
                     </div>
                 </div>
-                <!-- Chat Area -->
                 <div class="flex-1 flex flex-col bg-white">
                     <div class="p-3 border-b border-gray-200 flex justify-between items-center shadow-sm z-10">
                         <div class="flex items-center gap-2">
