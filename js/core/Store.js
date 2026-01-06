@@ -74,6 +74,15 @@ export default class Store {
             // --- BOSS MODE OS ---
             { id: 'os_legacy', name: 'Legacy OS License', description: 'Unlock Windows 95 style interface in Boss Mode.', cost: 1000, icon: 'fab fa-windows', type: 'os_license', value: 'legacy', category: 'system' },
             { id: 'os_terminal', name: 'Linux Distro', description: 'Unlock Terminal-only interface in Boss Mode.', cost: 1500, icon: 'fab fa-linux', type: 'os_license', value: 'terminal', category: 'system' },
+            { id: 'os_mac', name: 'Pear OS', description: 'Think Different. Expensive visuals.', cost: 2000, icon: 'fab fa-apple', type: 'os_license', value: 'mac', category: 'system' },
+            { id: 'os_ubuntu', name: 'Ubuntu Distro', description: 'User friendly Linux for humans.', cost: 1200, icon: 'fab fa-ubuntu', type: 'os_license', value: 'ubuntu', category: 'system' },
+            { id: 'os_android', name: 'Droid Tablet', description: 'Mobile experience on your desktop.', cost: 1500, icon: 'fab fa-android', type: 'os_license', value: 'android', category: 'system' },
+
+            // --- BOSS MODE APPS ---
+            { id: 'app_minesweeper', name: 'Mine Sweeper', description: 'Classic bomb avoidance game.', cost: 500, icon: 'fas fa-bomb', type: 'boss_app', value: 'minesweeper', category: 'system' },
+            { id: 'app_flight', name: 'Flight Sim 95', description: 'Hidden inside Excel. Don\'t crash.', cost: 800, icon: 'fas fa-plane', type: 'boss_app', value: 'flight', category: 'system' },
+            { id: 'app_browser', name: 'Edge Browser', description: 'Access the corporate intranet.', cost: 600, icon: 'fab fa-edge', type: 'boss_app', value: 'browser', category: 'system' },
+
             { id: 'disk_dnb', name: 'Drum & Bass Disk', description: 'High tempo breakbeats.', cost: 350, icon: 'fas fa-drum', type: 'music_disk', value: 'dnb', category: 'music' },
             { id: 'disk_jazz', name: 'Jazz Collection', description: 'Smooth jazz for rough days.', cost: 400, icon: 'fas fa-saxophone', type: 'music_disk', value: 'jazz', category: 'music' },
             { id: 'disk_rock', name: 'Rock Anthology', description: 'Dad rock classics.', cost: 400, icon: 'fas fa-guitar', type: 'music_disk', value: 'rock', category: 'music' },
@@ -167,7 +176,7 @@ export default class Store {
             let isEquipped = false;
             const equippedVal = this.saveSystem.getEquippedItem(item.type);
 
-            if (['hub_skin', 'theme', 'cabinet', 'trophy_room', 'property', 'wallpaper', 'flooring', 'music_disk', 'os_license'].includes(item.type)) {
+            if (['hub_skin', 'theme', 'cabinet', 'trophy_room', 'property', 'wallpaper', 'flooring', 'music_disk', 'os_license', 'boss_app'].includes(item.type)) {
                 // Strict equality if val exists
                 isEquipped = equippedVal === item.value;
                 
@@ -253,6 +262,8 @@ export default class Store {
             if (['hub_skin', 'theme', 'cabinet', 'trophy_room', 'avatar', 'property', 'wallpaper', 'flooring', 'music_disk', 'os_license'].includes(item.type)) {
                 this.saveSystem.equipItem(item.type, item.value);
             }
+            // Boss Apps are auto-equipped/unlocked but let's allow 'equipping' to mean highlighting or something,
+            // but effectively they are just features. However, for consistency we allow saving them as "equipped" preference if needed.
 
             // Specific Side Effects
             if (item.type === 'avatar') {
