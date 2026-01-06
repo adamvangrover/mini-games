@@ -27,6 +27,15 @@ def verify_boss_mode_new():
         print("Activating Boss Mode...")
         page.evaluate("BossMode.instance.toggle(true)")
 
+        # Wait for login screen
+        print("Waiting for Login Screen...")
+        page.wait_for_selector("#boss-login-input", state="visible")
+
+        # Login
+        print("Logging in...")
+        page.fill("#boss-login-input", "1234")
+        page.click("#boss-login-submit")
+
         # 3. Check desktop
         print("Checking desktop elements...")
         page.wait_for_selector("#boss-mode-overlay", state="visible")
@@ -38,11 +47,9 @@ def verify_boss_mode_new():
         time.sleep(1)
         # Increase timeout or try to force state
         try:
-            page.wait_for_selector("text=Pinned", timeout=5000, state="visible")
+            page.wait_for_selector("#boss-startmenu-container .w-64", timeout=5000, state="visible")
         except:
-            print("Start Menu did not appear visibly. Dumping classes...")
-            # Maybe animation delay
-            page.evaluate("document.querySelector('.absolute-menu').style.opacity = '1'")
+            print("Start Menu did not appear visibly.")
 
         # 5. Launch Excel
         print("Launching Excel...")
@@ -51,7 +58,7 @@ def verify_boss_mode_new():
         # 6. Verify Window
         print("Verifying Excel Window...")
         try:
-            page.wait_for_selector("#window-1", timeout=5000)
+            page.wait_for_selector("#win-1", timeout=5000)
             print("Window 1 found.")
         except:
             print("Window 1 missing.")
@@ -63,7 +70,7 @@ def verify_boss_mode_new():
         # 7. Launch Browser
         print("Launching Browser...")
         page.evaluate("BossMode.instance.openApp('browser')")
-        page.wait_for_selector("#window-2", timeout=5000)
+        page.wait_for_selector("#win-2", timeout=5000)
 
         # 8. Check Taskbar Items
         print("Checking taskbar...")
@@ -71,20 +78,27 @@ def verify_boss_mode_new():
         # It renders start btn, search (hidden on small screen?), and then windows.
         # .h-8.w-8 select might pick up start btn and windows.
         # Start btn id="boss-start-btn"
-        # Window icons are div with onclick="...toggleWindowMinimize..."
 
-        # Let's count elements with onclick containing toggleWindowMinimize
+        # Let's count elements with bg-white/5 which indicates active windows in taskbar
+        # Need to escape forward slash in selector for JS execution if not using correct syntax
+        # Actually .bg-white\/5 is the class name in DOM but in selector it needs escaping.
+        # Playwright evaluate runs JS in browser.
+
+        # In CSS selector, / is valid in class name if escaped.
+        # document.querySelectorAll('.bg-white\\/5') works in devtools.
+        # In python string passed to evaluate, we need double backslash.
+
         taskbar_window_icons = page.evaluate("""
-            Array.from(document.querySelectorAll('#boss-taskbar-container div[onclick*="toggleWindowMinimize"]')).length
+            Array.from(document.querySelectorAll('#boss-taskbar-container .bg-white\\\\/5')).length
         """)
-        print(f"Taskbar window icons found: {taskbar_window_icons}")
+        print(f"Taskbar active window icons found: {taskbar_window_icons}")
 
         # Should be 2 (Excel + Browser)
         assert taskbar_window_icons >= 2
 
         # 9. Verify Drag Logic
         print("Simulating Window Drag...")
-        w2 = page.locator("#window-2")
+        w2 = page.locator("#win-2")
         box = w2.bounding_box()
 
         start_x = box['x']
@@ -105,8 +119,8 @@ def verify_boss_mode_new():
 
         # 10. Close Window
         print("Closing Window...")
-        page.locator("#window-2 .fa-times").click()
-        page.wait_for_selector("#window-2", state="hidden")
+        page.locator("#win-2 .fa-times").click()
+        page.wait_for_selector("#win-2", state="hidden")
 
         print("Boss Mode verification passed!")
         browser.close()
