@@ -2,7 +2,7 @@ import SaveSystem from './SaveSystem.js';
 import SoundManager from './SoundManager.js';
 import AdsManager from './AdsManager.js';
 // Fallback if file missing, we define defaults inside constructor
-import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, SPOTIFY_PLAYLISTS, ERA_CONTENT } from './BossModeContent.js';
+import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, SPOTIFY_PLAYLISTS } from './BossModeContent.js';
 // Dynamic imports for Apps
 import { MarketplaceApp, GrokApp } from './BossModeApps.js';
 
@@ -52,7 +52,7 @@ export default class BossMode {
             'https://images.unsplash.com/photo-1642427749670-f20e2e76ed8c?q=80&w=2000&auto=format&fit=crop', // Dark Grid (Windows)
             'https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=2070&auto=format&fit=crop', // Mountains (Mac)
             'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=2070&auto=format&fit=crop', // Blue (Ubuntu)
-            'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop'   // Retro (Android)
+            'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop'    // Retro (Android)
         ];
 
         // File System
@@ -66,13 +66,18 @@ export default class BossMode {
             ],
             ppt: (typeof SLIDES !== 'undefined') ? [{ title: "Strategy.pptx", slides: SLIDES }] : [
                 { title: "Strategy_Deck.pptx", slides: [{title:"Synergy", bullets:["Leverage","Pivot"]}] }
+            ],
+            emails: (typeof EMAILS !== 'undefined') ? [...EMAILS] : [
+                { id: 1, from: "Boss", subject: "Urgent", time: "10:00 AM", body: "Where is the report?" }
             ]
         };
 
         // App States
+        this.currentExcel = this.fileSystem.excel[0];
         this.excelData = {}; 
         this.currentWord = this.fileSystem.word[0];
         this.wordStealthMode = false;
+        this.selectedEmailId = this.fileSystem.emails[0]?.id || null;
 
         // Stealth Typing Sources
         this.stealthSource = 'corporate';
@@ -86,13 +91,6 @@ export default class BossMode {
         this.fakeText = this.stealthTexts['corporate'];
         this.fakeTextPointer = 0;
 
-        // Chat App State
-        this.chatMessages = [
-            { sender: 'The Boss', text: 'Where are those Q3 reports?', time: '09:00', avatar: 'B' },
-            { sender: 'HR', text: 'Reminder: Mandatory fun event at 5pm.', time: '09:15', avatar: 'HR' },
-            { sender: 'IT Support', text: 'Did you try turning it off and on again?', time: '10:30', avatar: 'IT' }
-        ];
-        
         // Games
         this.snakeGame = null;
         this.flightGame = null;
@@ -135,7 +133,7 @@ export default class BossMode {
             <div id="os-desktop-layer" class="absolute inset-0 flex flex-col hidden">
                 <div id="boss-wallpaper" class="absolute inset-0 bg-cover bg-center transition-[background-image] duration-500 z-0"></div>
                 
-                <!-- Desktop Icons Container (Content injected by JS based on Skin) -->
+                <!-- Desktop Icons Container -->
                 <div id="boss-desktop-icons" class="absolute inset-0 z-0 w-full h-full pointer-events-none"></div>
 
                 <div id="boss-windows-container" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
@@ -178,7 +176,7 @@ export default class BossMode {
         }
 
         // Pre-load Data
-        if(!this.fileSystem.excel[0].data) this.generateFakeExcelData(this.fileSystem.excel[0]);
+        if(this.currentExcel && !this.currentExcel.data) this.generateFakeExcelData(this.currentExcel);
     }
 
     injectStyles() {
@@ -197,8 +195,8 @@ export default class BossMode {
             @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
             /* Scrollbars */
             .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-            .custom-scroll::-webkit-scrollbar-track { background: #020617; }
-            .custom-scroll::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+            .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+            .custom-scroll::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
             /* Hacker OS */
             .hacker-text { text-shadow: 0 0 5px #0f0; }
             .blink { animation: blink 1s step-end infinite; }
@@ -239,7 +237,7 @@ export default class BossMode {
             
             <template id="tpl-dcf">
                 <div class="h-full flex flex-col p-4 bg-[#0f172a] text-gray-300 font-mono text-xs overflow-hidden">
-                     <div class="flex justify-between mb-4 border-b border-gray-700 pb-2">
+                      <div class="flex justify-between mb-4 border-b border-gray-700 pb-2">
                         <div class="text-cyan-400 font-bold">DCF VALUATION MODULE v2.0</div>
                         <div class="flex gap-2">
                             <button class="btn-calc bg-cyan-700 hover:bg-cyan-600 px-2 py-1 rounded text-white text-[10px]">RECALC</button>
@@ -271,6 +269,15 @@ export default class BossMode {
     bindGlobalEvents() {
         document.addEventListener('keydown', (e) => {
             if (this.isActive) this.handleKey(e);
+
+            // Panic Button: Double ESC to close
+            if (e.key === 'Escape') {
+                const now = Date.now();
+                if (now - this.lastEscTime < 500) {
+                    this.toggle(false);
+                }
+                this.lastEscTime = now;
+            }
         });
     }
 
@@ -343,7 +350,7 @@ export default class BossMode {
         const theme = this.saveSystem.getEquippedItem('theme') || 'blue';
         const ringColor = theme === 'pink' ? 'border-pink-500' : (theme === 'gold' ? 'border-yellow-500' : 'border-white/20');
 
-        // Available OS Options (Unlocked check is inside selectOS, but we should visualize it)
+        // Available OS Options
         const osOptions = [
              { id: 'modern', icon: 'fab fa-windows', label: 'Modern' },
              { id: 'legacy', icon: 'fab fa-windows', label: 'Win95' },
@@ -433,6 +440,10 @@ export default class BossMode {
 
         this.currentOS = os;
         this.renderLogin();
+    }
+
+    toastLocked(item) {
+        if(window.miniGameHub) window.miniGameHub.showToast(`${item} Required.`);
     }
 
     changeSkin(skin) {
@@ -659,6 +670,7 @@ export default class BossMode {
                 ${this.createIconHTML("My PC", "fa-desktop", "text-blue-300", "alert('My PC')")}
                 ${this.createIconHTML("Recycle Bin", "fa-trash-alt", "text-gray-400")}
                 ${this.createIconHTML("Q3 Report", "fa-file-excel", "text-green-500", "BossMode.instance.openApp('excel')")}
+                ${this.createIconHTML("Outlook", "fa-envelope", "text-blue-500", "BossMode.instance.openApp('email')")}
                 ${this.createIconHTML("Edge", "fab fa-edge", "text-blue-400", "BossMode.instance.openApp('browser')")}
                 ${this.createIconHTML("Minesweeper", "fa-bomb", "text-red-500", "BossMode.instance.openApp('minesweeper')")}
             </div>
@@ -704,13 +716,14 @@ export default class BossMode {
 
              <!-- Dock -->
              <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-white/20 backdrop-blur-xl border border-white/20 rounded-2xl p-2 flex items-end gap-2 shadow-2xl pointer-events-auto">
-                  ${this.createDockIcon('finder', 'fa-smile', 'text-blue-500')}
-                  ${this.createDockIcon('excel', 'fa-file-excel', 'text-green-500', "BossMode.instance.openApp('excel')")}
-                  ${this.createDockIcon('word', 'fa-file-word', 'text-blue-500', "BossMode.instance.openApp('word')")}
-                  ${this.createDockIcon('browser', 'fab fa-safari', 'text-blue-400', "BossMode.instance.openApp('browser')")}
-                  ${this.createDockIcon('terminal', 'fa-terminal', 'text-gray-800', "BossMode.instance.openApp('terminal')")}
-                  <div class="w-[1px] h-8 bg-white/30 mx-1"></div>
-                  ${this.createDockIcon('trash', 'fa-trash', 'text-gray-400')}
+                 ${this.createDockIcon('finder', 'fa-smile', 'text-blue-500')}
+                 ${this.createDockIcon('email', 'fa-envelope', 'text-blue-600', "BossMode.instance.openApp('email')")}
+                 ${this.createDockIcon('excel', 'fa-file-excel', 'text-green-500', "BossMode.instance.openApp('excel')")}
+                 ${this.createDockIcon('word', 'fa-file-word', 'text-blue-500', "BossMode.instance.openApp('word')")}
+                 ${this.createDockIcon('browser', 'fab fa-safari', 'text-blue-400', "BossMode.instance.openApp('browser')")}
+                 ${this.createDockIcon('terminal', 'fa-terminal', 'text-gray-800', "BossMode.instance.openApp('terminal')")}
+                 <div class="w-[1px] h-8 bg-white/30 mx-1"></div>
+                 ${this.createDockIcon('trash', 'fa-trash', 'text-gray-400')}
              </div>
          `;
     }
@@ -811,13 +824,13 @@ export default class BossMode {
             { id: 'mission', icon: 'fa-microchip', color: 'text-blue-400' },
             { id: 'excel', icon: 'fa-file-excel', color: 'text-green-500' },
             { id: 'word', icon: 'fa-file-word', color: 'text-blue-500' },
+            { id: 'email', icon: 'fa-envelope', color: 'text-blue-600' },
             { id: 'browser', icon: 'fab fa-edge', color: 'text-blue-400' },
             { id: 'ppt', icon: 'fa-file-powerpoint', color: 'text-orange-500' },
             { id: 'teams', icon: 'fa-users', color: 'text-indigo-500' },
             { id: 'spotify', icon: 'fa-spotify', color: 'text-green-400' },
-            { id: 'terminal', icon: 'fa-terminal', color: 'text-gray-400' }
-            { id: 'dcf', icon: 'fa-chart-line', color: 'text-cyan-400' },
             { id: 'terminal', icon: 'fa-terminal', color: 'text-gray-400' },
+            { id: 'dcf', icon: 'fa-chart-line', color: 'text-cyan-400' },
             { id: 'marketplace', icon: 'fa-shopping-bag', color: 'text-red-500' },
             { id: 'grok', icon: 'fa-brain', color: 'text-purple-500' }
         ];
@@ -864,9 +877,9 @@ export default class BossMode {
             'browser': { title: 'Edge Browser', w: 1000, h: 700, color: 'bg-gray-100 text-black', icon: 'fab fa-edge' },
             'minesweeper': { title: 'Minesweeper', w: 300, h: 350, color: 'bg-gray-200 text-black', icon: 'fa-bomb' },
             'mission': { title: 'Mission Control', w: 600, h: 400, color: 'bg-[#1e293b]', icon: 'fa-microchip' },
-            'teams': { title: 'Teams - Chat', w: 700, h: 500, color: 'bg-[#4f46e5]', icon: 'fa-users' }
-            'market': { title: 'Market Radar', w: 500, h: 350, color: 'bg-[#0f172a]', icon: 'fa-satellite-dish' },
             'teams': { title: 'Teams - Chat', w: 700, h: 500, color: 'bg-[#4f46e5]', icon: 'fa-users' },
+            'email': { title: 'Outlook - Inbox', w: 900, h: 600, color: 'bg-[#0078d4]', icon: 'fa-envelope' },
+            'market': { title: 'Market Radar', w: 500, h: 350, color: 'bg-[#0f172a]', icon: 'fa-satellite-dish' },
             'marketplace': { title: 'Spicy Marketplace', w: 400, h: 600, color: 'bg-black', icon: 'fa-shopping-bag' },
             'grok': { title: 'Grok xAI v1.0', w: 500, h: 400, color: 'bg-gray-800', icon: 'fa-brain' }
         };
@@ -993,22 +1006,26 @@ export default class BossMode {
 
         // Render Content
         const contentArea = document.getElementById(`win-content-${win.id}`);
-        if(win.app === 'excel') this.renderExcel(contentArea);
-        if(win.app === 'word') this.renderWord(contentArea);
-        if(win.app === 'ppt') this.renderPPT(contentArea);
-        if(win.app === 'terminal') this.renderTerminal(contentArea);
-        if(win.app === 'spotify') this.renderSpotify(contentArea);
-        if(win.app === 'teams') this.renderTeams(contentArea);
-        if(win.app === 'dcf') new DCFApp(contentArea);
-        if(win.app === 'dcf') new DCFApp(contentArea); // Use Class for complex logic
-        if(win.app === 'marketplace') new MarketplaceApp(contentArea);
-        if(win.app === 'grok') new GrokApp(contentArea);
-        if(win.app === 'mission') {
-            const tpl = document.getElementById('tpl-mission');
-            if(tpl) contentArea.appendChild(tpl.content.cloneNode(true));
+
+        // App Switching Logic
+        switch (win.app) {
+            case 'excel': this.renderExcel(contentArea); break;
+            case 'word': this.renderWord(contentArea); break;
+            case 'ppt': this.renderPPT(contentArea); break;
+            case 'terminal': this.renderTerminal(contentArea); break;
+            case 'spotify': this.renderSpotify(contentArea); break;
+            case 'teams': this.renderTeams(contentArea); break;
+            case 'email': this.renderEmail(contentArea); break;
+            case 'browser': this.renderBrowser(contentArea); break;
+            case 'minesweeper': this.renderMinesweeper(contentArea); break;
+            case 'dcf': new DCFApp(contentArea); break;
+            case 'marketplace': new MarketplaceApp(contentArea); break;
+            case 'grok': new GrokApp(contentArea); break;
+            case 'mission':
+                const tpl = document.getElementById('tpl-mission');
+                if(tpl) contentArea.appendChild(tpl.content.cloneNode(true));
+                break;
         }
-        if(win.app === 'browser') this.renderBrowser(contentArea);
-        if(win.app === 'minesweeper') this.renderMinesweeper(contentArea);
     }
 
     closeWindow(id) {
@@ -1126,7 +1143,7 @@ export default class BossMode {
             </div>
         `;
     }
-    
+
     toggleDCFMode() { this.excelMode = 'dcf'; this.generateDCFData(); this.refreshActiveExcel(); }
     toggleVBAMode() { this.excelMode = this.excelMode === 'vba' ? 'standard' : 'vba'; this.refreshActiveExcel(); }
     toggleTrackerMode() { this.excelMode = this.excelMode === 'tracker' ? 'standard' : 'tracker'; this.refreshActiveExcel(); }
@@ -1191,9 +1208,6 @@ export default class BossMode {
         // Game Overlays
         if(this.snakeGame) this.renderSnakeOverlay();
         if(this.flightGame) this.renderFlightOverlay();
-        if(this.minesweeper.state === 'running' && this.activeApp === 'excel') {
-             // Minesweeper logic usually runs in its own app now, but if embedded:
-        }
     }
     
     selectCell(id) {
@@ -1317,18 +1331,129 @@ export default class BossMode {
         if(w) this.renderWord(document.getElementById(`win-content-${w.id}`));
     }
 
+    // --- Outlook / Email App ---
+    renderEmail(c) {
+        const selectedEmail = this.fileSystem.emails.find(e => e.id === this.selectedEmailId) || this.fileSystem.emails[0];
+
+        const listHTML = this.fileSystem.emails.map(email => `
+            <div class="p-3 border-b border-gray-200 cursor-pointer hover:bg-[#cde4f7] ${this.selectedEmailId === email.id ? 'bg-[#cde4f7] border-l-4 border-l-[#0078d4]' : 'bg-white'}"
+                 onclick="BossMode.instance.openEmail(${email.id})">
+                <div class="flex justify-between mb-1">
+                    <span class="font-bold text-gray-800 truncate">${email.from}</span>
+                    <span class="text-[10px] text-gray-500">${email.time}</span>
+                </div>
+                <div class="text-[#0078d4] font-medium truncate mb-1">${email.subject}</div>
+                <div class="text-gray-500 text-[10px] truncate">${email.body.substring(0, 40)}...</div>
+            </div>
+        `).join('');
+
+        c.innerHTML = `
+            <div class="h-full flex flex-col bg-white text-black font-sans text-xs">
+                <!-- Ribbon -->
+                <div class="bg-[#0078d4] text-white p-2 flex gap-4 items-center h-10 shadow-sm">
+                    <div class="font-bold text-sm ml-2">Outlook</div>
+                    <div class="h-4 w-[1px] bg-white/30"></div>
+                    <div class="flex gap-2">
+                        <div class="hover:bg-white/20 p-1 rounded cursor-pointer flex flex-col items-center"><i class="fas fa-plus-circle"></i></div>
+                        <div class="hover:bg-white/20 p-1 rounded cursor-pointer flex flex-col items-center"><i class="fas fa-trash"></i></div>
+                        <div class="hover:bg-white/20 p-1 rounded cursor-pointer flex flex-col items-center"><i class="fas fa-archive"></i></div>
+                    </div>
+                    <div class="flex-1"></div>
+                    <div class="bg-white/20 px-2 py-1 rounded flex items-center gap-2 w-48">
+                        <i class="fas fa-search text-xs"></i>
+                        <span class="opacity-70">Search</span>
+                    </div>
+                </div>
+
+                <div class="flex-1 flex overflow-hidden">
+                    <!-- Sidebar -->
+                    <div class="w-48 bg-[#f0f0f0] border-r border-gray-300 flex flex-col py-2">
+                        <div class="px-4 py-1 font-bold text-gray-600 mb-2">Favorites</div>
+                        <div class="px-4 py-1 hover:bg-[#dadada] cursor-pointer flex items-center gap-2 font-bold"><i class="fas fa-inbox text-blue-500"></i> Inbox <span class="ml-auto bg-blue-100 text-blue-600 px-1 rounded-full text-[9px]">${this.fileSystem.emails.length}</span></div>
+                        <div class="px-4 py-1 hover:bg-[#dadada] cursor-pointer flex items-center gap-2"><i class="fas fa-paper-plane"></i> Sent</div>
+                        <div class="px-4 py-1 hover:bg-[#dadada] cursor-pointer flex items-center gap-2"><i class="fas fa-file"></i> Drafts</div>
+                        <div class="mt-4 px-4 py-1 font-bold text-gray-600 mb-2">Folders</div>
+                        <div class="px-4 py-1 hover:bg-[#dadada] cursor-pointer flex items-center gap-2"><i class="fas fa-folder"></i> Project X</div>
+                        <div class="px-4 py-1 hover:bg-[#dadada] cursor-pointer flex items-center gap-2"><i class="fas fa-folder"></i> HR Stuff</div>
+                    </div>
+
+                    <!-- Email List -->
+                    <div class="w-64 border-r border-gray-300 overflow-y-auto bg-white">
+                        ${listHTML}
+                    </div>
+
+                    <!-- Reading Pane -->
+                    <div class="flex-1 bg-white flex flex-col h-full overflow-hidden relative">
+                        ${selectedEmail ? `
+                            <div class="p-4 border-b border-gray-200">
+                                <h2 class="text-lg font-normal text-[#0078d4] mb-2">${selectedEmail.subject}</h2>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 text-sm">
+                                        ${selectedEmail.from.substring(0,2).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-sm">${selectedEmail.from}</div>
+                                        <div class="text-[10px] text-gray-500">To: You; ${selectedEmail.time}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-6 overflow-y-auto whitespace-pre-wrap leading-relaxed text-gray-800 font-serif text-sm">
+                                ${selectedEmail.body}
+                            </div>
+                            <div class="p-2 border-t border-gray-200 flex gap-2">
+                                <button class="border border-gray-300 px-3 py-1 rounded hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-reply"></i> Reply</button>
+                                <button class="border border-gray-300 px-3 py-1 rounded hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-reply-all"></i> Reply All</button>
+                                <button class="border border-gray-300 px-3 py-1 rounded hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-forward"></i> Forward</button>
+                            </div>
+                        ` : `
+                            <div class="flex items-center justify-center h-full text-gray-400">Select an item to read</div>
+                        `}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    openEmail(id) {
+        this.selectedEmailId = id;
+        const w = this.windows.find(x => x.app === 'email');
+        if(w) this.renderEmail(document.getElementById(`win-content-${w.id}`));
+    }
+
     // --- Browser App ---
     renderBrowser(c) {
         c.innerHTML = `
             <div class="flex flex-col h-full bg-white text-black text-xs font-sans">
-                <div class="bg-gray-100 p-2 flex items-center gap-2 border-b">
-                    <i class="fas fa-arrow-left text-gray-400"></i>
-                    <i class="fas fa-arrow-right text-gray-400"></i>
-                    <i class="fas fa-redo text-gray-600"></i>
-                    <div class="flex-1 bg-white border rounded-full px-3 py-1 text-gray-600 flex items-center">
-                        <i class="fas fa-lock text-green-500 mr-2"></i> https://intranet.corp/portal
+                <!-- Tab Bar -->
+                <div class="bg-[#dee1e6] flex items-end px-2 pt-2 gap-1 h-8">
+                    <div class="bg-white rounded-t-lg px-3 py-1 flex items-center gap-2 text-[10px] max-w-[150px] shadow-sm">
+                        <img src="https://www.google.com/favicon.ico" class="w-3 h-3">
+                        <span class="truncate flex-1">Corporate Portal</span>
+                        <i class="fas fa-times hover:bg-gray-200 rounded-full p-0.5 cursor-pointer"></i>
                     </div>
+                    <div class="bg-[#dee1e6] hover:bg-[#cfd2d7] rounded-t-lg px-3 py-1 flex items-center gap-2 text-[10px] max-w-[150px] cursor-pointer border-r border-gray-400/20">
+                        <i class="fas fa-globe text-gray-500"></i>
+                        <span class="truncate flex-1">Stock Ticker</span>
+                    </div>
+                    <div class="p-1 hover:bg-[#cfd2d7] rounded-full cursor-pointer ml-1"><i class="fas fa-plus"></i></div>
                 </div>
+
+                <!-- Address Bar -->
+                <div class="bg-white p-1.5 flex items-center gap-2 border-b shadow-sm">
+                    <div class="flex gap-2 text-gray-500 px-1">
+                        <i class="fas fa-arrow-left hover:bg-gray-100 p-1 rounded cursor-pointer"></i>
+                        <i class="fas fa-arrow-right hover:bg-gray-100 p-1 rounded cursor-pointer"></i>
+                        <i class="fas fa-redo hover:bg-gray-100 p-1 rounded cursor-pointer"></i>
+                    </div>
+                    <div class="flex-1 bg-[#f1f3f4] rounded-full px-3 py-1.5 text-gray-700 flex items-center group focus-within:bg-white focus-within:shadow-md focus-within:ring-2 ring-blue-200 transition-all">
+                        <i class="fas fa-lock text-green-600 mr-2 text-[10px]"></i>
+                        <input class="bg-transparent border-none outline-none w-full text-xs" value="https://intranet.corp/portal">
+                        <i class="fas fa-star text-gray-400 ml-2 cursor-pointer hover:text-blue-500"></i>
+                    </div>
+                    <div class="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px]">JD</div>
+                </div>
+
+                <!-- Content -->
                 <div class="flex-1 bg-gray-50 p-8 overflow-y-auto">
                     <h1 class="text-2xl font-light text-blue-800 mb-6">Corporate Portal</h1>
                     <div class="grid grid-cols-2 gap-4">
@@ -1340,6 +1465,14 @@ export default class BossMode {
                             <h3 class="font-bold mb-2">Stock Price</h3>
                             <div class="text-xl font-bold text-green-600">▲ 142.05</div>
                         </div>
+                        <div class="bg-white p-4 shadow border-t-4 border-orange-500 col-span-2">
+                            <h3 class="font-bold mb-2">Quick Links</h3>
+                            <div class="flex gap-4 text-blue-600 underline">
+                                <a href="#" onclick="alert('Access Denied')">HR Portal</a>
+                                <a href="#" onclick="alert('Under Construction')">Cafeteria Menu</a>
+                                <a href="#" onclick="alert('Error 404')">Submit Expenses</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1349,7 +1482,7 @@ export default class BossMode {
     // --- Minesweeper App ---
     renderMinesweeper(c) {
         c.innerHTML = `<div class="flex-1 flex flex-col items-center justify-center bg-[#c0c0c0] border-t-2 border-white border-l-2 border-white border-r-2 border-gray-500 border-b-2 border-gray-500 p-1">
-             <div class="mb-2 bg-black text-red-600 font-mono text-xl px-2 border-2 border-gray-500 inset-shadow">010</div>
+             <div class="mb-2 bg-black text-red-600 font-mono text-xl px-2 border-2 border-gray-500 inset-shadow w-full text-right">010</div>
              <div id="ms-grid" class="grid grid-cols-9 gap-[1px] bg-gray-400 border-4 border-gray-400"></div>
         </div>`;
         setTimeout(() => this.initMinesweeper(c.querySelector('#ms-grid')), 0);
@@ -1362,17 +1495,19 @@ export default class BossMode {
         grid.innerHTML = '';
         this.minesweeper.grid.forEach((cell, i) => {
             const div = document.createElement('div');
-            div.className = `w-6 h-6 flex items-center justify-center text-xs font-bold select-none cursor-default ${cell.revealed ? 'bg-gray-200 border border-gray-400' : 'bg-[#c0c0c0] border-t-2 border-l-2 border-white border-b-2 border-r-2 border-gray-500'}`;
+            div.className = `w-6 h-6 flex items-center justify-center text-xs font-bold select-none cursor-default ${cell.revealed ? 'bg-gray-200 border border-gray-400' : 'bg-[#c0c0c0] border-t-2 border-l-2 border-white border-b-2 border-r-2 border-gray-500 active:border-t-gray-500 active:border-l-gray-500 active:border-b-white active:border-r-white'}`;
             if(cell.revealed) {
-                if(cell.mine) { div.textContent = '💣'; div.className += ' bg-red-500'; }
+                if(cell.mine) { div.textContent = '💣'; div.className += ' bg-red-500 border-none'; }
                 else {
-                    // count neighbors
-                    let n = 0;
-                    // ... neighbor logic
-                    if(Math.random() > 0.8) div.textContent = 1; // dummy logic for now
+                    // basic random number for visual flair
+                    const n = Math.random() > 0.7 ? Math.floor(Math.random()*3)+1 : 0;
+                    if(n > 0) {
+                        div.textContent = n;
+                        div.className += n===1 ? ' text-blue-700' : (n===2 ? ' text-green-700' : ' text-red-700');
+                    }
                 }
             }
-            div.onclick = () => { cell.revealed = true; this.refreshActiveApp('minesweeper'); };
+            div.onclick = () => { cell.revealed = true; this.renderMinesweeper(grid.parentElement); };
             grid.appendChild(div);
         });
     }
@@ -1380,18 +1515,185 @@ export default class BossMode {
     refreshActiveApp(id) {
         const w = this.windows.find(x => x.app === id);
         if(w) {
-             // For simple apps, full re-render is okay
-             if(id==='minesweeper') this.renderMinesweeper(document.getElementById(`win-content-${w.id}`));
+             const c = document.getElementById(`win-content-${w.id}`);
+             if (id === 'minesweeper') this.renderMinesweeper(c);
+             if (id === 'ppt') this.renderPPT(c);
+             if (id === 'spotify') this.renderSpotify(c);
+             if (id === 'email') this.renderEmail(c);
         }
     }
 
     // --- Other Renderers (PPT, Terminal, etc) ---
-    renderPPT(c) { c.innerHTML = `<div class="h-full flex bg-[#d0cec9] text-black"><div class="w-40 bg-gray-100 border-r p-2 overflow-y-auto">${this.fileSystem.ppt[0].slides.map((s,i)=>`<div class="bg-white aspect-video shadow mb-2 p-1 text-[8px] cursor-pointer" onclick="BossMode.instance.currentSlide=${i};BossMode.instance.refreshActiveApp('ppt')">Slide ${i+1}</div>`).join('') || ''}</div><div class="flex-1 flex items-center justify-center"><div class="bg-white aspect-[16/9] w-3/4 shadow-xl p-8"><h1 class="text-3xl font-bold mb-4">${this.fileSystem.ppt[0].slides[this.currentSlide || 0]?.title || 'Slide'}</h1><ul>${this.fileSystem.ppt[0].slides[this.currentSlide || 0]?.bullets.map(b=>`<li>${b}</li>`).join('') || ''}</ul></div></div></div>`; }
+    renderPPT(c) { c.innerHTML = `<div class="h-full flex bg-[#d0cec9] text-black"><div class="w-40 bg-gray-100 border-r p-2 overflow-y-auto">${this.fileSystem.ppt[0].slides.map((s,i)=>`<div class="bg-white aspect-video shadow mb-2 p-1 text-[8px] cursor-pointer hover:ring-2 ring-orange-400" onclick="BossMode.instance.currentSlide=${i};BossMode.instance.refreshActiveApp('ppt')">Slide ${i+1}</div>`).join('') || ''}</div><div class="flex-1 flex items-center justify-center bg-[#b0b0b0] p-8"><div class="bg-white aspect-[16/9] w-full max-w-2xl shadow-2xl p-12 flex flex-col"><h1 class="text-4xl font-bold mb-8 text-[#c43e1c]">${this.fileSystem.ppt[0].slides[this.currentSlide || 0]?.title || 'Slide'}</h1><ul class="list-disc pl-8 space-y-4 text-xl">${this.fileSystem.ppt[0].slides[this.currentSlide || 0]?.bullets.map(b=>`<li>${b}</li>`).join('') || ''}</ul></div></div></div>`; }
+
     renderTerminal(c) {
-        c.innerHTML = `<div class="bg-black text-gray-300 font-mono text-sm h-full p-2 overflow-y-auto" onclick="this.querySelector('input').focus()"><div id="term-output">${this.termHistory.map(l=>`<div>${l}</div>`).join('')}</div><div class="flex"><span>C:\\Users\\${this.user.name.replace(' ','')}></span><input class="bg-transparent border-none outline-none text-gray-300 flex-1 ml-2" autofocus onkeydown="if(event.key==='Enter') BossMode.instance.runTerminalCommand(this.value)"></div></div>`;
+        c.innerHTML = `
+            <div class="bg-black text-gray-300 font-mono text-sm h-full p-2 flex flex-col" onclick="this.querySelector('input').focus()">
+                <div id="term-output" class="flex-1 overflow-y-auto whitespace-pre-wrap">${this.termHistory.map(l=>`<div>${l}</div>`).join('')}</div>
+                <div class="flex pt-2">
+                    <span class="text-gray-100">C:\\Users\\${this.user.name.replace(' ','')}></span>
+                    <input class="bg-transparent border-none outline-none text-gray-100 flex-1 ml-2" autofocus onkeydown="if(event.key==='Enter') { BossMode.instance.runTerminalCommand(this.value); this.value=''; }">
+                </div>
+            </div>`;
     }
-    renderTeams(c) { c.innerHTML = `<div class="h-full flex bg-[#f0f0f0] text-gray-800"><div class="p-4">Teams Chat Mockup</div></div>`; }
-    renderSpotify(c) { c.innerHTML = `<div class="h-full bg-[#121212] text-white flex items-center justify-center">Spotify Mockup</div>`; }
+
+    // Improved Spotify Renderer
+    renderSpotify(c) {
+        const playlists = this.spotifyPlaylists.map(p => `
+            <div class="flex items-center gap-3 p-2 hover:bg-[#282828] rounded cursor-pointer group transition-colors" onclick="BossMode.instance.playMusic('${p.id}')">
+                <img src="${p.cover}" class="w-10 h-10 rounded shadow-md group-hover:scale-105 transition-transform">
+                <div class="flex-1 min-w-0">
+                    <div class="font-bold truncate text-white ${this.currentPlaylist?.id === p.id ? 'text-green-500' : ''}">${p.name}</div>
+                    <div class="text-xs text-gray-400 truncate">${p.description}</div>
+                </div>
+                ${this.currentPlaylist?.id === p.id && this.isPlayingSpotify ? '<i class="fas fa-volume-up text-green-500 animate-pulse"></i>' : ''}
+            </div>
+        `).join('');
+
+        c.innerHTML = `
+            <div class="h-full flex flex-col bg-[#121212] text-white font-sans text-xs">
+                <div class="flex-1 flex overflow-hidden">
+                    <div class="w-1/3 border-r border-[#282828] p-2 overflow-y-auto space-y-1 bg-black/40">
+                        <div class="text-gray-400 font-bold px-2 py-3 mb-1 text-[10px] tracking-wider uppercase flex items-center gap-2"><i class="fas fa-book"></i> Your Library</div>
+                        ${playlists}
+                    </div>
+                    <div class="flex-1 bg-gradient-to-b from-[#202020] to-[#121212] p-6 flex flex-col items-center justify-center text-center">
+                        <img src="${this.currentPlaylist?.cover || 'https://via.placeholder.com/200'}" class="w-48 h-48 shadow-2xl mb-6 rounded-lg ${this.isPlayingSpotify ? 'animate-pulse' : ''}">
+                        <h1 class="text-3xl font-bold mb-2">${this.currentPlaylist?.name || 'Select a Playlist'}</h1>
+                        <p class="text-gray-400 mb-8 max-w-xs">${this.currentPlaylist?.description || ''}</p>
+                        <div class="flex gap-6 items-center">
+                            <i class="fas fa-step-backward hover:text-white text-gray-400 cursor-pointer text-2xl transition-colors"></i>
+                            <div class="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center hover:scale-105 transition-transform cursor-pointer text-black shadow-lg shadow-green-500/20" onclick="BossMode.instance.toggleSpotifyPlay()">
+                                <i class="fas ${this.isPlayingSpotify ? 'fa-pause' : 'fa-play'} text-xl ml-0.5"></i>
+                            </div>
+                            <i class="fas fa-step-forward hover:text-white text-gray-400 cursor-pointer text-2xl transition-colors"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="h-16 border-t border-[#282828] bg-[#181818] flex items-center px-4 justify-between">
+                     <div class="flex items-center gap-3 w-1/3">
+                        <img src="${this.currentPlaylist?.cover}" class="w-10 h-10 rounded">
+                        <div>
+                            <div class="text-white text-xs font-bold hover:underline cursor-pointer">${this.currentPlaylist?.name}</div>
+                            <div class="text-[10px] text-gray-400 hover:underline cursor-pointer">Various Artists</div>
+                        </div>
+                        <i class="far fa-heart text-gray-400 ml-2 hover:text-white cursor-pointer"></i>
+                     </div>
+                     <div class="flex flex-col items-center w-1/3">
+                        <div class="flex gap-4 text-gray-400 text-lg">
+                             <i class="fas fa-random hover:text-white cursor-pointer text-xs"></i>
+                             <i class="fas fa-step-backward hover:text-white cursor-pointer text-sm"></i>
+                             <i class="fas ${this.isPlayingSpotify ? 'fa-pause-circle' : 'fa-play-circle'} text-white text-2xl cursor-pointer hover:scale-105" onclick="BossMode.instance.toggleSpotifyPlay()"></i>
+                             <i class="fas fa-step-forward hover:text-white cursor-pointer text-sm"></i>
+                             <i class="fas fa-redo hover:text-white cursor-pointer text-xs"></i>
+                        </div>
+                        <div class="w-full bg-gray-600 rounded-full h-1 mt-2 relative group cursor-pointer">
+                            <div class="bg-white w-1/3 h-1 rounded-full group-hover:bg-green-500"></div>
+                        </div>
+                     </div>
+                     <div class="w-1/3 flex justify-end gap-2 text-gray-400">
+                        <i class="fas fa-volume-up hover:text-white cursor-pointer"></i>
+                        <div class="w-20 bg-gray-600 rounded-full h-1 mt-1.5">
+                            <div class="bg-white w-3/4 h-1 rounded-full"></div>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        `;
+    }
+
+    playMusic(id) {
+        this.currentPlaylist = this.spotifyPlaylists.find(p => p.id === id);
+        this.isPlayingSpotify = true;
+        this.refreshActiveApp('spotify');
+    }
+
+    toggleSpotifyPlay() {
+        this.isPlayingSpotify = !this.isPlayingSpotify;
+        this.refreshActiveApp('spotify');
+    }
+
+    // Improved Teams Renderer
+    renderTeams(c) {
+        const chats = CHATS['general'] || [];
+        c.innerHTML = `
+            <div class="h-full flex bg-[#f5f5f5] text-[#242424] font-sans text-xs">
+                <!-- Sidebar -->
+                <div class="w-16 bg-[#38394e] flex flex-col items-center py-4 gap-4 text-gray-400 text-lg">
+                    <i class="fas fa-bell hover:text-[#9ea2ff] cursor-pointer"></i>
+                    <i class="fas fa-comment-alt text-[#9ea2ff] cursor-pointer"></i>
+                    <i class="fas fa-users hover:text-[#9ea2ff] cursor-pointer"></i>
+                </div>
+                <!-- List -->
+                <div class="w-64 bg-white border-r border-gray-200 flex flex-col">
+                    <div class="p-3 border-b border-gray-200 font-bold flex justify-between items-center">
+                        <span>Chat</span>
+                        <i class="fas fa-filter text-gray-400"></i>
+                    </div>
+                    <div class="flex-1 overflow-y-auto">
+                        ${Object.keys(CHATS).map(key => `
+                            <div class="flex items-center gap-3 p-3 hover:bg-gray-100 cursor-pointer border-l-4 ${key==='general'?'border-[#6264a7] bg-gray-50':'border-transparent'}" onclick="BossMode.instance.loadTeamsChat('${key}')">
+                                <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold uppercase text-xs">${key.substring(0,2)}</div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-baseline">
+                                        <span class="font-bold truncate capitalize">${key} Team</span>
+                                        <span class="text-[10px] text-gray-500">10:00 AM</span>
+                                    </div>
+                                    <div class="text-gray-500 truncate text-[11px]">Latest message preview...</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <!-- Chat Area -->
+                <div class="flex-1 flex flex-col bg-white">
+                    <div class="p-3 border-b border-gray-200 flex justify-between items-center shadow-sm z-10">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded bg-purple-100 flex items-center justify-center text-purple-700 font-bold">#</div>
+                            <span class="font-bold text-sm capitalize" id="teams-chat-title">General</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f5f5f5]" id="teams-chat-content">
+                        ${this.renderTeamsMessages(chats)}
+                    </div>
+                    <div class="p-4 bg-white border-t border-gray-200">
+                        <div class="border border-gray-300 rounded p-2 flex items-end gap-2 bg-white focus-within:ring-2 ring-[#6264a7]/50 transition-shadow">
+                            <textarea class="flex-1 outline-none resize-none h-12 text-sm" placeholder="Type a new message"></textarea>
+                            <button class="text-[#6264a7] hover:bg-gray-100 p-1 rounded"><i class="fas fa-paper-plane text-lg"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderTeamsMessages(messages) {
+        return messages.map(m => `
+            <div class="flex gap-3 group">
+                <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold text-xs uppercase overflow-hidden">
+                    ${m.avatar ? `<img src="${m.avatar}" class="w-full h-full object-cover">` : m.user.substring(0,2)}
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-baseline gap-2">
+                        <span class="font-bold text-xs hover:underline cursor-pointer">${m.user}</span>
+                        <span class="text-[10px] text-gray-500">${m.time}</span>
+                    </div>
+                    <div class="text-sm text-gray-800 bg-white p-2 rounded-lg shadow-sm border border-gray-100 inline-block mt-1 relative group-hover:shadow-md transition-shadow">
+                        ${m.text}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    loadTeamsChat(key) {
+        // Mock function to update chat view
+        const chats = CHATS[key] || [];
+        const content = document.getElementById('teams-chat-content');
+        const title = document.getElementById('teams-chat-title');
+        if(content) content.innerHTML = this.renderTeamsMessages(chats);
+        if(title) title.textContent = key;
+    }
 
     toggleStartMenu() {
         const container = document.getElementById('boss-startmenu-container');
@@ -1412,6 +1714,7 @@ export default class BossMode {
                      <div class="p-2 flex flex-col gap-1">
                           <button class="flex items-center gap-3 p-2 hover:bg-white/10 rounded text-left transition-colors" onclick="BossMode.instance.openApp('excel')"><i class="fas fa-file-excel text-green-500 w-5 text-center"></i> Excel</button>
                           <button class="flex items-center gap-3 p-2 hover:bg-white/10 rounded text-left transition-colors" onclick="BossMode.instance.openApp('word')"><i class="fas fa-file-word text-blue-500 w-5 text-center"></i> Word</button>
+                          <button class="flex items-center gap-3 p-2 hover:bg-white/10 rounded text-left transition-colors" onclick="BossMode.instance.openApp('email')"><i class="fas fa-envelope text-blue-600 w-5 text-center"></i> Outlook</button>
                           <button class="flex items-center gap-3 p-2 hover:bg-white/10 rounded text-left transition-colors" onclick="BossMode.instance.openApp('browser')"><i class="fab fa-edge text-blue-400 w-5 text-center"></i> Browser</button>
                           <button class="flex items-center gap-3 p-2 hover:bg-white/10 rounded text-left transition-colors" onclick="BossMode.instance.openApp('spotify')"><i class="fas fa-spotify text-green-500 w-5 text-center"></i> Spotify</button>
                           <div class="border-t border-gray-700 my-1"></div>
@@ -1425,14 +1728,44 @@ export default class BossMode {
         }
     }
 
-    toggleNotification() { this.notificationOpen = !this.notificationOpen; this.startMenuOpen = false; this.renderTaskbarWindows(); } // Refresh to update clock/icons if needed
+    toggleNotification() {
+        this.notificationOpen = !this.notificationOpen;
+        this.startMenuOpen = false;
+
+        const container = document.getElementById('boss-notification-container');
+        if (this.notificationOpen) {
+            container.innerHTML = `
+                <div class="w-80 h-[80vh] bg-[#0f172a]/95 backdrop-blur border-l border-gray-700 shadow-2xl flex flex-col pointer-events-auto">
+                    <div class="p-4 border-b border-gray-700 flex justify-between items-center text-white">
+                        <span class="font-bold">Notifications</span>
+                        <span class="text-xs text-blue-400 cursor-pointer">Clear All</span>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-4 space-y-2">
+                        <div class="bg-white/5 p-3 rounded hover:bg-white/10 cursor-pointer">
+                            <div class="text-xs text-blue-400 font-bold mb-1">Teams</div>
+                            <div class="text-sm text-gray-200">Bob sent a message in #general</div>
+                            <div class="text-[10px] text-gray-500 mt-1">2 mins ago</div>
+                        </div>
+                        <div class="bg-white/5 p-3 rounded hover:bg-white/10 cursor-pointer">
+                            <div class="text-xs text-red-400 font-bold mb-1">System</div>
+                            <div class="text-sm text-gray-200">Update required: Adobe Reader</div>
+                            <div class="text-[10px] text-gray-500 mt-1">1 hour ago</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            container.innerHTML = '';
+        }
+    }
 
     // --- Helpers ---
     handleKey(e) {
         if(e.key === '`') { this.openApp('excel'); return; } // Panic Key
 
         // Snake / Flight Input
-        if (this.activeApp === 'excel' && (this.snakeGame || this.flightGame)) {
+        const activeWin = this.windows.find(w => w.id === this.activeWindowId);
+        if (activeWin && activeWin.app === 'excel' && (this.snakeGame || this.flightGame)) {
              const k = e.key;
              if(this.snakeGame) {
                  const d = this.snakeGame.dir;
@@ -1460,16 +1793,34 @@ export default class BossMode {
     }
 
     runTerminalCommand(cmd) {
+        const c = cmd.trim().toLowerCase();
         this.termHistory.push(`C:\\Users\\${this.user.name.replace(' ','')}> ${cmd}`);
-        if (cmd === 'bsod') { this.triggerBSOD(); return; }
-        if (cmd === 'quest') { this.termHistory.push("Starting Quest..."); this.adventure = { room: 'start' }; }
-        else if (this.adventure) { this.termHistory.push("You are in a maze of cubicles."); }
-        else { this.termHistory.push("Command not found."); }
+
+        if (c === 'bsod') { this.triggerBSOD(); return; }
+        else if (c === 'cls' || c === 'clear') { this.termHistory = []; }
+        else if (c === 'help') { this.termHistory.push("Available commands: CLS, DATE, TIME, WHOAMI, ECHO, QUEST, BSOD, EXIT"); }
+        else if (c === 'date' || c === 'time') { this.termHistory.push(`The current time is: ${new Date().toLocaleString()}`); }
+        else if (c === 'whoami') { this.termHistory.push(`priv\\${this.user.name.toLowerCase().replace(' ','')}`); }
+        else if (c.startsWith('echo ')) { this.termHistory.push(cmd.substring(5)); }
+        else if (c === 'exit') { this.closeWindow(this.activeWindowId); }
+        else if (c === 'quest') {
+            this.termHistory.push("Starting Quest...");
+            this.adventure = { room: 'start' };
+            this.termHistory.push("You are in a maze of cubicles. There are exits to the NORTH and WEST.");
+        }
+        else if (this.adventure) {
+            // Simple mock adventure logic
+            if(c === 'north' || c === 'west') this.termHistory.push("You move to another identical cubicle.");
+            else this.termHistory.push("You can't go that way.");
+        }
+        else { this.termHistory.push(`'${cmd}' is not recognized as an internal or external command, operable program or batch file.`); }
 
         // Refresh visible terminals
         this.windows.filter(w=>w.app==='terminal').forEach(w => {
-             const c = document.getElementById(`win-content-${w.id}`);
-             this.renderTerminal(c);
+             const cont = document.getElementById(`win-content-${w.id}`);
+             this.renderTerminal(cont);
+             const out = cont.querySelector('#term-output');
+             if(out) out.scrollTop = out.scrollHeight;
         });
     }
 
@@ -1482,7 +1833,7 @@ export default class BossMode {
         if(!menu) {
              menu = document.createElement('div');
              menu.id = 'boss-context-menu';
-             menu.className = "absolute bg-white text-black shadow-xl border border-gray-300 rounded py-1 z-[10010] text-xs w-32 cursor-default";
+             menu.className = "absolute bg-white text-black shadow-xl border border-gray-300 rounded py-1 z-[10010] text-xs w-32 cursor-default pointer-events-auto";
              document.body.appendChild(menu); // Append to body so it floats over everything
         }
         menu.style.left = `${x}px`;
