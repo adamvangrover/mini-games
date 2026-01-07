@@ -1008,19 +1008,47 @@ export default class ArcadeHub {
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
         
         let hovered = false;
+        let tooltipText = '';
+
         if (intersects.length > 0) {
             let obj = intersects[0].object;
             // Traverse up to find user data
             while(obj.parent && !obj.userData.gameId && !obj.userData.isTeleporter && !obj.userData.isInteractable) {
                 obj = obj.parent;
             }
-            if (obj.userData && (obj.userData.gameId || obj.userData.isTeleporter || obj.userData.isInteractable)) {
-                hovered = true;
-
-                // Optional: Show Tooltip here if needed using obj.userData.tooltip
+            if (obj.userData) {
+                if (obj.userData.gameId) {
+                    hovered = true;
+                    tooltipText = obj.userData.name || 'Play Game';
+                } else if (obj.userData.isTeleporter) {
+                    hovered = true;
+                    tooltipText = 'Enter Trophy Room';
+                } else if (obj.userData.isInteractable) {
+                    hovered = true;
+                    tooltipText = obj.userData.tooltip || 'Interact';
+                }
             }
         }
         document.body.style.cursor = hovered ? 'pointer' : (this.isDragging ? 'grabbing' : 'default');
+
+        // Update Tooltip DOM
+        let tooltip = document.getElementById('hub-tooltip');
+        if (!tooltip) {
+            tooltip = document.createElement('div');
+            tooltip.id = 'hub-tooltip';
+            tooltip.className = 'fixed pointer-events-none bg-black/80 text-white px-3 py-1 rounded text-sm z-50 transition-opacity duration-200 border border-white/20';
+            document.body.appendChild(tooltip);
+        }
+
+        if (hovered && tooltipText) {
+            tooltip.textContent = tooltipText;
+            tooltip.style.opacity = '1';
+            // Position near mouse but offset
+            tooltip.style.left = (this.inputManager.mouse.x + 15) + 'px';
+            tooltip.style.top = (this.inputManager.mouse.y + 15) + 'px';
+        } else {
+            tooltip.style.opacity = '0';
+        }
     }
 
     // --- Inputs ---
