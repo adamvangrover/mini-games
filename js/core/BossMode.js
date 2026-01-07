@@ -669,6 +669,8 @@ export default class BossMode {
                 ${this.createIconHTML("Outlook", "fa-envelope", "text-blue-500", "BossMode.instance.openApp('email')")}
                 ${this.createIconHTML("Edge", "fab fa-edge", "text-blue-400", "BossMode.instance.openApp('browser')")}
                 ${this.createIconHTML("Minesweeper", "fa-bomb", "text-red-500", "BossMode.instance.openApp('minesweeper')")}
+                ${this.createIconHTML("Marketplace", "fa-shopping-bag", "text-purple-500", "BossMode.instance.openApp('marketplace')")}
+                ${this.createIconHTML("Wolf3D", "fas fa-crosshairs", "text-red-600", "BossMode.instance.openApp('wolf3d')")}
             </div>
         `;
 
