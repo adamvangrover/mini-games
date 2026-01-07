@@ -6,6 +6,10 @@ import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, SPOTIFY_PLAYLISTS
 // Dynamic imports for Apps
 import { MarketplaceApp, GrokApp } from './BossModeApps.js';
 import { MinesweeperApp, Wolf3DApp, NotepadApp } from './BossModeGames.js';
+import BossModeV0 from './BossModeV0.js';
+import BossModeV1 from './BossModeV1.js';
+import BossModeV2 from './BossModeV2.js';
+import BossModeV3 from './BossModeV3.js';
 
 export default class BossMode {
     constructor() {
@@ -39,6 +43,7 @@ export default class BossMode {
         this.adsManager = AdsManager.getInstance();
         this.overlay = null;
         this.legacyOS = null;
+        this.currentGuest = null; // For V0, V1, V2, V3
 
         // --- User Profile ---
         this.user = {
@@ -356,7 +361,11 @@ export default class BossMode {
              { id: 'xp', icon: 'fab fa-windows', label: 'WinXP' },
              { id: 'mac', icon: 'fab fa-apple', label: 'Mac OS' },
              { id: 'linux', icon: 'fab fa-linux', label: 'Linux' },
-             { id: 'hacker', icon: 'fas fa-terminal', label: 'Hacker' }
+             { id: 'hacker', icon: 'fas fa-terminal', label: 'Hacker' },
+             { id: 'v0', icon: 'fas fa-hdd', label: 'v0' },
+             { id: 'v1', icon: 'fas fa-server', label: 'v1' },
+             { id: 'v2', icon: 'fas fa-save', label: 'v2' },
+             { id: 'v3', icon: 'fas fa-microchip', label: 'v3' }
         ];
 
         loginLayer.innerHTML = `
@@ -411,6 +420,8 @@ export default class BossMode {
 
         if (['legacy', 'win98', 'win2000', 'xp', 'mac', 'linux', 'y2k'].includes(this.currentOS)) {
             this.startLegacyOS();
+        } else if (['v0', 'v1', 'v2', 'v3'].includes(this.currentOS)) {
+            this.startGuestOS(this.currentOS);
         } else if (this.currentOS === 'hacker') {
             this.renderHackerOS();
         } else {
@@ -433,6 +444,10 @@ export default class BossMode {
         if (os === 'mac' && !checkUnlock('mac', 'os_mac')) return this.toastLocked('Mac OS License');
         if (os === 'linux' && !checkUnlock('linux', 'os_linux')) return this.toastLocked('Linux Distro');
         if (os === 'hacker' && !checkUnlock('terminal', 'os_terminal')) return this.toastLocked('Terminal License');
+
+        // Check for VX licenses (mocked as always unlocked or add to store)
+        // For now assuming V0-V3 are included/free or use generic 'os_license' logic if needed
+        // We will add specific licenses to store later
 
         this.currentOS = os;
         this.renderLogin();
@@ -470,6 +485,43 @@ export default class BossMode {
                  }
             }
         });
+    }
+
+    startGuestOS(type) {
+        // Destroy existing
+        if (this.currentGuest && this.currentGuest.destroy) {
+            this.currentGuest.destroy();
+            this.currentGuest = null;
+        }
+
+        // Hide other layers
+        document.getElementById('os-desktop-layer').classList.add('hidden');
+        document.getElementById('os-legacy-container').classList.add('hidden');
+        document.getElementById('os-hacker-container').classList.add('hidden');
+
+        // Create/Get Container
+        let container = document.getElementById(`os-${type}-container`);
+        if (!container) {
+            container = document.createElement('div');
+            container.id = `os-${type}-container`;
+            container.className = 'absolute inset-0 z-[10005] bg-black hidden';
+            this.overlay.appendChild(container);
+        }
+
+        // Hide all guest containers first
+        ['v0', 'v1', 'v2', 'v3'].forEach(v => {
+            const c = document.getElementById(`os-${v}-container`);
+            if(c) c.classList.add('hidden');
+        });
+
+        container.classList.remove('hidden');
+
+        switch(type) {
+            case 'v0': this.currentGuest = new BossModeV0(container); break;
+            case 'v1': this.currentGuest = new BossModeV1(container); break;
+            case 'v2': this.currentGuest = new BossModeV2(container); break;
+            case 'v3': this.currentGuest = new BossModeV3(container); break;
+        }
     }
 
     renderHackerOS() {
