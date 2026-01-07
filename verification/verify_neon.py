@@ -38,9 +38,12 @@ def verify_neon_city():
         page.evaluate("window.miniGameHub.saveSystem.addCurrency(100)") # Ensure we have currency just in case
         page.evaluate("""
             (async () => {
-                const AdManager = (await import('./js/core/AdManager.js')).default;
-                const adManager = new AdManager();
-                adManager.showInterstitial();
+                const AdsManager = (await import('./js/core/AdsManager.js')).default;
+                // Ensure singleton or new instance
+                const instance = AdsManager.getInstance ? AdsManager.getInstance() : new AdsManager();
+                // showAd is the method name in main.js usage, let's try showAd or showInterstitial
+                // Based on main.js: adsManager.showAd(callback)
+                instance.showAd(() => console.log('Ad finished'));
             })()
         """)
 
