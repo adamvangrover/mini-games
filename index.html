@@ -58,7 +58,7 @@
                     <i class="fas fa-home mr-2"></i>Main Menu
                  </button>
             </div>
-            <button id="overlay-close-btn" class="absolute top-4 right-4 text-white text-2xl hover:text-fuchsia-500 transition-colors">&times;</button>
+            <button id="overlay-close-btn" class="absolute top-4 right-4 text-white text-2xl hover:text-fuchsia-500 transition-colors" aria-label="Close">&times;</button>
         </div>
     </div>
 
@@ -71,7 +71,7 @@
                      <div class="bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700">
                         <span class="text-xl text-yellow-400 font-bold"><i class="fas fa-coins mr-2"></i> <span id="store-currency">0</span></span>
                     </div>
-                    <button id="store-close-btn" class="text-white text-3xl hover:text-fuchsia-500 transition-colors">&times;</button>
+                    <button id="store-close-btn" class="text-white text-3xl hover:text-fuchsia-500 transition-colors" aria-label="Close">&times;</button>
                 </div>
             </div>
 
@@ -118,16 +118,16 @@
         <div class="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-white">
             <i class="fas fa-coins text-yellow-400"></i> <span id="total-currency-hud">0</span>
         </div>
-        <button id="shop-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Store">
+        <button id="shop-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Store" aria-label="Store">
             <i class="fas fa-store"></i>
         </button>
-        <button id="mute-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Mute/Unmute">
+        <button id="mute-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Mute/Unmute" aria-label="Mute Audio">
             <i class="fas fa-volume-up"></i>
         </button>
-        <button id="boss-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Work Mode (Alt+B)">
+        <button id="boss-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Work Mode (Alt+B)" aria-label="Toggle Boss Mode">
             <i class="fas fa-briefcase"></i>
         </button>
-        <button id="settings-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Data/Settings">
+        <button id="settings-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Data/Settings" aria-label="Settings">
             <i class="fas fa-cog"></i>
         </button>
     </div>
@@ -137,7 +137,7 @@
         <div class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 to-cyan-500 mb-8 title-glow animate-pulse text-center">
             NEON ARCADE
         </div>
-        <div class="w-64 h-2 bg-slate-800 rounded-full overflow-hidden relative">
+        <div role="progressbar" aria-label="Loading Application" class="w-64 h-2 bg-slate-800 rounded-full overflow-hidden relative">
             <div class="h-full bg-cyan-400 animate-[loading_2s_ease-in-out_infinite] absolute top-0 left-0 w-full"></div>
         </div>
         <p class="mt-4 text-slate-500 text-sm font-mono">Initializing Systems...</p>
@@ -159,7 +159,7 @@
         }
     </style>
 
-    <div id="controls-hint" class="fixed bottom-4 left-0 w-full text-center z-20 pointer-events-none transition-opacity duration-500">
+    <div id="controls-hint" role="status" class="fixed bottom-4 left-0 w-full text-center z-20 pointer-events-none transition-opacity duration-500">
         <p class="text-white/50 text-sm font-[Poppins] glass-panel inline-block px-4 py-1 rounded-full">
             CLICK A CABINET TO PLAY • DRAG TO LOOK AROUND
         </p>

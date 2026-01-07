@@ -5,6 +5,7 @@ import AdsManager from './AdsManager.js';
 import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, SPOTIFY_PLAYLISTS } from './BossModeContent.js';
 // Dynamic imports for Apps
 import { MarketplaceApp, GrokApp } from './BossModeApps.js';
+import { MinesweeperApp, Wolf3DApp, NotepadApp } from './BossModeGames.js';
 
 export default class BossMode {
     constructor() {
@@ -138,14 +139,11 @@ export default class BossMode {
 
                 <div id="boss-windows-container" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
                 
-                <!-- OS Specific UI Elements (Docks, Taskbars, Start Menus) -->
                 <div id="boss-os-ui" class="absolute inset-0 pointer-events-none z-[9999]"></div>
             </div>
 
-            <!-- Legacy OS Container -->
             <div id="os-legacy-container" class="absolute inset-0 z-[10005] hidden bg-teal-800"></div>
 
-            <!-- Hacker OS Container -->
             <div id="os-hacker-container" class="absolute inset-0 z-[10006] hidden bg-black font-mono text-green-500 p-4 overflow-hidden"></div>
 
             <div id="boss-bsod-container" class="absolute inset-0 z-[10050] hidden bg-[#0078d7] cursor-none flex flex-col items-start justify-center p-20 text-white font-mono"></div>
@@ -372,8 +370,7 @@ export default class BossMode {
                     <button id="boss-login-submit" class="bg-white/20 hover:bg-white/40 border border-white/30 rounded px-4 transition-all" onclick="BossMode.instance.login()"><i class="fas fa-arrow-right"></i></button>
                 </div>
 
-                 <!-- Skin Selector for Modern OS -->
-                <div class="mt-8 flex gap-4 bg-black/30 p-2 rounded-lg backdrop-blur-md">
+                 <div class="mt-8 flex gap-4 bg-black/30 p-2 rounded-lg backdrop-blur-md">
                      <div class="flex flex-col items-center cursor-pointer hover:text-blue-300 opacity-70 hover:opacity-100 ${this.skin==='windows'?'text-blue-400 opacity-100 font-bold':''}" onclick="BossMode.instance.changeSkin('windows')"><i class="fab fa-windows text-2xl"></i><span class="text-[9px]">Windows</span></div>
                      <div class="flex flex-col items-center cursor-pointer hover:text-gray-300 opacity-70 hover:opacity-100 ${this.skin==='mac'?'text-white opacity-100 font-bold':''}" onclick="BossMode.instance.changeSkin('mac')"><i class="fab fa-apple text-2xl"></i><span class="text-[9px]">macOS</span></div>
                      <div class="flex flex-col items-center cursor-pointer hover:text-orange-300 opacity-70 hover:opacity-100 ${this.skin==='ubuntu'?'text-orange-500 opacity-100 font-bold':''}" onclick="BossMode.instance.changeSkin('ubuntu')"><i class="fab fa-ubuntu text-2xl"></i><span class="text-[9px]">Ubuntu</span></div>
@@ -385,7 +382,6 @@ export default class BossMode {
                 <i class="fas fa-wifi"></i>
                 <i class="fas fa-power-off cursor-pointer hover:text-red-400" onclick="BossMode.instance.toggle(false)"></i>
             </div>
-            <!-- OS Selector -->
             <div class="absolute bottom-8 left-8 text-white/50 text-xs font-mono bg-black/50 p-2 rounded w-[600px] overflow-x-auto">
                 <div class="flex gap-4">
                     ${osOptions.map(opt => `
@@ -696,7 +692,6 @@ export default class BossMode {
          const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 
          ui.innerHTML = `
-             <!-- Top Bar -->
              <div class="absolute top-0 left-0 right-0 h-7 bg-white/20 backdrop-blur-md flex items-center justify-between px-4 text-white text-xs pointer-events-auto shadow-sm">
                  <div class="flex items-center gap-4 font-bold">
                      <i class="fab fa-apple text-sm"></i>
@@ -714,7 +709,6 @@ export default class BossMode {
                  </div>
              </div>
 
-             <!-- Dock -->
              <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-white/20 backdrop-blur-xl border border-white/20 rounded-2xl p-2 flex items-end gap-2 shadow-2xl pointer-events-auto">
                  ${this.createDockIcon('finder', 'fa-smile', 'text-blue-500')}
                  ${this.createDockIcon('email', 'fa-envelope', 'text-blue-600', "BossMode.instance.openApp('email')")}
@@ -736,7 +730,6 @@ export default class BossMode {
         const time = new Date().toLocaleDateString([], {weekday: 'short', hour: '2-digit', minute:'2-digit'});
 
         ui.innerHTML = `
-            <!-- Top Bar -->
             <div class="absolute top-0 left-0 right-0 h-7 bg-[#1c1c1c] text-white flex items-center justify-between px-3 text-xs pointer-events-auto shadow-sm">
                  <div class="font-bold cursor-pointer hover:bg-white/10 px-2 rounded">Activities</div>
                  <div class="absolute left-1/2 transform -translate-x-1/2 font-bold cursor-pointer hover:bg-white/10 px-2 rounded">${time}</div>
@@ -747,8 +740,7 @@ export default class BossMode {
                  </div>
             </div>
 
-             <!-- Side Dock -->
-            <div class="absolute left-0 top-7 bottom-0 w-14 bg-[#1c1c1c]/90 flex flex-col items-center py-2 gap-2 pointer-events-auto z-[10001]">
+             <div class="absolute left-0 top-7 bottom-0 w-14 bg-[#1c1c1c]/90 flex flex-col items-center py-2 gap-2 pointer-events-auto z-[10001]">
                  ${this.createDockIcon('excel', 'fa-file-excel', 'text-green-500', "BossMode.instance.openApp('excel')", 'ubuntu')}
                  ${this.createDockIcon('word', 'fa-file-word', 'text-blue-500', "BossMode.instance.openApp('word')", 'ubuntu')}
                  ${this.createDockIcon('browser', 'fab fa-firefox', 'text-orange-500', "BossMode.instance.openApp('browser')", 'ubuntu')}
@@ -832,7 +824,9 @@ export default class BossMode {
             { id: 'terminal', icon: 'fa-terminal', color: 'text-gray-400' },
             { id: 'dcf', icon: 'fa-chart-line', color: 'text-cyan-400' },
             { id: 'marketplace', icon: 'fa-shopping-bag', color: 'text-red-500' },
-            { id: 'grok', icon: 'fa-brain', color: 'text-purple-500' }
+            { id: 'grok', icon: 'fa-brain', color: 'text-purple-500' },
+            { id: 'wolf3d', icon: 'fas fa-crosshairs', color: 'text-red-600' },
+            { id: 'notepad', icon: 'fas fa-sticky-note', color: 'text-yellow-400' }
         ];
 
         const theme = this.saveSystem.getEquippedItem('theme') || 'blue';
@@ -881,7 +875,9 @@ export default class BossMode {
             'email': { title: 'Outlook - Inbox', w: 900, h: 600, color: 'bg-[#0078d4]', icon: 'fa-envelope' },
             'market': { title: 'Market Radar', w: 500, h: 350, color: 'bg-[#0f172a]', icon: 'fa-satellite-dish' },
             'marketplace': { title: 'Spicy Marketplace', w: 400, h: 600, color: 'bg-black', icon: 'fa-shopping-bag' },
-            'grok': { title: 'Grok xAI v1.0', w: 500, h: 400, color: 'bg-gray-800', icon: 'fa-brain' }
+            'grok': { title: 'Grok xAI v1.0', w: 500, h: 400, color: 'bg-gray-800', icon: 'fa-brain' },
+            'wolf3d': { title: 'Wolfenstein 3D', w: 640, h: 400, color: 'bg-black', icon: 'fas fa-crosshairs' },
+            'notepad': { title: 'Notepad', w: 400, h: 300, color: 'bg-yellow-100', icon: 'fas fa-sticky-note' }
         };
         const cfg = map[id] || { title: 'App', w: 600, h: 400, color: 'bg-gray-800', icon: 'fa-window-maximize' };
 
@@ -1021,6 +1017,9 @@ export default class BossMode {
             case 'dcf': new DCFApp(contentArea); break;
             case 'marketplace': new MarketplaceApp(contentArea); break;
             case 'grok': new GrokApp(contentArea); break;
+            case 'minesweeper': win.instance = new MinesweeperApp(contentArea); break;
+            case 'wolf3d': win.instance = new Wolf3DApp(contentArea); break;
+            case 'notepad': win.instance = new NotepadApp(contentArea); break;
             case 'mission':
                 const tpl = document.getElementById('tpl-mission');
                 if(tpl) contentArea.appendChild(tpl.content.cloneNode(true));
@@ -1029,6 +1028,10 @@ export default class BossMode {
     }
 
     closeWindow(id) {
+        const w = this.windows.find(x => x.id === id);
+        if (w && w.instance && typeof w.instance.destroy === 'function') {
+            w.instance.destroy();
+        }
         const el = document.getElementById(`win-${id}`);
         if(el) el.remove();
         this.windows = this.windows.filter(w => w.id !== id);

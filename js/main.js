@@ -336,7 +336,6 @@ function populateMenuGrid() {
     grid.innerHTML = '';
 
     // Initialize Daily Challenge if needed
-    // FIX: Ensure we don't pick a 'System' module (like Trophy Room) as the daily challenge
     if (!dailyChallengeGameId) {
         const validGameKeys = Object.keys(gameRegistry).filter(key => gameRegistry[key].category !== 'System');
         if (validGameKeys.length > 0) {
@@ -504,7 +503,7 @@ function showSettingsOverlay() {
             <div class="flex items-center justify-between bg-slate-800 p-3 rounded-lg border border-slate-700">
                 <span class="text-white font-bold">Enable Ads</span>
                 <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="settings-ads-toggle" class="sr-only peer" ${adsEnabled ? 'checked' : ''}>
+                    <input type="checkbox" id="settings-ads-toggle" aria-label="Enable Ads" class="sr-only peer" ${adsEnabled ? 'checked' : ''}>
                     <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fuchsia-600"></div>
                 </label>
             </div>
@@ -772,6 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
         guideBtn.id = 'guide-btn-hud';
         guideBtn.className = 'glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition';
         guideBtn.title = 'Game Guide';
+        guideBtn.setAttribute('aria-label', 'Game Guide');
         guideBtn.innerHTML = '<i class="fas fa-question-circle"></i>';
         guideBtn.onclick = showGuide;
         hud.insertBefore(guideBtn, hud.firstChild);
@@ -779,7 +779,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateMuteIcon = () => {
         const btn = document.getElementById('mute-btn-hud');
-        if(btn) btn.innerHTML = soundManager.muted ? '<i class="fas fa-volume-mute text-red-400"></i>' : '<i class="fas fa-volume-up"></i>';
+        if(btn) {
+            btn.innerHTML = soundManager.muted ? '<i class="fas fa-volume-mute text-red-400"></i>' : '<i class="fas fa-volume-up"></i>';
+            btn.setAttribute('aria-label', soundManager.muted ? 'Unmute Audio' : 'Mute Audio');
+        }
     };
     if (saveSystem.getSettings().muted) {
         soundManager.toggleMute(); // Will set to true
