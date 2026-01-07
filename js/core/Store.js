@@ -78,6 +78,12 @@ export default class Store {
             { id: 'os_ubuntu', name: 'Ubuntu Distro', description: 'User friendly Linux for humans.', cost: 1200, icon: 'fab fa-ubuntu', type: 'os_license', value: 'ubuntu', category: 'system' },
             { id: 'os_android', name: 'Droid Tablet', description: 'Mobile experience on your desktop.', cost: 1500, icon: 'fab fa-android', type: 'os_license', value: 'android', category: 'system' },
 
+            // --- LEGACY VERSIONS ---
+            { id: 'os_v0', name: 'Boss Mode Classic', description: 'The original v0 interface. Simple and effective.', cost: 500, icon: 'fas fa-hdd', type: 'os_license', value: 'v0', category: 'system' },
+            { id: 'os_v1', name: 'Boss Mode Mission', description: 'v1 Mission Control interface.', cost: 600, icon: 'fas fa-server', type: 'os_license', value: 'v1', category: 'system' },
+            { id: 'os_v2', name: 'Boss Mode Secure', description: 'v2 with enhanced security features.', cost: 700, icon: 'fas fa-lock', type: 'os_license', value: 'v2', category: 'system' },
+            { id: 'os_v3', name: 'Boss Mode Ultra', description: 'v3 Enhanced desktop experience.', cost: 800, icon: 'fas fa-microchip', type: 'os_license', value: 'v3', category: 'system' },
+
             // --- BOSS MODE APPS ---
             { id: 'app_minesweeper', name: 'Mine Sweeper', description: 'Classic bomb avoidance game.', cost: 500, icon: 'fas fa-bomb', type: 'boss_app', value: 'minesweeper', category: 'system' },
             { id: 'app_flight', name: 'Flight Sim 95', description: 'Hidden inside Excel. Don\'t crash.', cost: 800, icon: 'fas fa-plane', type: 'boss_app', value: 'flight', category: 'system' },

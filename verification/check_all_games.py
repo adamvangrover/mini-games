@@ -64,7 +64,9 @@ def verify_all_games():
 
                 # Check for canvas or container visibility
                 visible = page.evaluate(f"""() => {{
-                    const container = document.getElementById('{game_id}');
+                    let id = '{game_id}';
+                    if (id === 'trophy-room') id = 'trophy-room-container';
+                    const container = document.getElementById(id);
                     return container && !container.classList.contains('hidden');
                 }}""")
 
