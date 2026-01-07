@@ -1,4 +1,15 @@
 
+// Helper to prevent XSS
+function escapeHTML(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 export class MarketplaceApp {
     constructor(container) {
         this.container = container;
@@ -26,12 +37,12 @@ export class MarketplaceApp {
                     ${this.posts.map(post => `
                         <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 hover:border-blue-500 transition-colors">
                             <div class="flex justify-between items-start mb-2">
-                                <span class="font-bold text-blue-400">${post.user}</span>
+                                <span class="font-bold text-blue-400">${escapeHTML(post.user)}</span>
                                 <span class="text-xs text-gray-500">Just now</span>
                             </div>
-                            <p class="text-sm mb-3">${post.text}</p>
+                            <p class="text-sm mb-3">${escapeHTML(post.text)}</p>
                             <div class="flex gap-4 text-xs text-gray-400">
-                                <span class="cursor-pointer hover:text-red-400"><i class="fas fa-heart"></i> ${post.likes}</span>
+                                <span class="cursor-pointer hover:text-red-400"><i class="fas fa-heart"></i> ${escapeHTML(post.likes)}</span>
                                 <span class="cursor-pointer hover:text-green-400"><i class="fas fa-retweet"></i> Repost</span>
                                 <span class="cursor-pointer hover:text-blue-400"><i class="fas fa-share"></i> Share</span>
                             </div>
@@ -82,8 +93,8 @@ export class GrokApp {
                 <div class="flex-1 overflow-y-auto p-4 space-y-3" id="grok-chat-area">
                     ${this.history.map(msg => `
                         <div class="${msg.role === 'user' ? 'bg-blue-900/30 ml-auto' : 'bg-gray-800 mr-auto'} max-w-[80%] p-3 rounded-lg border ${msg.role === 'user' ? 'border-blue-800' : 'border-gray-700'}">
-                            <div class="text-[10px] font-bold ${msg.role === 'user' ? 'text-blue-400' : 'text-purple-400'} mb-1 uppercase">${msg.role}</div>
-                            <div class="text-sm">${msg.text}</div>
+                            <div class="text-[10px] font-bold ${msg.role === 'user' ? 'text-blue-400' : 'text-purple-400'} mb-1 uppercase">${escapeHTML(msg.role)}</div>
+                            <div class="text-sm">${escapeHTML(msg.text)}</div>
                         </div>
                     `).join('')}
                 </div>
