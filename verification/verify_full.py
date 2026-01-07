@@ -15,6 +15,16 @@ async def verify_everything():
         print("Loading page...")
         await page.goto("http://localhost:8000")
 
+        # --- Wait for App Initialization ---
+        print("Waiting for miniGameHub...")
+        try:
+             await page.wait_for_function("typeof window.miniGameHub !== 'undefined'", timeout=10000)
+             print("miniGameHub is ready.")
+        except Exception as e:
+             print(f"FATAL: miniGameHub failed to load: {e}")
+             await browser.close()
+             return
+
         # --- Handle App Loader ---
         print("Handling App Loader...")
         try:

@@ -215,7 +215,7 @@ export default class TheGrind98 {
         this.container.querySelector('#btn-work').onclick = () => this.setMode('work');
         this.container.querySelector('#btn-shop').onclick = () => this.setMode('shop');
         this.container.querySelector('#btn-gallery').onclick = () => this.setMode('gallery');
-        this.container.querySelector('#btn-exit').onclick = () => this.shutdown();
+        this.container.querySelector('#btn-exit').onclick = () => window.miniGameHub.goBack();
 
         this.container.querySelector('#job-selector').onchange = (e) => this.changeJob(e.target.value);
         this.container.querySelector('#start-shift-btn').onclick = () => this.startShift();
