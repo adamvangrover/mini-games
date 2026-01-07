@@ -271,9 +271,9 @@ export const ERA_CONTENT = {
             'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop', // Retro Grid
             'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=2070&auto=format&fit=crop'  // Vaporwave
             'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?q=80&w=1920', // Retro pattern
-            'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1920',  // Cyber 90s
+            'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1920', // Cyber 90s
             'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070&auto=format&fit=crop', // Landscape
-            'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop', // Abstract
+            'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop' // Abstract
         ]
     },
     '00s': {
@@ -281,8 +281,8 @@ export const ERA_CONTENT = {
             'https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=2070&auto=format&fit=crop', // Bliss-like
             'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop'  // Blue Tech
             'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1920', // Space/Tech
-            'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=1920',  // Bliss-like
-            'https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=2070&auto=format&fit=crop', // Mountains
+            'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=1920', // Bliss-like
+            'https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=2070&auto=format&fit=crop' // Mountains
         ]
     }
 };
