@@ -38,7 +38,19 @@ def verify_hunter_modes():
         for mode in modes:
             print(f"Testing Mode: {mode}")
 
-            # Restart game to get to menu (if not already)
+            # Reload page for each mode to ensure clean state and avoid WebGL context issues
+            page.reload()
+
+            # Dismiss loader again
+            try:
+                loader = page.locator("#app-loader")
+                if loader.is_visible(timeout=3000):
+                    page.click("body")
+                    expect(loader).to_be_hidden(timeout=5000)
+            except:
+                pass
+
+            # Transition to game
             page.evaluate("if(window.miniGameHub) window.miniGameHub.transitionToState('IN_GAME', { gameId: 'neon-hunter' })")
             page.wait_for_timeout(2000)
 
@@ -66,7 +78,7 @@ def verify_hunter_modes():
             ammo_text = page.locator("#nh-ammo").inner_text()
             print(f"  Initial Ammo: {ammo_text}")
 
-            expected_ammo = "2" if mode == 'clay' else "3" if mode == 'duck' else "6"
+            expected_ammo = "2" if mode == 'clay' else "3" if mode == 'duck' else "6" if mode == 'deer' else "8"
             if ammo_text != expected_ammo:
                 print(f"  ERROR: Expected ammo {expected_ammo}, got {ammo_text}")
             else:
@@ -78,9 +90,12 @@ def verify_hunter_modes():
                 # We need to make sure we are not clicking UI elements.
                 # Canvas is usually behind HUD which is pointer-events: none.
 
+                # Use a cleaner click location (center)
+                cx, cy = 640, 360
+
                 for _ in range(int(expected_ammo) + 2):
-                    page.mouse.click(400, 300)
-                    page.wait_for_timeout(100)
+                    page.mouse.click(cx, cy)
+                    page.wait_for_timeout(200) # Wait for shoot cooldown/anim
 
                 msg_text = page.locator("#nh-center-msg").inner_text()
                 print(f"  Message after emptying: '{msg_text}'")
