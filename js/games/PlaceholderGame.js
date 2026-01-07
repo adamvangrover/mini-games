@@ -80,9 +80,6 @@ export default class PlaceholderGame {
         for (let y = offset; y <= h; y += gridSize) {
             this.ctx.moveTo(0, y);
             this.ctx.lineTo(w, y);
-            // Perspective line
-            this.ctx.moveTo(w/2, h/2);
-            this.ctx.lineTo((x - w/2) * 5 + w/2, h);
         }
         this.ctx.stroke();
 

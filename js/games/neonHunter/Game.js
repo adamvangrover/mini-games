@@ -196,7 +196,18 @@ export default class Game {
         }
 
         if (this.activeModeInstance) {
-             this.activeModeInstance.init();
+            try {
+                this.activeModeInstance.init();
+                // Ensure HUD is visible (safeguard)
+                if(this.hud.classList.contains('hidden')) {
+                    console.warn("HUD was hidden after init, forcing show.");
+                    this.hud.classList.remove('hidden');
+                }
+            } catch(e) {
+                console.error(`Error initializing mode ${mode}:`, e);
+                this.showMsg("ERROR LOADING MODE");
+                setTimeout(() => this.gameOver(0), 2000);
+            }
         } else {
              console.error("Mode not implemented:", mode);
              this.gameOver(0);

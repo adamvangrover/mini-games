@@ -134,6 +134,7 @@ export default class BossMode {
             <div id="os-desktop-layer" class="absolute inset-0 flex flex-col hidden">
                 <div id="boss-wallpaper" class="absolute inset-0 bg-cover bg-center transition-[background-image] duration-500 z-0"></div>
                 
+                <!-- Desktop Icons Container -->
                 <div id="boss-desktop-icons" class="absolute inset-0 z-0 w-full h-full pointer-events-none"></div>
 
                 <div id="boss-windows-container" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
@@ -1012,10 +1013,11 @@ export default class BossMode {
             case 'teams': this.renderTeams(contentArea); break;
             case 'email': this.renderEmail(contentArea); break;
             case 'browser': this.renderBrowser(contentArea); break;
-            case 'minesweeper': win.instance = new MinesweeperApp(contentArea); break;
+            case 'minesweeper': this.renderMinesweeper(contentArea); break;
             case 'dcf': new DCFApp(contentArea); break;
             case 'marketplace': new MarketplaceApp(contentArea); break;
             case 'grok': new GrokApp(contentArea); break;
+            case 'minesweeper': win.instance = new MinesweeperApp(contentArea); break;
             case 'wolf3d': win.instance = new Wolf3DApp(contentArea); break;
             case 'notepad': win.instance = new NotepadApp(contentArea); break;
             case 'mission':
@@ -1337,7 +1339,7 @@ export default class BossMode {
         const selectedEmail = this.fileSystem.emails.find(e => e.id === this.selectedEmailId) || this.fileSystem.emails[0];
 
         const listHTML = this.fileSystem.emails.map(email => `
-            <div class="p-3 border-b border-gray-200 cursor-pointer hover:bg-[#cde4f7] ${this.selectedEmailId === email.id ? 'bg-[#cde4f7] border-l-4 border-l-[#0078d4]' : 'bg-white'}" 
+            <div class="p-3 border-b border-gray-200 cursor-pointer hover:bg-[#cde4f7] ${this.selectedEmailId === email.id ? 'bg-[#cde4f7] border-l-4 border-l-[#0078d4]' : 'bg-white'}"
                  onclick="BossMode.instance.openEmail(${email.id})">
                 <div class="flex justify-between mb-1">
                     <span class="font-bold text-gray-800 truncate">${email.from}</span>
@@ -1350,6 +1352,7 @@ export default class BossMode {
 
         c.innerHTML = `
             <div class="h-full flex flex-col bg-white text-black font-sans text-xs">
+                <!-- Ribbon -->
                 <div class="bg-[#0078d4] text-white p-2 flex gap-4 items-center h-10 shadow-sm">
                     <div class="font-bold text-sm ml-2">Outlook</div>
                     <div class="h-4 w-[1px] bg-white/30"></div>
@@ -1366,6 +1369,7 @@ export default class BossMode {
                 </div>
 
                 <div class="flex-1 flex overflow-hidden">
+                    <!-- Sidebar -->
                     <div class="w-48 bg-[#f0f0f0] border-r border-gray-300 flex flex-col py-2">
                         <div class="px-4 py-1 font-bold text-gray-600 mb-2">Favorites</div>
                         <div class="px-4 py-1 hover:bg-[#dadada] cursor-pointer flex items-center gap-2 font-bold"><i class="fas fa-inbox text-blue-500"></i> Inbox <span class="ml-auto bg-blue-100 text-blue-600 px-1 rounded-full text-[9px]">${this.fileSystem.emails.length}</span></div>
@@ -1376,10 +1380,12 @@ export default class BossMode {
                         <div class="px-4 py-1 hover:bg-[#dadada] cursor-pointer flex items-center gap-2"><i class="fas fa-folder"></i> HR Stuff</div>
                     </div>
 
+                    <!-- Email List -->
                     <div class="w-64 border-r border-gray-300 overflow-y-auto bg-white">
                         ${listHTML}
                     </div>
 
+                    <!-- Reading Pane -->
                     <div class="flex-1 bg-white flex flex-col h-full overflow-hidden relative">
                         ${selectedEmail ? `
                             <div class="p-4 border-b border-gray-200">
@@ -1421,6 +1427,7 @@ export default class BossMode {
     renderBrowser(c) {
         c.innerHTML = `
             <div class="flex flex-col h-full bg-white text-black text-xs font-sans">
+                <!-- Tab Bar -->
                 <div class="bg-[#dee1e6] flex items-end px-2 pt-2 gap-1 h-8">
                     <div class="bg-white rounded-t-lg px-3 py-1 flex items-center gap-2 text-[10px] max-w-[150px] shadow-sm">
                         <img src="https://www.google.com/favicon.ico" class="w-3 h-3">
@@ -1434,6 +1441,7 @@ export default class BossMode {
                     <div class="p-1 hover:bg-[#cfd2d7] rounded-full cursor-pointer ml-1"><i class="fas fa-plus"></i></div>
                 </div>
 
+                <!-- Address Bar -->
                 <div class="bg-white p-1.5 flex items-center gap-2 border-b shadow-sm">
                     <div class="flex gap-2 text-gray-500 px-1">
                         <i class="fas fa-arrow-left hover:bg-gray-100 p-1 rounded cursor-pointer"></i>
@@ -1448,6 +1456,7 @@ export default class BossMode {
                     <div class="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px]">JD</div>
                 </div>
 
+                <!-- Content -->
                 <div class="flex-1 bg-gray-50 p-8 overflow-y-auto">
                     <h1 class="text-2xl font-light text-blue-800 mb-6">Corporate Portal</h1>
                     <div class="grid grid-cols-2 gap-4">
@@ -1473,15 +1482,47 @@ export default class BossMode {
         `;
     }
 
+    // --- Minesweeper App ---
+    renderMinesweeper(c) {
+        c.innerHTML = `<div class="flex-1 flex flex-col items-center justify-center bg-[#c0c0c0] border-t-2 border-white border-l-2 border-white border-r-2 border-gray-500 border-b-2 border-gray-500 p-1">
+             <div class="mb-2 bg-black text-red-600 font-mono text-xl px-2 border-2 border-gray-500 inset-shadow w-full text-right">010</div>
+             <div id="ms-grid" class="grid grid-cols-9 gap-[1px] bg-gray-400 border-4 border-gray-400"></div>
+        </div>`;
+        setTimeout(() => this.initMinesweeper(c.querySelector('#ms-grid')), 0);
+    }
+
+    initMinesweeper(grid) {
+        if(this.minesweeper.grid.length === 0) {
+            for(let i=0; i<81; i++) this.minesweeper.grid.push({mine: Math.random() < 0.15, revealed: false, flagged: false});
+        }
+        grid.innerHTML = '';
+        this.minesweeper.grid.forEach((cell, i) => {
+            const div = document.createElement('div');
+            div.className = `w-6 h-6 flex items-center justify-center text-xs font-bold select-none cursor-default ${cell.revealed ? 'bg-gray-200 border border-gray-400' : 'bg-[#c0c0c0] border-t-2 border-l-2 border-white border-b-2 border-r-2 border-gray-500 active:border-t-gray-500 active:border-l-gray-500 active:border-b-white active:border-r-white'}`;
+            if(cell.revealed) {
+                if(cell.mine) { div.textContent = '💣'; div.className += ' bg-red-500 border-none'; }
+                else {
+                    // basic random number for visual flair
+                    const n = Math.random() > 0.7 ? Math.floor(Math.random()*3)+1 : 0;
+                    if(n > 0) {
+                        div.textContent = n;
+                        div.className += n===1 ? ' text-blue-700' : (n===2 ? ' text-green-700' : ' text-red-700');
+                    }
+                }
+            }
+            div.onclick = () => { cell.revealed = true; this.renderMinesweeper(grid.parentElement); };
+            grid.appendChild(div);
+        });
+    }
+
     refreshActiveApp(id) {
         const w = this.windows.find(x => x.app === id);
         if(w) {
              const c = document.getElementById(`win-content-${w.id}`);
-             // If class based, it might handle its own refresh, but we can re-instantiate or call update
+             if (id === 'minesweeper') this.renderMinesweeper(c);
              if (id === 'ppt') this.renderPPT(c);
              if (id === 'spotify') this.renderSpotify(c);
              if (id === 'email') this.renderEmail(c);
-             // Minesweeper, Wolf3D, Notepad maintain internal state, re-render might lose it unless handled carefully
         }
     }
 
@@ -1580,11 +1621,13 @@ export default class BossMode {
         const chats = CHATS['general'] || [];
         c.innerHTML = `
             <div class="h-full flex bg-[#f5f5f5] text-[#242424] font-sans text-xs">
+                <!-- Sidebar -->
                 <div class="w-16 bg-[#38394e] flex flex-col items-center py-4 gap-4 text-gray-400 text-lg">
                     <i class="fas fa-bell hover:text-[#9ea2ff] cursor-pointer"></i>
                     <i class="fas fa-comment-alt text-[#9ea2ff] cursor-pointer"></i>
                     <i class="fas fa-users hover:text-[#9ea2ff] cursor-pointer"></i>
                 </div>
+                <!-- List -->
                 <div class="w-64 bg-white border-r border-gray-200 flex flex-col">
                     <div class="p-3 border-b border-gray-200 font-bold flex justify-between items-center">
                         <span>Chat</span>
@@ -1605,6 +1648,7 @@ export default class BossMode {
                         `).join('')}
                     </div>
                 </div>
+                <!-- Chat Area -->
                 <div class="flex-1 flex flex-col bg-white">
                     <div class="p-3 border-b border-gray-200 flex justify-between items-center shadow-sm z-10">
                         <div class="flex items-center gap-2">

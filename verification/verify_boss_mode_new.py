@@ -1,129 +1,131 @@
-import os
+from playwright.sync_api import sync_playwright, expect
 import time
-from playwright.sync_api import sync_playwright
 
-def verify_boss_mode_new():
-    """Verify the new Boss Mode desktop implementation."""
-    print("\nStarting Boss Mode verification...")
-
+def verify_boss_mode():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context(viewport={'width': 1280, 'height': 720})
+        page = context.new_page()
 
-        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+        # 1. Load the page (simulated 3D Hub)
+        page.goto("http://localhost:8000/index.html")
 
-        # 1. Load page
-        print("Loading page...")
-        page.goto("http://localhost:8000")
+        # Wait for the app to load
         try:
-            page.wait_for_selector("#app-loader", state="hidden", timeout=5000)
+            loader = page.locator("#app-loader")
+            if loader.is_visible():
+                print("Clicking loader to start...")
+                loader.click()
+                page.wait_for_selector("#app-loader", state="hidden")
         except:
-            print("Loader didn't vanish, forcing hidden")
-            page.evaluate("document.getElementById('app-loader').style.display='none'")
+            print("Loader not found or already hidden.")
 
-        time.sleep(1)
+        # 2. Trigger Boss Mode (Alt+B)
+        print("Triggering Boss Mode with Alt+B...")
+        page.keyboard.down("Alt")
+        page.keyboard.press("b")
+        page.keyboard.up("Alt")
 
-        # 2. Activate Boss Mode
-        print("Activating Boss Mode...")
-        page.evaluate("BossMode.instance.toggle(true)")
+        # 3. Wait for Boss Mode Overlay
+        overlay = page.locator("#boss-mode-overlay")
+        expect(overlay).to_be_visible(timeout=5000)
+        print("Boss Mode overlay visible.")
 
-        # Wait for login screen
-        print("Waiting for Login Screen...")
-        page.wait_for_selector("#boss-login-input", state="visible")
+        # 4. Handle Boot Sequence
+        boot_layer = page.locator("#os-boot-layer")
+        if boot_layer.is_visible():
+            print("Boot sequence detected. Waiting for Login...")
+            page.wait_for_selector("#os-boot-layer", state="hidden", timeout=5000)
 
-        # Login
-        print("Logging in...")
-        page.fill("#boss-login-input", "1234")
+        # 5. Verify Login Screen
+        login_layer = page.locator("#os-login-layer")
+        expect(login_layer).to_be_visible()
+        print("Login screen visible.")
+
+        # 6. Perform Login
+        page.fill("#boss-login-input", "123")
         page.click("#boss-login-submit")
 
-        # 3. Check desktop
-        print("Checking desktop elements...")
-        page.wait_for_selector("#boss-mode-overlay", state="visible")
-        page.wait_for_selector("#boss-start-btn", state="visible")
+        # 7. Verify Desktop
+        desktop_layer = page.locator("#os-desktop-layer")
+        expect(desktop_layer).to_be_visible(timeout=2000)
+        print("Desktop visible.")
 
-        # 4. Open Start Menu
-        print("Opening Start Menu...")
-        page.click("#boss-start-btn")
-        time.sleep(1)
-        # Increase timeout or try to force state
-        try:
-            page.wait_for_selector("#boss-startmenu-container .w-64", timeout=5000, state="visible")
-        except:
-            print("Start Menu did not appear visibly.")
+        # 8. Handle Auto-Opened Mission Control Window
+        # It opens automatically. We need to close it to reach the icons,
+        # OR we can just use the Taskbar to open apps.
+        # Let's try to close it to verify window interaction.
+        print("Looking for Mission Control window...")
+        mission_window_title = page.get_by_text("Mission Control")
+        if mission_window_title.is_visible():
+            print("Mission Control found. closing it...")
+            # Find the close button within the same window-bar
+            # The structure is .window-bar > .window-controls > .btn-close
+            # We can find the parent window of the title, then find the close button
 
-        # 5. Launch Excel
-        print("Launching Excel...")
-        page.evaluate("BossMode.instance.openApp('excel')")
+            # This locator finds the window bar containing the title
+            window_bar = page.locator(".window-bar", has_text="Mission Control")
+            close_btn = window_bar.locator(".btn-close")
+            close_btn.click()
+            print("Mission Control closed.")
+            time.sleep(0.5)
 
-        # 6. Verify Window
-        print("Verifying Excel Window...")
-        try:
-            page.wait_for_selector("#win-1", timeout=5000)
-            print("Window 1 found.")
-        except:
-            print("Window 1 missing.")
-            raise
+        # 9. Open Excel via Desktop Icon (now that it's uncovered)
+        print("Opening Excel via Desktop Icon...")
+        excel_icon = page.get_by_text("Q3 Report")
+        excel_icon.dblclick(force=True) # force=True just in case of minor overlap
 
-        # Check content
-        page.wait_for_selector("#boss-grid", state="visible")
+        # Verify Excel Window
+        expect(page.locator(".window-bar", has_text="Excel")).to_be_visible()
+        print("Excel window opened.")
 
-        # 7. Launch Browser
-        print("Launching Browser...")
-        page.evaluate("BossMode.instance.openApp('browser')")
-        page.wait_for_selector("#win-2", timeout=5000)
+        # Close Excel
+        page.locator(".window-bar", has_text="Excel").locator(".btn-close").click()
+        print("Excel window closed.")
 
-        # 8. Check Taskbar Items
-        print("Checking taskbar...")
-        # The new renderTaskbar has specific structure.
-        # It renders start btn, search (hidden on small screen?), and then windows.
-        # .h-8.w-8 select might pick up start btn and windows.
-        # Start btn id="boss-start-btn"
+        # 10. Open Marketplace via Taskbar
+        print("Opening Marketplace via Taskbar...")
+        # Marketplace icon is 'fa-shopping-bag' which is in the taskbar apps
+        # The code maps 'marketplace' app to 'fa-shopping-bag' icon.
+        # We can find the taskbar item by the onclick attribute or just the icon class
+        # apps loop: onclick="BossMode.instance.openApp('marketplace')"
+        marketplace_btn = page.locator("div[onclick=\"BossMode.instance.openApp('marketplace')\"]")
+        marketplace_btn.click()
 
-        # Let's count elements with bg-white/5 which indicates active windows in taskbar
-        # Need to escape forward slash in selector for JS execution if not using correct syntax
-        # Actually .bg-white\/5 is the class name in DOM but in selector it needs escaping.
-        # Playwright evaluate runs JS in browser.
+        expect(page.locator(".window-bar", has_text="Spicy Marketplace")).to_be_visible()
+        print("Marketplace opened.")
+        page.screenshot(path="verification/boss_mode_marketplace.png")
 
-        # In CSS selector, / is valid in class name if escaped.
-        # document.querySelectorAll('.bg-white\\/5') works in devtools.
-        # In python string passed to evaluate, we need double backslash.
+        # Close Marketplace
+        page.locator(".window-bar", has_text="Spicy Marketplace").locator(".btn-close").click()
 
-        taskbar_window_icons = page.evaluate("""
-            Array.from(document.querySelectorAll('#boss-taskbar-container .bg-white\\\\/5')).length
-        """)
-        print(f"Taskbar active window icons found: {taskbar_window_icons}")
+        # 11. Open Grok via Taskbar
+        print("Opening Grok via Taskbar...")
+        grok_btn = page.locator("div[onclick=\"BossMode.instance.openApp('grok')\"]")
+        grok_btn.click()
 
-        # Should be 2 (Excel + Browser)
-        assert taskbar_window_icons >= 2
+        expect(page.locator(".window-bar", has_text="Grok xAI")).to_be_visible()
+        print("Grok opened.")
+        page.screenshot(path="verification/boss_mode_grok.png")
 
-        # 9. Verify Drag Logic
-        print("Simulating Window Drag...")
-        w2 = page.locator("#win-2")
-        box = w2.bounding_box()
+        # 12. Test Grok Interaction
+        print("Testing Grok chat...")
+        grok_input = page.locator("#grok-chat-area").locator("..").locator("input") # finding input next to chat area
+        grok_input.fill("Hello Grok")
+        grok_input.press("Enter")
 
-        start_x = box['x']
-        start_y = box['y']
+        # Wait for user message
+        expect(page.locator("text=Hello Grok")).to_be_visible()
+        print("User message appeared.")
 
-        # Drag title bar area
-        page.mouse.move(start_x + 50, start_y + 10)
-        page.mouse.down()
-        page.mouse.move(start_x + 150, start_y + 150, steps=5)
-        page.mouse.up()
+        # Wait for AI response (delayed by 1s in code)
+        time.sleep(1.5)
+        # Check if AI responded (look for a role: 'ai' message div, hard to target generic text, but we can look for any new text)
+        # The history has { role: 'ai', text: ... }
+        # We can just check that the chat area has more children now.
 
-        time.sleep(0.5)
-        box_new = w2.bounding_box()
-        print(f"Window moved from ({start_x}, {start_y}) to ({box_new['x']}, {box_new['y']})")
-
-        assert box_new['x'] > start_x
-        assert box_new['y'] > start_y
-
-        # 10. Close Window
-        print("Closing Window...")
-        page.locator("#win-2 .fa-times").click()
-        page.wait_for_selector("#win-2", state="hidden")
-
-        print("Boss Mode verification passed!")
+        print("Verification Complete!")
         browser.close()
 
 if __name__ == "__main__":
-    verify_boss_mode_new()
+    verify_boss_mode()

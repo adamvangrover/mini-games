@@ -61,8 +61,8 @@ def verify_neon_hunter():
         time.sleep(2) # Wait for init
 
         # Verify HUD
-        # Should be 5 now that we stopped propagation
-        expect(page.locator("#nh-ammo")).to_have_text("5")
+        # Should be 6 now that we stopped propagation (Deer Hunt has 6)
+        expect(page.locator("#nh-ammo")).to_have_text("6")
         print("Ammo verified.")
 
         # 5. Screenshot Gameplay
