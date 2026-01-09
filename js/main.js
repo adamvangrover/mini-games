@@ -552,17 +552,55 @@ function showSettingsOverlay() {
         navigator.clipboard.writeText(saveSystem.getFormattedStats());
     };
 
-    document.getElementById('import-btn').onclick = () => {
+    const importBtn = document.getElementById('import-btn');
+    let importConfirmTimeout;
+
+    const resetImportButton = () => {
+        importBtn.dataset.confirm = 'false';
+        importBtn.innerHTML = '<i class="fas fa-file-import"></i> Import & Overwrite';
+        importBtn.classList.remove('bg-red-800', 'hover:bg-red-700', 'animate-pulse');
+        importBtn.classList.add('bg-red-600', 'hover:bg-red-500');
+        if (importConfirmTimeout) clearTimeout(importConfirmTimeout);
+    };
+
+    importBtn.onclick = () => {
         const data = document.getElementById('import-area').value.trim();
         const statusEl = document.getElementById('import-status');
-        if (!data) return;
-        if (confirm("WARNING: Overwrite progress?")) {
+
+        if (!data) {
+            statusEl.textContent = "Please paste data first.";
+            statusEl.className = "text-center text-xs text-yellow-400 mt-1 font-bold";
+            return;
+        }
+
+        if (importBtn.dataset.confirm === 'true') {
+            // Step 2: Confirmed Execution
             if (saveSystem.importData(data)) {
                 statusEl.textContent = "Success! Reloading...";
+                statusEl.className = "text-center text-xs text-green-400 mt-1 font-bold";
+                importBtn.disabled = true;
                 setTimeout(() => location.reload(), 1000);
             } else {
-                statusEl.textContent = "Invalid Data.";
+                statusEl.textContent = "Invalid Data Format.";
+                statusEl.className = "text-center text-xs text-red-400 mt-1 font-bold";
+                resetImportButton();
             }
+        } else {
+            // Step 1: Request Confirmation
+            statusEl.textContent = "Warning: This will overwrite your current save.";
+            statusEl.className = "text-center text-xs text-red-400 mt-1 font-bold";
+
+            importBtn.dataset.confirm = 'true';
+            importBtn.textContent = "⚠️ CLICK AGAIN TO CONFIRM";
+            importBtn.classList.remove('bg-red-600', 'hover:bg-red-500');
+            importBtn.classList.add('bg-red-800', 'hover:bg-red-700', 'animate-pulse');
+
+            // Auto-reset
+            if (importConfirmTimeout) clearTimeout(importConfirmTimeout);
+            importConfirmTimeout = setTimeout(() => {
+                resetImportButton();
+                statusEl.textContent = "";
+            }, 3000);
         }
     };
 }
