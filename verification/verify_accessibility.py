@@ -6,7 +6,7 @@ def verify_accessibility_and_take_screenshot():
         page = browser.new_page()
 
         # Navigate to the local server
-        page.goto("http://localhost:8080")
+        page.goto("http://localhost:8000")
 
         # Click through the loader
         page.click("body", force=True)
