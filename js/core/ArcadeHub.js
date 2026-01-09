@@ -24,10 +24,15 @@ export default class ArcadeHub {
         this.ceilingLights = [];
         this.ghostPlayers = [];
         this.interactables = []; // New generic interactables system
+        this.interactionTargets = []; // Optimization: Only raycast against these
         
         // State
         this.isHovering = false;
         this.isActive = true;
+
+        // UI State (DOM Optimization)
+        this.tooltip = null;
+        this.lastCursor = '';
 
         // Player / Physics State
         this.inputManager = InputManager.getInstance();
@@ -203,6 +208,7 @@ export default class ArcadeHub {
         this.scene.add(group);
         this.addCollider(body);
         this.interactables.push(group);
+        this.interactionTargets.push(group);
 
         // Add a floating note particle system around it
         // (Simplified for now, maybe add later)
@@ -259,6 +265,7 @@ export default class ArcadeHub {
         this.scene.add(group);
         this.addCollider(body);
         this.interactables.push(group);
+        this.interactionTargets.push(group);
     }
 
     createJobBoard(x, y, z) {
@@ -310,6 +317,7 @@ export default class ArcadeHub {
         this.scene.add(group);
         this.addCollider(board); // Small collider
         this.interactables.push(group);
+        this.interactionTargets.push(group);
     }
 
 
@@ -708,6 +716,7 @@ export default class ArcadeHub {
         this.scene.add(group);
         this.addCollider(body);
         this.cabinets.push(group);
+        this.interactionTargets.push(group);
     }
 
     createTeleporter() {
@@ -737,6 +746,7 @@ export default class ArcadeHub {
         this.scene.add(group);
         this.addCollider(pad);
         this.teleporterTrigger = group;
+        this.interactionTargets.push(group);
     }
 
     createNavMarker() {
@@ -799,6 +809,7 @@ export default class ArcadeHub {
             };
 
             this.scene.add(group);
+            this.interactionTargets.push(group); // Add to interactive list
             this.ghostPlayers.push({
                 mesh: group,
                 target: this.getRandomGhostTarget(),
@@ -1005,7 +1016,8 @@ export default class ArcadeHub {
 
     checkInteractions() {
         this.raycaster.setFromCamera(this.mouse, this.camera);
-        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+        // Bolt Optimization: Only raycast against interactive targets instead of entire scene
+        const intersects = this.raycaster.intersectObjects(this.interactionTargets, true);
         
         let hovered = false;
         let tooltipText = '';
@@ -1029,25 +1041,38 @@ export default class ArcadeHub {
                 }
             }
         }
-        document.body.style.cursor = hovered ? 'pointer' : (this.isDragging ? 'grabbing' : 'default');
 
-        // Update Tooltip DOM
-        let tooltip = document.getElementById('hub-tooltip');
-        if (!tooltip) {
-            tooltip = document.createElement('div');
-            tooltip.id = 'hub-tooltip';
-            tooltip.className = 'fixed pointer-events-none bg-black/80 text-white px-3 py-1 rounded text-sm z-50 transition-opacity duration-200 border border-white/20';
-            document.body.appendChild(tooltip);
+        // Bolt Optimization: Debounce cursor updates to avoid redundant DOM writes
+        const newCursor = hovered ? 'pointer' : (this.isDragging ? 'grabbing' : 'default');
+        if (this.lastCursor !== newCursor) {
+            document.body.style.cursor = newCursor;
+            this.lastCursor = newCursor;
+        }
+
+        // Bolt Optimization: Cache tooltip element and use Transform for performance
+        if (!this.tooltip) {
+            this.tooltip = document.getElementById('hub-tooltip');
+            if (!this.tooltip) {
+                this.tooltip = document.createElement('div');
+                this.tooltip.id = 'hub-tooltip';
+                this.tooltip.className = 'fixed pointer-events-none bg-black/80 text-white px-3 py-1 rounded text-sm z-50 transition-opacity duration-200 border border-white/20';
+                this.tooltip.style.top = '0px';
+                this.tooltip.style.left = '0px';
+                document.body.appendChild(this.tooltip);
+            }
         }
 
         if (hovered && tooltipText) {
-            tooltip.textContent = tooltipText;
-            tooltip.style.opacity = '1';
-            // Position near mouse but offset
-            tooltip.style.left = (this.inputManager.mouse.x + 15) + 'px';
-            tooltip.style.top = (this.inputManager.mouse.y + 15) + 'px';
+            if (this.tooltip.textContent !== tooltipText) {
+                this.tooltip.textContent = tooltipText;
+            }
+            this.tooltip.style.opacity = '1';
+            // Bolt Optimization: Use translate3d to avoid layout thrashing
+            const x = this.inputManager.mouse.x + 15;
+            const y = this.inputManager.mouse.y + 15;
+            this.tooltip.style.transform = `translate3d(${x}px, ${y}px, 0)`;
         } else {
-            tooltip.style.opacity = '0';
+            this.tooltip.style.opacity = '0';
         }
     }
 
