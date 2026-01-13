@@ -375,3 +375,19 @@ canvas {
     --primary-glow: 0 0 10px #f00, 0 0 20px #f00;
     --secondary-glow: 0 0 10px #ff4500, 0 0 20px #ff4500;
 }
+
+/* --- Cursor Trail (Bolt Optimized) --- */
+.trail-dot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 6px;
+    background: cyan;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    box-shadow: 0 0 5px cyan;
+    opacity: 0;
+    will-change: transform, opacity;
+}
