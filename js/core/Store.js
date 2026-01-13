@@ -146,12 +146,20 @@ export default class Store {
         ];
 
         this.container.innerHTML = `
-            <div class="col-span-full mb-4 flex flex-wrap justify-center gap-2 sticky top-0 bg-slate-900/90 z-10 py-2 border-b border-slate-700">
+            <div role="tablist" aria-label="Store Categories" class="col-span-full mb-4 flex flex-wrap justify-center gap-2 sticky top-0 bg-slate-900/90 z-10 py-2 border-b border-slate-700">
                 ${tabs.map(t => `
-                    <button class="store-tab px-4 py-2 rounded-full font-bold transition-all ${this.currentTab === t.id ? 'bg-fuchsia-600 text-white shadow-lg shadow-fuchsia-500/50' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}" data-tab="${t.id}">
+                    <button
+                        role="tab"
+                        aria-selected="${this.currentTab === t.id}"
+                        aria-controls="store-items-panel"
+                        id="tab-${t.id}"
+                        class="store-tab px-4 py-2 rounded-full font-bold transition-all ${this.currentTab === t.id ? 'bg-fuchsia-600 text-white shadow-lg shadow-fuchsia-500/50' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}"
+                        data-tab="${t.id}">
                         <i class="${t.icon} mr-2"></i>${t.label}
                     </button>
                 `).join('')}
+            </div>
+            <div id="store-items-panel" role="tabpanel" aria-labelledby="tab-${this.currentTab}" class="contents">
             </div>
         `;
 
@@ -170,8 +178,10 @@ export default class Store {
             return item.category === this.currentTab;
         });
 
+        const itemsContainer = this.container.querySelector('#store-items-panel');
+
         if (filteredItems.length === 0) {
-            this.container.innerHTML += `<div class="col-span-full text-center text-slate-500 py-12"><i class="fas fa-search text-4xl mb-2"></i><br>No items found in this category.</div>`;
+            itemsContainer.innerHTML = `<div class="col-span-full text-center text-slate-500 py-12"><i class="fas fa-search text-4xl mb-2"></i><br>No items found in this category.</div>`;
         }
 
         filteredItems.forEach(item => {
@@ -219,14 +229,14 @@ export default class Store {
 
             if (isUnlocked) {
                  if (item.type === 'decoration' || item.type === 'furniture') {
-                    buttonHtml = `<button class="w-full py-2 bg-green-600 text-white font-bold rounded cursor-default"><i class="fas fa-check"></i> Owned</button>`;
+                    buttonHtml = `<button aria-label="Owned: ${item.name}" class="w-full py-2 bg-green-600 text-white font-bold rounded cursor-default"><i class="fas fa-check"></i> Owned</button>`;
                  } else if (isEquipped) {
-                    buttonHtml = `<button class="w-full py-2 bg-green-600 text-white font-bold rounded cursor-default"><i class="fas fa-check"></i> Active</button>`;
+                    buttonHtml = `<button aria-label="Active: ${item.name}" class="w-full py-2 bg-green-600 text-white font-bold rounded cursor-default"><i class="fas fa-check"></i> Active</button>`;
                  } else {
-                    buttonHtml = `<button class="equip-btn w-full py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded transition-colors" data-id="${item.id}">Equip</button>`;
+                    buttonHtml = `<button aria-label="Equip ${item.name}" class="equip-btn w-full py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded transition-colors" data-id="${item.id}">Equip</button>`;
                  }
             } else {
-                 buttonHtml = `<button class="buy-btn w-full py-2 font-bold rounded transition-all ${canAfford ? 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}" data-id="${item.id}">
+                 buttonHtml = `<button aria-label="Buy ${item.name} for ${item.cost} coins" class="buy-btn w-full py-2 font-bold rounded transition-all ${canAfford ? 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}" data-id="${item.id}">
                              ${item.cost} <i class="fas fa-coins text-yellow-400"></i>
                             </button>`;
             }
@@ -256,7 +266,7 @@ export default class Store {
                 }
             }
 
-            this.container.appendChild(card);
+            itemsContainer.appendChild(card);
         });
 
         this.updateCurrencyDisplays();
