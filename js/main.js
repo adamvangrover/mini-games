@@ -947,41 +947,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Global Cursor Trail ---
+    // --- Global Cursor Trail (Bolt Optimized) ---
     const cursorTrail = [];
-    const maxTrail = 10;
+    const maxTrail = 20;
 
     // Create trail elements pool
     for(let i=0; i<maxTrail; i++) {
         const dot = document.createElement('div');
-        dot.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 6px; height: 6px;
-            background: cyan; border-radius: 50%; pointer-events: none;
-            z-index: 9998; opacity: 0; transition: transform 0.1s, opacity 0.2s;
-            box-shadow: 0 0 5px cyan;
-        `;
+        dot.className = 'trail-dot';
         document.body.appendChild(dot);
         cursorTrail.push(dot);
     }
 
     let currentTrailIdx = 0;
     window.addEventListener('mousemove', (e) => {
-        if (currentState === AppState.IN_GAME && !currentGameInstance.noCursorHide) return; // Hide in some games?
+        if (currentState === AppState.IN_GAME && !currentGameInstance.noCursorHide) return;
 
         const dot = cursorTrail[currentTrailIdx];
+
+        // Instant update
         dot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        dot.style.transition = 'none';
         dot.style.opacity = '1';
 
-        // Fade out previous ones
-        cursorTrail.forEach((d, i) => {
-            if (i !== currentTrailIdx) {
-                const op = parseFloat(d.style.opacity || 0);
-                if (op > 0) d.style.opacity = (op - 0.1).toString();
-            }
+        // Schedule fade
+        // Double RAF ensures the initial state (opacity: 1) renders before the transition starts
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                dot.style.transition = 'opacity 0.5s ease-out';
+                dot.style.opacity = '0';
+            });
         });
 
         currentTrailIdx = (currentTrailIdx + 1) % maxTrail;
-    });
+    }, { passive: true });
 
 
     document.body.addEventListener('click', (e) => {
