@@ -81,7 +81,7 @@ export class GrokApp {
         this.render();
     }
 
-    render() {
+    render(shouldFocus = false) {
         this.container.innerHTML = `
             <div class="h-full flex flex-col bg-[#1a1a1a] text-gray-200 font-mono">
                 <div class="p-3 border-b border-gray-700 bg-[#2a2a2a] flex items-center gap-2">
@@ -100,17 +100,31 @@ export class GrokApp {
                 </div>
                 <div class="p-4 border-t border-gray-700 bg-[#2a2a2a] flex gap-2">
                     <span class="text-purple-500 font-bold">></span>
-                    <input class="flex-1 bg-transparent outline-none text-white" placeholder="Ask me anything..." onkeydown="if(event.key==='Enter') { this.closest('.os-window').grokInstance.chat(this.value); this.value=''; }">
+                    <input class="flex-1 bg-transparent outline-none text-white" placeholder="Ask me anything...">
                 </div>
             </div>
         `;
-        // Attach instance to DOM for the inline handler to find it (hacky but effective for string templates)
-        this.container.closest('.os-window').grokInstance = this;
+
+        // Scroll to bottom
+        const area = this.container.querySelector('#grok-chat-area');
+        if(area) area.scrollTop = area.scrollHeight;
+
+        // Securely attach event listener
+        const input = this.container.querySelector('input');
+        if (input) {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    this.chat(input.value);
+                    input.value = '';
+                }
+            });
+            if (shouldFocus) input.focus();
+        }
     }
 
     chat(msg) {
         this.history.push({ role: 'user', text: msg });
-        this.render();
+        this.render(true); // Re-render and restore focus
         setTimeout(() => {
             const responses = [
                 "Interesting theory. Have you considered that you might be a simulation?",
@@ -122,9 +136,7 @@ export class GrokApp {
             ];
             const reply = responses[Math.floor(Math.random() * responses.length)];
             this.history.push({ role: 'ai', text: reply });
-            this.render();
-            const area = this.container.querySelector('#grok-chat-area');
-            if(area) area.scrollTop = area.scrollHeight;
+            this.render(true); // Re-render and restore focus
         }, 1000);
     }
 }
