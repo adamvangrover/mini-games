@@ -1,3 +1,7 @@
 ## 2026-01-12 - [Animation Frame Batching]
 **Learning:** Browsers batch DOM updates within the same frame. Setting an element to 'visible' and then 'hidden' in the same frame (even inside a single requestAnimationFrame) results in the element never being seen.
 **Action:** Use nested requestAnimationFrame (double RAF) to ensure the first state is painted before the second state is applied.
+
+## 2026-01-12 - [High-Frequency Input Throttling]
+**Learning:** High-polling rate mice (1000Hz+) can flood the main thread with `mousemove` events, causing significant overhead if heavy DOM manipulation or RAF scheduling happens on every event.
+**Action:** Always throttle `mousemove` handlers for visual effects (like cursor trails) to a reasonable frame rate (e.g., 20ms or ~50fps) using `performance.now()`.
