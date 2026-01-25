@@ -11,6 +11,17 @@ import BossModeV1 from './BossModeV1.js';
 import BossModeV2 from './BossModeV2.js';
 import BossModeV3 from './BossModeV3.js';
 
+// Helper to prevent XSS
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 export default class BossMode {
     constructor() {
         if (BossMode.instance) return BossMode.instance;
@@ -1195,7 +1206,7 @@ export default class BossMode {
             <div class="absolute top-2 right-2 w-64 bg-yellow-50 border border-yellow-400 p-2 shadow-lg text-[10px] font-mono h-[300px] overflow-auto opacity-90">
                 <div class="font-bold border-b border-yellow-300 mb-1">ACTIVITY TRACKER</div>
                 <div id="tracker-feed" class="flex flex-col gap-1 text-gray-700">
-                    ${this.trackerLog.map(l => `<div>> ${l}</div>`).join('')}
+                    ${this.trackerLog.map(l => `<div>> ${escapeHTML(l)}</div>`).join('')}
                 </div>
             </div>
         `;
@@ -1396,11 +1407,11 @@ export default class BossMode {
             <div class="p-3 border-b border-gray-200 cursor-pointer hover:bg-[#cde4f7] ${this.selectedEmailId === email.id ? 'bg-[#cde4f7] border-l-4 border-l-[#0078d4]' : 'bg-white'}"
                  onclick="BossMode.instance.openEmail(${email.id})">
                 <div class="flex justify-between mb-1">
-                    <span class="font-bold text-gray-800 truncate">${email.from}</span>
-                    <span class="text-[10px] text-gray-500">${email.time}</span>
+                    <span class="font-bold text-gray-800 truncate">${escapeHTML(email.from)}</span>
+                    <span class="text-[10px] text-gray-500">${escapeHTML(email.time)}</span>
                 </div>
-                <div class="text-[#0078d4] font-medium truncate mb-1">${email.subject}</div>
-                <div class="text-gray-500 text-[10px] truncate">${email.body.substring(0, 40)}...</div>
+                <div class="text-[#0078d4] font-medium truncate mb-1">${escapeHTML(email.subject)}</div>
+                <div class="text-gray-500 text-[10px] truncate">${escapeHTML(email.body).substring(0, 40)}...</div>
             </div>
         `).join('');
 
@@ -1443,19 +1454,19 @@ export default class BossMode {
                     <div class="flex-1 bg-white flex flex-col h-full overflow-hidden relative">
                         ${selectedEmail ? `
                             <div class="p-4 border-b border-gray-200">
-                                <h2 class="text-lg font-normal text-[#0078d4] mb-2">${selectedEmail.subject}</h2>
+                                <h2 class="text-lg font-normal text-[#0078d4] mb-2">${escapeHTML(selectedEmail.subject)}</h2>
                                 <div class="flex items-center gap-3">
                                     <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 text-sm">
-                                        ${selectedEmail.from.substring(0,2).toUpperCase()}
+                                        ${escapeHTML(selectedEmail.from).substring(0,2).toUpperCase()}
                                     </div>
                                     <div>
-                                        <div class="font-bold text-sm">${selectedEmail.from}</div>
-                                        <div class="text-[10px] text-gray-500">To: You; ${selectedEmail.time}</div>
+                                        <div class="font-bold text-sm">${escapeHTML(selectedEmail.from)}</div>
+                                        <div class="text-[10px] text-gray-500">To: You; ${escapeHTML(selectedEmail.time)}</div>
                                     </div>
                                 </div>
                             </div>
                             <div class="p-6 overflow-y-auto whitespace-pre-wrap leading-relaxed text-gray-800 font-serif text-sm">
-                                ${selectedEmail.body}
+                                ${escapeHTML(selectedEmail.body)}
                             </div>
                             <div class="p-2 border-t border-gray-200 flex gap-2">
                                 <button class="border border-gray-300 px-3 py-1 rounded hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-reply"></i> Reply</button>
@@ -1586,7 +1597,7 @@ export default class BossMode {
     renderTerminal(c) {
         c.innerHTML = `
             <div class="bg-black text-gray-300 font-mono text-sm h-full p-2 flex flex-col" onclick="this.querySelector('input').focus()">
-                <div id="term-output" class="flex-1 overflow-y-auto whitespace-pre-wrap">${this.termHistory.map(l=>`<div>${l}</div>`).join('')}</div>
+                <div id="term-output" class="flex-1 overflow-y-auto whitespace-pre-wrap">${this.termHistory.map(l=>`<div>${escapeHTML(l)}</div>`).join('')}</div>
                 <div class="flex pt-2">
                     <span class="text-gray-100">C:\\Users\\${this.user.name.replace(' ','')}></span>
                     <input class="bg-transparent border-none outline-none text-gray-100 flex-1 ml-2" autofocus onkeydown="if(event.key==='Enter') { BossMode.instance.runTerminalCommand(this.value); this.value=''; }">
@@ -1728,15 +1739,15 @@ export default class BossMode {
         return messages.map(m => `
             <div class="flex gap-3 group">
                 <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold text-xs uppercase overflow-hidden">
-                    ${m.avatar ? `<img src="${m.avatar}" class="w-full h-full object-cover">` : m.user.substring(0,2)}
+                    ${m.avatar ? `<img src="${m.avatar}" class="w-full h-full object-cover">` : escapeHTML(m.user).substring(0,2)}
                 </div>
                 <div class="flex-1">
                     <div class="flex items-baseline gap-2">
-                        <span class="font-bold text-xs hover:underline cursor-pointer">${m.user}</span>
-                        <span class="text-[10px] text-gray-500">${m.time}</span>
+                        <span class="font-bold text-xs hover:underline cursor-pointer">${escapeHTML(m.user)}</span>
+                        <span class="text-[10px] text-gray-500">${escapeHTML(m.time)}</span>
                     </div>
                     <div class="text-sm text-gray-800 bg-white p-2 rounded-lg shadow-sm border border-gray-100 inline-block mt-1 relative group-hover:shadow-md transition-shadow">
-                        ${m.text}
+                        ${escapeHTML(m.text)}
                     </div>
                 </div>
             </div>
