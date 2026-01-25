@@ -969,8 +969,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let currentTrailIdx = 0;
+    let lastTrailTime = 0;
     window.addEventListener('mousemove', (e) => {
         if (currentState === AppState.IN_GAME && !currentGameInstance.noCursorHide) return;
+
+        const now = performance.now();
+        // Bolt Optimization: Throttle updates to ~50fps
+        if (now - lastTrailTime < 20) return;
+        lastTrailTime = now;
 
         const dot = cursorTrail[currentTrailIdx];
 
