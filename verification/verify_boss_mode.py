@@ -24,6 +24,12 @@ async def verify_boss_mode():
         print(f"Navigating to {url}")
         await page.goto(url)
 
+        # Click loader if present
+        try:
+            await page.click("#app-loader", timeout=2000)
+        except:
+            pass
+
         # Wait for loading
         await page.wait_for_selector("#app-loader", state="hidden", timeout=10000)
 
