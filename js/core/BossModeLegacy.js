@@ -6,6 +6,17 @@ import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, BROWSER_DATA, ERA
 // Game Imports
 import { MinesweeperApp, Wolf3DApp, NotepadApp } from './BossModeGames.js';
 
+// Helper to prevent XSS
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 /**
  * BossModeLegacy: Adapted from boss_mode_v0.js to work within the unified BossMode framework.
  * This class renders various Legacy OS interfaces (Win95, 98, 2000, XP, Mac, Linux).
@@ -452,11 +463,11 @@ export default class BossModeLegacy {
         </div>`;
     }
 
-    getWordContent() { return `<div class="p-8 h-full overflow-y-auto bg-gray-200"><div class="bg-white shadow-md p-8 min-h-full font-serif text-black" contenteditable="true">${this.docContent}</div></div>`; }
-    getPPTContent() { return `<div class="flex h-full"><div class="w-32 bg-gray-200 border-r p-2">${this.slides.map((s,i)=>`<div class="bg-white mb-2 p-1 text-[8px] cursor-pointer" onclick="BossMode.instance.legacyOS.setSlide(${i})">Slide ${i+1}</div>`).join('')}</div><div class="flex-1 p-8 bg-gray-100 flex items-center justify-center"><div class="bg-white w-full aspect-video p-8 shadow-lg text-black"><h1>${this.slides[this.currentSlide].title}</h1><ul>${this.slides[this.currentSlide].bullets.map(b=>`<li>${b}</li>`).join('')}</ul></div></div></div>`; }
-    getEmailContent() { return `<div class="flex h-full"><div class="w-48 bg-white border-r overflow-y-auto text-black">${this.emails.map(e=>`<div class="p-2 border-b hover:bg-blue-100 cursor-pointer" onclick="BossMode.instance.legacyOS.selectEmail(${e.id})"><b>${e.from}</b><br>${e.subject}</div>`).join('')}</div><div class="flex-1 p-4 bg-white text-black">${this.selectedEmail?`<b>Subject: ${this.selectedEmail.subject}</b><hr class="my-2"><pre class="font-sans">${this.selectedEmail.body}</pre>`:''}</div></div>`; }
-    getChatContent() { return `<div class="flex flex-col h-full text-black"><div class="flex-1 p-2 overflow-y-auto bg-white" id="chat-msgs">${(this.chatHistory[this.activeChannel]||[]).map(m=>`<div><b>${m.user}:</b> ${m.text}</div>`).join('')}</div><div class="p-2 border-t"><input id="chat-input" class="w-full border p-1" onkeydown="if(event.key==='Enter') BossMode.instance.legacyOS.sendChat()"></div></div>`; }
-    getTerminalContent() { return `<div class="bg-black text-gray-300 font-mono h-full p-2 overflow-y-auto"><div id="term-output">${this.termHistory.map(l=>`<div>${l}</div>`).join('')}</div><div class="flex"><span>></span><input id="term-input" class="bg-black text-gray-300 border-none outline-none flex-1 ml-1" autofocus onkeydown="if(event.key==='Enter') BossMode.instance.legacyOS.runTerminalCommand(this.value)"></div></div>`; }
+    getWordContent() { return `<div class="p-8 h-full overflow-y-auto bg-gray-200"><div class="bg-white shadow-md p-8 min-h-full font-serif text-black" contenteditable="true">${escapeHTML(this.docContent)}</div></div>`; }
+    getPPTContent() { return `<div class="flex h-full"><div class="w-32 bg-gray-200 border-r p-2">${this.slides.map((s,i)=>`<div class="bg-white mb-2 p-1 text-[8px] cursor-pointer" onclick="BossMode.instance.legacyOS.setSlide(${i})">Slide ${i+1}</div>`).join('')}</div><div class="flex-1 p-8 bg-gray-100 flex items-center justify-center"><div class="bg-white w-full aspect-video p-8 shadow-lg text-black"><h1>${escapeHTML(this.slides[this.currentSlide].title)}</h1><ul>${this.slides[this.currentSlide].bullets.map(b=>`<li>${escapeHTML(b)}</li>`).join('')}</ul></div></div></div>`; }
+    getEmailContent() { return `<div class="flex h-full"><div class="w-48 bg-white border-r overflow-y-auto text-black">${this.emails.map(e=>`<div class="p-2 border-b hover:bg-blue-100 cursor-pointer" onclick="BossMode.instance.legacyOS.selectEmail(${e.id})"><b>${escapeHTML(e.from)}</b><br>${escapeHTML(e.subject)}</div>`).join('')}</div><div class="flex-1 p-4 bg-white text-black">${this.selectedEmail?`<b>Subject: ${escapeHTML(this.selectedEmail.subject)}</b><hr class="my-2"><pre class="font-sans">${escapeHTML(this.selectedEmail.body)}</pre>`:''}</div></div>`; }
+    getChatContent() { return `<div class="flex flex-col h-full text-black"><div class="flex-1 p-2 overflow-y-auto bg-white" id="chat-msgs">${(this.chatHistory[this.activeChannel]||[]).map(m=>`<div><b>${escapeHTML(m.user)}:</b> ${escapeHTML(m.text)}</div>`).join('')}</div><div class="p-2 border-t"><input id="chat-input" class="w-full border p-1" onkeydown="if(event.key==='Enter') BossMode.instance.legacyOS.sendChat()"></div></div>`; }
+    getTerminalContent() { return `<div class="bg-black text-gray-300 font-mono h-full p-2 overflow-y-auto"><div id="term-output">${this.termHistory.map(l=>`<div>${escapeHTML(l)}</div>`).join('')}</div><div class="flex"><span>></span><input id="term-input" class="bg-black text-gray-300 border-none outline-none flex-1 ml-1" autofocus onkeydown="if(event.key==='Enter') BossMode.instance.legacyOS.runTerminalCommand(this.value)"></div></div>`; }
     getEdgeContent() { return `<div class="h-full bg-white flex flex-col text-black"><div class="bg-gray-200 p-1 border-b">Address: <input value="http://intranet.corp" class="w-1/2"></div><div class="p-4"><h1>Intranet</h1><p>Welcome to the corporate portal.</p><ul><li><a href="#">HR Policies</a></li><li><a href="#">Cafeteria Menu</a></li></ul></div></div>`; }
     getSpotifyContent() { return `<div class="bg-[#222] text-[#0f0] font-mono h-full p-2 flex flex-col"><div class="border border-[#0f0] p-2 mb-2 text-center text-xl">${this.currentTrack}</div><div class="flex gap-2 justify-center text-2xl"><button onclick="BossMode.instance.legacyOS.toggleMusic()">[ ${this.isPlayingMusic?'PAUSE':'PLAY'} ]</button></div><div class="mt-4 border-t border-[#0f0] pt-2">PLAYLIST:<br>1. Acid Mix<br>2. Glitch<br>3. Ambient</div></div>`; }
 
