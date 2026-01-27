@@ -122,6 +122,8 @@ let is3DView = true;
 let store = null;
 let gameOverCount = 0;
 let dailyChallengeGameId = null;
+let lastRenderedDailyId = null;
+let lastRenderedTheme = null;
 let gameStartTime = 0;
 let lastInputTime = 0;
 
@@ -333,7 +335,6 @@ async function transitionToState(newState, context = {}) {
 function populateMenuGrid() {
     const grid = document.getElementById('menu-grid');
     if (!grid) return;
-    grid.innerHTML = '';
 
     // Initialize Daily Challenge if needed
     if (!dailyChallengeGameId) {
@@ -343,8 +344,24 @@ function populateMenuGrid() {
         }
     }
 
+    // Bolt Optimization: Check Cache
+    const currentTheme = saveSystem.getEquippedItem('theme') || 'blue';
+    console.log('[Performance] populateMenuGrid called');
+
+    if (grid.hasChildNodes() &&
+        lastRenderedTheme === currentTheme &&
+        dailyChallengeGameId &&
+        lastRenderedDailyId === dailyChallengeGameId) {
+            console.log('[Performance] populateMenuGrid: Skipped (Cached)');
+            return;
+    }
+
+    grid.innerHTML = '';
+    lastRenderedTheme = currentTheme;
+    lastRenderedDailyId = dailyChallengeGameId;
+
     // Determine Theme Colors
-    const theme = saveSystem.getEquippedItem('theme') || 'blue';
+    const theme = currentTheme;
     const themeColors = {
         blue: { border: 'hover:border-fuchsia-500', icon: 'text-fuchsia-400', shadow: 'shadow-fuchsia-500/20', gradient: 'from-fuchsia-500 to-cyan-500' },
         pink: { border: 'hover:border-pink-500', icon: 'text-pink-400', shadow: 'shadow-pink-500/20', gradient: 'from-pink-500 to-purple-500' },
@@ -1057,5 +1074,7 @@ window.miniGameHub = {
     showToast, // Uses the safely imported local function
     gameRegistry,
     goBack: () => transitionToState(AppState.MENU),
-    getCurrentGame: () => currentGameInstance
+    getCurrentGame: () => currentGameInstance,
+    toggleView,
+    get is3DView() { return is3DView; }
 };
