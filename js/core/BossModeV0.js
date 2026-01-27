@@ -3,6 +3,17 @@ import SoundManager from './SoundManager.js';
 import AdsManager from './AdsManager.js';
 import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE } from './BossModeContent.js';
 
+// Helper to prevent XSS
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 export default class BossModeV0 {
     constructor(container) {
         this.container = container;
@@ -512,10 +523,10 @@ export default class BossModeV0 {
     renderBSOD() { this.container.innerHTML = `<div class="bg-blue-700 text-white p-20 h-full text-4xl">:(<br>Your PC ran into a problem.</div>`; }
 
     // Content Getters
-    getPPTContent() { return `<div class="flex h-full bg-gray-200"><div class="w-48 bg-white p-4">Slide 1</div><div class="flex-1 flex items-center justify-center"><div class="bg-white w-2/3 h-2/3 p-8 shadow-lg"><h1>Q3 Synergy</h1><ul><li>Leverage</li><li>Pivot</li></ul></div></div></div>`; }
-    getWordContent() { return `<div class="bg-gray-200 h-full p-8 flex justify-center overflow-auto"><div class="bg-white w-[21cm] min-h-[29cm] shadow-lg p-10 font-serif">${this.docContent}</div></div>`; }
-    getEmailContent() { return `<div class="flex h-full"><div class="w-64 bg-white border-r">Inbox</div><div class="flex-1 p-4 bg-white">Select an email</div></div>`; }
-    getChatContent() { return `<div class="flex h-full"><div class="w-64 bg-gray-100 border-r">#general</div><div class="flex-1 bg-white p-4">Chat History...</div></div>`; }
-    getSpotifyContent() { return `<div class="bg-black text-white h-full p-4"><h1>Spotify</h1><button onclick="BossMode.instance.currentGuest.soundManager.toggleMute()">Toggle Music</button></div>`; }
-    getTerminalContent() { return `<div class="bg-black text-green-500 font-mono h-full p-2">C:\\> _</div>`; }
+    getPPTContent() { return `<div class="flex h-full bg-gray-200"><div class="w-48 bg-white p-4">Slide 1</div><div class="flex-1 flex items-center justify-center"><div class="bg-white w-2/3 h-2/3 p-8 shadow-lg"><h1>${escapeHTML(this.slides[this.currentSlide].title)}</h1><ul>${this.slides[this.currentSlide].bullets.map(b=>`<li>${escapeHTML(b)}</li>`).join('')}</ul></div></div></div>`; }
+    getWordContent() { return `<div class="bg-gray-200 h-full p-8 flex justify-center overflow-auto"><div class="bg-white w-[21cm] min-h-[29cm] shadow-lg p-10 font-serif">${escapeHTML(this.docContent).replace(/\n/g, '<br>')}</div></div>`; }
+    getEmailContent() { return `<div class="flex h-full"><div class="w-64 bg-white border-r overflow-y-auto">${this.emails.map(e=>`<div class="p-2 border-b cursor-pointer hover:bg-gray-100" onclick="BossMode.instance.currentGuest.selectedEmail=BossMode.instance.currentGuest.emails.find(x=>x.id===${e.id});BossMode.instance.currentGuest.render()"><b>${escapeHTML(e.from)}</b><br>${escapeHTML(e.subject)}</div>`).join('')}</div><div class="flex-1 p-4 bg-white">${this.selectedEmail ? `<b>${escapeHTML(this.selectedEmail.subject)}</b><hr class="my-2">${escapeHTML(this.selectedEmail.body).replace(/\n/g, '<br>')}` : 'Select an email'}</div></div>`; }
+    getChatContent() { return `<div class="flex h-full"><div class="w-64 bg-gray-100 border-r">#${escapeHTML(this.activeChannel)}</div><div class="flex-1 bg-white p-4 flex flex-col gap-2 overflow-y-auto">${(this.chatHistory[this.activeChannel]||[]).map(m=>`<div><b>${escapeHTML(m.user)}:</b> ${escapeHTML(m.text)}</div>`).join('')}</div></div>`; }
+    getSpotifyContent() { return `<div class="bg-black text-white h-full p-4"><h1>Spotify</h1><div class="my-4 text-green-400 font-mono">${escapeHTML(this.currentPlaylist.name)} - ${escapeHTML(this.currentPlaylist.description)}</div><button onclick="BossMode.instance.currentGuest.soundManager.toggleMute()">Toggle Music</button></div>`; }
+    getTerminalContent() { return `<div class="bg-black text-green-500 font-mono h-full p-2 overflow-y-auto">${this.termHistory.map(l=>`<div>${escapeHTML(l)}</div>`).join('')}</div>`; }
 }

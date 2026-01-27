@@ -12,3 +12,8 @@
 **Vulnerability:** Found Stored XSS vulnerabilities in `BossModeLegacy.js` (Win95/Win98 simulation). The Terminal output, Chat application, and Email viewer were rendering user input directly into `innerHTML` using template literals, similar to previous issues in `BossMode.js`.
 **Learning:** Legacy/Deprecated modules or "Easter Egg" features often bypass standard security reviews and updates. The `escapeHTML` helper was present in `BossMode.js` but not in the legacy module.
 **Prevention:** Ensure all modules, including legacy/optional ones, enforce input sanitization. Consider refactoring to use a shared `utils.js` for security helpers to avoid copy-pasting and missing files.
+
+## 2026-02-17 - [HIGH] Stored XSS in Boss Mode V0
+**Vulnerability:** Found Stored XSS vulnerability in `BossModeV0.js`. The Word application was rendering `docContent` directly into `innerHTML` without sanitization. This module appeared to be a copy of `BossModeLegacy.js` before it was patched.
+**Learning:** Forked or copied code often misses subsequent security patches applied to the original source.
+**Prevention:** When refactoring or versioning modules, ensure security fixes are propagated to all variants. Ideally, use inheritance or shared renderers to avoid duplication of vulnerable patterns.
