@@ -1,0 +1,82 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1] [cursor=pointer]:
+  - text:                                        ?                                              
+  - generic [ref=e2]:
+    - button "Game Guide" [ref=e3]:
+      - generic [ref=e4]: 
+    - generic [ref=e5]:
+      - generic [ref=e6]: 
+      - generic [ref=e7]: "60"
+    - button "Store" [ref=e8]:
+      - generic [ref=e9]: 
+    - button "Mute Audio" [ref=e10]:
+      - generic [ref=e11]: 
+    - button "Toggle Boss Mode" [ref=e12]:
+      - generic [ref=e13]: 
+    - button "Settings" [ref=e14]:
+      - generic [ref=e15]: 
+  - status:
+    - paragraph: CLICK A CABINET TO PLAY • DRAG TO LOOK AROUND
+  - generic [ref=e18]:
+    - heading "NEON IDLE TYCOON" [level=2] [ref=e19]
+    - paragraph [ref=e20]: Build your Cyberpunk Empire
+    - generic [ref=e21]:
+      - paragraph [ref=e22]: Corporate Funds
+      - generic [ref=e23]: $0
+      - generic [ref=e24]:
+        - generic [ref=e25]: 
+        - text: 0 / sec
+    - button " CLICK ME" [ref=e26]:
+      - generic [ref=e28]: 
+      - generic [ref=e29]: CLICK ME
+    - generic [ref=e30]:
+      - 'button " Cyber Click Enhance click power Owned: 1 $10 Buy" [ref=e31]':
+        - generic [ref=e33]: 
+        - generic [ref=e34]:
+          - generic [ref=e35]: Cyber Click
+          - generic [ref=e36]: Enhance click power
+          - generic [ref=e37]: "Owned: 1"
+        - generic [ref=e38]:
+          - generic [ref=e39]: $10
+          - generic [ref=e40]: Buy
+      - 'button " Auto-Bot Basic automation unit Owned: 0 $50 Buy" [ref=e41]':
+        - generic [ref=e43]: 
+        - generic [ref=e44]:
+          - generic [ref=e45]: Auto-Bot
+          - generic [ref=e46]: Basic automation unit
+          - generic [ref=e47]: "Owned: 0"
+        - generic [ref=e48]:
+          - generic [ref=e49]: $50
+          - generic [ref=e50]: Buy
+      - 'button " Nano Factory Mass production facility Owned: 0 $500 Buy" [ref=e51]':
+        - generic [ref=e53]: 
+        - generic [ref=e54]:
+          - generic [ref=e55]: Nano Factory
+          - generic [ref=e56]: Mass production facility
+          - generic [ref=e57]: "Owned: 0"
+        - generic [ref=e58]:
+          - generic [ref=e59]: $500
+          - generic [ref=e60]: Buy
+      - 'button " Crypto Bank High-yield investments Owned: 0 $2,000 Buy" [ref=e61]':
+        - generic [ref=e63]: 
+        - generic [ref=e64]:
+          - generic [ref=e65]: Crypto Bank
+          - generic [ref=e66]: High-yield investments
+          - generic [ref=e67]: "Owned: 0"
+        - generic [ref=e68]:
+          - generic [ref=e69]: $2,000
+          - generic [ref=e70]: Buy
+    - text: 
+    - button " Return to Hub" [ref=e71]:
+      - generic [ref=e72]: 
+      - text: Return to Hub
+  - text: 
+  - generic:
+    - generic:
+      - generic: "LIVE FEED:"
+      - generic:
+        - generic: "Market: BitPixel up 10% on news of higher resolution."
+  - generic: Daily Quests
+```
