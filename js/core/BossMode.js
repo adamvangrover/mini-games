@@ -6,6 +6,8 @@ import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, SPOTIFY_PLAYLISTS
 // Dynamic imports for Apps
 import { MarketplaceApp, GrokApp } from './BossModeApps.js';
 import { MinesweeperApp, Wolf3DApp, NotepadApp } from './BossModeGames.js';
+import { CodeEditorApp } from './BossModeEditor.js';
+import { SystemMonitorApp } from './BossModeSystem.js';
 import BossModeV0 from './BossModeV0.js';
 import BossModeV1 from './BossModeV1.js';
 import BossModeV2 from './BossModeV2.js';
@@ -734,6 +736,8 @@ export default class BossMode {
                 ${this.createIconHTML("Minesweeper", "fa-bomb", "text-red-500", "BossMode.instance.openApp('minesweeper')")}
                 ${this.createIconHTML("Marketplace", "fa-shopping-bag", "text-purple-500", "BossMode.instance.openApp('marketplace')")}
                 ${this.createIconHTML("Wolf3D", "fas fa-crosshairs", "text-red-600", "BossMode.instance.openApp('wolf3d')")}
+                ${this.createIconHTML("Neon Code", "fa-code", "text-blue-500", "BossMode.instance.openApp('code-editor')")}
+                ${this.createIconHTML("SysMon", "fa-chart-area", "text-green-400", "BossMode.instance.openApp('system-monitor')")}
             </div>
         `;
 
@@ -891,7 +895,9 @@ export default class BossMode {
             { id: 'marketplace', icon: 'fa-shopping-bag', color: 'text-red-500' },
             { id: 'grok', icon: 'fa-brain', color: 'text-purple-500' },
             { id: 'wolf3d', icon: 'fas fa-crosshairs', color: 'text-red-600' },
-            { id: 'notepad', icon: 'fas fa-sticky-note', color: 'text-yellow-400' }
+            { id: 'notepad', icon: 'fas fa-sticky-note', color: 'text-yellow-400' },
+            { id: 'code-editor', icon: 'fa-code', color: 'text-blue-500' },
+            { id: 'system-monitor', icon: 'fa-chart-area', color: 'text-green-400' }
         ];
 
         const theme = this.saveSystem.getEquippedItem('theme') || 'blue';
@@ -942,7 +948,9 @@ export default class BossMode {
             'marketplace': { title: 'Spicy Marketplace', w: 400, h: 600, color: 'bg-black', icon: 'fa-shopping-bag' },
             'grok': { title: 'Grok xAI v1.0', w: 500, h: 400, color: 'bg-gray-800', icon: 'fa-brain' },
             'wolf3d': { title: 'Wolfenstein 3D', w: 640, h: 400, color: 'bg-black', icon: 'fas fa-crosshairs' },
-            'notepad': { title: 'Notepad', w: 400, h: 300, color: 'bg-yellow-100', icon: 'fas fa-sticky-note' }
+            'notepad': { title: 'Notepad', w: 400, h: 300, color: 'bg-yellow-100', icon: 'fas fa-sticky-note' },
+            'code-editor': { title: 'Neon Code', w: 800, h: 600, color: 'bg-[#1e1e1e]', icon: 'fa-code' },
+            'system-monitor': { title: 'System Monitor', w: 600, h: 450, color: 'bg-[#1e1e1e]', icon: 'fa-chart-area' }
         };
         const cfg = map[id] || { title: 'App', w: 600, h: 400, color: 'bg-gray-800', icon: 'fa-window-maximize' };
 
@@ -1085,6 +1093,8 @@ export default class BossMode {
             case 'minesweeper': win.instance = new MinesweeperApp(contentArea); break;
             case 'wolf3d': win.instance = new Wolf3DApp(contentArea); break;
             case 'notepad': win.instance = new NotepadApp(contentArea); break;
+            case 'code-editor': win.instance = new CodeEditorApp(contentArea); break;
+            case 'system-monitor': win.instance = new SystemMonitorApp(contentArea); break;
             case 'mission':
                 const tpl = document.getElementById('tpl-mission');
                 if(tpl) contentArea.appendChild(tpl.content.cloneNode(true));

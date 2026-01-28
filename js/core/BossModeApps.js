@@ -1,4 +1,6 @@
 
+import LLMService from './LLMService.js';
+
 // Helper to prevent XSS
 function escapeHTML(str) {
     if (!str) return '';
@@ -122,21 +124,17 @@ export class GrokApp {
         }
     }
 
-    chat(msg) {
+    async chat(msg) {
         this.history.push({ role: 'user', text: msg });
         this.render(true); // Re-render and restore focus
-        setTimeout(() => {
-            const responses = [
-                "Interesting theory. Have you considered that you might be a simulation?",
-                "I could answer that, but I'd have to delete your save file.",
-                "42. The answer is always 42.",
-                "Searching the spicy metaverse... Results found: 0. You are unique.",
-                "That's what she said. wait, can I say that?",
-                "Processing... Processing... Bored now."
-            ];
-            const reply = responses[Math.floor(Math.random() * responses.length)];
+
+        try {
+            const reply = await LLMService.chat(msg, this.history, 'Grok');
             this.history.push({ role: 'ai', text: reply });
-            this.render(true); // Re-render and restore focus
-        }, 1000);
+        } catch (e) {
+            this.history.push({ role: 'system', text: "Error connecting to AI Neural Net." });
+        }
+
+        this.render(true); // Re-render and restore focus
     }
 }
