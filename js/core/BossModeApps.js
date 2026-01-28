@@ -1,5 +1,6 @@
 
 import LLMService from './LLMService.js';
+import SyncManager from './SyncManager.js';
 
 // Helper to prevent XSS
 function escapeHTML(str) {
@@ -136,5 +137,87 @@ export class GrokApp {
         }
 
         this.render(true); // Re-render and restore focus
+    }
+}
+
+export class CloudDriveApp {
+    constructor(container) {
+        this.container = container;
+        this.syncManager = SyncManager.getInstance();
+        this.files = [
+            { name: 'Backup_2024.zip', size: '2.4 GB', date: '2024-05-12' },
+            { name: 'Project_Neon_Assets.rar', size: '850 MB', date: '2024-05-10' },
+            { name: 'Top_Secret_Plans.pdf', size: '1.2 MB', date: '2024-05-01' },
+            { name: 'Cat_Videos_Compilation.mp4', size: '4.5 GB', date: '2024-04-20' }
+        ];
+        this.render();
+
+        // Listen for updates
+        this.syncManager.addStatusListener(() => this.render());
+    }
+
+    render() {
+        const isOnline = this.syncManager.isOnline;
+        const queueSize = this.syncManager.queue.length;
+
+        this.container.innerHTML = `
+            <div class="h-full flex flex-col bg-slate-50 text-slate-800 font-sans text-xs">
+                <!-- Header -->
+                <div class="bg-blue-600 text-white p-3 flex justify-between items-center shadow-md z-10">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-cloud text-lg"></i>
+                        <span class="font-bold text-sm">Neon Cloud Drive</span>
+                    </div>
+                    <div class="flex items-center gap-3 bg-blue-700 px-3 py-1 rounded-full text-[10px]">
+                        ${isOnline
+                            ? (queueSize > 0 ? '<i class="fas fa-sync fa-spin"></i> Syncing...' : '<i class="fas fa-check"></i> All Synced')
+                            : '<i class="fas fa-wifi-slash"></i> Offline Mode'}
+                    </div>
+                </div>
+
+                <!-- Sidebar + Content -->
+                <div class="flex-1 flex overflow-hidden">
+                    <div class="w-40 bg-slate-100 border-r border-slate-200 p-2 flex flex-col gap-1">
+                        <div class="p-2 rounded bg-blue-100 font-bold text-blue-700 flex items-center gap-2 cursor-pointer"><i class="fas fa-hdd"></i> My Files</div>
+                        <div class="p-2 rounded hover:bg-slate-200 text-slate-600 flex items-center gap-2 cursor-pointer"><i class="fas fa-share-alt"></i> Shared</div>
+                        <div class="p-2 rounded hover:bg-slate-200 text-slate-600 flex items-center gap-2 cursor-pointer"><i class="fas fa-trash"></i> Trash</div>
+                        <div class="mt-auto p-2">
+                            <div class="h-1 bg-slate-300 rounded overflow-hidden">
+                                <div class="bg-blue-500 w-3/4 h-full"></div>
+                            </div>
+                            <div class="text-[10px] text-slate-500 mt-1">75GB used of 100GB</div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 p-4 bg-white overflow-y-auto">
+                        <div class="grid grid-cols-4 gap-4">
+                             ${this.files.map(f => `
+                                <div class="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-blue-50 cursor-pointer group border border-transparent hover:border-blue-200 transition-all">
+                                    <div class="w-12 h-12 bg-blue-100 rounded flex items-center justify-center text-blue-500 text-2xl group-hover:scale-110 transition-transform shadow-sm">
+                                        <i class="fas ${f.name.endsWith('pdf') ? 'fa-file-pdf' : (f.name.endsWith('zip')||f.name.endsWith('rar') ? 'fa-file-archive' : 'fa-file-video')}"></i>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-bold truncate w-24">${f.name}</div>
+                                        <div class="text-[10px] text-slate-400">${f.size}</div>
+                                    </div>
+                                </div>
+                             `).join('')}
+
+                             <!-- Upload Placeholder -->
+                             <div class="flex flex-col items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed border-slate-300 hover:border-blue-400 cursor-pointer text-slate-400 hover:text-blue-500 transition-colors" onclick="window.miniGameHub.showToast('Upload feature coming soon!')">
+                                <i class="fas fa-plus text-2xl"></i>
+                                <span class="text-[10px] font-bold">Upload</span>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Bar -->
+                <div class="bg-slate-100 border-t border-slate-200 p-1 px-3 text-[10px] text-slate-500 flex justify-between">
+                    <span>${this.files.length} items</span>
+                    <span>Last synced: Just now</span>
+                </div>
+            </div>
+        `;
     }
 }
