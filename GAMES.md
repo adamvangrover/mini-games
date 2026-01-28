@@ -231,3 +231,19 @@ This file provides detailed instructions and walkthroughs for each game in the M
 3.  The AI will then take its turn.
 4.  First to get 3 in a row wins.
 5.  If the board fills up with no winner, it's a draw.
+
+---
+
+## 🔍 Neon Scavenger
+
+**Objective:** Scan the grid to find hidden data shards, glitches, and protocols before time runs out.
+
+**How to Play:**
+1.  **Scan the Grid:** Click on the blue grid cells to reveal what's hidden underneath.
+2.  **Find Items:** Locate specific items like **Data Shards** (Blue), **Glitches** (Red), and **Protocols** (Green).
+3.  **Check Bounties:** Some items correspond to active **Bounties** from the Boss Mode Quest Board. Finding them will progress your quest.
+4.  **Avoid Empty Space:** Clicking empty cells will reduce your score.
+5.  **Time Limit:** You have 60 seconds to find as many items as possible.
+
+**Integration:**
+*   This game is heavily integrated with the **Boss Mode Quest System**. Check the **Bounty Board** app in Boss Mode for specific targets to hunt!
