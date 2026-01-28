@@ -1,3 +1,5 @@
+import LLMService from './LLMService.js';
+
 export default class SaveSystem {
     constructor() {
         if (SaveSystem.instance) {
@@ -449,18 +451,19 @@ export default class SaveSystem {
     }
 
     generateDailyQuests(dateIndex) {
+        // 1. Generate Basic Fallback Quests immediately (Sync)
         const questTypes = [
-            { id: 'play_games', desc: 'Play 3 different games', target: 3, reward: 50 },
-            { id: 'earn_coins', desc: 'Earn 100 coins', target: 100, reward: 75 },
-            { id: 'high_score', desc: 'Set a new High Score', target: 1, reward: 100 },
-            { id: 'clicker', desc: 'Click 500 times in Clicker', target: 500, reward: 50 },
-            { id: 'spend', desc: 'Spend 50 coins in Store', target: 50, reward: 25 },
-            { id: 'boss_mode', desc: 'Find the Boss Mode', target: 1, reward: 200 } // Special
+            { id: 'play_games', desc: 'Play 3 different games', target: 3, reward: 50, type: 'basic' },
+            { id: 'earn_coins', desc: 'Earn 100 coins', target: 100, reward: 75, type: 'basic' },
+            { id: 'high_score', desc: 'Set a new High Score', target: 1, reward: 100, type: 'basic' },
+            { id: 'clicker', desc: 'Click 500 times in Clicker', target: 500, reward: 50, type: 'basic' },
+            { id: 'spend', desc: 'Spend 50 coins in Store', target: 50, reward: 25, type: 'basic' },
+            { id: 'boss_mode', desc: 'Find the Boss Mode', target: 1, reward: 200, type: 'special' }
         ];
 
-        // Shuffle and pick 3
+        // Shuffle and pick 2 basic ones
         const shuffled = questTypes.sort(() => 0.5 - Math.random());
-        const selected = shuffled.slice(0, 3).map(q => ({
+        const selected = shuffled.slice(0, 2).map(q => ({
             ...q,
             progress: 0,
             claimed: false
@@ -471,6 +474,32 @@ export default class SaveSystem {
             quests: selected
         };
         this.save();
+
+        // 2. Trigger Async AI Quest Generation (Adds a 3rd "Elite" Quest)
+        this.generateAiQuest(dateIndex);
+    }
+
+    async generateAiQuest(dateIndex) {
+        try {
+            const level = this.data.level || 1;
+            const aiQuest = await LLMService.generateQuest(level);
+
+            // Ensure we are still on the same day (user didn't travel through time)
+            if (this.data.dailyQuests.date === dateIndex) {
+                // Check if already added (avoid dupe on multi-call)
+                if (this.data.dailyQuests.quests.find(q => q.type === 'generic')) return;
+
+                // Add the AI quest
+                this.data.dailyQuests.quests.push(aiQuest);
+                this.save();
+                // Notify if possible (window dispatch)
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('quests-updated'));
+                }
+            }
+        } catch (e) {
+            console.error("SaveSystem: Failed to generate AI quest", e);
+        }
     }
 
     updateQuestProgress(type, amount = 1) {

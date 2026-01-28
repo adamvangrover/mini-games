@@ -68,6 +68,13 @@ export default class LLMService {
                         "Input received."
                     ]
                 }
+            },
+            "QuestGiver": {
+                style: "Cryptic, demanding, offering opportunities.",
+                keywords: {
+                    "hello": ["I have a job for you.", "Are you looking for work?", "The city sleeps for no one."],
+                    "default": ["Complete the objective.", "Time is money.", "Don't ask questions."]
+                }
             }
         };
 
@@ -88,5 +95,41 @@ export default class LLMService {
         // 4. Default Response
         const defaults = currentPersona.keywords.default;
         return defaults[Math.floor(Math.random() * defaults.length)];
+    }
+
+    /**
+     * Generates a dynamic quest object.
+     * @param {number} level - Player level.
+     * @param {Array} interests - Player's favorite game categories.
+     * @returns {Promise<Object>} - Quest object { id, desc, target, reward, flavorText }.
+     */
+    static async generateQuest(level = 1, interests = []) {
+        // Simulate async processing
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const verbs = ["Recover", "Hack", "Locate", "Decrypt", "Eliminate", "Survive"];
+        const nouns = ["Data Shard", "Glitch", "Protocol", "Firewall", "Bug", "Frame Drop"];
+        const locations = ["in Neon City", "during a run", "in the Matrix", "while AFK", "in Boss Mode"];
+
+        const v = verbs[Math.floor(Math.random() * verbs.length)];
+        const n = nouns[Math.floor(Math.random() * nouns.length)];
+        const l = locations[Math.floor(Math.random() * locations.length)];
+
+        const targetBase = 3 + Math.floor(level * 1.5);
+        const rewardBase = 50 + Math.floor(level * 20);
+
+        // Flavor text via the Chat system (simulated internal call)
+        const flavor = await this.chat(`Describe a mission to ${v} ${n}`, [], "QuestGiver");
+
+        return {
+            id: `quest_${Date.now()}_${Math.floor(Math.random()*1000)}`,
+            desc: `${v} ${targetBase} ${n}s`,
+            target: targetBase,
+            progress: 0,
+            reward: rewardBase,
+            flavorText: flavor,
+            claimed: false,
+            type: 'generic' // simple counter type
+        };
     }
 }
