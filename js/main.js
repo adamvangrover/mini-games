@@ -389,16 +389,15 @@ function populateMenuGrid() {
 
         categories[cat].forEach(game => {
             const isDaily = game.id === dailyChallengeGameId;
-            const card = document.createElement('div');
+            const card = document.createElement('button');
+            card.type = 'button';
 
             // Daily Challenge Highlighting
             let borderClass = isDaily
                 ? "border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)]"
                 : `border-slate-700 ${t.border}`;
 
-            card.className = `bg-slate-800/80 backdrop-blur rounded-xl p-4 border ${borderClass} transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500`;
-            card.setAttribute('role', 'button');
-            card.setAttribute('tabindex', '0');
+            card.className = `w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border ${borderClass} transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500`;
             card.setAttribute('aria-label', `Play ${game.name}: ${game.description}`);
 
             card.innerHTML = `
@@ -416,12 +415,6 @@ function populateMenuGrid() {
             `;
             card.onmouseenter = () => soundManager.playSound('hover');
             card.onclick = () => transitionToState(AppState.IN_GAME, { gameId: game.id });
-            card.onkeydown = (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    transitionToState(AppState.IN_GAME, { gameId: game.id });
-                }
-            };
             grid.appendChild(card);
         });
     });
