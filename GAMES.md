@@ -205,3 +205,29 @@ This file provides detailed instructions and walkthroughs for each game in the M
     *   **Gray:** Letter is not in the word.
 4.  **Hints:** Stuck? Click "NEED A HINT?" to reveal the definition of the word.
 5.  **Streak:** Build your winning streak by solving puzzles consecutively!
+
+---
+
+## 🃏 Neon Match
+
+**Objective:** Find all matching pairs of cards in the fewest moves possible.
+
+**How to Play:**
+1.  Click on a card to flip it over.
+2.  Click on a second card to try and find a match.
+3.  If the cards match, they stay face up.
+4.  If they don't match, they flip back over.
+5.  Clear the board to win!
+
+---
+
+## ❌ Neon Tic-Tac-Toe
+
+**Objective:** Get three of your symbols (X) in a row, column, or diagonal before the AI (O) does.
+
+**How to Play:**
+1.  You are X and you go first.
+2.  Click on an empty square to place your X.
+3.  The AI will then take its turn.
+4.  First to get 3 in a row wins.
+5.  If the board fills up with no winner, it's a draw.

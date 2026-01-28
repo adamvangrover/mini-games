@@ -85,6 +85,8 @@ const gameRegistry = {
     // Logic Puzzles
     'math-blaster': { name: 'Galactic Rescue', description: 'Math Blaster Episode I', icon: 'fa-solid fa-rocket', category: 'Logic Puzzles', importFn: () => import('./games/mathBlaster.js'), wide: true, noDpad: true },
     'queens-game': { name: 'Queens', description: 'Place Queens', icon: 'fa-solid fa-chess-queen', category: 'Logic Puzzles', importFn: () => import('./games/queens.js') },
+    'neon-match': { name: 'Neon Match', description: 'Find Pairs', icon: 'fa-solid fa-clone', category: 'Logic Puzzles', importFn: () => import('./games/neonMatch.js'), noDpad: true },
+    'neon-tictactoe': { name: 'Tic Tac Toe', description: '3 in a Row', icon: 'fa-solid fa-hashtag', category: 'Logic Puzzles', importFn: () => import('./games/neonTicTacToe.js'), noDpad: true },
     'neon-mines-game': { name: 'Neon Mines', description: 'Avoid Mines', icon: 'fa-solid fa-bomb', category: 'Logic Puzzles', importFn: () => import('./games/neonMines.js') },
     'neon-picross-game': { name: 'Neon Picross', description: 'Picture Cross', icon: 'fa-solid fa-pencil-alt', category: 'Logic Puzzles', importFn: () => import('./games/neonPicross.js') },
     'sudoku-game': { name: 'Neon Sudoku', description: 'Classic Number Puzzle', icon: 'fa-solid fa-border-none', category: 'Logic Puzzles', importFn: () => import('./games/sudoku.js') },
