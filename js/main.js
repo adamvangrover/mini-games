@@ -10,6 +10,9 @@ import AdsManager from './core/AdsManager.js';
 import BossMode from './core/BossMode.js';
 import DevConsole from './core/DevConsole.js';
 import ToastManager from './core/ToastManager.js'; // Imported statically for reliability
+import VoiceControl from './core/VoiceControl.js';
+import SyncManager from './core/SyncManager.js';
+import AIHub from './core/AIHub.js';
 import PlaceholderGame from './games/PlaceholderGame.js';
 
 // --- Game Registry ---
@@ -36,6 +39,7 @@ const gameRegistry = {
     'neon-memory': { name: 'Neon Memory', description: 'Simon Says', icon: 'fa-solid fa-brain', category: 'New Games', importFn: () => import('./games/neonMemory.js'), noDpad: true },
     'neon-flow-game': { name: 'Neon Flow', description: 'Relax & Create', icon: 'fa-solid fa-wind', category: 'New Games', importFn: () => import('./games/neonFlow.js'), wide: true, noDpad: true },
     'neon-scavenger': { name: 'Neon Scavenger', description: 'Data Hunt', icon: 'fa-solid fa-search', category: 'New Games', importFn: () => import('./games/neonScavenger.js') },
+    'neon-automata': { name: 'Neon Automata', description: 'AI Training Sim', icon: 'fa-solid fa-robot', category: 'New Games', importFn: () => import('./games/neonAutomata.js'), noDpad: true },
 
     // Sports
     'neon-golf': { name: 'Neon Golf', description: 'Mini Golf Challenge', icon: 'fa-solid fa-golf-ball-tee', category: 'Sports', importFn: () => import('./games/neonGolf.js') },
@@ -132,6 +136,8 @@ const soundManager = SoundManager.getInstance();
 const saveSystem = SaveSystem.getInstance();
 const inputManager = InputManager.getInstance();
 const adsManager = AdsManager.getInstance();
+const syncManager = SyncManager.getInstance();
+const aiHub = AIHub.getInstance();
 
 // Local Helper for Toasts
 function showToast(msg) {
@@ -833,17 +839,36 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('close-guide-btn').onclick = () => hideOverlay();
     };
 
-    // Add Guide Button to HUD
+    // Add Guide & Extra Buttons to HUD
     const hud = document.getElementById('hub-hud');
     if (hud) {
+        // Guide
         const guideBtn = document.createElement('button');
         guideBtn.id = 'guide-btn-hud';
         guideBtn.className = 'glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition';
         guideBtn.title = 'Game Guide';
-        guideBtn.setAttribute('aria-label', 'Game Guide');
         guideBtn.innerHTML = '<i class="fas fa-question-circle"></i>';
         guideBtn.onclick = showGuide;
         hud.insertBefore(guideBtn, hud.firstChild);
+
+        // Voice Control
+        const voiceBtn = document.createElement('button');
+        voiceBtn.id = 'voice-control-btn';
+        voiceBtn.className = 'glass-panel px-4 py-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition ml-2';
+        voiceBtn.title = 'Voice Command';
+        voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+        voiceBtn.onclick = () => VoiceControl.instance.toggle();
+        hud.insertBefore(voiceBtn, hud.firstChild);
+
+        // Sync Indicator (Hidden by default)
+        const syncInd = document.createElement('div');
+        syncInd.className = 'sync-status-indicator glass-panel px-3 py-2 rounded-full ml-2 flex items-center justify-center';
+        syncInd.innerHTML = '<i class="fas fa-check-circle text-green-500"></i>';
+        syncInd.title = "Online";
+        hud.insertBefore(syncInd, hud.firstChild);
+
+        // Initial Update
+        SyncManager.instance.updateIndicators();
     }
 
     const updateMuteIcon = () => {
@@ -929,6 +954,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Boss Mode Logic
     const bossMode = new BossMode();
+
+    // Init Voice Control (Lazy load or init here)
+    const voiceControl = new VoiceControl();
 
     // Input tracking for AFK
     const resetIdle = () => { lastInputTime = performance.now(); };
@@ -1076,6 +1104,8 @@ window.miniGameHub = {
     saveSystem,
     showGameOver,
     inputManager,
+    syncManager,
+    aiHub,
     showToast, // Uses the safely imported local function
     gameRegistry,
     goBack: () => transitionToState(AppState.MENU),

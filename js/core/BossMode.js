@@ -4,7 +4,7 @@ import AdsManager from './AdsManager.js';
 // Fallback if file missing, we define defaults inside constructor
 import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, SPOTIFY_PLAYLISTS } from './BossModeContent.js';
 // Dynamic imports for Apps
-import { MarketplaceApp, GrokApp } from './BossModeApps.js';
+import { MarketplaceApp, GrokApp, CloudDriveApp } from './BossModeApps.js';
 import { MinesweeperApp, Wolf3DApp, NotepadApp } from './BossModeGames.js';
 import { CodeEditorApp } from './BossModeEditor.js';
 import { SystemMonitorApp } from './BossModeSystem.js';
@@ -738,6 +738,7 @@ export default class BossMode {
                 ${this.createIconHTML("Wolf3D", "fas fa-crosshairs", "text-red-600", "BossMode.instance.openApp('wolf3d')")}
                 ${this.createIconHTML("Neon Code", "fa-code", "text-blue-500", "BossMode.instance.openApp('code-editor')")}
                 ${this.createIconHTML("SysMon", "fa-chart-area", "text-green-400", "BossMode.instance.openApp('system-monitor')")}
+                ${this.createIconHTML("Cloud Drive", "fa-cloud", "text-blue-300", "BossMode.instance.openApp('cloud-drive')")}
             </div>
         `;
 
@@ -897,7 +898,8 @@ export default class BossMode {
             { id: 'wolf3d', icon: 'fas fa-crosshairs', color: 'text-red-600' },
             { id: 'notepad', icon: 'fas fa-sticky-note', color: 'text-yellow-400' },
             { id: 'code-editor', icon: 'fa-code', color: 'text-blue-500' },
-            { id: 'system-monitor', icon: 'fa-chart-area', color: 'text-green-400' }
+            { id: 'system-monitor', icon: 'fa-chart-area', color: 'text-green-400' },
+            { id: 'cloud-drive', icon: 'fa-cloud', color: 'text-blue-300' }
         ];
 
         const theme = this.saveSystem.getEquippedItem('theme') || 'blue';
@@ -950,7 +952,8 @@ export default class BossMode {
             'wolf3d': { title: 'Wolfenstein 3D', w: 640, h: 400, color: 'bg-black', icon: 'fas fa-crosshairs' },
             'notepad': { title: 'Notepad', w: 400, h: 300, color: 'bg-yellow-100', icon: 'fas fa-sticky-note' },
             'code-editor': { title: 'Neon Code', w: 800, h: 600, color: 'bg-[#1e1e1e]', icon: 'fa-code' },
-            'system-monitor': { title: 'System Monitor', w: 600, h: 450, color: 'bg-[#1e1e1e]', icon: 'fa-chart-area' }
+            'system-monitor': { title: 'System Monitor', w: 600, h: 450, color: 'bg-[#1e1e1e]', icon: 'fa-chart-area' },
+            'cloud-drive': { title: 'Neon Cloud Drive', w: 700, h: 500, color: 'bg-blue-600', icon: 'fa-cloud' }
         };
         const cfg = map[id] || { title: 'App', w: 600, h: 400, color: 'bg-gray-800', icon: 'fa-window-maximize' };
 
@@ -1095,6 +1098,7 @@ export default class BossMode {
             case 'notepad': win.instance = new NotepadApp(contentArea); break;
             case 'code-editor': win.instance = new CodeEditorApp(contentArea); break;
             case 'system-monitor': win.instance = new SystemMonitorApp(contentArea); break;
+            case 'cloud-drive': win.instance = new CloudDriveApp(contentArea); break;
             case 'mission':
                 const tpl = document.getElementById('tpl-mission');
                 if(tpl) contentArea.appendChild(tpl.content.cloneNode(true));
