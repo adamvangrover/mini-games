@@ -60,6 +60,14 @@ export default class SoundManager {
         this.bgmGainNode.connect(this.delayGain);
         this.delayGain.connect(this.delayNode);
 
+        // --- Bolt Optimization: Shared Noise Buffer ---
+        // Pre-generate 2 seconds of noise to reuse, saving massive GC overhead
+        this.noiseBufferSize = this.audioCtx.sampleRate * 2;
+        this.noiseBuffer = this.audioCtx.createBuffer(1, this.noiseBufferSize, this.audioCtx.sampleRate);
+        const noiseData = this.noiseBuffer.getChannelData(0);
+        for (let i = 0; i < this.noiseBufferSize; i++) {
+            noiseData[i] = Math.random() * 2 - 1;
+        }
 
         // --- Procedural Jukebox State ---
         this.isPlayingBGM = false;
@@ -249,13 +257,12 @@ export default class SoundManager {
     }
 
     playNoise(duration, vol = 0.5) {
-        const bufferSize = this.audioCtx.sampleRate * duration;
-        const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
         const noise = this.audioCtx.createBufferSource();
-        noise.buffer = buffer;
+        // Bolt Optimization: Use shared buffer
+        noise.buffer = this.noiseBuffer;
+        noise.loop = true;
+        // Randomize start to avoid pattern repetition
+        const startOffset = Math.random() * this.noiseBuffer.duration;
 
         const gain = this.audioCtx.createGain();
         gain.gain.setValueAtTime(vol, this.audioCtx.currentTime);
@@ -263,7 +270,7 @@ export default class SoundManager {
 
         noise.connect(gain);
         gain.connect(this.sfxGainNode);
-        noise.start();
+        noise.start(this.audioCtx.currentTime, startOffset, duration);
     }
 
     // --- Procedural Jukebox ---
@@ -668,14 +675,11 @@ export default class SoundManager {
     }
 
     playHiHat(time, dur = 0.05, vol = 0.1) {
-        // High pass noise
-        const bufferSize = this.audioCtx.sampleRate * dur;
-        const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1);
-
         const node = this.audioCtx.createBufferSource();
-        node.buffer = buffer;
+        // Bolt Optimization: Use shared buffer
+        node.buffer = this.noiseBuffer;
+        node.loop = true;
+        const startOffset = Math.random() * this.noiseBuffer.duration;
 
         const filter = this.audioCtx.createBiquadFilter();
         filter.type = 'highpass';
@@ -688,17 +692,16 @@ export default class SoundManager {
         node.connect(filter);
         filter.connect(gain);
         gain.connect(this.bgmGainNode);
-        node.start(time);
+        node.start(time, startOffset, dur);
     }
 
     playNoiseOneShot(time, duration, vol) {
-        const bufferSize = this.audioCtx.sampleRate * duration;
-        const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
         const node = this.audioCtx.createBufferSource();
-        node.buffer = buffer;
+        // Bolt Optimization: Use shared buffer
+        node.buffer = this.noiseBuffer;
+        node.loop = true;
+        const startOffset = Math.random() * this.noiseBuffer.duration;
+
         const gain = this.audioCtx.createGain();
         gain.gain.setValueAtTime(vol, time);
         if (duration > 0.1) {
@@ -709,7 +712,7 @@ export default class SoundManager {
 
         node.connect(gain);
         gain.connect(this.bgmGainNode);
-        node.start(time);
+        node.start(time, startOffset, duration);
     }
 
     playAcidSynth(freq, time, duration, accent = false, slide = false) {
