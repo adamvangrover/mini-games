@@ -247,3 +247,20 @@ This file provides detailed instructions and walkthroughs for each game in the M
 
 **Integration:**
 *   This game is heavily integrated with the **Boss Mode Quest System**. Check the **Bounty Board** app in Boss Mode for specific targets to hunt!
+
+---
+
+## 🔴 Neon Connect 4
+
+**Objective:** Be the first player to form a horizontal, vertical, or diagonal line of four of your own discs.
+
+**How to Play:**
+1.  **Your Turn:** Click on any column to drop your neon pink disc into the lowest empty spot.
+2.  **Opponent's Turn:** The AI (Neon Blue) will then take its turn.
+3.  **Winning:** Connect 4 of your discs in a row, column, or diagonal to win.
+4.  **Draw:** If the board fills up without a winner, the game ends in a draw.
+
+**Strategy:**
+*   Control the center columns early to maximize your connection possibilities.
+*   Keep an eye on the AI's moves to block them from getting 4 in a row.
+*   Look for opportunities to create multiple threats at once (forks).
