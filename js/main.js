@@ -55,6 +55,8 @@ const gameRegistry = {
     'snack-hole-game': { name: 'Neon Snacks', description: 'Devour Everything', icon: 'fa-solid fa-cookie-bite', category: 'Action', importFn: () => import('./games/snackHole.js'), wide: true, noDpad: true },
 
     // Simulation
+    'byte-broker': { name: 'Byte Broker', description: 'Trade Your Data', icon: 'fa-solid fa-chart-line', category: 'Simulation', importFn: () => import('./games/byteBroker.js'), wide: true },
+    'fingerprint-dungeon': { name: 'The Fingerprint Dungeon', description: 'Identity Roguelike', icon: 'fa-solid fa-fingerprint', category: 'RPG & Logic', importFn: () => import('./games/fingerprintDungeon.js'), wide: true },
     'work-game': { name: 'The Grind 98', description: 'Life Simulator', icon: 'fa-solid fa-briefcase', category: 'Simulation', importFn: () => import('./games/work.js'), wide: true },
     'neon-factory': { name: 'Neon Factory', description: 'Build & Automate', icon: 'fa-solid fa-industry', category: 'Simulation', importFn: () => import('./games/neonFactory.js'), wide: true },
     'life-sim-game': { name: 'Neon Life', description: 'Live Your Best Life', icon: 'fa-solid fa-user-astronaut', category: 'Simulation', importFn: () => import('./games/lifeSim.js'), wide: true },
