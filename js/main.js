@@ -104,6 +104,7 @@ const gameRegistry = {
     'classic-chess-game': { name: 'Classic Chess', description: 'Expert Edition', icon: 'fa-solid fa-chess-king', category: 'Logic Puzzles', importFn: () => import('./games/chess/ClassicChessGame.js'), noDpad: true },
 
     // Classics & Board Games (Merged into Classics above or Logic, ensuring consistency)
+    'neon-connect4': { name: 'Neon Connect 4', description: '4 in a Row', icon: 'fa-solid fa-circle-dot', category: 'Classics', importFn: () => import('./games/neonConnect4.js'), noDpad: true },
     'neon-chance-game': { name: 'Games of Chance', description: 'Coin Flip & Dice', icon: 'fa-solid fa-dice', category: 'Classics', importFn: () => import('./games/neonChance.js'), noDpad: true },
     'neon-rps-game': { name: 'Neon RPS+LS', description: 'Big Bang Mode', icon: 'fa-solid fa-hand-spock', category: 'Classics', importFn: () => import('./games/neonRPS.js'), noDpad: true },
     'neon-trivia-game': { name: 'Neon Trivia', description: 'Test Your Knowledge', icon: 'fa-solid fa-question', category: 'Classics', importFn: () => import('./games/neonTrivia.js'), noDpad: true },
