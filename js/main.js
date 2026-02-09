@@ -760,6 +760,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Skip to Games (A11y)
+    const skipLink = document.getElementById('skip-to-games');
+    if (skipLink) {
+        skipLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (is3DView) toggleView();
+            setTimeout(() => {
+                const firstGame = document.querySelector('#menu-grid button');
+                if (firstGame) firstGame.focus();
+            }, 100);
+        });
+    }
+
     // Listen for Generic Interactions
     window.addEventListener('open-quest-board', () => {
         showQuestOverlay();
