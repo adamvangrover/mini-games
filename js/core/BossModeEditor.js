@@ -24,6 +24,7 @@ export class CodeEditorApp {
             { type: 'system', text: 'Neon Editor v1.0.2 initialized...' },
             { type: 'system', text: 'Connected to dev server: localhost:3000' }
         ];
+        this.worker = null;
         this.render();
     }
 
@@ -107,15 +108,7 @@ export class CodeEditorApp {
                         <div class="px-2 py-1 text-gray-500 hover:text-gray-300 cursor-pointer">PROBLEMS</div>
                     </div>
                     <div class="flex-1 overflow-y-auto p-2 font-mono text-xs custom-scroll" id="editor-console">
-                        ${this.consoleOutput.map(log => `
-                            <div class="mb-1">
-                                <span class="${log.type==='error'?'text-red-400':(log.type==='warn'?'text-yellow-400':'text-gray-300')}">${log.type==='system'?'':'> '}${escapeHTML(log.text)}</span>
-                            </div>
-                        `).join('')}
-                        <div class="flex gap-1 text-gray-300">
-                            <span>$</span>
-                            <input class="bg-transparent border-none outline-none flex-1" onkeydown="if(event.key==='Enter') window.BossModeEditor.runCommand(this)">
-                        </div>
+                        ${this.getConsoleHTML()}
                     </div>
                 </div>
 
@@ -166,29 +159,68 @@ export class CodeEditorApp {
         this.log('system', `Running ${this.activeFile.name}...`);
 
         if (this.activeFile.language === 'javascript') {
-            try {
-                // VERY UNSAFE in real world, but fine for this client-side game mock
-                // We'll wrap it in a try-catch and capture console.log
-                const logs = [];
-                const mockConsole = {
-                    log: (...args) => logs.push(args.join(' ')),
-                    error: (...args) => logs.push('Error: ' + args.join(' ')),
-                    warn: (...args) => logs.push('Warn: ' + args.join(' '))
-                };
-
-                // Safe evaluation wrapper
-                const safeEval = new Function('console', this.activeFile.content);
-                safeEval(mockConsole);
-
-                logs.forEach(l => this.log('info', l));
-                this.log('system', 'Done in 0.42s');
-            } catch (e) {
-                this.log('error', e.message);
+            // SECURITY FIX: Use Web Worker to isolate code execution
+            // This prevents access to DOM, localStorage, cookies, etc.
+            if (this.worker) {
+                this.worker.terminate();
             }
+
+            const workerScript = `
+                self.onmessage = function(e) {
+                    const code = e.data;
+                    const console = {
+                        log: (...args) => self.postMessage({type: 'log', level: 'info', text: args.join(' ')}),
+                        error: (...args) => self.postMessage({type: 'log', level: 'error', text: args.join(' ')}),
+                        warn: (...args) => self.postMessage({type: 'log', level: 'warn', text: args.join(' ')})
+                    };
+
+                    try {
+                        // Safe(r) evaluation in isolated worker scope
+                        // Cannot access main thread window/document
+                        new Function('console', code)(console);
+                        self.postMessage({type: 'done'});
+                    } catch (err) {
+                        self.postMessage({type: 'log', level: 'error', text: err.toString()});
+                    }
+                };
+            `;
+
+            const blob = new Blob([workerScript], { type: 'application/javascript' });
+            const workerUrl = URL.createObjectURL(blob);
+            this.worker = new Worker(workerUrl);
+
+            // Clean up blob URL immediately
+            URL.revokeObjectURL(workerUrl);
+
+            this.worker.onmessage = (e) => {
+                const data = e.data;
+                if (data.type === 'log') {
+                    this.log(data.level === 'info' ? 'system' : (data.level === 'error' ? 'error' : 'warn'), data.text);
+                } else if (data.type === 'done') {
+                    // Execution finished synchronously (async tasks might still be running)
+                }
+            };
+
+            this.worker.onerror = (e) => {
+                this.log('error', `Worker Error: ${e.message}`);
+                e.preventDefault();
+            };
+
+            // Send code to worker
+            this.worker.postMessage(this.activeFile.content);
+
+            // Timeout to prevent infinite loops freezing the worker (though main thread is safe)
+            setTimeout(() => {
+                if (this.worker) {
+                    // Check if we should terminate?
+                    // For now, we leave it running in case of async code (setTimeout etc)
+                    // But we could add a "Stop" button.
+                }
+            }, 5000);
+
         } else {
             this.log('warn', `Cannot execute ${this.activeFile.language} files directly.`);
         }
-        this.render(); // Re-render to show logs
     }
 
     runCommand(input) {
@@ -197,6 +229,7 @@ export class CodeEditorApp {
 
         if (cmd === 'clear') {
             this.consoleOutput = [];
+            this.updateConsole();
         } else if (cmd === 'npm install') {
             this.log('system', 'npm WARN deprecated request@2.88.2: request has been deprecated...');
             setTimeout(() => this.log('system', 'added 1 package in 2.3s'), 500);
@@ -205,7 +238,7 @@ export class CodeEditorApp {
         } else {
             this.log('error', `Command not found: ${cmd}`);
         }
-        this.render();
+
         // Focus back
         setTimeout(() => {
             const inputs = this.container.querySelectorAll('input');
@@ -216,6 +249,27 @@ export class CodeEditorApp {
     log(type, text) {
         this.consoleOutput.push({ type, text });
         if (this.consoleOutput.length > 50) this.consoleOutput.shift();
+        this.updateConsole();
+    }
+
+    getConsoleHTML() {
+        return this.consoleOutput.map(log => `
+            <div class="mb-1">
+                <span class="${log.type==='error'?'text-red-400':(log.type==='warn'?'text-yellow-400':'text-gray-300')}">${log.type==='system'?'':'> '}${escapeHTML(log.text)}</span>
+            </div>
+        `).join('') + `
+        <div class="flex gap-1 text-gray-300">
+            <span>$</span>
+            <input class="bg-transparent border-none outline-none flex-1" onkeydown="if(event.key==='Enter') window.BossModeEditor.runCommand(this)">
+        </div>`;
+    }
+
+    updateConsole() {
+        const consoleEl = this.container.querySelector('#editor-console');
+        if (consoleEl) {
+             consoleEl.innerHTML = this.getConsoleHTML();
+             consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
     }
 
     getLineNumbers(content) {
@@ -255,7 +309,10 @@ export class CodeEditorApp {
     }
 
     destroy() {
-        // Cleanup if needed
+        if (this.worker) {
+            this.worker.terminate();
+            this.worker = null;
+        }
         delete window.BossModeEditor;
     }
 }
