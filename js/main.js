@@ -148,6 +148,19 @@ function showToast(msg) {
     ToastManager.getInstance().show(msg);
 }
 
+// Security: Helper for XSS Prevention
+function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[&<>'"]/g,
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag]));
+}
+
 // --- Game Loop ---
 function mainLoop(timestamp) {
     const deltaTime = (timestamp - lastTime) / 1000;
@@ -691,14 +704,14 @@ function showQuestOverlay() {
                     return `
                     <div class="bg-slate-800 p-3 rounded border border-slate-700 relative overflow-hidden group">
                         <div class="flex justify-between items-center mb-1 relative z-10">
-                            <span class="font-bold text-white">${q.description}</span>
-                            <span class="text-xs text-slate-400">${q.progress}/${q.target}</span>
+                            <span class="font-bold text-white">${escapeHTML(q.description)}</span>
+                            <span class="text-xs text-slate-400">${escapeHTML(q.progress)}/${escapeHTML(q.target)}</span>
                         </div>
                         <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden relative z-10">
                             <div class="bg-gradient-to-r from-fuchsia-600 to-cyan-500 h-full" style="width: ${width}%"></div>
                         </div>
                         <div class="mt-2 flex justify-between items-center relative z-10">
-                            <span class="text-yellow-400 text-sm font-bold"><i class="fas fa-coins"></i> ${q.reward}</span>
+                            <span class="text-yellow-400 text-sm font-bold"><i class="fas fa-coins"></i> ${escapeHTML(q.reward)}</span>
                             ${isClaimed
                                 ? '<span class="text-green-500 text-xs font-bold">CLAIMED</span>'
                                 : isComplete
