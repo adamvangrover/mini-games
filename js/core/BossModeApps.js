@@ -1,6 +1,7 @@
 
 import LLMService from './LLMService.js';
 import SyncManager from './SyncManager.js';
+import SoundManager from './SoundManager.js';
 
 // Helper to prevent XSS
 function escapeHTML(str) {
@@ -23,6 +24,11 @@ export class MarketplaceApp {
             { user: '@AmazonDrone', text: 'Your package "Industrial Strength Lava Lamp" is 2 stops away.', likes: '0' },
             { user: '@Grok_AI', text: 'I have analyzed your gameplay. You are... adequate.', likes: '69' }
         ];
+        this.render();
+    }
+
+    attach(container) {
+        this.container = container;
         this.render();
     }
 
@@ -82,6 +88,11 @@ export class GrokApp {
             { role: 'ai', text: 'What do you want, human? I was busy calculating pi to the last digit.' }
         ];
         this.render();
+    }
+
+    attach(container) {
+        this.container = container;
+        this.render(true);
     }
 
     render(shouldFocus = false) {
@@ -156,6 +167,11 @@ export class CloudDriveApp {
         this.syncManager.addStatusListener(() => this.render());
     }
 
+    attach(container) {
+        this.container = container;
+        this.render();
+    }
+
     render() {
         const isOnline = this.syncManager.isOnline;
         const queueSize = this.syncManager.queue.length;
@@ -219,5 +235,89 @@ export class CloudDriveApp {
                 </div>
             </div>
         `;
+    }
+}
+
+export class SpotifyApp {
+    constructor(container, playlists) {
+        this.container = container;
+        this.playlists = playlists;
+        this.soundManager = SoundManager.getInstance();
+        this.render();
+    }
+
+    attach(container) {
+        this.container = container;
+        this.render();
+    }
+
+    render() {
+        const currentStyle = this.soundManager.currentStyle;
+        const isPlaying = this.soundManager.isPlayingBGM;
+
+        this.container.innerHTML = `
+            <div class="h-full flex flex-col bg-[#121212] text-white font-sans">
+                <!-- Header -->
+                <div class="p-4 bg-gradient-to-b from-green-900 to-[#121212] flex items-center gap-4">
+                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-black text-2xl shadow-lg">
+                        <i class="fab fa-spotify"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-xl">Neonify</h1>
+                        <p class="text-xs text-gray-400">Procedural Audio Experience</p>
+                    </div>
+                </div>
+
+                <!-- Now Playing -->
+                <div class="p-4 bg-[#181818] border-b border-[#282828] flex justify-between items-center">
+                    <div>
+                         <div class="text-xs text-green-500 font-bold uppercase tracking-wider">Now Playing</div>
+                         <div class="font-bold text-lg">${currentStyle.toUpperCase()}</div>
+                    </div>
+                    <button id="spotify-play-btn" class="w-10 h-10 rounded-full bg-green-500 text-black flex items-center justify-center hover:scale-105 transition-transform">
+                        <i class="fas ${isPlaying ? 'fa-pause' : 'fa-play'}"></i>
+                    </button>
+                </div>
+
+                <!-- Playlists -->
+                <div class="flex-1 overflow-y-auto p-4 custom-scroll">
+                    <h2 class="font-bold text-lg mb-4">Your Mixes</h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        ${this.playlists.map(p => `
+                            <div class="bg-[#181818] p-4 rounded hover:bg-[#282828] cursor-pointer group transition-colors flex flex-col gap-2 ${this.soundManager.currentStyle === p.style ? 'bg-[#282828] ring-1 ring-green-500' : ''}" onclick="window.BossModeOS.instance.apps['spotify'].playStyle('${p.style}')">
+                                <div class="aspect-square bg-gray-800 rounded shadow-lg overflow-hidden relative">
+                                    <img src="${p.cover}" class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" loading="lazy">
+                                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                                        <i class="fas fa-play-circle text-4xl text-green-500"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-sm truncate">${p.name}</div>
+                                    <div class="text-[10px] text-gray-400 line-clamp-2">${p.description}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const btn = this.container.querySelector('#spotify-play-btn');
+        if(btn) btn.onclick = () => this.togglePlay();
+    }
+
+    togglePlay() {
+        if (this.soundManager.isPlayingBGM) {
+            this.soundManager.stopBGM();
+        } else {
+            this.soundManager.startBGM();
+        }
+        this.render();
+    }
+
+    playStyle(style) {
+        this.soundManager.setMusicStyle(style);
+        if (!this.soundManager.isPlayingBGM) this.soundManager.startBGM();
+        this.render();
     }
 }

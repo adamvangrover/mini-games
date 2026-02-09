@@ -30,6 +30,7 @@ async function verifyGameImports() {
         'neon-slice': () => import('../js/games/neonSlice.js'),
         'neon-galaga-game': () => import('../js/games/neonGalaga.js'),
         'neon-combat': () => import('../js/games/neonCombat.js'),
+        'neon-racer': () => import('../js/games/neonRacer.js'),
         'snack-hole-game': () => import('../js/games/snackHole.js'),
 
         // Simulation
