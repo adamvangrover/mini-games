@@ -22,6 +22,8 @@ export default class SoundManager {
         // Analyser for Visualization
         this.analyser = this.audioCtx.createAnalyser();
         this.analyser.fftSize = 256;
+        // Bolt Optimization: Pre-allocate data array to avoid GC every frame
+        this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
         this.masterGain.connect(this.analyser);
 
         this.bgmGainNode = this.audioCtx.createGain();
@@ -209,11 +211,15 @@ export default class SoundManager {
         this.bgmGainNode.gain.setTargetAtTime(this.volume, this.audioCtx.currentTime, 0.1);
     }
 
+    /**
+     * Gets the current frequency data.
+     * @returns {Uint8Array} A shared buffer containing the data. Do not store this reference; copy it if you need a snapshot.
+     */
     getAudioData() {
         if (!this.analyser) return new Uint8Array(0);
-        const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-        this.analyser.getByteFrequencyData(dataArray);
-        return dataArray;
+        // Bolt Optimization: Reuse pre-allocated array
+        this.analyser.getByteFrequencyData(this.dataArray);
+        return this.dataArray;
     }
 
     // --- SFX System ---
