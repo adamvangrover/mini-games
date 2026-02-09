@@ -78,6 +78,7 @@ const gameRegistry = {
     'clicker-game': { name: 'Clicker', description: 'Exponential Growth', icon: 'fa-solid fa-hand-pointer', category: 'Quick Minigames', importFn: () => import('./games/clicker.js'), noDpad: true },
     'neon-stack': { name: 'Neon Stack', description: 'Stack the Blocks', icon: 'fa-solid fa-layer-group', category: 'Quick Minigames', importFn: () => import('./games/neonStack.js'), noDpad: true },
     'neon-whack-game': { name: 'Neon Whack', description: 'Whack the Moles', icon: 'fa-solid fa-hammer', category: 'Quick Minigames', importFn: () => import('./games/neonWhack.js'), noDpad: true },
+    'neon-plinko': { name: 'Neon Plinko', description: 'Drop & Win', icon: 'fa-solid fa-circle-arrow-down', category: 'Quick Minigames', importFn: () => import('./games/neonPlinko.js'), noDpad: true },
 
     // Card & Board
     'solitaire-game': { name: 'Cyber Solitaire', description: 'Classic Card Game', icon: 'fa-solid fa-diamond', category: 'Classics', importFn: () => import('./games/solitaire.js'), wide: true, noDpad: true },
