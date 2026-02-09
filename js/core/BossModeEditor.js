@@ -1,4 +1,3 @@
-
 // Helper to prevent XSS
 function escapeHTML(str) {
     if (!str) return '';
@@ -24,17 +23,16 @@ export class CodeEditorApp {
             { type: 'system', text: 'Neon Editor v1.0.2 initialized...' },
             { type: 'system', text: 'Connected to dev server: localhost:3000' }
         ];
+        this.worker = null;
         this.render();
     }
 
     render() {
         this.container.innerHTML = `
             <div class="h-full flex flex-col bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm overflow-hidden select-none">
-                <!-- Toolbar -->
                 <div class="h-8 bg-[#333333] flex items-center px-2 select-none border-b border-[#252526]">
                     <div class="flex gap-2 mr-4 window-controls">
-                        <!-- Window controls placeholder -->
-                    </div>
+                        </div>
                     <div class="flex gap-4 text-xs">
                         <span class="cursor-pointer hover:text-white">File</span>
                         <span class="cursor-pointer hover:text-white">Edit</span>
@@ -48,7 +46,6 @@ export class CodeEditorApp {
                 </div>
 
                 <div class="flex-1 flex overflow-hidden">
-                    <!-- Sidebar -->
                     <div class="w-48 bg-[#252526] flex flex-col border-r border-[#333333]">
                         <div class="h-8 flex items-center px-4 font-bold text-xs uppercase tracking-wider text-gray-400">Explorer</div>
                         <div class="flex-1 overflow-y-auto py-2">
@@ -65,9 +62,7 @@ export class CodeEditorApp {
                         </div>
                     </div>
 
-                    <!-- Editor Area -->
                     <div class="flex-1 flex flex-col bg-[#1e1e1e] relative">
-                        <!-- Tabs -->
                         <div class="flex bg-[#252526] overflow-x-auto custom-scroll h-9 items-end px-2 gap-1 border-b border-[#252526]">
                              ${this.files.map(file => `
                                 <div class="px-3 py-2 text-xs flex items-center gap-2 cursor-pointer border-t-2 ${this.activeFile === file ? 'bg-[#1e1e1e] text-white border-blue-500' : 'bg-[#2d2d2d] text-gray-500 border-transparent hover:bg-[#2d2d2d]'} rounded-t-sm min-w-[100px]"
@@ -79,7 +74,6 @@ export class CodeEditorApp {
                              `).join('')}
                         </div>
 
-                        <!-- Code Area -->
                         <div class="flex-1 relative overflow-auto custom-scroll font-mono text-sm leading-6" id="editor-scroller">
                             <div class="absolute top-0 left-0 w-10 bg-[#1e1e1e] text-[#858585] text-right pr-2 border-r border-[#333333] select-none pt-2 h-full min-h-full">
                                 ${this.getLineNumbers(this.activeFile.content)}
@@ -91,7 +85,6 @@ export class CodeEditorApp {
                                  oninput="window.BossModeEditor.handleInput(this)">${this.highlightSyntax(this.activeFile.content, this.activeFile.language)}</div>
                         </div>
 
-                        <!-- Run Button (Floating) -->
                         <button class="absolute top-4 right-6 bg-green-600 hover:bg-green-500 text-white p-2 rounded-full shadow-lg z-10 w-10 h-10 flex items-center justify-center transition-transform hover:scale-110"
                                 onclick="window.BossModeEditor.runCode()" title="Run Code (F5)">
                             <i class="fas fa-play text-xs pl-0.5"></i>
@@ -99,7 +92,6 @@ export class CodeEditorApp {
                     </div>
                 </div>
 
-                <!-- Terminal / Console -->
                 <div class="h-32 bg-[#1e1e1e] border-t border-[#333333] flex flex-col">
                     <div class="flex text-xs px-4 border-b border-[#333333]">
                         <div class="px-2 py-1 text-white border-b border-white cursor-pointer">TERMINAL</div>
@@ -107,19 +99,10 @@ export class CodeEditorApp {
                         <div class="px-2 py-1 text-gray-500 hover:text-gray-300 cursor-pointer">PROBLEMS</div>
                     </div>
                     <div class="flex-1 overflow-y-auto p-2 font-mono text-xs custom-scroll" id="editor-console">
-                        ${this.consoleOutput.map(log => `
-                            <div class="mb-1">
-                                <span class="${log.type==='error'?'text-red-400':(log.type==='warn'?'text-yellow-400':'text-gray-300')}">${log.type==='system'?'':'> '}${escapeHTML(log.text)}</span>
-                            </div>
-                        `).join('')}
-                        <div class="flex gap-1 text-gray-300">
-                            <span>$</span>
-                            <input class="bg-transparent border-none outline-none flex-1" onkeydown="if(event.key==='Enter') window.BossModeEditor.runCommand(this)">
-                        </div>
+                        ${this.getConsoleHTML()}
                     </div>
                 </div>
 
-                <!-- Status Bar -->
                 <div class="h-6 bg-[#007acc] text-white flex items-center px-2 text-xs justify-between select-none">
                     <div class="flex gap-3">
                         <span><i class="fas fa-code-branch"></i> main</span>
@@ -166,26 +149,29 @@ export class CodeEditorApp {
         this.log('system', `Running ${this.activeFile.name}...`);
 
         if (this.activeFile.language === 'javascript') {
+            // Terminate existing worker if running
+            if (this.worker) {
+                this.worker.terminate();
+            }
+
             // Secure Sandbox Execution via Web Worker
             const workerCode = `
                 self.onmessage = function(e) {
                     const code = e.data;
                     const mockConsole = {
-                        log: (...args) => self.postMessage({type: 'log', args: args}),
-                        error: (...args) => self.postMessage({type: 'error', args: args}),
-                        warn: (...args) => self.postMessage({type: 'warn', args: args})
+                        log: (...args) => self.postMessage({type: 'log', level: 'info', text: args.join(' ')}),
+                        error: (...args) => self.postMessage({type: 'log', level: 'error', text: args.join(' ')}),
+                        warn: (...args) => self.postMessage({type: 'log', level: 'warn', text: args.join(' ')})
                     };
 
                     try {
-                        // Override global console within the worker scope
-                        // Note: Strict mode is implied in modules but eval inherits scope.
-                        // We use a self-executing function to provide a "cleaner" scope, though Worker is already isolated.
+                        // Safe(r) evaluation in isolated worker scope
+                        // Cannot access main thread window/document
                         const run = new Function('console', code);
                         run(mockConsole);
-
                         self.postMessage({type: 'done'});
                     } catch(err) {
-                        self.postMessage({type: 'error', args: [err.message]});
+                        self.postMessage({type: 'log', level: 'error', text: err.toString()});
                         self.postMessage({type: 'done'});
                     }
                 };
@@ -194,43 +180,45 @@ export class CodeEditorApp {
             try {
                 const blob = new Blob([workerCode], { type: 'application/javascript' });
                 const workerUrl = URL.createObjectURL(blob);
-                const worker = new Worker(workerUrl);
+                this.worker = new Worker(workerUrl);
                 const startTime = performance.now();
 
-                // Timeout (5s)
+                // Clean up blob URL immediately
+                URL.revokeObjectURL(workerUrl);
+
+                // Timeout (5s) to prevent infinite loops
                 const timeout = setTimeout(() => {
-                    worker.terminate();
-                    URL.revokeObjectURL(workerUrl);
-                    this.log('error', 'Execution timed out (5s limit).');
-                    this.render();
+                    if (this.worker) {
+                        this.worker.terminate();
+                        this.worker = null;
+                        this.log('error', 'Execution timed out (5s limit).');
+                        this.render();
+                    }
                 }, 5000);
 
-                worker.onmessage = (e) => {
-                    const { type, args } = e.data;
+                this.worker.onmessage = (e) => {
+                    const { type, level, text } = e.data;
+                    
                     if (type === 'done') {
                         clearTimeout(timeout);
                         const duration = ((performance.now() - startTime) / 1000).toFixed(2);
                         this.log('system', `Done in ${duration}s`);
-                        worker.terminate();
-                        URL.revokeObjectURL(workerUrl);
+                        this.worker.terminate();
+                        this.worker = null;
                     } else if (type === 'log') {
-                        this.log('info', args.join(' '));
-                    } else if (type === 'error') {
-                        this.log('error', args.join(' '));
-                    } else if (type === 'warn') {
-                        this.log('warn', args.join(' '));
+                        this.log(level, text);
                     }
                     this.render();
                 };
 
-                worker.onerror = (e) => {
+                this.worker.onerror = (e) => {
                      this.log('error', 'Worker Error: ' + e.message);
                      this.render();
-                     worker.terminate();
-                     URL.revokeObjectURL(workerUrl);
+                     this.worker.terminate();
+                     this.worker = null;
                 };
 
-                worker.postMessage(this.activeFile.content);
+                this.worker.postMessage(this.activeFile.content);
 
             } catch (e) {
                 this.log('error', 'Failed to start worker: ' + e.message);
@@ -247,15 +235,16 @@ export class CodeEditorApp {
 
         if (cmd === 'clear') {
             this.consoleOutput = [];
+            this.updateConsole();
         } else if (cmd === 'npm install') {
             this.log('system', 'npm WARN deprecated request@2.88.2: request has been deprecated...');
             setTimeout(() => this.log('system', 'added 1 package in 2.3s'), 500);
         } else if (cmd === 'git status') {
             this.log('info', 'On branch main\nYour branch is up to date with "origin/main".\nnothing to commit, working tree clean');
         } else {
-            this.log('error', `Command not found: ${cmd}`);
+            this.log('error', 'Command not found: ' + cmd);
         }
-        this.render();
+
         // Focus back
         setTimeout(() => {
             const inputs = this.container.querySelectorAll('input');
@@ -266,6 +255,27 @@ export class CodeEditorApp {
     log(type, text) {
         this.consoleOutput.push({ type, text });
         if (this.consoleOutput.length > 50) this.consoleOutput.shift();
+        this.updateConsole();
+    }
+
+    getConsoleHTML() {
+        return this.consoleOutput.map(log => `
+            <div class="mb-1">
+                <span class="${log.type==='error'?'text-red-400':(log.type==='warn'?'text-yellow-400':'text-gray-300')}">${log.type==='system'?'':'> '}${escapeHTML(log.text)}</span>
+            </div>
+        `).join('') + `
+        <div class="flex gap-1 text-gray-300">
+            <span>$</span>
+            <input class="bg-transparent border-none outline-none flex-1" onkeydown="if(event.key==='Enter') window.BossModeEditor.runCommand(this)">
+        </div>`;
+    }
+
+    updateConsole() {
+        const consoleEl = this.container.querySelector('#editor-console');
+        if (consoleEl) {
+             consoleEl.innerHTML = this.getConsoleHTML();
+             consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
     }
 
     getLineNumbers(content) {
@@ -305,7 +315,10 @@ export class CodeEditorApp {
     }
 
     destroy() {
-        // Cleanup if needed
+        if (this.worker) {
+            this.worker.terminate();
+            this.worker = null;
+        }
         delete window.BossModeEditor;
     }
 }

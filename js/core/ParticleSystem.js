@@ -34,6 +34,11 @@ export default class ParticleSystem {
                 size: size
             });
         }
+
+        // Bolt Optimization: Enforce MAX_PARTICLES to prevent memory leaks/lag
+        if (this.particles.length > 2000) {
+            this.particles.splice(0, this.particles.length - 2000);
+        }
     }
     setShake(magnitude) {
         this.shake.magnitude = magnitude;
@@ -82,7 +87,9 @@ export default class ParticleSystem {
             const p = this.particles[i];
             ctx.globalAlpha = Math.max(0, p.life); // Fade out
             ctx.fillStyle = p.color;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+            // Bolt Optimization: Use fillRect for massive performance gain over arc
+            const s = p.size;
+            ctx.fillRect(p.x - s, p.y - s, s * 2, s * 2);
         }
         ctx.restore();
     }

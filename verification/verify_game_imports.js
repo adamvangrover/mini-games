@@ -33,6 +33,8 @@ async function verifyGameImports() {
         'snack-hole-game': () => import('../js/games/snackHole.js'),
 
         // Simulation
+        'byte-broker': () => import('../js/games/byteBroker.js'),
+        'fingerprint-dungeon': () => import('../js/games/fingerprintDungeon.js'),
         'work-game': () => import('../js/games/work.js'),
         'life-sim-game': () => import('../js/games/lifeSim.js'),
         'zen-garden-game': () => import('../js/games/zenGarden.js'),

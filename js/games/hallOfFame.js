@@ -1,6 +1,16 @@
 import SaveSystem from '../core/SaveSystem.js';
 import { AchievementRegistry } from '../core/AchievementRegistry.js';
 
+function escapeHTML(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 export default class HallOfFame {
     constructor() {
         this.container = null;
@@ -101,7 +111,7 @@ export default class HallOfFame {
              table.innerHTML += `<div class="p-8 text-center text-emerald-600 italic">NO DATA_LOGS FOUND. INITIATE GAMEPLAY.</div>`;
         } else {
             gameEntries.forEach(([gameId, score], index) => {
-                const name = gameId.replace(/-game|-/g, ' ').toUpperCase();
+                const name = escapeHTML(gameId.replace(/-game|-/g, ' ').toUpperCase());
 
                 // Simple Rank Logic based on Achievement status
                 let rank = "C";

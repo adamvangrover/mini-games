@@ -32,6 +32,7 @@ const gameRegistry = {
     'all-in-hole-game': { name: 'All In Hole', description: 'Swallow the World', icon: 'fa-solid fa-circle-notch', category: '3D Immersive', importFn: () => import('./games/allInHole.js'), wide: true, noDpad: true },
 
     // New Games
+    'file-forge-game': { name: 'File Forge', description: 'AI File Generator', icon: 'fa-solid fa-file-code', category: 'New Games', importFn: () => import('./games/fileForge.js') },
     'tower-defense-game': { name: 'Tower Defense', description: 'Defend the Base', icon: 'fa-solid fa-chess-rook', category: 'New Games', importFn: () => import('./games/towerDefense.js') },
     'stacker-game': { name: 'Physics Stacker', description: 'Balance Blocks', icon: 'fa-solid fa-cubes-stacked', category: 'New Games', importFn: () => import('./games/physicsStacker.js') },
     'neon-2048': { name: 'Neon 2048', description: 'Merge the Grid', icon: 'fa-solid fa-border-all', category: 'New Games', importFn: () => import('./games/neon2048.js'), noDpad: true },
@@ -55,6 +56,8 @@ const gameRegistry = {
     'snack-hole-game': { name: 'Neon Snacks', description: 'Devour Everything', icon: 'fa-solid fa-cookie-bite', category: 'Action', importFn: () => import('./games/snackHole.js'), wide: true, noDpad: true },
 
     // Simulation
+    'byte-broker': { name: 'Byte Broker', description: 'Trade Your Data', icon: 'fa-solid fa-chart-line', category: 'Simulation', importFn: () => import('./games/byteBroker.js'), wide: true },
+    'fingerprint-dungeon': { name: 'The Fingerprint Dungeon', description: 'Identity Roguelike', icon: 'fa-solid fa-fingerprint', category: 'RPG & Logic', importFn: () => import('./games/fingerprintDungeon.js'), wide: true },
     'work-game': { name: 'The Grind 98', description: 'Life Simulator', icon: 'fa-solid fa-briefcase', category: 'Simulation', importFn: () => import('./games/work.js'), wide: true },
     'neon-factory': { name: 'Neon Factory', description: 'Build & Automate', icon: 'fa-solid fa-industry', category: 'Simulation', importFn: () => import('./games/neonFactory.js'), wide: true },
     'life-sim-game': { name: 'Neon Life', description: 'Live Your Best Life', icon: 'fa-solid fa-user-astronaut', category: 'Simulation', importFn: () => import('./games/lifeSim.js'), wide: true },
@@ -144,6 +147,19 @@ const aiHub = AIHub.getInstance();
 // Local Helper for Toasts
 function showToast(msg) {
     ToastManager.getInstance().show(msg);
+}
+
+// Security: Helper for XSS Prevention
+function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[&<>'"]/g,
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag]));
 }
 
 // --- Game Loop ---
@@ -689,14 +705,14 @@ function showQuestOverlay() {
                     return `
                     <div class="bg-slate-800 p-3 rounded border border-slate-700 relative overflow-hidden group">
                         <div class="flex justify-between items-center mb-1 relative z-10">
-                            <span class="font-bold text-white">${q.description}</span>
-                            <span class="text-xs text-slate-400">${q.progress}/${q.target}</span>
+                            <span class="font-bold text-white">${escapeHTML(q.description)}</span>
+                            <span class="text-xs text-slate-400">${escapeHTML(q.progress)}/${escapeHTML(q.target)}</span>
                         </div>
                         <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden relative z-10">
                             <div class="bg-gradient-to-r from-fuchsia-600 to-cyan-500 h-full" style="width: ${width}%"></div>
                         </div>
                         <div class="mt-2 flex justify-between items-center relative z-10">
-                            <span class="text-yellow-400 text-sm font-bold"><i class="fas fa-coins"></i> ${q.reward}</span>
+                            <span class="text-yellow-400 text-sm font-bold"><i class="fas fa-coins"></i> ${escapeHTML(q.reward)}</span>
                             ${isClaimed
                                 ? '<span class="text-green-500 text-xs font-bold">CLAIMED</span>'
                                 : isComplete
@@ -742,6 +758,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }).catch(registrationError => {
                 console.log('SW registration failed: ', registrationError);
             });
+        });
+    }
+
+    // Skip to Games (A11y)
+    const skipLink = document.getElementById('skip-to-games');
+    if (skipLink) {
+        skipLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (is3DView) toggleView();
+            setTimeout(() => {
+                const firstGame = document.querySelector('#menu-grid button');
+                if (firstGame) firstGame.focus();
+            }, 100);
         });
     }
 
