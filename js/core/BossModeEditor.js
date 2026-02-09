@@ -166,29 +166,79 @@ export class CodeEditorApp {
         this.log('system', `Running ${this.activeFile.name}...`);
 
         if (this.activeFile.language === 'javascript') {
+            // Secure Sandbox Execution via Web Worker
+            const workerCode = `
+                self.onmessage = function(e) {
+                    const code = e.data;
+                    const mockConsole = {
+                        log: (...args) => self.postMessage({type: 'log', args: args}),
+                        error: (...args) => self.postMessage({type: 'error', args: args}),
+                        warn: (...args) => self.postMessage({type: 'warn', args: args})
+                    };
+
+                    try {
+                        // Override global console within the worker scope
+                        // Note: Strict mode is implied in modules but eval inherits scope.
+                        // We use a self-executing function to provide a "cleaner" scope, though Worker is already isolated.
+                        const run = new Function('console', code);
+                        run(mockConsole);
+
+                        self.postMessage({type: 'done'});
+                    } catch(err) {
+                        self.postMessage({type: 'error', args: [err.message]});
+                        self.postMessage({type: 'done'});
+                    }
+                };
+            `;
+
             try {
-                // VERY UNSAFE in real world, but fine for this client-side game mock
-                // We'll wrap it in a try-catch and capture console.log
-                const logs = [];
-                const mockConsole = {
-                    log: (...args) => logs.push(args.join(' ')),
-                    error: (...args) => logs.push('Error: ' + args.join(' ')),
-                    warn: (...args) => logs.push('Warn: ' + args.join(' '))
+                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                const workerUrl = URL.createObjectURL(blob);
+                const worker = new Worker(workerUrl);
+                const startTime = performance.now();
+
+                // Timeout (5s)
+                const timeout = setTimeout(() => {
+                    worker.terminate();
+                    URL.revokeObjectURL(workerUrl);
+                    this.log('error', 'Execution timed out (5s limit).');
+                    this.render();
+                }, 5000);
+
+                worker.onmessage = (e) => {
+                    const { type, args } = e.data;
+                    if (type === 'done') {
+                        clearTimeout(timeout);
+                        const duration = ((performance.now() - startTime) / 1000).toFixed(2);
+                        this.log('system', `Done in ${duration}s`);
+                        worker.terminate();
+                        URL.revokeObjectURL(workerUrl);
+                    } else if (type === 'log') {
+                        this.log('info', args.join(' '));
+                    } else if (type === 'error') {
+                        this.log('error', args.join(' '));
+                    } else if (type === 'warn') {
+                        this.log('warn', args.join(' '));
+                    }
+                    this.render();
                 };
 
-                // Safe evaluation wrapper
-                const safeEval = new Function('console', this.activeFile.content);
-                safeEval(mockConsole);
+                worker.onerror = (e) => {
+                     this.log('error', 'Worker Error: ' + e.message);
+                     this.render();
+                     worker.terminate();
+                     URL.revokeObjectURL(workerUrl);
+                };
 
-                logs.forEach(l => this.log('info', l));
-                this.log('system', 'Done in 0.42s');
+                worker.postMessage(this.activeFile.content);
+
             } catch (e) {
-                this.log('error', e.message);
+                this.log('error', 'Failed to start worker: ' + e.message);
             }
         } else {
             this.log('warn', `Cannot execute ${this.activeFile.language} files directly.`);
         }
-        this.render(); // Re-render to show logs
+        this.render(); // Show initial "Running..." status
     }
 
     runCommand(input) {
