@@ -1,4 +1,3 @@
-
 // Helper to prevent XSS
 function escapeHTML(str) {
     if (!str) return '';
@@ -31,11 +30,9 @@ export class CodeEditorApp {
     render() {
         this.container.innerHTML = `
             <div class="h-full flex flex-col bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm overflow-hidden select-none">
-                <!-- Toolbar -->
                 <div class="h-8 bg-[#333333] flex items-center px-2 select-none border-b border-[#252526]">
                     <div class="flex gap-2 mr-4 window-controls">
-                        <!-- Window controls placeholder -->
-                    </div>
+                        </div>
                     <div class="flex gap-4 text-xs">
                         <span class="cursor-pointer hover:text-white">File</span>
                         <span class="cursor-pointer hover:text-white">Edit</span>
@@ -49,7 +46,6 @@ export class CodeEditorApp {
                 </div>
 
                 <div class="flex-1 flex overflow-hidden">
-                    <!-- Sidebar -->
                     <div class="w-48 bg-[#252526] flex flex-col border-r border-[#333333]">
                         <div class="h-8 flex items-center px-4 font-bold text-xs uppercase tracking-wider text-gray-400">Explorer</div>
                         <div class="flex-1 overflow-y-auto py-2">
@@ -66,9 +62,7 @@ export class CodeEditorApp {
                         </div>
                     </div>
 
-                    <!-- Editor Area -->
                     <div class="flex-1 flex flex-col bg-[#1e1e1e] relative">
-                        <!-- Tabs -->
                         <div class="flex bg-[#252526] overflow-x-auto custom-scroll h-9 items-end px-2 gap-1 border-b border-[#252526]">
                              ${this.files.map(file => `
                                 <div class="px-3 py-2 text-xs flex items-center gap-2 cursor-pointer border-t-2 ${this.activeFile === file ? 'bg-[#1e1e1e] text-white border-blue-500' : 'bg-[#2d2d2d] text-gray-500 border-transparent hover:bg-[#2d2d2d]'} rounded-t-sm min-w-[100px]"
@@ -80,7 +74,6 @@ export class CodeEditorApp {
                              `).join('')}
                         </div>
 
-                        <!-- Code Area -->
                         <div class="flex-1 relative overflow-auto custom-scroll font-mono text-sm leading-6" id="editor-scroller">
                             <div class="absolute top-0 left-0 w-10 bg-[#1e1e1e] text-[#858585] text-right pr-2 border-r border-[#333333] select-none pt-2 h-full min-h-full">
                                 ${this.getLineNumbers(this.activeFile.content)}
@@ -92,7 +85,6 @@ export class CodeEditorApp {
                                  oninput="window.BossModeEditor.handleInput(this)">${this.highlightSyntax(this.activeFile.content, this.activeFile.language)}</div>
                         </div>
 
-                        <!-- Run Button (Floating) -->
                         <button class="absolute top-4 right-6 bg-green-600 hover:bg-green-500 text-white p-2 rounded-full shadow-lg z-10 w-10 h-10 flex items-center justify-center transition-transform hover:scale-110"
                                 onclick="window.BossModeEditor.runCode()" title="Run Code (F5)">
                             <i class="fas fa-play text-xs pl-0.5"></i>
@@ -100,7 +92,6 @@ export class CodeEditorApp {
                     </div>
                 </div>
 
-                <!-- Terminal / Console -->
                 <div class="h-32 bg-[#1e1e1e] border-t border-[#333333] flex flex-col">
                     <div class="flex text-xs px-4 border-b border-[#333333]">
                         <div class="px-2 py-1 text-white border-b border-white cursor-pointer">TERMINAL</div>
@@ -112,7 +103,6 @@ export class CodeEditorApp {
                     </div>
                 </div>
 
-                <!-- Status Bar -->
                 <div class="h-6 bg-[#007acc] text-white flex items-center px-2 text-xs justify-between select-none">
                     <div class="flex gap-3">
                         <span><i class="fas fa-code-branch"></i> main</span>
@@ -159,16 +149,16 @@ export class CodeEditorApp {
         this.log('system', `Running ${this.activeFile.name}...`);
 
         if (this.activeFile.language === 'javascript') {
-            // SECURITY FIX: Use Web Worker to isolate code execution
-            // This prevents access to DOM, localStorage, cookies, etc.
+            // Terminate existing worker if running
             if (this.worker) {
                 this.worker.terminate();
             }
 
-            const workerScript = `
+            // Secure Sandbox Execution via Web Worker
+            const workerCode = `
                 self.onmessage = function(e) {
                     const code = e.data;
-                    const console = {
+                    const mockConsole = {
                         log: (...args) => self.postMessage({type: 'log', level: 'info', text: args.join(' ')}),
                         error: (...args) => self.postMessage({type: 'log', level: 'error', text: args.join(' ')}),
                         warn: (...args) => self.postMessage({type: 'log', level: 'warn', text: args.join(' ')})
@@ -177,50 +167,66 @@ export class CodeEditorApp {
                     try {
                         // Safe(r) evaluation in isolated worker scope
                         // Cannot access main thread window/document
-                        new Function('console', code)(console);
+                        const run = new Function('console', code);
+                        run(mockConsole);
                         self.postMessage({type: 'done'});
-                    } catch (err) {
+                    } catch(err) {
                         self.postMessage({type: 'log', level: 'error', text: err.toString()});
+                        self.postMessage({type: 'done'});
                     }
                 };
             `;
 
-            const blob = new Blob([workerScript], { type: 'application/javascript' });
-            const workerUrl = URL.createObjectURL(blob);
-            this.worker = new Worker(workerUrl);
+            try {
+                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                const workerUrl = URL.createObjectURL(blob);
+                this.worker = new Worker(workerUrl);
+                const startTime = performance.now();
 
-            // Clean up blob URL immediately
-            URL.revokeObjectURL(workerUrl);
+                // Clean up blob URL immediately
+                URL.revokeObjectURL(workerUrl);
 
-            this.worker.onmessage = (e) => {
-                const data = e.data;
-                if (data.type === 'log') {
-                    this.log(data.level === 'info' ? 'system' : (data.level === 'error' ? 'error' : 'warn'), data.text);
-                } else if (data.type === 'done') {
-                    // Execution finished synchronously (async tasks might still be running)
-                }
-            };
+                // Timeout (5s) to prevent infinite loops
+                const timeout = setTimeout(() => {
+                    if (this.worker) {
+                        this.worker.terminate();
+                        this.worker = null;
+                        this.log('error', 'Execution timed out (5s limit).');
+                        this.render();
+                    }
+                }, 5000);
 
-            this.worker.onerror = (e) => {
-                this.log('error', `Worker Error: ${e.message}`);
-                e.preventDefault();
-            };
+                this.worker.onmessage = (e) => {
+                    const { type, level, text } = e.data;
+                    
+                    if (type === 'done') {
+                        clearTimeout(timeout);
+                        const duration = ((performance.now() - startTime) / 1000).toFixed(2);
+                        this.log('system', `Done in ${duration}s`);
+                        this.worker.terminate();
+                        this.worker = null;
+                    } else if (type === 'log') {
+                        this.log(level, text);
+                    }
+                    this.render();
+                };
 
-            // Send code to worker
-            this.worker.postMessage(this.activeFile.content);
+                this.worker.onerror = (e) => {
+                     this.log('error', 'Worker Error: ' + e.message);
+                     this.render();
+                     this.worker.terminate();
+                     this.worker = null;
+                };
 
-            // Timeout to prevent infinite loops freezing the worker (though main thread is safe)
-            setTimeout(() => {
-                if (this.worker) {
-                    // Check if we should terminate?
-                    // For now, we leave it running in case of async code (setTimeout etc)
-                    // But we could add a "Stop" button.
-                }
-            }, 5000);
+                this.worker.postMessage(this.activeFile.content);
 
+            } catch (e) {
+                this.log('error', 'Failed to start worker: ' + e.message);
+            }
         } else {
             this.log('warn', `Cannot execute ${this.activeFile.language} files directly.`);
         }
+        this.render(); // Show initial "Running..." status
     }
 
     runCommand(input) {
@@ -236,7 +242,7 @@ export class CodeEditorApp {
         } else if (cmd === 'git status') {
             this.log('info', 'On branch main\nYour branch is up to date with "origin/main".\nnothing to commit, working tree clean');
         } else {
-            this.log('error', `Command not found: ${cmd}`);
+            this.log('error', 'Command not found: ' + cmd);
         }
 
         // Focus back
