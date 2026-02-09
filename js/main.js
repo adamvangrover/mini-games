@@ -32,6 +32,7 @@ const gameRegistry = {
     'all-in-hole-game': { name: 'All In Hole', description: 'Swallow the World', icon: 'fa-solid fa-circle-notch', category: '3D Immersive', importFn: () => import('./games/allInHole.js'), wide: true, noDpad: true },
 
     // New Games
+    'file-forge-game': { name: 'File Forge', description: 'AI File Generator', icon: 'fa-solid fa-file-code', category: 'New Games', importFn: () => import('./games/fileForge.js') },
     'tower-defense-game': { name: 'Tower Defense', description: 'Defend the Base', icon: 'fa-solid fa-chess-rook', category: 'New Games', importFn: () => import('./games/towerDefense.js') },
     'stacker-game': { name: 'Physics Stacker', description: 'Balance Blocks', icon: 'fa-solid fa-cubes-stacked', category: 'New Games', importFn: () => import('./games/physicsStacker.js') },
     'neon-2048': { name: 'Neon 2048', description: 'Merge the Grid', icon: 'fa-solid fa-border-all', category: 'New Games', importFn: () => import('./games/neon2048.js'), noDpad: true },
