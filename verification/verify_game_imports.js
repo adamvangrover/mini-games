@@ -56,6 +56,7 @@ async function verifyGameImports() {
         'clicker-game': () => import('../js/games/clicker.js'),
         'neon-stack': () => import('../js/games/neonStack.js'),
         'neon-whack-game': () => import('../js/games/neonWhack.js'),
+        'neon-plinko': () => import('../js/games/neonPlinko.js'),
 
         // RPG & Logic
         'rpg-game': () => import('../js/games/rpg.js'),
