@@ -1,7 +1,8 @@
 import SaveSystem from './SaveSystem.js';
 import SoundManager from './SoundManager.js';
 import AdsManager from './AdsManager.js';
-import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE } from './BossModeContent.js';
+import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, SPOTIFY_PLAYLISTS } from './BossModeContent.js';
+import { MarketplaceApp, GrokApp, CloudDriveApp, SpotifyApp } from './BossModeApps.js';
 
 export default class BossModeOS {
     constructor() {
@@ -11,7 +12,7 @@ export default class BossModeOS {
         // --- System State ---
         this.isActive = false;
         this.systemState = 'boot'; // 'boot', 'login', 'desktop', 'bsod'
-        this.activeApp = null; // 'excel', 'word', 'ppt', 'email', 'chat', 'edge', 'terminal', 'minesweeper'
+        this.activeApp = null; // 'excel', 'word', 'ppt', 'email', 'chat', 'edge', 'terminal', 'minesweeper', 'spotify', 'marketplace', 'grok', 'cloud'
         this.startMenuOpen = false;
         this.notificationOpen = false;
         this.wifiStrength = 3;
@@ -21,6 +22,8 @@ export default class BossModeOS {
         this.saveSystem = SaveSystem.getInstance();
         this.adsManager = AdsManager.getInstance();
         this.overlay = null;
+
+        this.apps = {}; // Persistent app instances
 
         // --- User Profile ---
         this.user = {
@@ -179,6 +182,20 @@ export default class BossModeOS {
                 const termInput = document.getElementById('term-input');
                 if(termInput) termInput.focus();
             }
+            if (['spotify', 'marketplace', 'grok', 'cloud'].includes(this.activeApp)) {
+                const container = document.getElementById(`app-container-${this.activeApp}`);
+                if (container) {
+                    if (!this.apps[this.activeApp]) {
+                        // Lazy init
+                        if (this.activeApp === 'spotify') this.apps['spotify'] = new SpotifyApp(container, SPOTIFY_PLAYLISTS);
+                        if (this.activeApp === 'marketplace') this.apps['marketplace'] = new MarketplaceApp(container);
+                        if (this.activeApp === 'grok') this.apps['grok'] = new GrokApp(container);
+                        if (this.activeApp === 'cloud') this.apps['cloud'] = new CloudDriveApp(container);
+                    } else {
+                        this.apps[this.activeApp].attach(container);
+                    }
+                }
+            }
         }
     }
 
@@ -308,6 +325,10 @@ export default class BossModeOS {
                     ${this.createDesktopIcon('Q3 Report', 'fa-file-excel', 'text-green-500', "BossModeOS.instance.launchApp('excel')")}
                     ${this.createDesktopIcon('Meeting Notes', 'fa-file-word', 'text-blue-500', "BossModeOS.instance.launchApp('word')")}
                     ${this.createDesktopIcon('Chrome', 'fa-chrome', 'text-red-500', "BossModeOS.instance.launchApp('edge')")}
+                    ${this.createDesktopIcon('Spotify', 'fa-spotify', 'text-green-500', "BossModeOS.instance.launchApp('spotify')")}
+                    ${this.createDesktopIcon('Market', 'fa-shopping-cart', 'text-red-500', "BossModeOS.instance.launchApp('marketplace')")}
+                    ${this.createDesktopIcon('Grok AI', 'fa-brain', 'text-purple-500', "BossModeOS.instance.launchApp('grok')")}
+                    ${this.createDesktopIcon('Cloud', 'fa-cloud', 'text-blue-400', "BossModeOS.instance.launchApp('cloud')")}
                 </div>
 
                 ${appWindow}
@@ -338,7 +359,11 @@ export default class BossModeOS {
             { id: 'chat', icon: 'fa-comments', color: 'text-indigo-600', label: 'Teams' },
             { id: 'edge', icon: 'fa-edge', color: 'text-sky-500', label: 'Edge' },
             { id: 'terminal', icon: 'fa-terminal', color: 'text-gray-500', label: 'Terminal' },
-            { id: 'minesweeper', icon: 'fa-bomb', color: 'text-black', label: 'Minesweeper' }
+            { id: 'minesweeper', icon: 'fa-bomb', color: 'text-black', label: 'Minesweeper' },
+            { id: 'spotify', icon: 'fa-spotify', color: 'text-green-500', label: 'Spotify' },
+            { id: 'marketplace', icon: 'fa-shopping-cart', color: 'text-red-500', label: 'Marketplace' },
+            { id: 'grok', icon: 'fa-brain', color: 'text-purple-500', label: 'Grok AI' },
+            { id: 'cloud', icon: 'fa-cloud', color: 'text-blue-400', label: 'Cloud Drive' }
         ];
 
         const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -424,6 +449,10 @@ export default class BossModeOS {
                 title = 'Minesweeper';
                 content = `<div class="flex-1 flex items-center justify-center bg-[#c0c0c0] p-4"><div id="minesweeper-board" class="border-4 border-gray-400 bg-gray-300"></div></div>`;
                 break;
+            case 'spotify': title = 'Spotify'; content = '<div id="app-container-spotify" class="h-full"></div>'; break;
+            case 'marketplace': title = 'Marketplace'; content = '<div id="app-container-marketplace" class="h-full"></div>'; break;
+            case 'grok': title = 'Grok AI'; content = '<div id="app-container-grok" class="h-full"></div>'; break;
+            case 'cloud': title = 'Cloud Drive'; content = '<div id="app-container-cloud" class="h-full"></div>'; break;
         }
 
         // Generic Window Wrapper for apps that don't draw their own headers (Edge, Minesweeper)

@@ -4,7 +4,7 @@ import AdsManager from './AdsManager.js';
 // Fallback if file missing, we define defaults inside constructor
 import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, SPOTIFY_PLAYLISTS } from './BossModeContent.js';
 // Dynamic imports for Apps
-import { MarketplaceApp, GrokApp, CloudDriveApp } from './BossModeApps.js';
+import { MarketplaceApp, GrokApp, CloudDriveApp, SpotifyApp } from './BossModeApps.js';
 import { MinesweeperApp, Wolf3DApp, NotepadApp } from './BossModeGames.js';
 import { CodeEditorApp } from './BossModeEditor.js';
 import { SystemMonitorApp } from './BossModeSystem.js';
@@ -1085,7 +1085,7 @@ export default class BossMode {
             case 'word': this.renderWord(contentArea); break;
             case 'ppt': this.renderPPT(contentArea); break;
             case 'terminal': this.renderTerminal(contentArea); break;
-            case 'spotify': this.renderSpotify(contentArea); break;
+            case 'spotify': win.instance = new SpotifyApp(contentArea, this.spotifyPlaylists); break;
             case 'teams': this.renderTeams(contentArea); break;
             case 'email': this.renderEmail(contentArea); break;
             case 'browser': this.renderBrowser(contentArea); break;

@@ -52,6 +52,7 @@ const gameRegistry = {
     'neon-galaga-game': { name: 'Neon Galaga', description: 'Space Warfare', icon: 'fa-solid fa-jet-fighter', category: 'Action', importFn: () => import('./games/neonGalaga.js') },
     'neon-survivor': { name: 'Neon Survivor', description: 'Survive the Swarm', icon: 'fa-solid fa-skull', category: 'Action', importFn: () => import('./games/neonSurvivor.js') },
     'neon-combat': { name: 'Neon Combat', description: 'Cyber Fight', icon: 'fa-solid fa-hand-fist', category: 'Action', importFn: () => import('./games/neonCombat.js') },
+    'neon-racer': { name: 'Neon Racer', description: 'Synthwave Racing', icon: 'fa-solid fa-car-side', category: 'Action', importFn: () => import('./games/neonRacer.js'), wide: true },
     'snack-hole-game': { name: 'Neon Snacks', description: 'Devour Everything', icon: 'fa-solid fa-cookie-bite', category: 'Action', importFn: () => import('./games/snackHole.js'), wide: true, noDpad: true },
 
     // Simulation
