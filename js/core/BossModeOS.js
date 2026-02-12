@@ -4,6 +4,17 @@ import AdsManager from './AdsManager.js';
 import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE, SPOTIFY_PLAYLISTS } from './BossModeContent.js';
 import { MarketplaceApp, GrokApp, CloudDriveApp, SpotifyApp } from './BossModeApps.js';
 
+// Helper to prevent XSS
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 export default class BossModeOS {
     constructor() {
         if (BossModeOS.instance) return BossModeOS.instance;
@@ -345,7 +356,7 @@ export default class BossModeOS {
         return `
             <div class="flex flex-col items-center gap-1 group cursor-pointer w-20 text-white drop-shadow-md hover:bg-white/10 rounded p-2 transition-colors" onclick="${action ? action : ''}">
                 <i class="fab ${icon} text-3xl ${color} group-hover:scale-110 transition-transform filter drop-shadow-lg"></i>
-                <span class="text-[11px] text-center leading-tight line-clamp-2 text-shadow-sm font-medium">${name}</span>
+                <span class="text-[11px] text-center leading-tight line-clamp-2 text-shadow-sm font-medium">${escapeHTML(name)}</span>
             </div>
         `;
     }
@@ -637,15 +648,15 @@ export default class BossModeOS {
                         ${this.slides.map((slide, i) => `
                             <div class="bg-white aspect-video shadow-md p-2 flex flex-col gap-1 cursor-pointer ${i === this.currentSlide ? 'ring-2 ring-[#b7472a]' : 'hover:ring-1 hover:ring-gray-400'}" onclick="BossModeOS.instance.setSlide(${i})">
                                 <div class="h-1 w-8 bg-gray-300 mb-1"></div>
-                                <div class="text-[9px] font-bold text-gray-600 truncate">${slide.title}</div>
+                                <div class="text-[9px] font-bold text-gray-600 truncate">${escapeHTML(slide.title)}</div>
                             </div>
                         `).join('')}
                     </div>
                     <div class="flex-1 flex items-center justify-center p-8 bg-[#d0cec9]">
                         <div class="bg-white aspect-[16/9] w-full max-w-4xl shadow-2xl flex flex-col p-12 relative">
-                            <h1 class="text-4xl font-bold text-gray-800 mb-8 border-b-4 border-[#b7472a] pb-2 outline-none" contenteditable="true" oninput="BossModeOS.instance.updateSlideTitle(this.innerText)">${this.slides[this.currentSlide].title}</h1>
+                            <h1 class="text-4xl font-bold text-gray-800 mb-8 border-b-4 border-[#b7472a] pb-2 outline-none" contenteditable="true" oninput="BossModeOS.instance.updateSlideTitle(this.innerText)">${escapeHTML(this.slides[this.currentSlide].title)}</h1>
                             <ul class="list-disc list-inside text-2xl text-gray-600 space-y-4 outline-none" contenteditable="true" oninput="BossModeOS.instance.updateSlideBullets(this)">
-                                ${this.slides[this.currentSlide].bullets.map(b => `<li>${b}</li>`).join('')}
+                                ${this.slides[this.currentSlide].bullets.map(b => `<li>${escapeHTML(b)}</li>`).join('')}
                             </ul>
                         </div>
                     </div>
@@ -660,7 +671,7 @@ export default class BossModeOS {
                 <div class="bg-[#2b579a] text-white flex items-center justify-between px-2 py-1 select-none h-8 shadow-sm">
                     <div class="flex items-center gap-4">
                         <i class="fas fa-file-word"></i>
-                        <span class="font-bold text-sm">${this.docTitle}</span>
+                        <span class="font-bold text-sm">${escapeHTML(this.docTitle)}</span>
                     </div>
                     <div class="flex gap-3 text-white/80"><i class="fas fa-times cursor-pointer hover:bg-red-500 px-2" onclick="BossModeOS.instance.closeWindow()"></i></div>
                 </div>
@@ -692,7 +703,7 @@ export default class BossModeOS {
                 <div class="flex-1 bg-[#d0cec9] overflow-y-auto flex justify-center p-8">
                      <div class="bg-white w-[21cm] min-h-[29.7cm] shadow-2xl p-[2.54cm] text-black font-serif text-sm leading-relaxed outline-none" contenteditable="true" spellcheck="false" id="word-doc-content" oninput="BossModeOS.instance.updateDocContent(this.innerText)">
                         <p class="mb-4 text-center font-bold text-lg underline">INTERNAL MEMORANDUM</p>
-                        ${this.docContent.replace(/\n/g, '<br>')}
+                        ${escapeHTML(this.docContent).replace(/\n/g, '<br>')}
                      </div>
                 </div>
             </div>
@@ -720,20 +731,20 @@ export default class BossModeOS {
                         ${this.emails.map(email => `
                             <div class="border-b border-gray-200 p-3 cursor-pointer hover:bg-[#cde6f7] ${selected && selected.id === email.id ? 'bg-[#cde6f7] border-l-4 border-l-[#0078d4]' : ''}" onclick="BossModeOS.instance.selectEmail(${email.id})">
                                 <div class="flex justify-between items-baseline mb-1">
-                                    <span class="font-bold text-sm text-gray-800 truncate">${email.from}</span>
-                                    <span class="text-[10px] text-gray-500 whitespace-nowrap ml-2">${email.time}</span>
+                                    <span class="font-bold text-sm text-gray-800 truncate">${escapeHTML(email.from)}</span>
+                                    <span class="text-[10px] text-gray-500 whitespace-nowrap ml-2">${escapeHTML(email.time)}</span>
                                 </div>
-                                <div class="text-xs text-[#0078d4] font-semibold mb-1 truncate">${email.subject}</div>
+                                <div class="text-xs text-[#0078d4] font-semibold mb-1 truncate">${escapeHTML(email.subject)}</div>
                             </div>
                         `).join('')}
                     </div>
                     <div class="flex-1 flex flex-col bg-white">
                         ${selected ? `
                             <div class="border-b border-gray-200 p-4 bg-[#f8f9fa]">
-                                <h2 class="text-xl font-bold text-gray-800 mb-2">${selected.subject}</h2>
-                                <div class="text-sm font-bold text-gray-700">${selected.from}</div>
+                                <h2 class="text-xl font-bold text-gray-800 mb-2">${escapeHTML(selected.subject)}</h2>
+                                <div class="text-sm font-bold text-gray-700">${escapeHTML(selected.from)}</div>
                             </div>
-                            <div class="flex-1 p-6 text-sm text-gray-800 leading-relaxed overflow-y-auto whitespace-pre-wrap font-serif">${selected.body}</div>
+                            <div class="flex-1 p-6 text-sm text-gray-800 leading-relaxed overflow-y-auto whitespace-pre-wrap font-serif">${escapeHTML(selected.body)}</div>
                             <div class="p-4 border-t border-gray-200 bg-[#f8f9fa] flex gap-2">
                                 <button class="bg-[#0078d4] text-white px-4 py-1 rounded text-xs" onclick="BossModeOS.instance.replyEmail()"><i class="fas fa-reply"></i> Reply</button>
                             </div>
@@ -771,10 +782,10 @@ export default class BossModeOS {
                                     <div class="w-8 h-8 rounded bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-xs shrink-0">${m.user.charAt(0)}</div>
                                     <div>
                                         <div class="flex gap-2 items-baseline">
-                                            <span class="font-bold text-sm text-gray-800">${m.user}</span>
-                                            <span class="text-[10px] text-gray-500">${m.time}</span>
+                                            <span class="font-bold text-sm text-gray-800">${escapeHTML(m.user)}</span>
+                                            <span class="text-[10px] text-gray-500">${escapeHTML(m.time)}</span>
                                         </div>
-                                        <div class="text-sm text-gray-700">${m.text}</div>
+                                        <div class="text-sm text-gray-700">${escapeHTML(m.text)}</div>
                                     </div>
                                 </div>
                             `).join('')}
@@ -800,7 +811,7 @@ export default class BossModeOS {
                 </div>
                 <div class="flex-1 bg-black p-2 font-mono text-green-500 text-sm overflow-y-auto cursor-text" onclick="document.getElementById('term-input').focus()">
                     <div id="term-output">
-                        ${this.termHistory.map(l => `<div>${l}</div>`).join('')}
+                        ${this.termHistory.map(l => `<div>${escapeHTML(l)}</div>`).join('')}
                     </div>
                     <div class="flex">
                         <span>C:\\Users\\JohnDoe&gt;</span>
