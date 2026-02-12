@@ -9,11 +9,16 @@ def verify_cursor_trail():
         # Load the local server
         page.goto("http://localhost:8000")
 
-        # Wait for loading to finish (click loader)
-        try:
-            page.locator("#app-loader").click(timeout=5000)
-        except:
-            pass
+        # Wait for page load
+        time.sleep(2)
+
+        # Force remove loader to ensure we can see the trail
+        print("Removing loader...")
+        page.evaluate("""
+            const loader = document.getElementById('app-loader');
+            if (loader) loader.remove();
+        """)
+        time.sleep(0.5)
 
         # Move mouse to generate trail
         # We need to simulate movement.
@@ -21,11 +26,12 @@ def verify_cursor_trail():
         center_y = 300
 
         # Spiral movement
-        for i in range(20):
+        print("Moving mouse...")
+        for i in range(40):
             x = center_x + (i * 10)
             y = center_y + (i * 5)
             page.mouse.move(x, y)
-            time.sleep(0.01) # Small delay to allow trail to spawn
+            time.sleep(0.03) # 30ms
 
         # Take screenshot immediately
         page.screenshot(path="verification/cursor_trail.png")
