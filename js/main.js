@@ -1039,9 +1039,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Global Cursor Trail (Bolt Optimized) ---
+    // --- Global Cursor Trail (Bolt Optimized: WAAPI) ---
     const cursorTrail = [];
-    const maxTrail = 20;
+    const maxTrail = 30; // Increased pool to prevent premature recycling
 
     // Create trail elements pool
     for(let i=0; i<maxTrail; i++) {
@@ -1063,18 +1063,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const dot = cursorTrail[currentTrailIdx];
 
-        // Instant update
-        dot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
-        dot.style.transition = 'none';
-        dot.style.opacity = '1';
+        // WAAPI Optimization: Use element.animate() to handle fading without layout thrashing
+        // or double-RAF callbacks.
 
-        // Schedule fade
-        // Double RAF ensures the initial state (opacity: 1) renders before the transition starts
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                dot.style.transition = 'opacity 0.5s ease-out';
-                dot.style.opacity = '0';
-            });
+        // Instant position update (using translate3d for GPU layer promotion)
+        dot.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+
+        // Cancel previous animations if any (implicit with new animation usually, but safe to be sure)
+        const currentAnims = dot.getAnimations();
+        if (currentAnims.length > 0) currentAnims.forEach(a => a.cancel());
+
+        dot.animate([
+            { opacity: 1, offset: 0 },
+            { opacity: 0, offset: 1 }
+        ], {
+            duration: 500,
+            easing: 'ease-out',
+            fill: 'forwards'
         });
 
         currentTrailIdx = (currentTrailIdx + 1) % maxTrail;
