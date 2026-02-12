@@ -184,6 +184,19 @@ export default class FileForgeGame {
 
     // --- Core Logic ---
 
+    // Security: Helper for XSS Prevention
+    escapeHTML(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>'"]/g,
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag]));
+    }
+
     async generateFile(input, format) {
         let content = input;
         let previewText = "";
@@ -273,7 +286,7 @@ export default class FileForgeGame {
 <html>
 <head><title>Generated File</title></head>
 <body>
-${lines.map(l => `<p>${l}</p>`).join('\n')}
+${lines.map(l => `<p>${this.escapeHTML(l)}</p>`).join('\n')}
 </body>
 </html>`;
                 blob = new Blob([htmlStr], { type: 'text/html' });
