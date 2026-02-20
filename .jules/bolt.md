@@ -9,3 +9,7 @@
 ## 2026-02-01 - [Audio Buffer Pooling]
 **Learning:** Creating new `AudioBuffer` objects (especially filling them with random data) on every beat for synthesized sounds causes massive garbage collection overhead and CPU spikes.
 **Action:** Pre-generate shared noise buffers (e.g., 2 seconds of white noise) and play slices of them with randomized offsets.
+
+## 2026-02-03 - [Synchronous Storage Blocking]
+**Learning:** Serializing large objects with JSON.stringify and encrypting synchronously in localStorage.setItem blocks the main thread for >5ms on complex objects.
+**Action:** Debounce save operations to coalesce updates and defer execution.
