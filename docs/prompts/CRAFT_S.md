@@ -95,3 +95,11 @@ When connecting this to your MCP server, ensure your tool descriptions match the
 
 * **Tool:** `update_verification_log`
 * **Description:** "Appends a new entry to `VERIFICATION_LOG.md` with date, agent name, and outcome."
+
+
+
+### Why this works for your specific files:
+
+1. **Adheres to `AGENTS.md**`: The prompt explicitly forces the model to acknowledge the "Self-Contained Modules" rule and the "Verification" requirement before it writes a single line of code.
+2. **Respects `LLMService.js**`: By injecting the `{{Active_File_Name}}` variable, if you are working on the chat system, the agent knows to look at `js/core/LLMService.js` and will mimic the "Persona" structure (Grok, Coder, etc.) defined in that file.
+3. **Environment Aware**: It knows it is in a "Vanilla JS" environment (from `README.md`) and won't hallucinate `npm install react` commands, which would break your specific workflow.

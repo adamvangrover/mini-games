@@ -1,4 +1,6 @@
 
+import Security from '../core/Security.js';
+
 export default class FileForgeGame {
     constructor() {
         this.container = null;
@@ -184,19 +186,6 @@ export default class FileForgeGame {
 
     // --- Core Logic ---
 
-    // Security: Helper for XSS Prevention
-    escapeHTML(str) {
-        if (!str) return '';
-        return String(str).replace(/[&<>'"]/g,
-            tag => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                "'": '&#39;',
-                '"': '&quot;'
-            }[tag]));
-    }
-
     async generateFile(input, format) {
         let content = input;
         let previewText = "";
@@ -273,10 +262,13 @@ export default class FileForgeGame {
                 // If parsed table, join it. Else just text.
                 let csvStr = input;
                 if (Array.isArray(parsedData) && Array.isArray(parsedData[0])) {
-                    csvStr = parsedData.map(row => row.join(',')).join('\n');
+                    // Sanitize each cell to prevent injection
+                    csvStr = parsedData.map(row =>
+                        row.map(cell => Security.sanitizeCSV(cell)).join(',')
+                    ).join('\n');
                 } else if (Array.isArray(parsedData)) {
                     // List -> Single column
-                    csvStr = "Item\n" + parsedData.join('\n');
+                    csvStr = "Item\n" + parsedData.map(item => Security.sanitizeCSV(item)).join('\n');
                 }
                 blob = new Blob([csvStr], { type: 'text/csv' });
                 previewText = csvStr;
@@ -286,7 +278,7 @@ export default class FileForgeGame {
 <html>
 <head><title>Generated File</title></head>
 <body>
-${lines.map(l => `<p>${this.escapeHTML(l)}</p>`).join('\n')}
+${lines.map(l => `<p>${Security.escapeHTML(l)}</p>`).join('\n')}
 </body>
 </html>`;
                 blob = new Blob([htmlStr], { type: 'text/html' });

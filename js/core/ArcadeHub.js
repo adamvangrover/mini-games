@@ -33,6 +33,8 @@ export default class ArcadeHub {
         // UI State (DOM Optimization)
         this.tooltip = null;
         this.lastCursor = '';
+        this.lastInteractionCheck = 0;
+        this.hoverState = { hovered: false, text: '' };
 
         // Player / Physics State
         this.inputManager = InputManager.getInstance();
@@ -1015,12 +1017,24 @@ export default class ArcadeHub {
     }
 
     checkInteractions() {
+        // Bolt Optimization: Throttle Raycasting (Heavy)
+        const now = performance.now();
+        if (now - this.lastInteractionCheck > 50) {
+            this.lastInteractionCheck = now;
+            this.performRaycast();
+        }
+
+        // Always update Tooltip Position (Light)
+        this.updateTooltipPosition();
+    }
+
+    performRaycast() {
         this.raycaster.setFromCamera(this.mouse, this.camera);
         // Bolt Optimization: Only raycast against interactive targets instead of entire scene
         const intersects = this.raycaster.intersectObjects(this.interactionTargets, true);
         
-        let hovered = false;
-        let tooltipText = '';
+        this.hoverState.hovered = false;
+        this.hoverState.text = '';
 
         if (intersects.length > 0) {
             let obj = intersects[0].object;
@@ -1030,25 +1044,27 @@ export default class ArcadeHub {
             }
             if (obj.userData) {
                 if (obj.userData.gameId) {
-                    hovered = true;
-                    tooltipText = obj.userData.name || 'Play Game';
+                    this.hoverState.hovered = true;
+                    this.hoverState.text = obj.userData.name || 'Play Game';
                 } else if (obj.userData.isTeleporter) {
-                    hovered = true;
-                    tooltipText = 'Enter Trophy Room';
+                    this.hoverState.hovered = true;
+                    this.hoverState.text = 'Enter Trophy Room';
                 } else if (obj.userData.isInteractable) {
-                    hovered = true;
-                    tooltipText = obj.userData.tooltip || 'Interact';
+                    this.hoverState.hovered = true;
+                    this.hoverState.text = obj.userData.tooltip || 'Interact';
                 }
             }
         }
 
         // Bolt Optimization: Debounce cursor updates to avoid redundant DOM writes
-        const newCursor = hovered ? 'pointer' : (this.isDragging ? 'grabbing' : 'default');
+        const newCursor = this.hoverState.hovered ? 'pointer' : (this.isDragging ? 'grabbing' : 'default');
         if (this.lastCursor !== newCursor) {
             document.body.style.cursor = newCursor;
             this.lastCursor = newCursor;
         }
+    }
 
+    updateTooltipPosition() {
         // Bolt Optimization: Cache tooltip element and use Transform for performance
         if (!this.tooltip) {
             this.tooltip = document.getElementById('hub-tooltip');
@@ -1062,9 +1078,9 @@ export default class ArcadeHub {
             }
         }
 
-        if (hovered && tooltipText) {
-            if (this.tooltip.textContent !== tooltipText) {
-                this.tooltip.textContent = tooltipText;
+        if (this.hoverState.hovered && this.hoverState.text) {
+            if (this.tooltip.textContent !== this.hoverState.text) {
+                this.tooltip.textContent = this.hoverState.text;
             }
             this.tooltip.style.opacity = '1';
             // Bolt Optimization: Use translate3d to avoid layout thrashing
