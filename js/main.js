@@ -95,6 +95,7 @@ const gameRegistry = {
 
     // Logic Puzzles
     'math-blaster': { name: 'Galactic Rescue', description: 'Math Blaster Episode I', icon: 'fa-solid fa-rocket', category: 'Logic Puzzles', importFn: () => import('./games/mathBlaster.js'), wide: true, noDpad: true },
+    'smarter-than-chatbot': { name: 'Smarter Than Chatbot?', description: 'Beat the AI at Trivia', icon: 'fa-solid fa-robot', category: 'Logic Puzzles', importFn: () => import('./games/smarterThanChatbot.js'), wide: true, noDpad: true },
     'queens-game': { name: 'Queens', description: 'Place Queens', icon: 'fa-solid fa-chess-queen', category: 'Logic Puzzles', importFn: () => import('./games/queens.js') },
     'neon-match': { name: 'Neon Match', description: 'Find Pairs', icon: 'fa-solid fa-clone', category: 'Logic Puzzles', importFn: () => import('./games/neonMatch.js'), noDpad: true },
     'neon-tictactoe': { name: 'Tic Tac Toe', description: '3 in a Row', icon: 'fa-solid fa-hashtag', category: 'Logic Puzzles', importFn: () => import('./games/neonTicTacToe.js'), noDpad: true },
