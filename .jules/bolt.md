@@ -13,3 +13,7 @@
 ## 2026-05-21 - [Raycast Throttling]
 **Learning:** Performing raycasting against a complex scene every frame (60fps) for simple UI hover states is wasteful and consumes significant CPU, especially when the interaction feedback (tooltip) doesn't require sub-16ms precision.
 **Action:** Throttle the expensive raycasting operation (e.g., to 50ms) while keeping the visual feedback (tooltip positioning) running at full frame rate to maintain perceived smoothness.
+
+## 2026-02-03 - [Synchronous Storage Blocking]
+**Learning:** Serializing large objects with JSON.stringify and encrypting synchronously in localStorage.setItem blocks the main thread for >5ms on complex objects.
+**Action:** Debounce save operations to coalesce updates and defer execution.

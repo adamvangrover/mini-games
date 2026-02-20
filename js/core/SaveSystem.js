@@ -10,6 +10,17 @@ export default class SaveSystem {
         this.currentVersion = 1.3; // Schema Version
         this.data = this.load();
 
+        // Bolt Optimization: Debounce save to reduce I/O overhead
+        this.saveTimeout = null;
+        this.debouncedSaveDelay = 1000;
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('beforeunload', () => this.forceSave());
+            window.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') this.forceSave();
+            });
+        }
+
         SaveSystem.instance = this;
     }
 
@@ -113,7 +124,7 @@ export default class SaveSystem {
         if (!this.data || typeof this.data !== 'object') {
              console.error("SaveSystem: Integrity Check Failed. resetting.");
              this.data = this.getDefaultData();
-             this.save();
+             this.forceSave();
              return false;
         }
         return true;
@@ -211,6 +222,20 @@ export default class SaveSystem {
     }
 
     save() {
+        if (this.saveTimeout) {
+            clearTimeout(this.saveTimeout);
+        }
+        this.saveTimeout = setTimeout(() => {
+            this.forceSave();
+        }, this.debouncedSaveDelay);
+    }
+
+    forceSave() {
+        if (this.saveTimeout) {
+            clearTimeout(this.saveTimeout);
+            this.saveTimeout = null;
+        }
+
         try {
             // Update timestamp
             this.data.timestamp = Date.now();
@@ -337,7 +362,7 @@ export default class SaveSystem {
             data = this.migrate(data);
 
             this.data = data;
-            this.save();
+            this.forceSave();
             return true;
         } catch (e) {
             console.error("SaveSystem: Import failed.", e);
