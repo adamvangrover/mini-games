@@ -11,7 +11,6 @@ def run_server(port):
 
 def verify_game():
     port = 0  # Let OS pick a port if possible, but http.server usually needs one.
-    # Actually, let's pick a random high port or just 8096.
     import socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(('', 0))
@@ -40,35 +39,26 @@ def verify_game():
 
         # 1. Start Game
         print("Waiting for game load...")
-        # Simulate click to start audio context if needed (splash screen)
         try:
             # Check if loader exists and is visible
             if page.is_visible("#app-loader"):
                 page.click("#app-loader")
-                # Wait for it to fade out
                 page.wait_for_selector("#app-loader", state="hidden", timeout=5000)
         except Exception as e:
             print(f"Loader handling error (ignorable): {e}")
 
         print("Searching for game card...")
-        # Search for "Smarter Than Chatbot?" text
         try:
-            # Grid view might be hidden if 3D is default, but verify script runs in headless which might default to 2D if WebGL fails?
-            # JS logic: if WebGL fails, 2D is forced. Headless Chrome usually supports WebGL though.
-            # Let's force 2D view to be safe.
+            # Ensure grid view
             page.evaluate("window.miniGameHub.toggleView()")
-            # Or just check if button exists
 
             # Wait for grid
             page.wait_for_selector("#menu-grid", state="visible", timeout=10000)
 
             # Find the game card
-            # The name in registry is "Smarter Than Chatbot?"
-            # The card H3 contains this text.
             card = page.locator("h3", has_text="Smarter Than Chatbot?")
             if card.count() == 0:
                 print("Game card not found!")
-                # Dump page text
                 print(page.inner_text("body"))
                 browser.close()
                 return False
@@ -84,6 +74,26 @@ def verify_game():
             print("Waiting for start button...")
             start_btn = page.wait_for_selector("#start-btn", timeout=5000)
             start_btn.click()
+
+            # ---------------------------------------------------------
+            # NEW STEP: Category Selection
+            # ---------------------------------------------------------
+            print("Waiting for Category Selection...")
+            page.wait_for_selector(".cat-select-grid", timeout=5000)
+
+            print("Randomizing categories...")
+            page.click("#random-btn")
+
+            # Verify 5 selected (check play button enabled)
+            play_btn = page.locator("#play-btn")
+            if play_btn.is_disabled():
+                print("Error: Play button is still disabled after randomize!")
+                browser.close()
+                return False
+
+            print("Starting game...")
+            play_btn.click()
+            # ---------------------------------------------------------
 
             # 4. Wait for Board (Grid of points)
             print("Waiting for board...")
@@ -104,7 +114,6 @@ def verify_game():
             page.wait_for_selector("#timer-bar", timeout=5000)
 
             # Verify question text is present
-            # Use specific selector within game container
             q_text = page.locator("#smarter-than-chatbot h3").inner_text()
             print(f"Question: {q_text}")
 
@@ -120,8 +129,6 @@ def verify_game():
 
             # 8. Wait for feedback
             print("Waiting for feedback...")
-            # Button should get .bg-green-600 or .bg-red-600
-            # Wait for class change
             page.wait_for_function("""
                 () => {
                     const btn = document.querySelector('.option-btn');

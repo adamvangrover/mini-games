@@ -4,14 +4,16 @@ import { CHATBOT_TRIVIA_DATA } from './smarterThanChatbotData.js';
 export default class SmarterThanChatbot {
     constructor() {
         this.container = null;
-        this.state = 'MENU'; // MENU, BOARD, QUESTION, GAME_OVER
+        this.state = 'MENU'; // MENU, CATEGORY_SELECT, BOARD, QUESTION, GAME_OVER
         this.score = 0;
         this.totalQuestions = 0;
         this.correctAnswers = 0;
         this.questionsAnswered = 0;
 
         // Game State
-        this.categories = [];
+        this.allCategoryKeys = Object.keys(CHATBOT_TRIVIA_DATA);
+        this.selectedCategories = []; // Array of keys
+        this.categories = []; // Array of full category objects for the board
         this.boardState = {}; // Key: "catIndex-qIndex", Value: boolean (isUsed)
         this.currentQuestion = null;
 
@@ -42,12 +44,15 @@ export default class SmarterThanChatbot {
                 border: 2px solid #334155;
                 border-radius: 8px;
                 color: #22d3ee;
-                font-size: 0.9rem;
+                font-size: 0.8rem;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
+                justify-content: center;
                 gap: 5px;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                min-height: 80px;
+                word-wrap: break-word;
             }
             .point-btn {
                 background: #1e293b;
@@ -99,6 +104,78 @@ export default class SmarterThanChatbot {
                 0%, 100% { transform: translateY(0); }
                 50% { transform: translateY(-10px); }
             }
+
+            /* New Styles for Category Selection */
+            .cat-select-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 15px;
+                padding: 10px;
+                width: 100%;
+                max-width: 1000px;
+                max-height: 50vh;
+                overflow-y: auto;
+                margin-bottom: 20px;
+            }
+            .cat-card {
+                background: #1e293b;
+                border: 2px solid #334155;
+                border-radius: 8px;
+                padding: 15px;
+                cursor: pointer;
+                transition: all 0.2s;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                text-align: center;
+                position: relative;
+            }
+            .cat-card:hover {
+                border-color: #22d3ee;
+                background: #334155;
+            }
+            .cat-card.selected {
+                border-color: #facc15;
+                background: #334155;
+                box-shadow: 0 0 15px rgba(250, 204, 21, 0.2);
+            }
+            .cat-card i {
+                font-size: 2rem;
+                color: #94a3b8;
+                transition: color 0.2s;
+            }
+            .cat-card.selected i {
+                color: #facc15;
+            }
+            .cat-card h4 {
+                font-size: 0.9rem;
+                font-weight: bold;
+                color: #e2e8f0;
+            }
+            .check-icon {
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                color: #facc15;
+                opacity: 0;
+                transition: opacity 0.2s;
+            }
+            .cat-card.selected .check-icon {
+                opacity: 1;
+            }
+
+            /* Scrollbar styling */
+            .cat-select-grid::-webkit-scrollbar {
+                width: 8px;
+            }
+            .cat-select-grid::-webkit-scrollbar-track {
+                background: #0f172a;
+            }
+            .cat-select-grid::-webkit-scrollbar-thumb {
+                background: #334155;
+                border-radius: 4px;
+            }
         `;
 
         this.scanLineElement = document.createElement('div');
@@ -109,21 +186,33 @@ export default class SmarterThanChatbot {
         this.container = container;
         this.container.className = 'game-container w-full h-full flex flex-col bg-slate-900 text-white font-sans overflow-hidden relative';
 
-        this.prepareGameData();
+        // Pre-load logic? Not really needed.
         this.renderMenu();
     }
 
     prepareGameData() {
-        this.categories = Object.keys(CHATBOT_TRIVIA_DATA).map(key => ({
+        // Use selected categories, or default if something went wrong
+        if (!this.selectedCategories || this.selectedCategories.length === 0) {
+            // Fallback to random 5
+            this.randomizeCategories();
+        }
+
+        this.categories = this.selectedCategories.map(key => ({
             id: key,
             ...CHATBOT_TRIVIA_DATA[key]
         }));
+
         // Reset board state
         this.boardState = {};
         this.score = 0;
         this.questionsAnswered = 0;
         this.correctAnswers = 0;
         this.totalQuestions = this.categories.length * 5;
+    }
+
+    randomizeCategories() {
+        const shuffled = [...this.allCategoryKeys].sort(() => 0.5 - Math.random());
+        this.selectedCategories = shuffled.slice(0, 5);
     }
 
     renderMenu() {
@@ -156,9 +245,111 @@ export default class SmarterThanChatbot {
 
         document.getElementById('start-btn').onclick = () => {
             this.soundManager.playSound('click');
-            this.soundManager.speak("Initializing cognitive test protocols. Good luck, human.");
-            this.renderBoard();
+            this.soundManager.speak("Select your knowledge domains.");
+            this.renderCategorySelection();
         };
+    }
+
+    renderCategorySelection() {
+        this.state = 'CATEGORY_SELECT';
+        this.container.innerHTML = '';
+        this.container.appendChild(this.styleElement);
+        this.container.appendChild(this.scanLineElement);
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'w-full text-center py-4 z-20';
+        header.innerHTML = `
+            <h2 class="text-3xl font-bold text-cyan-400 mb-2">SELECT 5 CATEGORIES</h2>
+            <p id="selection-count" class="text-slate-400">Selected: ${this.selectedCategories.length} / 5</p>
+        `;
+        this.container.appendChild(header);
+
+        // Grid Container
+        const contentContainer = document.createElement('div');
+        contentContainer.className = 'flex-1 flex flex-col items-center justify-center z-20 w-full px-4';
+
+        const grid = document.createElement('div');
+        grid.className = 'cat-select-grid';
+
+        this.allCategoryKeys.forEach(key => {
+            const cat = CHATBOT_TRIVIA_DATA[key];
+            const isSelected = this.selectedCategories.includes(key);
+
+            const card = document.createElement('div');
+            card.className = `cat-card ${isSelected ? 'selected' : ''}`;
+            card.dataset.key = key;
+            card.innerHTML = `
+                <div class="check-icon"><i class="fas fa-check-circle"></i></div>
+                <i class="fas ${cat.icon}"></i>
+                <h4>${cat.name}</h4>
+            `;
+
+            card.onclick = () => this.toggleCategory(key, card);
+            grid.appendChild(card);
+        });
+
+        contentContainer.appendChild(grid);
+
+        // Controls
+        const controls = document.createElement('div');
+        controls.className = 'flex gap-4 mb-4';
+        controls.innerHTML = `
+            <button id="random-btn" class="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-lg transition-transform hover:scale-105">
+                <i class="fas fa-dice mr-2"></i> RANDOMIZE
+            </button>
+            <button id="play-btn" class="px-8 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg shadow-lg transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+                START GAME <i class="fas fa-play ml-2"></i>
+            </button>
+        `;
+        contentContainer.appendChild(controls);
+
+        this.container.appendChild(contentContainer);
+
+        // Listeners
+        document.getElementById('random-btn').onclick = () => {
+            this.soundManager.playSound('click');
+            this.randomizeCategories();
+            this.renderCategorySelection(); // Re-render to show selection
+        };
+
+        const playBtn = document.getElementById('play-btn');
+        playBtn.disabled = this.selectedCategories.length !== 5;
+        playBtn.onclick = () => {
+            if (this.selectedCategories.length === 5) {
+                this.soundManager.playSound('click');
+                this.soundManager.speak("Loading simulation.");
+                this.prepareGameData();
+                this.renderBoard();
+            }
+        };
+    }
+
+    toggleCategory(key, cardElement) {
+        if (this.selectedCategories.includes(key)) {
+            // Deselect
+            this.selectedCategories = this.selectedCategories.filter(k => k !== key);
+            cardElement.classList.remove('selected');
+            this.soundManager.playSound('ui_hover');
+        } else {
+            // Select if under 5
+            if (this.selectedCategories.length < 5) {
+                this.selectedCategories.push(key);
+                cardElement.classList.add('selected');
+                this.soundManager.playSound('ui_hover');
+            } else {
+                // Max limit reached feedback
+                this.soundManager.playSound('error'); // assuming error sound or use explosion/buzz
+            }
+        }
+
+        // Update count text
+        const countText = document.getElementById('selection-count');
+        if(countText) countText.textContent = `Selected: ${this.selectedCategories.length} / 5`;
+
+        // Update Start Button
+        const playBtn = document.getElementById('play-btn');
+        if(playBtn) playBtn.disabled = this.selectedCategories.length !== 5;
     }
 
     renderBoard() {
@@ -171,14 +362,14 @@ export default class SmarterThanChatbot {
         const header = document.createElement('div');
         header.className = 'w-full flex justify-between items-center px-8 py-4 bg-slate-900 border-b border-slate-700 z-20';
         header.innerHTML = `
-            <div class="text-2xl font-bold text-cyan-400"><i class="fas fa-robot mr-2"></i> HOST_BOT_v1.0</div>
+            <div class="text-2xl font-bold text-cyan-400"><i class="fas fa-robot mr-2"></i> HOST_BOT_v2.0</div>
             <div class="text-3xl font-mono font-bold text-yellow-400 score-display">SCORE: ${this.score}</div>
         `;
         this.container.appendChild(header);
 
         // Grid Container
         const gridContainer = document.createElement('div');
-        gridContainer.className = 'flex-1 flex items-center justify-center z-20 overflow-auto';
+        gridContainer.className = 'flex-1 flex items-center justify-center z-20 overflow-auto p-4';
 
         const grid = document.createElement('div');
         grid.className = 'chatbot-grid';
@@ -278,9 +469,6 @@ export default class SmarterThanChatbot {
         this.container.querySelectorAll('.option-btn').forEach(btn => {
             btn.onclick = () => this.handleAnswer(parseInt(btn.dataset.idx));
         });
-
-        // Speak the question? Maybe too annoying if repeated. Let's just do a blip.
-        // this.soundManager.speak(q.q); // Optional, maybe toggleable.
     }
 
     handleAnswer(selectedIndex) {
@@ -378,7 +566,7 @@ export default class SmarterThanChatbot {
         this.container.appendChild(this.styleElement);
         this.container.appendChild(this.scanLineElement);
 
-        const accuracy = (this.correctAnswers / this.totalQuestions) * 100;
+        const accuracy = this.totalQuestions > 0 ? (this.correctAnswers / this.totalQuestions) * 100 : 0;
         let title = "Training Data";
         if (accuracy >= 100) title = "Superintelligence";
         else if (accuracy >= 80) title = "AGI Prototype";
@@ -425,8 +613,9 @@ export default class SmarterThanChatbot {
         this.container.appendChild(content);
 
         document.getElementById('retry-btn').onclick = () => {
-             this.prepareGameData();
-             this.renderBoard();
+             // Go back to category selection for replay
+             this.selectedCategories = [];
+             this.renderCategorySelection();
         };
         document.getElementById('exit-btn').onclick = () => window.miniGameHub.goBack();
     }
