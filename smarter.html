@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smarter Than a Chatbot</title>
+    <title>Smarter Than a Chatbot // V2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -22,19 +22,18 @@
 
         h1, h2, h3, .orbitron { font-family: 'Orbitron', sans-serif; }
 
-        /* Canvas Background */
-        #bg-canvas {
+        /* Canvas Backgrounds */
+        #bg-canvas, #fx-canvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 0;
-            opacity: 0.4;
             pointer-events: none;
         }
+        #bg-canvas { z-index: 0; opacity: 0.4; }
+        #fx-canvas { z-index: 9999; }
 
-        /* Game Container Container */
         #game-mount {
             position: relative;
             z-index: 10;
@@ -45,7 +44,6 @@
             overflow-y: auto;
         }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 4px; }
@@ -69,10 +67,28 @@
             50% { transform: translateY(-10px); }
         }
         .floating { animation: float 3s ease-in-out infinite; }
-        
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 15px rgba(34, 211, 238, 0.4); }
-            50% { box-shadow: 0 0 30px rgba(34, 211, 238, 0.8); }
+
+        @keyframes crt-flicker {
+            0% { opacity: 0.95; }
+            5% { opacity: 0.85; }
+            10% { opacity: 0.95; }
+            15% { opacity: 1; }
+            100% { opacity: 1; }
+        }
+        .crt-effect { animation: crt-flicker 0.15s infinite; }
+
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+        .glitch-hover:hover {
+            animation: glitch 0.2s linear infinite;
+            color: #f43f5e;
+            text-shadow: 2px 0 #38bdf8, -2px 0 #facc15;
         }
 
         /* UI Elements */
@@ -118,6 +134,7 @@
             background: #1e293b; border: 2px solid #334155; color: #facc15;
             font-size: 1.5rem; padding: 20px 0; border-radius: 8px; cursor: pointer;
             transition: all 0.2s; text-shadow: 0 0 5px rgba(250, 204, 21, 0.5);
+            position: relative; overflow: hidden;
         }
         .point-btn:hover:not(:disabled) {
             background: #334155; transform: scale(1.05); border-color: #facc15;
@@ -125,6 +142,10 @@
         }
         .point-btn:disabled {
             background: transparent; color: transparent; border-color: #0f172a; cursor: default; text-shadow: none; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        .anomaly-marker {
+            position: absolute; top: 5px; right: 5px; color: #f43f5e; font-size: 0.8rem;
+            animation: float 2s infinite; opacity: 0.7;
         }
 
         /* Category Select Grid */
@@ -137,25 +158,25 @@
             padding: 15px; cursor: pointer; transition: all 0.2s;
             display: flex; flex-direction: column; align-items: center; text-align: center; position: relative;
         }
-        .cat-card:hover { border-color: #22d3ee; background: #334155; }
+        .cat-card:hover { border-color: #22d3ee; background: #334155; transform: translateY(-5px); }
         .cat-card.selected { border-color: #facc15; background: #334155; box-shadow: 0 0 15px rgba(250, 204, 21, 0.2); }
         .cat-card i { font-size: 2rem; color: #94a3b8; margin-bottom: 10px; }
         .cat-card.selected i { color: #facc15; }
-        .check-icon { position: absolute; top: 5px; right: 5px; color: #facc15; opacity: 0; }
+        .check-icon { position: absolute; top: 5px; right: 5px; color: #facc15; opacity: 0; transition: opacity 0.2s; }
         .cat-card.selected .check-icon { opacity: 1; }
     </style>
 </head>
-<body>
+<body class="crt-effect">
 
-    <!-- Background Animation (Replaces video to remain self-contained) -->
     <canvas id="bg-canvas"></canvas>
+    <canvas id="fx-canvas"></canvas>
     <div class="scan-line"></div>
 
     <div id="game-mount"></div>
 
 <script>
 /**
- * TRIVIA DATA
+ * EXPANDED TRIVIA DATA
  */
 const CHATBOT_TRIVIA_DATA = {
     'llm_basics': { name: 'LLM Basics', icon: 'fa-brain', questions: [
@@ -170,7 +191,7 @@ const CHATBOT_TRIVIA_DATA = {
         { points: 200, q: "What was the name of the IBM computer that defeated Garry Kasparov at chess?", options: ["Deep Blue", "Watson", "AlphaGo", "HAL 9000"], answer: 0 },
         { points: 300, q: "Which AI program defeated the world champion at the game of Go in 2016?", options: ["AlphaGo", "DeepMind", "Stockfish", "GPT-3"], answer: 0 },
         { points: 400, q: "What year was the term 'Artificial Intelligence' coined?", options: ["1956", "1945", "1969", "1980"], answer: 0 },
-        { points: 500, q: "Which chatbot was created in 1966 to simulate a Rogerian psychotherapist?", options: ["ELIZA", "PARRY", "A.L.I.C.E.", "Siri"], answer: 0 }
+        { points: 500, q: "Which chatbot was created in 1966 to simulate a psychotherapist?", options: ["ELIZA", "PARRY", "A.L.I.C.E.", "Siri"], answer: 0 }
     ]},
     'pop_culture': { name: 'Pop Culture AI', icon: 'fa-film', questions: [
         { points: 100, q: "What is the name of the AI in the 'Halo' video game series?", options: ["Cortana", "Siri", "Alexa", "GLaDOS"], answer: 0 },
@@ -190,22 +211,43 @@ const CHATBOT_TRIVIA_DATA = {
         { points: 100, q: "What is an AI 'hallucination'?", options: ["Confidently stating false information", "Seeing ghosts in images", "Crashing due to overload", "Dreaming of electric sheep"], answer: 0 },
         { points: 200, q: "Why do LLMs sometimes struggle with math?", options: ["They predict tokens, not calculate", "They hate numbers", "They have small context windows", "They lack GPUs"], answer: 0 },
         { points: 300, q: "What is 'prompt injection'?", options: ["Tricking an AI to ignore its instructions", "Adding more memory to a prompt", "Optimizing a prompt for speed", "Deleting a prompt"], answer: 0 },
-        { points: 400, q: "Which of these is a common issue with image generation models?", options: ["Extra fingers/limbs", "Too much color", "Perfect text rendering", "Overly sharp edges"], answer: 0 },
+        { points: 400, q: "Which of these is a common issue with early image generation models?", options: ["Extra fingers/limbs", "Too much color", "Perfect text rendering", "Overly sharp edges"], answer: 0 },
         { points: 500, q: "What is 'mode collapse' in GANs?", options: ["Generating the same output repeatedly", "The model crashing", "Forgetting old data", "Overfitting to noise"], answer: 0 }
     ]},
-    'prompt_engineering': { name: 'Prompt Engineering', icon: 'fa-pen-fancy', questions: [
+    'prompt_engineering': { name: 'Prompting', icon: 'fa-pen-fancy', questions: [
         { points: 100, q: "What is 'Chain of Thought' prompting?", options: ["Asking the model to explain its reasoning", "Writing a really long prompt", "Chaining multiple models together", "Repeating the same question"], answer: 0 },
         { points: 200, q: "What is 'Zero-shot' prompting?", options: ["Asking without examples", "Asking with zero context", "Asking a model with zero training", "A failed prompt"], answer: 0 },
         { points: 300, q: "What does 'Few-shot' prompting involve?", options: ["Providing a few examples in the prompt", "Asking a few questions", "Running the model a few times", "Using a small model"], answer: 0 },
         { points: 400, q: "What is a 'System Prompt'?", options: ["Initial instructions setting behavior", "A prompt for the operating system", "A hardware level command", "The final user query"], answer: 0 },
-        { points: 500, q: "What is 'RAG' in the context of prompting?", options: ["Retrieval-Augmented Generation", "Random Access Generation", "Real-time AI Generation", "Recursive Algorithm Grouping"], answer: 0 }
+        { points: 500, q: "What is 'RAG' in the context of AI?", options: ["Retrieval-Augmented Generation", "Random Access Generation", "Real-time AI Generation", "Recursive Algorithm Grouping"], answer: 0 }
     ]},
     'major_players': { name: 'Major Players', icon: 'fa-building', questions: [
         { points: 100, q: "Which company created ChatGPT?", options: ["OpenAI", "Google", "Microsoft", "Meta"], answer: 0 },
         { points: 200, q: "Who created the 'Claude' series of models?", options: ["Anthropic", "DeepMind", "Mistral", "Cohere"], answer: 0 },
         { points: 300, q: "Which company released the 'Llama' open weights models?", options: ["Meta", "Amazon", "Apple", "NVIDIA"], answer: 0 },
         { points: 400, q: "What is the name of Google's flagship model family?", options: ["Gemini", "Bard", "PaLM", "Bert"], answer: 0 },
-        { points: 500, q: "Which of these is a French AI company?", options: ["Mistral", "Cohere", "Hugging Face", "DeepL"], answer: 0 }
+        { points: 500, q: "Which of these is a French AI startup?", options: ["Mistral", "Cohere", "Hugging Face", "DeepL"], answer: 0 }
+    ]},
+    'agentic_ai': { name: 'Agentic Systems', icon: 'fa-network-wired', questions: [
+        { points: 100, q: "What distinguishes an AI 'Agent' from a standard LLM?", options: ["Ability to take actions/use tools", "It has a physical robot body", "It costs more to run", "It generates images"], answer: 0 },
+        { points: 200, q: "Which framework is popular for building LLM apps and agents?", options: ["LangChain", "React", "TensorFlow", "Django"], answer: 0 },
+        { points: 300, q: "What does an agent use to interact with external APIs?", options: ["Tools/Functions", "Web scraping", "Telepathy", "SQL injections"], answer: 0 },
+        { points: 400, q: "What is an autonomous agent loop often called?", options: ["ReAct (Reason + Act)", "DoLoop", "Infinite Context", "Tokenization"], answer: 0 },
+        { points: 500, q: "Which early open-source project popularized autonomous terminal agents?", options: ["AutoGPT", "Midjourney", "Stable Diffusion", "Whisper"], answer: 0 }
+    ]},
+    'neural_arch': { name: 'Architectures', icon: 'fa-project-diagram', questions: [
+        { points: 100, q: "What does 'ANN' stand for?", options: ["Artificial Neural Network", "Automated Node Network", "Algorithmic Neural Node", "Advanced Network Node"], answer: 0 },
+        { points: 200, q: "Which architecture revolutionized NLP in 2017?", options: ["Transformer", "RNN", "CNN", "GAN"], answer: 0 },
+        { points: 300, q: "What paper introduced the Transformer architecture?", options: ["Attention Is All You Need", "Computing Machinery and Intelligence", "The Singularity is Near", "ImageNet Classification"], answer: 0 },
+        { points: 400, q: "What is the mechanism that allows models to focus on relevant parts of input?", options: ["Attention", "Backpropagation", "Pooling", "Dropout"], answer: 0 },
+        { points: 500, q: "What type of architecture is primarily used for generating synthetic images?", options: ["Diffusion Models", "Decision Trees", "LSTMs", "Support Vector Machines"], answer: 0 }
+    ]},
+    'quantum_tech': { name: 'Quantum & Math', icon: 'fa-atom', questions: [
+        { points: 100, q: "What is the basic unit of information in quantum computing?", options: ["Qubit", "Byte", "Quantum Bitrate", "Quark"], answer: 0 },
+        { points: 200, q: "What phenomenon allows qubits to exist in multiple states at once?", options: ["Superposition", "Entanglement", "Interference", "Teleportation"], answer: 0 },
+        { points: 300, q: "What algorithmic technique relies on repeated random sampling?", options: ["Monte Carlo", "QuickSort", "Dijkstra's", "A* Search"], answer: 0 },
+        { points: 400, q: "Which hardware company is known for Quantum Annealing processors?", options: ["D-Wave", "Intel", "AMD", "ARM"], answer: 0 },
+        { points: 500, q: "What is 'Quantum Supremacy'?", options: ["Solving a problem a classical computer practically cannot", "AI taking over", "The fastest CPU", "A sci-fi novel"], answer: 0 }
     ]}
 };
 
@@ -245,78 +287,116 @@ class AudioSystem {
         setTimeout(() => this._playTone(150, 'sawtooth', 0.4, 0.2), 150);
     }
     playTimeout() { this._playTone(300, 'triangle', 0.5, 0.3); }
+    playAnomaly() {
+        this._playTone(900, 'sawtooth', 0.5, 0.3);
+        setTimeout(() => this._playTone(400, 'sawtooth', 0.8, 0.4), 200);
+    }
 
     speak(text) {
         if(this.isMuted) return;
-        this.synth.cancel(); // stop current speaking
+        this.synth.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.pitch = 0.7; // Robotic pitch
+        utterance.pitch = 0.6; // Deeper robotic pitch
         utterance.rate = 1.1;
-        // Try to find a synthetic/robotic voice if available
         const voices = this.synth.getVoices();
         const botVoice = voices.find(v => v.name.toLowerCase().includes('google') || v.name.toLowerCase().includes('zira'));
         if(botVoice) utterance.voice = botVoice;
         this.synth.speak(utterance);
     }
-    stopSpeaking() { this.synth.cancel(); }
 }
 
 /**
- * BACKGROUND ANIMATION SYSTEM
+ * VISUAL FX SYSTEMS (Background & Particles)
  */
-class BackgroundSystem {
+class FXSystem {
     constructor() {
-        this.canvas = document.getElementById('bg-canvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.nodes = [];
+        this.bgCanvas = document.getElementById('bg-canvas');
+        this.bgCtx = this.bgCanvas.getContext('2d');
+        this.fxCanvas = document.getElementById('fx-canvas');
+        this.fxCtx = this.fxCanvas.getContext('2d');
+        
+        this.bgNodes = [];
+        this.particles = [];
+        
         this.resize();
         window.addEventListener('resize', () => this.resize());
-        this.initNodes();
+        this.initBgNodes();
         this.animate();
     }
     resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        this.bgCanvas.width = window.innerWidth; this.bgCanvas.height = window.innerHeight;
+        this.fxCanvas.width = window.innerWidth; this.fxCanvas.height = window.innerHeight;
     }
-    initNodes() {
-        this.nodes = [];
+    initBgNodes() {
+        this.bgNodes = [];
         const numNodes = Math.floor((window.innerWidth * window.innerHeight) / 15000);
         for(let i = 0; i < numNodes; i++) {
-            this.nodes.push({
-                x: Math.random() * this.canvas.width,
-                y: Math.random() * this.canvas.height,
+            this.bgNodes.push({
+                x: Math.random() * this.bgCanvas.width,
+                y: Math.random() * this.bgCanvas.height,
                 vx: (Math.random() - 0.5) * 0.5,
                 vy: (Math.random() - 0.5) * 0.5,
                 radius: Math.random() * 2 + 1
             });
         }
     }
+    triggerExplosion(x, y, color) {
+        for(let i=0; i<30; i++) {
+            this.particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 10,
+                vy: (Math.random() - 0.5) * 10,
+                life: 1.0, decay: Math.random() * 0.05 + 0.02,
+                color: color, size: Math.random() * 4 + 2
+            });
+        }
+    }
     animate() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = 'rgba(14, 165, 233, 0.5)';
-        this.ctx.strokeStyle = 'rgba(14, 165, 233, 0.15)';
+        // Background Render
+        this.bgCtx.clearRect(0, 0, this.bgCanvas.width, this.bgCanvas.height);
+        this.bgCtx.fillStyle = 'rgba(14, 165, 233, 0.4)';
+        this.bgCtx.strokeStyle = 'rgba(14, 165, 233, 0.1)';
         
-        for(let i=0; i<this.nodes.length; i++) {
-            let n = this.nodes[i];
+        for(let i=0; i<this.bgNodes.length; i++) {
+            let n = this.bgNodes[i];
             n.x += n.vx; n.y += n.vy;
-            if(n.x < 0 || n.x > this.canvas.width) n.vx *= -1;
-            if(n.y < 0 || n.y > this.canvas.height) n.vy *= -1;
+            if(n.x < 0 || n.x > this.bgCanvas.width) n.vx *= -1;
+            if(n.y < 0 || n.y > this.bgCanvas.height) n.vy *= -1;
             
-            this.ctx.beginPath();
-            this.ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
-            this.ctx.fill();
+            this.bgCtx.beginPath();
+            this.bgCtx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+            this.bgCtx.fill();
 
-            for(let j=i+1; j<this.nodes.length; j++) {
-                let n2 = this.nodes[j];
+            for(let j=i+1; j<this.bgNodes.length; j++) {
+                let n2 = this.bgNodes[j];
                 let dist = Math.hypot(n.x - n2.x, n.y - n2.y);
                 if(dist < 150) {
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(n.x, n.y);
-                    this.ctx.lineTo(n2.x, n2.y);
-                    this.ctx.stroke();
+                    this.bgCtx.beginPath();
+                    this.bgCtx.moveTo(n.x, n.y);
+                    this.bgCtx.lineTo(n2.x, n2.y);
+                    this.bgCtx.stroke();
                 }
             }
         }
+
+        // FX Render (Particles)
+        this.fxCtx.clearRect(0, 0, this.fxCanvas.width, this.fxCanvas.height);
+        for(let i=this.particles.length-1; i>=0; i--) {
+            let p = this.particles[i];
+            p.x += p.vx; p.y += p.vy;
+            p.life -= p.decay;
+            if(p.life <= 0) {
+                this.particles.splice(i, 1);
+            } else {
+                this.fxCtx.globalAlpha = p.life;
+                this.fxCtx.fillStyle = p.color;
+                this.fxCtx.beginPath();
+                this.fxCtx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                this.fxCtx.fill();
+            }
+        }
+        this.fxCtx.globalAlpha = 1.0;
+
         requestAnimationFrame(() => this.animate());
     }
 }
@@ -328,22 +408,21 @@ class GameApp {
     constructor() {
         this.mount = document.getElementById('game-mount');
         this.audio = new AudioSystem();
+        this.fx = new FXSystem();
         
-        // Profiles
         this.player = { name: "Human", seed: "human_123", style: "avataaars", avatarUrl: "" };
-        this.bot = { name: "Host_Bot_v2", seed: "host_bot_99", style: "bottts", avatarUrl: "" };
+        this.bot = { name: "Host_Bot_v3", seed: "host_bot_99", style: "bottts", avatarUrl: "" };
 
-        // State
         this.allCategories = Object.keys(CHATBOT_TRIVIA_DATA);
         this.selectedCategories = [];
         this.categories = [];
         this.boardState = {};
+        this.anomalies = [];
         this.score = 0;
         this.totalQuestions = 0;
         this.questionsAnswered = 0;
         this.correctAnswers = 0;
         
-        // Timers
         this.timerInterval = null;
         this.timer = 0;
         this.maxTime = 20;
@@ -353,7 +432,6 @@ class GameApp {
     }
 
     updateAvatarUrls() {
-        // Using DiceBear for AI-generated customized avatars based on seed
         this.player.avatarUrl = `https://api.dicebear.com/7.x/${this.player.style}/svg?seed=${this.player.name}`;
         this.bot.avatarUrl = `https://api.dicebear.com/7.x/${this.bot.style}/svg?seed=${this.bot.seed}`;
     }
@@ -362,11 +440,10 @@ class GameApp {
         this.mount.innerHTML = `
             <div class="flex-1 flex items-center justify-center p-4">
                 <div class="glass-panel p-8 rounded-2xl w-full max-w-3xl text-center">
-                    <h1 class="text-4xl orbitron text-cyan-400 mb-2">INITIALIZE PROFILES</h1>
+                    <h1 class="text-4xl orbitron text-cyan-400 mb-2 glitch-hover">INITIALIZE PROFILES</h1>
                     <p class="text-slate-400 mb-8">Customize your biological entity representation</p>
                     
                     <div class="flex flex-col md:flex-row gap-8 items-center justify-center mb-8">
-                        <!-- Player Setup -->
                         <div class="flex flex-col items-center bg-slate-800/50 p-6 rounded-xl border border-slate-700 w-full md:w-1/2">
                             <h3 class="text-xl text-white mb-4">PLAYER ENTITY</h3>
                             <img id="preview-player" src="${this.player.avatarUrl}" class="w-32 h-32 rounded-full bg-slate-900 border-4 border-cyan-500 mb-4 floating">
@@ -381,12 +458,11 @@ class GameApp {
 
                         <div class="text-4xl text-cyan-500 font-bold orbitron">VS</div>
 
-                        <!-- Bot Setup -->
                         <div class="flex flex-col items-center bg-slate-800/50 p-6 rounded-xl border border-slate-700 w-full md:w-1/2">
                             <h3 class="text-xl text-white mb-4">HOST SYSTEM</h3>
                             <img src="${this.bot.avatarUrl}" class="w-32 h-32 rounded-full bg-slate-900 border-4 border-purple-500 mb-4 floating" style="animation-delay: -1.5s;">
                             <div class="w-full bg-slate-900 border border-purple-500 rounded p-2 text-purple-300 text-center mb-4 cursor-not-allowed opacity-70">${this.bot.name}</div>
-                            <div class="w-full bg-slate-900 border border-purple-500 rounded p-2 text-purple-300 text-center cursor-not-allowed opacity-70">Style: Bottts</div>
+                            <div class="w-full bg-slate-900 border border-purple-500 rounded p-2 text-purple-300 text-center cursor-not-allowed opacity-70">Model: Hyper-Agent V3</div>
                         </div>
                     </div>
 
@@ -412,7 +488,6 @@ class GameApp {
         styleSelect.addEventListener('change', updatePreview);
 
         document.getElementById('btn-start').onclick = () => {
-            // Must initialize AudioContext on user interaction
             if(this.audio.ctx.state === 'suspended') this.audio.ctx.resume();
             this.audio.playClick();
             this.renderMenu();
@@ -423,15 +498,12 @@ class GameApp {
         this.mount.innerHTML = `
             <div class="flex-1 flex flex-col items-center justify-center text-center p-8 z-20">
                 <img src="${this.bot.avatarUrl}" class="w-40 h-40 mb-6 drop-shadow-[0_0_20px_rgba(168,85,247,0.6)] floating">
-                <h1 class="text-5xl md:text-7xl orbitron font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 mb-2 drop-shadow-lg">
+                <h1 class="text-5xl md:text-7xl orbitron font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 mb-2 drop-shadow-lg glitch-hover">
                     ARE YOU SMARTER
                 </h1>
                 <h2 class="text-3xl md:text-5xl font-bold text-white mb-8 tracking-widest">
                     THAN A CHATBOT?
                 </h2>
-                <p class="text-slate-400 mb-12 max-w-lg text-lg">
-                    Challenge your knowledge on AI, LLMs, and the Singularity. Prove you are not just training data.
-                </p>
                 <button id="btn-select-cat" class="btn-cyber px-10 py-5 rounded-full text-2xl font-bold shadow-[0_0_20px_rgba(8,145,178,0.5)]">
                     INITIATE CHALLENGE
                 </button>
@@ -440,7 +512,7 @@ class GameApp {
 
         document.getElementById('btn-select-cat').onclick = () => {
             this.audio.playClick();
-            this.audio.speak(`Welcome, ${this.player.name}. Select your knowledge domains.`);
+            this.audio.speak(`Welcome, ${this.player.name}. Select your five data domains.`);
             this.renderCategorySelection();
         };
     }
@@ -448,7 +520,7 @@ class GameApp {
     renderCategorySelection() {
         this.mount.innerHTML = `
             <div class="w-full text-center py-6 z-20 glass-panel border-x-0 border-t-0">
-                <h2 class="text-3xl font-bold text-cyan-400 mb-2 orbitron">SELECT 5 CATEGORIES</h2>
+                <h2 class="text-3xl font-bold text-cyan-400 mb-2 orbitron glitch-hover">CONFIGURE MATRICES</h2>
                 <p id="selection-count" class="text-slate-400">Selected: ${this.selectedCategories.length} / 5</p>
             </div>
             <div class="flex-1 flex flex-col items-center justify-center z-20 w-full p-4 overflow-hidden">
@@ -458,7 +530,7 @@ class GameApp {
                         <i class="fas fa-dice mr-2"></i> RANDOMIZE
                     </button>
                     <button id="btn-play" class="btn-cyber px-8 py-3 rounded-lg shadow-lg" ${this.selectedCategories.length !== 5 ? 'disabled' : ''}>
-                        START GAME <i class="fas fa-play ml-2"></i>
+                        COMPILE & RUN <i class="fas fa-play ml-2"></i>
                     </button>
                 </div>
             </div>
@@ -502,7 +574,7 @@ class GameApp {
 
         document.getElementById('btn-play').onclick = () => {
             this.audio.playClick();
-            this.audio.speak("Loading simulation.");
+            this.audio.speak("Generating game board. Injecting anomalies.");
             this.prepareGameData();
             this.renderBoard();
         };
@@ -517,17 +589,24 @@ class GameApp {
         this.questionsAnswered = 0;
         this.correctAnswers = 0;
         this.totalQuestions = this.categories.length * 5;
+
+        // Generate Daily Double (System Anomalies)
+        this.anomalies = [];
+        while(this.anomalies.length < 2) {
+            let c = Math.floor(Math.random() * 5);
+            let q = Math.floor(Math.random() * 5);
+            let key = `${c}-${q}`;
+            if(!this.anomalies.includes(key)) this.anomalies.push(key);
+        }
     }
 
     renderBoard() {
         let gridHtml = '';
         
-        // Headers
         this.categories.forEach(cat => {
-            gridHtml += `<div class="cat-header"><i class="fas ${cat.icon} text-2xl mb-1"></i><span>${cat.name.toUpperCase()}</span></div>`;
+            gridHtml += `<div class="cat-header"><i class="fas ${cat.icon} text-2xl mb-1"></i><span class="text-sm">${cat.name.toUpperCase()}</span></div>`;
         });
 
-        // Rows (100 to 500)
         for (let i = 0; i < 5; i++) {
             this.categories.forEach((cat, catIndex) => {
                 const qKey = `${catIndex}-${i}`;
@@ -571,29 +650,51 @@ class GameApp {
     }
 
     selectQuestion(catIndex, qIndex) {
-        this.audio.playClick();
         const qKey = `${catIndex}-${qIndex}`;
         this.boardState[qKey] = true;
-        this.currentQuestion = {
-            ...this.categories[catIndex].questions[qIndex],
-            catName: this.categories[catIndex].name,
-            key: qKey
-        };
-        this.renderQuestion();
+        
+        // Deep copy so we don't mutate original data permanently
+        this.currentQuestion = JSON.parse(JSON.stringify(this.categories[catIndex].questions[qIndex]));
+        this.currentQuestion.catName = this.categories[catIndex].name;
+        this.currentQuestion.key = qKey;
+
+        // Check Anomaly
+        if(this.anomalies.includes(qKey)) {
+            this.audio.playAnomaly();
+            this.currentQuestion.points *= 2;
+            this.currentQuestion.isAnomaly = true;
+            
+            // Show flash warning
+            const warning = document.createElement('div');
+            warning.className = 'fixed inset-0 z-50 flex items-center justify-center bg-red-900/80 backdrop-blur-md';
+            warning.innerHTML = `<h1 class="text-6xl text-white font-bold orbitron glitch-hover">SYSTEM ANOMALY<br><span class="text-3xl text-yellow-400">POINTS DOUBLED</span></h1>`;
+            document.body.appendChild(warning);
+            this.audio.speak("System anomaly detected. Wager doubled.");
+            
+            setTimeout(() => {
+                warning.remove();
+                this.renderQuestion();
+            }, 2500);
+        } else {
+            this.audio.playClick();
+            this.renderQuestion();
+        }
     }
 
     renderQuestion() {
         const q = this.currentQuestion;
         this.timer = this.maxTime;
         
-        // Shuffle options
         const opts = q.options.map((text, i) => ({ text, originalIndex: i }));
         this.shuffledOptions = opts.sort(() => Math.random() - 0.5);
 
+        let headerColor = q.isAnomaly ? 'text-red-400' : 'text-cyan-400';
+        let pointColor = q.isAnomaly ? 'text-fuchsia-400' : 'text-cyan-400';
+
         this.mount.innerHTML = `
             <div class="w-full max-w-4xl mx-auto p-6 flex flex-col h-full justify-center z-20 relative">
-                <div class="flex justify-between items-end mb-4 text-cyan-400">
-                    <span class="text-xl font-bold orbitron">${q.catName.toUpperCase()} // ${q.points} PTS</span>
+                <div class="flex justify-between items-end mb-4 ${headerColor}">
+                    <span class="text-xl font-bold orbitron">${q.catName.toUpperCase()} // <span class="${pointColor}">${q.points} PTS ${q.isAnomaly ? '(!)' : ''}</span></span>
                     <span class="text-4xl font-bold text-white orbitron" id="timer-display">${this.timer}</span>
                 </div>
 
@@ -603,7 +704,7 @@ class GameApp {
 
                 <div class="glass-panel p-8 rounded-xl mb-8 relative overflow-hidden group">
                     <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl text-cyan-400 group-hover:scale-110 transition-transform duration-1000">
-                        <i class="fas fa-question-circle"></i>
+                        <i class="fas fa-microchip"></i>
                     </div>
                     <h3 class="text-2xl md:text-3xl font-bold text-center leading-relaxed text-white drop-shadow-md">${q.q}</h3>
                 </div>
@@ -620,7 +721,7 @@ class GameApp {
                 <div id="feedback-overlay" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300">
                      <div id="feedback-card" class="glass-panel px-10 py-6 rounded-2xl text-center transform scale-50 transition-transform duration-500">
                          <div id="feedback-icon" class="text-6xl mb-2"></div>
-                         <div id="feedback-text" class="text-2xl font-bold mb-2"></div>
+                         <div id="feedback-text" class="text-2xl font-bold mb-2 orbitron"></div>
                          <div id="feedback-points" class="text-xl text-yellow-400 orbitron"></div>
                      </div>
                 </div>
@@ -628,17 +729,19 @@ class GameApp {
         `;
 
         this.mount.querySelectorAll('.option-btn').forEach(btn => {
-            btn.onclick = () => this.handleAnswer(parseInt(btn.dataset.idx));
+            btn.onclick = (e) => {
+                const rect = btn.getBoundingClientRect();
+                this.handleAnswer(parseInt(btn.dataset.idx), rect.left + rect.width/2, rect.top + rect.height/2);
+            };
         });
 
-        // Start Timer
         clearInterval(this.timerInterval);
         this.timerInterval = setInterval(() => {
             this.timer -= 0.1;
             if (this.timer <= 0) {
                 this.timer = 0;
                 clearInterval(this.timerInterval);
-                this.handleAnswer(-1); // Timeout
+                this.handleAnswer(-1, window.innerWidth/2, window.innerHeight/2);
             }
             this.updateTimerUI();
         }, 100);
@@ -660,10 +763,9 @@ class GameApp {
         }
     }
 
-    handleAnswer(selectedIndex) {
+    handleAnswer(selectedIndex, clickX, clickY) {
         clearInterval(this.timerInterval);
         
-        // Prevent double clicks
         const btns = this.mount.querySelectorAll('.option-btn');
         btns.forEach(b => b.disabled = true);
         
@@ -686,35 +788,37 @@ class GameApp {
         if (isCorrect) {
             btns[selectedIndex].classList.add('bg-green-800', 'border-green-500');
             
-            // Calculate Time Bonus
             const timeBonus = Math.floor(this.timer * 5);
             const totalEarned = this.currentQuestion.points + timeBonus;
             this.score += totalEarned;
             this.correctAnswers++;
             
             this.audio.playScore();
-            fIcon.innerHTML = '<i class="fas fa-check-circle text-green-400"></i>';
-            fText.innerHTML = '<span class="text-green-400">CORRECT</span>';
-            fPoints.innerHTML = `+${this.currentQuestion.points} Base <br> <span class="text-sm text-cyan-300">+${timeBonus} Time Bonus</span>`;
+            this.fx.triggerExplosion(clickX, clickY, '#4ade80'); // Green particles
             
-            const comments = ["Data verified.", "Processing... Valid.", "Not bad for a biological entity."];
+            fIcon.innerHTML = '<i class="fas fa-check-circle text-green-400"></i>';
+            fText.innerHTML = '<span class="text-green-400">DATA VERIFIED</span>';
+            fPoints.innerHTML = `+${this.currentQuestion.points} Base <br> <span class="text-sm text-cyan-300">+${timeBonus} Speed Bonus</span>`;
+            
+            const comments = ["Node accepted.", "Logic sound.", "Impressive execution speed."];
             this.audio.speak(comments[Math.floor(Math.random() * comments.length)]);
         } else {
-            // Highlight Correct
             if(btns[correctBtnIndex]) btns[correctBtnIndex].classList.add('bg-green-900', 'border-green-600', 'opacity-80');
             
             if (isTimeout) {
                 this.audio.playTimeout();
                 fIcon.innerHTML = '<i class="fas fa-clock text-red-500"></i>';
-                fText.innerHTML = '<span class="text-red-500">TIME LIMIT EXCEEDED</span>';
-                this.audio.speak("Time limit exceeded.");
+                fText.innerHTML = '<span class="text-red-500">TIMEOUT</span>';
+                this.audio.speak("Latency threshold exceeded.");
             } else {
                 btns[selectedIndex].classList.add('bg-red-900', 'border-red-500');
                 this.audio.playError();
-                fIcon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
-                fText.innerHTML = '<span class="text-red-500">INCORRECT</span>';
+                this.fx.triggerExplosion(clickX, clickY, '#ef4444'); // Red particles
                 
-                const comments = ["Hallucination detected.", "Error. Logic flaw.", "Try upgrading your neural net."];
+                fIcon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
+                fText.innerHTML = '<span class="text-red-500">ERROR</span>';
+                
+                const comments = ["Hallucination detected.", "Syntax error.", "Incorrect assumption."];
                 this.audio.speak(comments[Math.floor(Math.random() * comments.length)]);
             }
         }
@@ -733,42 +837,39 @@ class GameApp {
         let title, awardName, awardColor, awardSvg;
 
         if (accuracy >= 90) {
-            title = "Superintelligence"; awardName = "Gold Neural Matrix"; awardColor = "text-yellow-400";
-            awardSvg = `<svg class="w-32 h-32 mx-auto drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #facc15;"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>`;
+            title = "Superintelligence"; awardName = "Quantum Core"; awardColor = "text-yellow-400";
+            awardSvg = `<svg class="w-32 h-32 mx-auto drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #facc15;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`;
         } else if (accuracy >= 70) {
-            title = "AGI Prototype"; awardName = "Silver Logic Core"; awardColor = "text-slate-300";
+            title = "AGI Prototype"; awardName = "Silver Logic Node"; awardColor = "text-slate-300";
             awardSvg = `<svg class="w-32 h-32 mx-auto drop-shadow-[0_0_20px_rgba(203,213,225,0.8)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #cbd5e1;"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>`;
         } else if (accuracy >= 40) {
-            title = "Prompt Engineer"; awardName = "Bronze Syntax Medal"; awardColor = "text-orange-400";
-            awardSvg = `<svg class="w-32 h-32 mx-auto drop-shadow-[0_0_20px_rgba(251,146,60,0.8)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #fb923c;"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>`;
+            title = "Prompt Engineer"; awardName = "Bronze Syntax Key"; awardColor = "text-orange-400";
+            awardSvg = `<svg class="w-32 h-32 mx-auto drop-shadow-[0_0_20px_rgba(251,146,60,0.8)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #fb923c;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>`;
         } else {
-            title = "Hallucinating Model"; awardName = "Broken Floppy Disk"; awardColor = "text-red-500";
+            title = "Legacy Script"; awardName = "Corrupted Drive"; awardColor = "text-red-500";
             awardSvg = `<svg class="w-32 h-32 mx-auto drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #ef4444;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`;
         }
 
         this.mount.innerHTML = `
             <div class="flex-1 flex flex-col items-center justify-center p-8 z-20 overflow-y-auto">
                 <div class="glass-panel p-10 rounded-2xl w-full max-w-4xl text-center border-t-4 border-t-cyan-500">
-                    <h2 class="text-5xl font-bold text-white mb-2 orbitron">ASSESSMENT COMPLETE</h2>
+                    <h2 class="text-5xl font-bold text-white mb-2 orbitron glitch-hover">SESSION TERMINATED</h2>
                     <div class="text-2xl text-cyan-400 mb-8 font-mono">CLASSIFICATION: <span class="text-white font-bold border-b-2 border-cyan-500 pb-1">${title}</span></div>
 
                     <div class="flex flex-col md:flex-row gap-8 justify-center items-center mb-8">
-                        
-                        <!-- Player Stats -->
                         <div class="bg-slate-800/80 p-6 rounded-xl border border-slate-700 w-full md:w-1/2 shadow-inner">
                             <img src="${this.player.avatarUrl}" class="w-24 h-24 mx-auto rounded-full bg-slate-900 border-2 border-cyan-500 mb-4">
                             <h3 class="text-xl text-cyan-300 mb-4 orbitron">${this.player.name}</h3>
                             <div class="grid grid-cols-2 gap-4 text-lg">
-                                <div class="text-right text-slate-400">Total Score:</div>
+                                <div class="text-right text-slate-400">Final Score:</div>
                                 <div class="text-left font-bold text-yellow-400">${this.score}</div>
                                 <div class="text-right text-slate-400">Accuracy:</div>
                                 <div class="text-left font-bold text-white">${accuracy.toFixed(1)}%</div>
-                                <div class="text-right text-slate-400">Correct:</div>
+                                <div class="text-right text-slate-400">Nodes Secured:</div>
                                 <div class="text-left font-bold text-green-400">${this.correctAnswers} / ${this.totalQuestions}</div>
                             </div>
                         </div>
 
-                        <!-- Award Section -->
                         <div class="bg-slate-800/80 p-6 rounded-xl border border-slate-700 w-full md:w-1/2 flex flex-col justify-center shadow-inner min-h-[300px]">
                             <h3 class="text-xl text-slate-300 mb-4 orbitron">ACQUIRED ASSET</h3>
                             <div class="mb-4 floating">
@@ -777,21 +878,19 @@ class GameApp {
                             <div class="text-2xl font-bold ${awardColor} orbitron tracking-wider">${awardName}</div>
                             <p class="text-sm text-slate-400 mt-2">Added to inventory.</p>
                         </div>
-
                     </div>
 
                     <div class="flex justify-center gap-6 mt-4">
                         <button id="btn-replay" class="btn-cyber px-8 py-3 rounded-full text-xl shadow-lg">
-                            <i class="fas fa-redo mr-2"></i> NEW SESSION
+                            <i class="fas fa-redo mr-2"></i> REBOOT SYSTEM
                         </button>
                     </div>
                 </div>
             </div>
         `;
 
-        // Speak Result
         setTimeout(() => {
-            this.audio.speak(`Analysis complete. Biological entity ${this.player.name} is rated as: ${title}.`);
+            this.audio.speak(`Analysis complete. Biological entity ${this.player.name} is classified as: ${title}.`);
         }, 500);
 
         document.getElementById('btn-replay').onclick = () => {
@@ -802,14 +901,9 @@ class GameApp {
     }
 }
 
-// Initialization
 window.onload = () => {
-    // Start background animation
-    new BackgroundSystem();
-    // Start Game logic
     new GameApp();
 };
-
 </script>
 </body>
 </html>
