@@ -6,6 +6,7 @@ import HackingPuzzle from './HackingPuzzle.js';
 import Progression from './Progression.js';
 import CityUI from './CityUI.js';
 import SaveSystem from '../../core/SaveSystem.js';
+import Security from '../../core/Security.js';
 
 export default class CityGame {
     constructor(container) {
@@ -309,7 +310,7 @@ export default class CityGame {
         if(!text) return;
 
         const display = this.ui.chatOverlay.querySelector('#chat-text');
-        display.innerHTML = `<div class="mb-2"><span class="text-fuchsia-300 font-bold">You:</span> ${text}</div>`;
+        display.innerHTML = `<div class="mb-2"><span class="text-fuchsia-300 font-bold">You:</span> ${Security.escapeHTML(text)}</div>`;
         input.value = '';
 
         const thinkingId = 'thinking-' + Date.now();
@@ -321,7 +322,7 @@ export default class CityGame {
         const thinking = document.getElementById(thinkingId);
         if(thinking) thinking.remove();
 
-        display.innerHTML += `<div class="mb-4 pl-4 border-l-2 border-cyan-500/30"><span class="text-cyan-300 font-bold">Agent:</span> ${response}</div>`;
+        display.innerHTML += `<div class="mb-4 pl-4 border-l-2 border-cyan-500/30"><span class="text-cyan-300 font-bold">Agent:</span> ${Security.escapeHTML(response)}</div>`;
         display.scrollTop = display.scrollHeight;
 
         // Reward for socializing

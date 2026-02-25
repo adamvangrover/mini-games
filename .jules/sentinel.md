@@ -17,3 +17,8 @@
 **Vulnerability:** Found Stored XSS vulnerability in `BossModeV0.js`. The Word application was rendering `docContent` directly into `innerHTML` without sanitization. This module appeared to be a copy of `BossModeLegacy.js` before it was patched.
 **Learning:** Forked or copied code often misses subsequent security patches applied to the original source.
 **Prevention:** When refactoring or versioning modules, ensure security fixes are propagated to all variants. Ideally, use inheritance or shared renderers to avoid duplication of vulnerable patterns.
+
+## 2025-05-24 - [HIGH] Stored XSS in CityGame Chat
+**Vulnerability:** Found Stored XSS vulnerability in `CityGame.js`. The chat interface was rendering user input and LLM responses directly into `innerHTML` without sanitization.
+**Learning:** New game modules often reimplement chat or text display features from scratch, missing the security practices established in core or other modules.
+**Prevention:** Always use `Security.escapeHTML` when inserting text into the DOM. Promote the use of shared UI components for chat to avoid reimplementing vulnerable rendering logic.
