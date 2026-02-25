@@ -247,3 +247,25 @@ This file provides detailed instructions and walkthroughs for each game in the M
 
 **Integration:**
 *   This game is heavily integrated with the **Boss Mode Quest System**. Check the **Bounty Board** app in Boss Mode for specific targets to hunt!
+
+---
+
+## 🟦 Neon Blocks
+
+**Objective:** Explore a procedurally generated voxel world, gather resources, and build structures.
+
+**Controls:**
+*   **WASD:** Move your character.
+*   **Space:** Jump (or fly up in Fly Mode).
+*   **Shift:** Fly down (in Fly Mode).
+*   **Left Click:** Break block.
+*   **Right Click:** Place block.
+*   **Scroll Wheel / 1-9:** Select block type.
+*   **F:** Toggle Fly Mode.
+
+**How to Play:**
+1.  **Explore:** Wander through different biomes like Grasslands, Deserts, Snow, and Water.
+2.  **Build:** Select a block from your hotbar and right-click to place it.
+3.  **Mine:** Left-click to break blocks and clear space.
+4.  **Create:** Use the infinite resources to build whatever you can imagine!
+5.  **Save:** Your world is automatically saved locally, so you can return to your creation later.
