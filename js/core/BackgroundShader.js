@@ -11,6 +11,7 @@ export default class BackgroundShader {
 
         this.stars = [];
         this.initStars();
+        this.initBackground();
 
         window.addEventListener('resize', () => {
             this.width = window.innerWidth;
@@ -18,6 +19,7 @@ export default class BackgroundShader {
             this.canvas.width = this.width;
             this.canvas.height = this.height;
             this.initStars();
+            this.initBackground();
         });
 
         this.animate();
@@ -35,18 +37,32 @@ export default class BackgroundShader {
         }
     }
 
+    initBackground() {
+        if (!this.ctx) return;
+
+        // Bolt Optimization: Cache radial gradient to avoid object allocation every frame
+        this.bgGradient = this.ctx.createRadialGradient(
+            this.width/2, this.height/2, 0,
+            this.width/2, this.height/2, this.width
+        );
+        this.bgGradient.addColorStop(0, '#1e1b4b');
+        this.bgGradient.addColorStop(1, '#020617');
+
+        // Bolt Optimization: Cache scanlines pattern to avoid redundant fillRect calls every frame
+        const scanlineCanvas = document.createElement('canvas');
+        scanlineCanvas.width = 1;
+        scanlineCanvas.height = 4;
+        const scanCtx = scanlineCanvas.getContext('2d');
+        scanCtx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        scanCtx.fillRect(0, 0, 1, 1);
+        this.scanlinePattern = this.ctx.createPattern(scanlineCanvas, 'repeat');
+    }
+
     animate() {
         if (!this.ctx) return;
 
         // Deep dark blue/purple background
-        const grad = this.ctx.createRadialGradient(
-            this.width/2, this.height/2, 0,
-            this.width/2, this.height/2, this.width
-        );
-        grad.addColorStop(0, '#1e1b4b');
-        grad.addColorStop(1, '#020617');
-
-        this.ctx.fillStyle = grad;
+        this.ctx.fillStyle = this.bgGradient;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
         // Draw Stars
@@ -80,9 +96,9 @@ export default class BackgroundShader {
         */
 
         // Simple overlay scanline
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-        for(let i=0; i<this.height; i+=4) {
-            this.ctx.fillRect(0, i, this.width, 1);
+        if (this.scanlinePattern) {
+            this.ctx.fillStyle = this.scanlinePattern;
+            this.ctx.fillRect(0, 0, this.width, this.height);
         }
 
         requestAnimationFrame(() => this.animate());
