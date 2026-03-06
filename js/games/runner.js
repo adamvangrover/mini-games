@@ -134,6 +134,14 @@ export default class RunnerGame {
         if (!this.player.isJumping) {
             this.player.y = this.groundY - this.player.height;
         }
+
+        // Bolt Optimization: Cache the background CanvasGradient in the resize() method
+        // to prevent expensive reallocation during the draw() loop on every frame.
+        if (this.ctx) {
+            this.bgGradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+            this.bgGradient.addColorStop(0, '#0f172a');
+            this.bgGradient.addColorStop(1, '#1e1b4b');
+        }
     }
 
     resetGame() {
@@ -342,10 +350,8 @@ export default class RunnerGame {
         this.ctx.clearRect(0, 0, width, height);
         
         // Background Gradient
-        const gradient = this.ctx.createLinearGradient(0, 0, 0, height);
-        gradient.addColorStop(0, '#0f172a');
-        gradient.addColorStop(1, '#1e1b4b');
-        this.ctx.fillStyle = gradient;
+        // Bolt Optimization: Use the cached gradient instead of creating a new one every frame
+        this.ctx.fillStyle = this.bgGradient || '#0f172a'; // Fallback in case resize hasn't fired
         this.ctx.fillRect(0, 0, width, height);
         
         // Background Grid (Moving)
