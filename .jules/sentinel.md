@@ -22,3 +22,8 @@
 **Vulnerability:** Found Stored XSS vulnerability in `CityGame.js`. The chat interface was rendering user input and LLM responses directly into `innerHTML` without sanitization.
 **Learning:** New game modules often reimplement chat or text display features from scratch, missing the security practices established in core or other modules.
 **Prevention:** Always use `Security.escapeHTML` when inserting text into the DOM. Promote the use of shared UI components for chat to avoid reimplementing vulnerable rendering logic.
+
+## 2024-05-30 - [Stored XSS in Life Simulator Minigame]
+**Vulnerability:** The social media feature in `js/games/lifeSim.js` allowed Stored Cross-Site Scripting (XSS). User input passed to `addPost(user, text)` was added directly to `this.state.socialFeed` without sanitization, and later rendered raw into the DOM via `el.innerHTML = ...` in the `renderSocial()` loop.
+**Learning:** Even isolated minigames within a larger framework can introduce severe vulnerabilities if they implement their own state management and raw DOM rendering without utilizing the central security utilities.
+**Prevention:** All user-controlled text inputs intended for HTML rendering must be sanitized through `Security.escapeHTML` prior to interpolation, regardless of the module's apparent isolation.
