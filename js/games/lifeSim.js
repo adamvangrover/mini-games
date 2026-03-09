@@ -1,3 +1,5 @@
+import Security from '../core/Security.js';
+
 export default class LifeSimGame {
     constructor() {
         this.container = null;
@@ -375,7 +377,7 @@ export default class LifeSimGame {
         this.state.socialFeed.forEach(post => {
             const el = document.createElement('div');
             el.className = 'ls-post';
-            el.innerHTML = `<div class="ls-post-user">${post.user} <span style="color:#666; font-weight:normal">${post.time}</span></div><div>${post.text}</div>`;
+            el.innerHTML = `<div class="ls-post-user">${Security.escapeHTML(post.user)} <span style="color:#666; font-weight:normal">${Security.escapeHTML(post.time)}</span></div><div>${Security.escapeHTML(post.text)}</div>`;
             container.appendChild(el);
         });
     }
