@@ -29,6 +29,8 @@ export default class TrophyRoom {
         this.isActive = true;
         this.interactables = [];
         this.colliders = [];
+        this.interactionTargets = []; // Optimization: Only raycast against these
+        this.lastInteractionCheck = 0;
 
         // Navigation State
         this.player = {
@@ -290,6 +292,7 @@ export default class TrophyRoom {
         floor.receiveShadow = true;
         this.scene.add(floor);
         this.floor = floor; // Reference for clicking
+        this.interactionTargets.push(floor);
 
         // Grid
         const gridHelper = new THREE.GridHelper(60, 30, theme.grid, 0x222222);
@@ -393,6 +396,7 @@ export default class TrophyRoom {
             
             this.scene.add(cupGroup);
             this.interactables.push(cupGroup);
+            this.interactionTargets.push(cupGroup);
         });
     }
 
@@ -648,7 +652,12 @@ export default class TrophyRoom {
             this.updateCameraRotation();
 
             // Check interaction hover
-            this.checkHover();
+            // Bolt Optimization: Throttle Raycasting (Heavy)
+            const now = performance.now();
+            if (now - this.lastInteractionCheck > 50) {
+                this.lastInteractionCheck = now;
+                this.checkHover();
+            }
         }
 
         // Ambient Animation (Float)
@@ -734,7 +743,8 @@ export default class TrophyRoom {
 
     checkHover() {
         this.raycaster.setFromCamera(this.mouse, this.camera);
-        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+        // Bolt Optimization: Only raycast against interactive targets instead of entire scene
+        const intersects = this.raycaster.intersectObjects(this.interactionTargets, true);
         
         let found = null;
         if (intersects.length > 0) {
@@ -791,7 +801,8 @@ export default class TrophyRoom {
         if (this.isDragging || this.focusedTrophy || this.joystick.active) return;
 
         this.raycaster.setFromCamera(this.mouse, this.camera);
-        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+        // Bolt Optimization: Only raycast against interactive targets instead of entire scene
+        const intersects = this.raycaster.intersectObjects(this.interactionTargets, true);
 
         if (intersects.length > 0) {
             let obj = intersects[0].object;
