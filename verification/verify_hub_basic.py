@@ -5,6 +5,9 @@ def verify_app_load(page):
     # Navigate to the local server
     page.goto("http://localhost:8000/index.html")
 
+    # Dismiss the loader
+    page.click("body")
+
     # Wait for the loader to disappear
     page.wait_for_selector("#app-loader", state="hidden", timeout=10000)
 
