@@ -455,6 +455,7 @@ export default class ArcadeHub {
         floor.receiveShadow = true;
         this.scene.add(floor);
         this.floor = floor; // Reference
+        this.interactionTargets.push(floor);
 
         // Grid on floor
         const gridHelper = new THREE.GridHelper(60, 30, colors.grid, this.currentSkin === 'gibson' ? 0x003300 : 0x222222);
@@ -1126,7 +1127,8 @@ export default class ArcadeHub {
         if (this.joystick.active) return; // Prevent click interference
 
         this.raycaster.setFromCamera(this.mouse, this.camera);
-        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+        // Bolt Optimization: Raycast against interactionTargets instead of entire scene to fix click lag
+        const intersects = this.raycaster.intersectObjects(this.interactionTargets, true);
 
         if (intersects.length > 0) {
             const point = intersects[0].point;
