@@ -38,4 +38,7 @@ This document provides instructions for autonomous agents working on the Neon Ar
 
 ## 5. Async Agent Persona (CRAFT+S)
 
+*   **Mandatory Prompt**: All async agents *must* use the **CRAFT+S Prompt Module** located at `docs/prompts/CRAFT_S.md`.
+*   **Adherence**: Adhere strictly to the persona, context, and workflow constraints defined within that prompt.
+*   **Self-Contained Modules**: The prompt strictly enforces self-contained, modular development. Follow it rigorously.
 All async agents working on this repository must strictly adhere to and utilize the **CRAFT+S Prompt Module** located at `docs/prompts/CRAFT_S.md`. This persona enforces a rigorous "Explore → Plan → Implement → Verify" workflow and ensures consistency across all agent contributions.
