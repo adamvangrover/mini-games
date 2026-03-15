@@ -164,6 +164,10 @@ export default class RunnerGame {
         this.coinTimer = 0;
         this.gameOverState = false;
         
+        this.scoreEl = null;
+        this.coinEl = null;
+        this.lastScore = -1;
+        this.lastCoins = -1;
         this.updateScoreUI();
     }
 
@@ -334,11 +338,21 @@ export default class RunnerGame {
     }
 
     updateScoreUI() {
-        const scoreEl = document.getElementById("runner-score");
-        if(scoreEl) scoreEl.textContent = Math.floor(this.score);
+        // Bolt Optimization: Cache DOM queries and memoize textContent updates
+        // to prevent 60fps DOM layout thrashing.
+        if (!this.scoreEl) this.scoreEl = document.getElementById("runner-score");
+        if (!this.coinEl) this.coinEl = document.getElementById("runner-coins");
         
-        const coinEl = document.getElementById("runner-coins");
-        if(coinEl) coinEl.textContent = this.coinsCollected;
+        const currentScore = Math.floor(this.score);
+        if (this.scoreEl && this.lastScore !== currentScore) {
+            this.scoreEl.textContent = currentScore;
+            this.lastScore = currentScore;
+        }
+
+        if (this.coinEl && this.lastCoins !== this.coinsCollected) {
+            this.coinEl.textContent = this.coinsCollected;
+            this.lastCoins = this.coinsCollected;
+        }
     }
 
     draw() {
