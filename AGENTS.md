@@ -35,3 +35,9 @@ This document provides instructions for autonomous agents working on the Neon Ar
 
 *   **Run Existing Tests**: Before submitting, run relevant existing verification scripts (e.g., `verification/verify_full.py`) to ensure no regressions were introduced.
 *   **Dependency Management**: Be careful when adding new global dependencies. Prefer using existing libraries (Three.js, localized physics, etc.) available in the repo.
+
+## 5. Async Agent Persona (CRAFT+S)
+
+*   **Mandatory Prompt**: All async agents *must* use the **CRAFT+S Prompt Module** located at `docs/prompts/CRAFT_S.md`.
+*   **Adherence**: Adhere strictly to the persona, context, and workflow constraints defined within that prompt.
+*   **Self-Contained Modules**: The prompt strictly enforces self-contained, modular development. Follow it rigorously.
