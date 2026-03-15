@@ -58,6 +58,9 @@ export default class PongGame {
         this.player2 = { x: this.canvas.width - 20, y: this.canvas.height / 2 - this.paddleHeight / 2, score: 0 };
         this.ball = { x: this.canvas.width / 2, y: this.canvas.height / 2, radius: 10, dx: 300, dy: 300 };
         this.trail = [];
+        this.scoreEl = null;
+        this.lastScore1 = -1;
+        this.lastScore2 = -1;
         this.updateScore();
         this.active = true;
     }
@@ -177,9 +180,13 @@ export default class PongGame {
     }
 
     updateScore() {
-        const scoreEl = document.getElementById("pong-score");
-        if (scoreEl) {
-            scoreEl.innerText = `${this.player1.score} - ${this.player2.score}`;
+        // Bolt Optimization: Cache DOM query and memoize textContent update
+        // to prevent 60fps DOM layout thrashing.
+        if (!this.scoreEl) this.scoreEl = document.getElementById("pong-score");
+        if (this.scoreEl && (this.lastScore1 !== this.player1.score || this.lastScore2 !== this.player2.score)) {
+            this.scoreEl.textContent = `${this.player1.score} - ${this.player2.score}`;
+            this.lastScore1 = this.player1.score;
+            this.lastScore2 = this.player2.score;
         }
     }
 

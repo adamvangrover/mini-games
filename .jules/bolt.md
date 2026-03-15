@@ -21,3 +21,7 @@
 ## 2024-03-12 - [Raycast Throttling for Click Events]
 **Learning:** Calling `raycaster.intersectObjects(this.scene.children, true)` on every click in a scene with hundreds of geometries (like the Arcade Hub) causes significant main thread blocking and input lag.
 **Action:** Maintain a separate array of `interactionTargets` (e.g., interactable items AND the floor for movement) and raycast against only that subset to drastically reduce intersection calculations.
+
+## 2026-06-12 - [DOM Layout Thrashing in Game Loops]
+**Learning:** Updating DOM elements (e.g., `textContent` for score UI) blindly on every frame inside a 60fps canvas `update()` loop causes severe layout thrashing and high CPU usage, even if the value hasn't changed.
+**Action:** Always cache the DOM element reference and memoize the previous value. Only update the DOM when the new value strictly differs from the memoized value.
