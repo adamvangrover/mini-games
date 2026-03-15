@@ -27,7 +27,9 @@ def main():
             "Self-Contained Modules",
             "Verification",
             "Log",
-            "SaveSystem"
+            "SaveSystem",
+            "CRAFT_S.md",
+            "Async Agent Persona"
         ]),
         ('README.md', [
             "Vanilla JavaScript",
