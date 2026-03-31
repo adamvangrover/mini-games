@@ -231,6 +231,11 @@ export default class NeonGalagaGame {
     }
 
     update(dt) {
+        // Bolt Optimization: Cache DOM queries and memoize textContent updates
+        // to prevent 60fps DOM layout thrashing.
+        if (!this.scoreEl) this.scoreEl = document.getElementById('galaga-score');
+        if (!this.livesEl) this.livesEl = document.getElementById('galaga-lives');
+
         if (this.player.active) {
             if (this.keys['ArrowLeft']) this.player.x -= 350 * dt;
             if (this.keys['ArrowRight']) this.player.x += 350 * dt;
@@ -314,7 +319,10 @@ export default class NeonGalagaGame {
             this.wave++;
             this.lives++;
             this.showMessage("WAVE COMPLETE! EXTRA LIFE", 2000, 'text-green-400');
-            document.getElementById('galaga-lives').textContent = this.lives;
+            if (this.livesEl && this.lastLives !== this.lives) {
+                this.livesEl.textContent = this.lives;
+                this.lastLives = this.lives;
+            }
             this.startWave();
         }
 
@@ -449,7 +457,10 @@ export default class NeonGalagaGame {
             this.score += val;
             this.spawnFloatingText(e.x, e.y, `+${val}`);
             
-            document.getElementById('galaga-score').textContent = this.score;
+            if (this.scoreEl && this.lastScore !== this.score) {
+                this.scoreEl.textContent = this.score;
+                this.lastScore = this.score;
+            }
             ParticleSystem.getInstance().emit(e.x, e.y, '#f0f', 15);
             window.miniGameHub.soundManager.playSound('explosion');
             
@@ -478,15 +489,24 @@ export default class NeonGalagaGame {
         host.capturedShip = { type: 'player' };
         
         this.lives--;
-        document.getElementById('galaga-lives').textContent = this.lives;
+        if (this.livesEl && this.lastLives !== this.lives) {
+            this.livesEl.textContent = this.lives;
+            this.lastLives = this.lives;
+        }
         
         if (this.lives <= 0) {
             this.state = 'GAMEOVER';
             window.miniGameHub.showGameOver(this.score, () => {
                 this.lives = 3;
                 this.score = 0;
-                document.getElementById('galaga-lives').textContent = 3;
-                document.getElementById('galaga-score').textContent = 0;
+                if (this.livesEl) {
+                    this.livesEl.textContent = 3;
+                    this.lastLives = 3;
+                }
+                if (this.scoreEl) {
+                    this.scoreEl.textContent = 0;
+                    this.lastScore = 0;
+                }
                 this.player.dual = false;
                 this.startWave();
             });
@@ -509,7 +529,10 @@ export default class NeonGalagaGame {
             window.miniGameHub.soundManager.playSound('explosion');
         } else {
             this.lives--;
-            document.getElementById('galaga-lives').textContent = this.lives;
+            if (this.livesEl && this.lastLives !== this.lives) {
+                this.livesEl.textContent = this.lives;
+                this.lastLives = this.lives;
+            }
             ParticleSystem.getInstance().emit(this.player.x, this.player.y, '#0ff', 30);
             window.miniGameHub.soundManager.playSound('explosion');
             
@@ -519,8 +542,14 @@ export default class NeonGalagaGame {
                 window.miniGameHub.showGameOver(this.score, () => {
                     this.lives = 3;
                     this.score = 0;
-                    document.getElementById('galaga-lives').textContent = 3;
-                    document.getElementById('galaga-score').textContent = 0;
+                    if (this.livesEl) {
+                        this.livesEl.textContent = 3;
+                        this.lastLives = 3;
+                    }
+                    if (this.scoreEl) {
+                        this.scoreEl.textContent = 0;
+                        this.lastScore = 0;
+                    }
                     this.player.dual = false;
                     this.startWave();
                 });
