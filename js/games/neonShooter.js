@@ -183,6 +183,11 @@ export default class NeonShooter {
     update(dt) {
         if (!this.isRunning || !this.player) return;
 
+        // Bolt Optimization: Cache DOM queries and memoize textContent updates
+        // to prevent 60fps DOM layout thrashing.
+        if (!this.healthEl) this.healthEl = document.getElementById('fps-health');
+        if (!this.scoreEl) this.scoreEl = document.getElementById('fps-score');
+
         // Player Movement
         const speed = 5 * dt;
         const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0,1,0), this.player.rotation.y);
@@ -210,7 +215,15 @@ export default class NeonShooter {
             // Player Collision (Damage)
             if (e.mesh.position.distanceTo(this.camera.position) < 1.5) {
                 this.player.health -= 10 * dt;
-                document.getElementById('fps-health').textContent = Math.floor(this.player.health);
+
+                if (this.healthEl) {
+                    const healthInt = Math.floor(this.player.health);
+                    if (this.lastHealth !== healthInt) {
+                        this.healthEl.textContent = healthInt;
+                        this.lastHealth = healthInt;
+                    }
+                }
+
                 if (this.player.health <= 0) {
                      this.gameOver();
                 }
@@ -242,7 +255,12 @@ export default class NeonShooter {
                         this.scene.remove(e.mesh);
                         this.enemies.splice(j, 1);
                         this.score += 100;
-                        document.getElementById('fps-score').textContent = this.score;
+
+                        if (this.scoreEl && this.lastScore !== this.score) {
+                            this.scoreEl.textContent = this.score;
+                            this.lastScore = this.score;
+                        }
+
                         this.soundManager.playSound('score');
                     } else {
                         // Flash red
@@ -267,8 +285,16 @@ export default class NeonShooter {
             this.enemies = [];
             this.bullets.forEach(b => this.scene.remove(b.mesh));
             this.bullets = [];
-            document.getElementById('fps-health').textContent = "100";
-            document.getElementById('fps-score').textContent = "0";
+
+            if (this.healthEl) {
+                this.healthEl.textContent = "100";
+                this.lastHealth = 100;
+            }
+            if (this.scoreEl) {
+                this.scoreEl.textContent = "0";
+                this.lastScore = 0;
+            }
+
             this.isRunning = true;
         });
     }

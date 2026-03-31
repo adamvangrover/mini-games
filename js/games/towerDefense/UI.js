@@ -88,22 +88,46 @@ export default class UI {
     }
 
     update(dt) {
-        document.getElementById('td-money').textContent = Math.floor(this.game.money);
-        document.getElementById('td-lives').textContent = this.game.lives;
-        document.getElementById('td-wave').textContent = this.game.wave;
+        // Bolt Optimization: Cache DOM queries and memoize textContent updates
+        // to prevent 60fps DOM layout thrashing.
+        if (!this.moneyEl) this.moneyEl = document.getElementById('td-money');
+        if (!this.livesEl) this.livesEl = document.getElementById('td-lives');
+        if (!this.waveEl) this.waveEl = document.getElementById('td-wave');
+        if (!this.speedBtnEl) this.speedBtnEl = document.getElementById('td-speed-btn');
 
-        const speedBtn = document.getElementById('td-speed-btn');
-        if (speedBtn) speedBtn.textContent = `${this.game.speedMultiplier}x Speed`;
+        const currentMoney = Math.floor(this.game.money);
+        if (this.moneyEl && this.lastMoney !== currentMoney) {
+            this.moneyEl.textContent = currentMoney;
+            this.lastMoney = currentMoney;
+        }
+
+        if (this.livesEl && this.lastLives !== this.game.lives) {
+            this.livesEl.textContent = this.game.lives;
+            this.lastLives = this.game.lives;
+        }
+
+        if (this.waveEl && this.lastWave !== this.game.wave) {
+            this.waveEl.textContent = this.game.wave;
+            this.lastWave = this.game.wave;
+        }
+
+        if (this.speedBtnEl && this.lastSpeed !== this.game.speedMultiplier) {
+            this.speedBtnEl.textContent = `${this.game.speedMultiplier}x Speed`;
+            this.lastSpeed = this.game.speedMultiplier;
+        }
 
         // Highlight selected build button
         const selected = this.game.selectedBuildType;
-        this.container.querySelectorAll('.td-build-btn').forEach(btn => {
-            if (btn.dataset.type === selected) {
-                btn.classList.add('bg-white/20', 'border-white');
-            } else {
-                btn.classList.remove('bg-white/20', 'border-white');
-            }
-        });
+        if (this.lastSelected !== selected) {
+            this.container.querySelectorAll('.td-build-btn').forEach(btn => {
+                if (btn.dataset.type === selected) {
+                    btn.classList.add('bg-white/20', 'border-white');
+                } else {
+                    btn.classList.remove('bg-white/20', 'border-white');
+                }
+            });
+            this.lastSelected = selected;
+        }
     }
 
     showUpgradePanel(tower) {

@@ -72,13 +72,19 @@ export default class NeonMemory {
     }
 
     updateScore() {
-        const el = document.getElementById('nm-score');
-        if (el) el.textContent = this.score;
+        if (!this.scoreEl) this.scoreEl = document.getElementById('nm-score');
+        if (this.scoreEl && this.lastScore !== this.score) {
+            this.scoreEl.textContent = this.score;
+            this.lastScore = this.score;
+        }
     }
 
     showMessage(msg) {
-        const el = document.getElementById('nm-message');
-        if (el) el.textContent = msg;
+        if (!this.msgEl) this.msgEl = document.getElementById('nm-message');
+        if (this.msgEl && this.lastMsg !== msg) {
+            this.msgEl.textContent = msg;
+            this.lastMsg = msg;
+        }
     }
 
     nextRound() {
