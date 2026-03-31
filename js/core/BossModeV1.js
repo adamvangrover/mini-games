@@ -1,6 +1,7 @@
 import SaveSystem from './SaveSystem.js';
 import SoundManager from './SoundManager.js';
 import AdsManager from './AdsManager.js';
+import Security from './Security.js';
 import { EMAILS, DOCUMENTS, SLIDES, CHATS, TERMINAL_ADVENTURE } from './BossModeContent.js';
 
 export default class BossModeV1 {
@@ -122,7 +123,7 @@ export default class BossModeV1 {
                 <div class="w-32 h-32 rounded-full bg-gray-200 border-4 border-white/20 flex items-center justify-center mb-6 shadow-2xl">
                     <span class="text-4xl text-gray-500 font-bold">JD</span>
                 </div>
-                <div class="text-3xl font-bold mb-6">${this.user.name}</div>
+                <div class="text-3xl font-bold mb-6">${Security.escapeHTML(this.user.name)}</div>
                 <div class="flex gap-2">
                     <input type="password" placeholder="PIN" class="bg-white/20 border border-white/30 rounded px-4 py-2 text-center text-white placeholder-gray-300 outline-none w-48 backdrop-blur" onkeydown="if(event.key==='Enter') BossMode.instance.currentGuest.login()">
                     <button class="bg-white/20 hover:bg-white/40 border border-white/30 rounded px-4 transition-all" onclick="BossMode.instance.currentGuest.login()"><i class="fas fa-arrow-right"></i></button>
