@@ -27,3 +27,8 @@
 **Vulnerability:** The social media feature in `js/games/lifeSim.js` allowed Stored Cross-Site Scripting (XSS). User input passed to `addPost(user, text)` was added directly to `this.state.socialFeed` without sanitization, and later rendered raw into the DOM via `el.innerHTML = ...` in the `renderSocial()` loop.
 **Learning:** Even isolated minigames within a larger framework can introduce severe vulnerabilities if they implement their own state management and raw DOM rendering without utilizing the central security utilities.
 **Prevention:** All user-controlled text inputs intended for HTML rendering must be sanitized through `Security.escapeHTML` prior to interpolation, regardless of the module's apparent isolation.
+
+## 2026-03-28 - [CRITICAL] Stored XSS in BossMode V1, V2, and V3 Login Screens
+**Vulnerability:** Found Stored XSS vulnerabilities in `BossModeV1.js`, `BossModeV2.js`, and `BossModeV3.js`. The user's name (`this.user.name`) and initials (`this.user.initials` in V3) were being rendered directly into `innerHTML` during the `renderLogin()` sequence without sanitization.
+**Learning:** Even simulated OS "login" screens can be vulnerable if they directly render user profile data. The pattern of missing sanitization was consistently propagated across multiple iterations of the BossMode UI components.
+**Prevention:** Always wrap user-controlled properties (like names, avatars, initials) with `Security.escapeHTML()` when interpolating them into HTML templates. Ensure security imports (`import Security from './Security.js';`) are included when copying or creating new UI modules.
