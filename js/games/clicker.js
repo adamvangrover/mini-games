@@ -32,6 +32,8 @@ export default class ClickerGame {
     }
 
     init(container) {
+        this.uiElements = null;
+        this.uiValues = null;
         // Load save state
         const config = this.saveSystem.getGameConfig('clicker-game') || {};
         this.money = config.money || 0;
@@ -170,6 +172,8 @@ export default class ClickerGame {
     }
 
     shutdown() {
+        this.uiElements = null;
+        this.uiValues = null;
         // Save
         this.saveSystem.setGameConfig('clicker-game', {
             money: this.money,
@@ -196,8 +200,11 @@ export default class ClickerGame {
         if (this.autoClickRate > 0) {
             const income = this.autoClickRate * dt;
             this.moneyAccumulator += income;
-            this.money = Math.floor(this.moneyAccumulator);
-            this.updateUI();
+            const newMoney = Math.floor(this.moneyAccumulator);
+            if (newMoney !== this.money) {
+                this.money = newMoney;
+                this.updateUI();
+            }
         }
         
         this.particleSystem.update(dt);
@@ -354,54 +361,87 @@ export default class ClickerGame {
         if (!this.container) return;
         const fmt = (n) => Math.floor(n).toLocaleString();
 
-        const setText = (id, val) => {
-            const el = this.container.querySelector('#' + id);
-            if(el) el.textContent = val;
+        if (!this.uiElements) {
+            this.uiElements = {
+                money: this.container.querySelector('#money'),
+                autoRate: this.container.querySelector('#auto-rate'),
+                clickPower: this.container.querySelector('#click-power'),
+                upgradeCost: this.container.querySelector('#upgrade-cost'),
+                autoCount: this.container.querySelector('#auto-count'),
+                autoclickerCost: this.container.querySelector('#autoclicker-cost'),
+                factoryCount: this.container.querySelector('#factory-count'),
+                factoryCost: this.container.querySelector('#factory-cost'),
+                bankCount: this.container.querySelector('#bank-count'),
+                bankCost: this.container.querySelector('#bank-cost'),
+                prestigeMultiplier: this.container.querySelector('#prestige-multiplier'),
+                prestigeSection: this.container.querySelector('#prestige-section'),
+                upgradeBtn: this.container.querySelector('#upgrade-btn'),
+                autoBtn: this.container.querySelector('#auto-btn'),
+                factoryBtn: this.container.querySelector('#factory-btn'),
+                bankBtn: this.container.querySelector('#bank-btn'),
+            };
+            this.uiValues = {};
+        }
+
+        const setText = (key, val) => {
+            if (this.uiValues[key] !== val) {
+                const el = this.uiElements[key];
+                if (el) el.textContent = val;
+                this.uiValues[key] = val;
+            }
         };
 
         setText("money", fmt(this.money));
-        setText("auto-rate", fmt(this.autoClickRate));
+        setText("autoRate", fmt(this.autoClickRate));
         
-        setText("click-power", fmt(this.clickPower));
-        setText("upgrade-cost", fmt(this.upgradeCost));
+        setText("clickPower", fmt(this.clickPower));
+        setText("upgradeCost", fmt(this.upgradeCost));
         
-        setText("auto-count", fmt(this.autoClickers));
-        setText("autoclicker-cost", fmt(this.autoClickerCost));
+        setText("autoCount", fmt(this.autoClickers));
+        setText("autoclickerCost", fmt(this.autoClickerCost));
         
-        setText("factory-count", fmt(this.factories));
-        setText("factory-cost", fmt(this.factoryCost));
+        setText("factoryCount", fmt(this.factories));
+        setText("factoryCost", fmt(this.factoryCost));
         
-        setText("bank-count", fmt(this.banks));
-        setText("bank-cost", fmt(this.bankCost));
+        setText("bankCount", fmt(this.banks));
+        setText("bankCost", fmt(this.bankCost));
         
-        setText("prestige-multiplier", this.prestigeMultiplier + "x");
+        setText("prestigeMultiplier", this.prestigeMultiplier + "x");
 
-        const pSection = this.container.querySelector("#prestige-section");
+        const pSection = this.uiElements.prestigeSection;
         if (pSection) {
-            if (this.money >= 1000 || this.prestigeMultiplier > 1) {
-                pSection.classList.remove("hidden");
-            } else {
-                pSection.classList.add("hidden");
+            const showPrestige = this.money >= 1000 || this.prestigeMultiplier > 1;
+            if (this.uiValues.showPrestige !== showPrestige) {
+                if (showPrestige) {
+                    pSection.classList.remove("hidden");
+                } else {
+                    pSection.classList.add("hidden");
+                }
+                this.uiValues.showPrestige = showPrestige;
             }
         }
 
         // Button States
-        const checkAfford = (val, id) => {
-             const btn = this.container.querySelector(`#${id}`);
+        const checkAfford = (val, key) => {
+             const btn = this.uiElements[key];
+             const canAfford = this.money >= val;
              if(btn) {
-                 if(this.money >= val) {
-                     btn.classList.remove('opacity-50', 'grayscale');
-                     btn.classList.add('hover:scale-[1.02]');
-                 } else {
-                     btn.classList.add('opacity-50', 'grayscale');
-                     btn.classList.remove('hover:scale-[1.02]');
+                 if(this.uiValues[key + '_afford'] !== canAfford) {
+                     if(canAfford) {
+                         btn.classList.remove('opacity-50', 'grayscale');
+                         btn.classList.add('hover:scale-[1.02]');
+                     } else {
+                         btn.classList.add('opacity-50', 'grayscale');
+                         btn.classList.remove('hover:scale-[1.02]');
+                     }
+                     this.uiValues[key + '_afford'] = canAfford;
                  }
              }
         };
         
-        checkAfford(this.upgradeCost, 'upgrade-btn');
-        checkAfford(this.autoClickerCost, 'auto-btn');
-        checkAfford(this.factoryCost, 'factory-btn');
-        checkAfford(this.bankCost, 'bank-btn');
+        checkAfford(this.upgradeCost, 'upgradeBtn');
+        checkAfford(this.autoClickerCost, 'autoBtn');
+        checkAfford(this.factoryCost, 'factoryBtn');
+        checkAfford(this.bankCost, 'bankBtn');
     }
 }
