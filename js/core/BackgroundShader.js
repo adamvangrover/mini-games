@@ -66,16 +66,22 @@ export default class BackgroundShader {
         this.ctx.fillRect(0, 0, this.width, this.height);
 
         // Draw Stars
-        this.ctx.fillStyle = '#ffffff';
-        this.stars.forEach(star => {
+        // Bolt Optimization: Replace forEach, replace ctx.arc with fillRect, force integer coords to avoid subpixel antialiasing
+        const starCount = this.stars.length;
+        for (let i = 0; i < starCount; i++) {
+            const star = this.stars[i];
             star.y += star.speed;
             if (star.y > this.height) star.y = 0;
 
-            this.ctx.globalAlpha = Math.random() * 0.5 + 0.3;
-            this.ctx.beginPath();
-            this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-            this.ctx.fill();
-        });
+            const alpha = Math.random() * 0.5 + 0.3;
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+
+            const x = (star.x) | 0;
+            const y = (star.y) | 0;
+            const size = Math.max(1, (star.size * 2) | 0);
+
+            this.ctx.fillRect(x, y, size, size);
+        }
 
         // Grid Effect
         this.ctx.strokeStyle = 'rgba(255, 0, 255, 0.1)';
