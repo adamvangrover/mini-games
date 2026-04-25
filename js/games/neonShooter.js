@@ -213,7 +213,8 @@ export default class NeonShooter {
             e.mesh.lookAt(this.camera.position);
 
             // Player Collision (Damage)
-            if (e.mesh.position.distanceTo(this.camera.position) < 1.5) {
+            // Bolt Optimization: Replace distanceTo with distanceToSquared to bypass expensive Math.sqrt in high-frequency game loop
+            if (e.mesh.position.distanceToSquared(this.camera.position) < 2.25) {
                 this.player.health -= 10 * dt;
 
                 if (this.healthEl) {
@@ -245,7 +246,8 @@ export default class NeonShooter {
             // Bullet Collision
             for (let j = this.enemies.length - 1; j >= 0; j--) {
                 let e = this.enemies[j];
-                if (b.mesh.position.distanceTo(e.mesh.position) < 1.0) {
+                // Bolt Optimization: Replace distanceTo with distanceToSquared to bypass expensive Math.sqrt in high-frequency game loop
+                if (b.mesh.position.distanceToSquared(e.mesh.position) < 1.0) {
                     // Hit
                     e.health--;
                     this.scene.remove(b.mesh);
