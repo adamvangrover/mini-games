@@ -25,3 +25,7 @@
 ## 2026-06-12 - [DOM Layout Thrashing in Game Loops]
 **Learning:** Updating DOM elements (e.g., `textContent` for score UI) blindly on every frame inside a 60fps canvas `update()` loop causes severe layout thrashing and high CPU usage, even if the value hasn't changed.
 **Action:** Always cache the DOM element reference and memoize the previous value. Only update the DOM when the new value strictly differs from the memoized value.
+
+## 2026-06-15 - [Sub-pixel Anti-aliasing Overhead]
+**Learning:** In high-frequency 60fps canvas rendering loops, drawing tiny shapes (like stars or particles) using `ctx.arc()` causes immense CPU overhead due to pathing calculations, and failing to clamp coordinates/dimensions to integers triggers expensive sub-pixel anti-aliasing. Furthermore, modifying `ctx.globalAlpha` inside tight loops causes context switches which can be mitigated by using interpolated `rgba()` strings on `fillStyle`.
+**Action:** Replace `ctx.arc()` with `ctx.fillRect()`, use bitwise OR (e.g., `(x) | 0`) to force integer values, bound random size truncations (e.g., `Math.max(1, size)`), and combine alpha into `fillStyle` to drastically improve performance.
