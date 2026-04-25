@@ -32,3 +32,7 @@
 **Vulnerability:** Found Stored XSS vulnerabilities in `BossModeV1.js`, `BossModeV2.js`, and `BossModeV3.js`. The user's name (`this.user.name`) and initials (`this.user.initials` in V3) were being rendered directly into `innerHTML` during the `renderLogin()` sequence without sanitization.
 **Learning:** Even simulated OS "login" screens can be vulnerable if they directly render user profile data. The pattern of missing sanitization was consistently propagated across multiple iterations of the BossMode UI components.
 **Prevention:** Always wrap user-controlled properties (like names, avatars, initials) with `Security.escapeHTML()` when interpolating them into HTML templates. Ensure security imports (`import Security from './Security.js';`) are included when copying or creating new UI modules.
+## 2026-04-25 - [CRITICAL] Stored XSS in Boss Mode Legacy and OS
+**Vulnerability:** Found Stored XSS vulnerabilities in `BossModeLegacy.js` and `BossModeOS.js`. Similar to earlier findings, the `this.user.name` property was directly embedded into `innerHTML` strings via template literals without calling `escapeHTML` or `Security.escapeHTML()`.
+**Learning:** Legacy and OS emulation features are common spots for XSS due to directly reflecting user profiles in emulated interfaces. It is important to remember to import `Security` or use the localized `escapeHTML` helper in legacy components.
+**Prevention:** Ensured `this.user.name` is always escaped using the file's available XSS prevention utility.
