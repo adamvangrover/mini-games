@@ -374,9 +374,9 @@ export default class BossMode {
         loginLayer.innerHTML = `
             <div class="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center text-white">
                 <div class="w-32 h-32 rounded-full bg-gray-200 border-4 ${ringColor} flex items-center justify-center mb-6 shadow-2xl">
-                    <span class="text-4xl text-gray-500 font-bold">${this.user.avatar}</span>
+                    <span class="text-4xl text-gray-500 font-bold">${Security.escapeHTML(this.user.avatar)}</span>
                 </div>
-                <div class="text-3xl font-bold mb-6">${this.user.name}</div>
+                <div class="text-3xl font-bold mb-6">${Security.escapeHTML(this.user.name)}</div>
                 <div class="flex gap-2">
                     <input id="boss-login-input" type="password" placeholder="PIN" class="bg-white/20 border border-white/30 rounded px-4 py-2 text-center text-white placeholder-gray-300 outline-none w-48 backdrop-blur" onkeydown="if(event.key==='Enter') BossMode.instance.login()">
                     <button id="boss-login-submit" class="bg-white/20 hover:bg-white/40 border border-white/30 rounded px-4 transition-all" onclick="BossMode.instance.login()"><i class="fas fa-arrow-right"></i></button>
@@ -1603,7 +1603,7 @@ export default class BossMode {
             <div class="bg-black text-gray-300 font-mono text-sm h-full p-2 flex flex-col" onclick="this.querySelector('input').focus()">
                 <div id="term-output" class="flex-1 overflow-y-auto whitespace-pre-wrap">${this.termHistory.map(l=>`<div>${Security.escapeHTML(l)}</div>`).join('')}</div>
                 <div class="flex pt-2">
-                    <span class="text-gray-100">C:\\Users\\${this.user.name.replace(' ','')}></span>
+                    <span class="text-gray-100">C:\\Users\\${Security.escapeHTML(this.user.name).replace(' ','')}></span>
                     <input class="bg-transparent border-none outline-none text-gray-100 flex-1 ml-2" autofocus onkeydown="if(event.key==='Enter') { BossMode.instance.runTerminalCommand(this.value); this.value=''; }">
                 </div>
             </div>`;
@@ -1781,7 +1781,7 @@ export default class BossMode {
                 <div class="w-64 ${menuColor} backdrop-blur border rounded-t-lg shadow-2xl flex flex-col overflow-hidden text-gray-300 pointer-events-auto">
                      <div class="p-4 bg-gradient-to-r ${headerColor} border-b border-gray-700 flex items-center gap-3">
                           <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs">JD</div>
-                          <div class="font-bold text-white">${this.user.name}</div>
+                          <div class="font-bold text-white">${Security.escapeHTML(this.user.name)}</div>
                      </div>
                      <div class="p-2 flex flex-col gap-1">
                           <button class="flex items-center gap-3 p-2 hover:bg-white/10 rounded text-left transition-colors" onclick="BossMode.instance.openApp('excel')"><i class="fas fa-file-excel text-green-500 w-5 text-center"></i> Excel</button>
