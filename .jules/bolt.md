@@ -29,3 +29,7 @@
 ## 2026-06-15 - [Sub-pixel Anti-aliasing Overhead]
 **Learning:** In high-frequency 60fps canvas rendering loops, drawing tiny shapes (like stars or particles) using `ctx.arc()` causes immense CPU overhead due to pathing calculations, and failing to clamp coordinates/dimensions to integers triggers expensive sub-pixel anti-aliasing. Furthermore, modifying `ctx.globalAlpha` inside tight loops causes context switches which can be mitigated by using interpolated `rgba()` strings on `fillStyle`.
 **Action:** Replace `ctx.arc()` with `ctx.fillRect()`, use bitwise OR (e.g., `(x) | 0`) to force integer values, bound random size truncations (e.g., `Math.max(1, size)`), and combine alpha into `fillStyle` to drastically improve performance.
+
+## 2026-04-26 - [Nested Collision Loop Optimization]
+**Learning:** In nested broad-phase collision detection loops (e.g., bullet vs. enemy), using array methods like `forEach` and calculating exact distances via `distanceTo()` introduces significant overhead due to callback execution and `Math.sqrt()` operations. Furthermore, continuing to check collisions after a hit is registered on a bullet is wasteful.
+**Action:** Replace `forEach` with standard backwards or forwards `for` loops, swap `distanceTo()` with `distanceToSquared()` using pre-calculated squared thresholds, and insert an early `break;` statement upon hit resolution to prevent redundant O(N*M) checks.
