@@ -303,15 +303,21 @@ export default class NeonGalagaGame {
             this.updateEnemy(e, dt, this.isChallengeStage);
         });
 
-        // Bullet Collisions
-        this.bullets.forEach(b => {
-            this.enemies.forEach(e => {
+        // Bolt Optimization: Replace nested forEach with standard loops and early break
+        // to prevent O(N*M) checks and redundant callback execution when checking collisions.
+        for (let i = 0; i < this.bullets.length; i++) {
+            const b = this.bullets[i];
+            if (!b.active) continue;
+
+            for (let j = 0; j < this.enemies.length; j++) {
+                const e = this.enemies[j];
                 if (e.hp > 0 && Math.abs(b.x - e.x) < 25 && Math.abs(b.y - e.y) < 25) {
                     b.active = false;
                     this.damageEnemy(e);
+                    break; // Bullet is destroyed, skip remaining enemies
                 }
-            });
-        });
+            }
+        }
 
         this.enemies = this.enemies.filter(e => e.hp > 0 || e.capturedShip);
         
