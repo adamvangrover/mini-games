@@ -1,3 +1,5 @@
+Here is the **Async Agent "CRAFT+S" Prompt Module**. This is designed to be pasted into **Copilot Studio** as a "System Message" or "Prompt Tool" with the variables mapped to your inputs.
+
 ### The Component-Based Prompt (CRAFT+S)
 
 **Copy and paste the block below. The `{{DoubleCurlyBrackets}}` indicate dynamic input variables you must map in Copilot Studio.**
