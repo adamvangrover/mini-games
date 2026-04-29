@@ -68,6 +68,7 @@ const gameRegistry = {
     'zen-garden-game': { name: 'Zen Garden', description: 'Relax & Create', icon: 'fa-solid fa-spa', category: 'Simulation', importFn: () => import('./games/zenGarden.js'), wide: true, noDpad: true },
 
     // Arcade Classics
+    'neon-bounce': { name: 'Neon Bounce', description: 'Cybernetic Breakout', icon: 'fa-solid fa-table-tennis-paddle-ball', category: 'Arcade Classics', importFn: () => import('./games/neonBounce.js') },
     'matterhorn-arcade': { name: 'Matterhorn Arcade', description: 'Retro Climbing Challenge', icon: 'fa-solid fa-person-hiking', category: 'Arcade Classics', importFn: () => import('./games/matterhornArcade.js'), wide: true },
     'snake-game': { name: 'Snake', description: 'Eat & Grow', icon: 'fa-solid fa-snake', category: 'Arcade Classics', importFn: () => import('./games/snake.js') },
     'pong-game': { name: 'Pong', description: 'Retro Tennis', icon: 'fa-solid fa-table-tennis-paddle-ball', category: 'Arcade Classics', importFn: () => import('./games/pong.js') },
