@@ -25,3 +25,18 @@
 ## 2026-06-12 - [DOM Layout Thrashing in Game Loops]
 **Learning:** Updating DOM elements (e.g., `textContent` for score UI) blindly on every frame inside a 60fps canvas `update()` loop causes severe layout thrashing and high CPU usage, even if the value hasn't changed.
 **Action:** Always cache the DOM element reference and memoize the previous value. Only update the DOM when the new value strictly differs from the memoized value.
+
+## 2026-06-15 - [Sub-pixel Anti-aliasing Overhead]
+**Learning:** In high-frequency 60fps canvas rendering loops, drawing tiny shapes (like stars or particles) using `ctx.arc()` causes immense CPU overhead due to pathing calculations, and failing to clamp coordinates/dimensions to integers triggers expensive sub-pixel anti-aliasing. Furthermore, modifying `ctx.globalAlpha` inside tight loops causes context switches which can be mitigated by using interpolated `rgba()` strings on `fillStyle`.
+**Action:** Replace `ctx.arc()` with `ctx.fillRect()`, use bitwise OR (e.g., `(x) | 0`) to force integer values, bound random size truncations (e.g., `Math.max(1, size)`), and combine alpha into `fillStyle` to drastically improve performance.
+
+## 2026-04-26 - [Nested Collision Loop Optimization]
+**Learning:** In nested broad-phase collision detection loops (e.g., bullet vs. enemy), using array methods like `forEach` and calculating exact distances via `distanceTo()` introduces significant overhead due to callback execution and `Math.sqrt()` operations. Furthermore, continuing to check collisions after a hit is registered on a bullet is wasteful.
+**Action:** Replace `forEach` with standard backwards or forwards `for` loops, swap `distanceTo()` with `distanceToSquared()` using pre-calculated squared thresholds, and insert an early `break;` statement upon hit resolution to prevent redundant O(N*M) checks.
+## 2026-04-27 - [Nested Collision Loop Early Break]
+**Learning:** In nested broad-phase collision detection loops (e.g., bullet vs. enemy in Neon Galaga), using `forEach` callbacks introduces overhead. More importantly, continuing to check collisions for a bullet *after* it has already hit an enemy is an $O(N \times M)$ waste of CPU cycles and allows a single bullet to potentially register multiple hits in the exact same frame.
+**Action:** Always replace nested `forEach` callbacks with standard `for` loops in hot code paths, and insert an early `break;` statement in the inner loop as soon as the first object registers a collision and is deactivated, avoiding unnecessary iterations.
+
+## 2024-05-18 - [Neon Survivor Distance Calculation Optimization]
+**Learning:** In entity-dense games like Neon Survivor with O(N^2) spatial checks (e.g., enemy separation, bullet collisions), using `Math.sqrt` for distance calculations creates a significant CPU overhead during high-frequency loops. Squared distance checks (`dx*dx + dy*dy < minD * minD`) achieve the same result without the expensive square root operation.
+**Action:** Always prefer squared distance comparisons (`distSq < radiusSq`) over actual distance calculations (`Math.sqrt() < radius`) in game loops, specifically prioritizing loops nested within each other or those iterating over arrays containing many elements like enemies or projectiles.

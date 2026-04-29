@@ -33,6 +33,7 @@ const gameRegistry = {
     'all-in-hole-game': { name: 'All In Hole', description: 'Swallow the World', icon: 'fa-solid fa-circle-notch', category: '3D Immersive', importFn: () => import('./games/allInHole.js'), wide: true, noDpad: true },
 
     // New Games
+    'repo-builder': { name: 'Repo Builder', description: 'Meta-game of building the repo', icon: 'fa-solid fa-server', category: 'Simulation', importFn: () => import('./games/repoBuilder.js'), wide: true },
     'neon-blocks': { name: 'Neon Blocks', description: 'Voxel Sandbox Builder', icon: 'fa-solid fa-cubes', category: 'New Games', importFn: () => import('./games/neonBlocks.js'), wide: true, noDpad: true },
     'file-forge-game': { name: 'File Forge', description: 'AI File Generator', icon: 'fa-solid fa-file-code', category: 'New Games', importFn: () => import('./games/fileForge.js') },
     'tower-defense-game': { name: 'Tower Defense', description: 'Defend the Base', icon: 'fa-solid fa-chess-rook', category: 'New Games', importFn: () => import('./games/towerDefense.js') },

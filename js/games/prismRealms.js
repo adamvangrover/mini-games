@@ -315,13 +315,16 @@ export default class PrismRealms {
             const b = this.bullets[i];
             b.position.addScaledVector(b.userData.vel, dt);
             b.userData.life -= dt;
-            this.enemies.forEach(e => {
-                if(b.position.distanceTo(e.position) < 1.5) {
+            // Bolt Optimization: Replace forEach with standard for loop, distanceTo with distanceToSquared (1.5^2 = 2.25) to bypass Math.sqrt, and early break on hit.
+            for (let j = 0; j < this.enemies.length; j++) {
+                const e = this.enemies[j];
+                if(b.position.distanceToSquared(e.position) < 2.25) {
                     e.userData.hp -= 10;
                     b.userData.life = 0;
                     this.explode(e.position);
+                    break;
                 }
-            });
+            }
             if(b.userData.life <= 0) { this.scene.remove(b); this.bullets.splice(i,1); }
         }
 

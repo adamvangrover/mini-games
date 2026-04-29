@@ -414,7 +414,7 @@ export default class BossModeLegacy {
 
         if(this.skin === 'xp') {
             menuClass = "absolute bottom-10 left-0 w-64 bg-white border-2 border-blue-600 rounded-t-lg shadow-2xl flex flex-col z-[10002] overflow-hidden";
-            sideBar = `<div class="bg-blue-600 p-2 flex items-center gap-2 text-white font-bold border-b border-orange-400"><div class="w-8 h-8 rounded border-2 border-white bg-blue-400 overflow-hidden"><i class="fas fa-user-circle text-2xl"></i></div>${this.user.name}</div>`;
+            sideBar = `<div class="bg-blue-600 p-2 flex items-center gap-2 text-white font-bold border-b border-orange-400"><div class="w-8 h-8 rounded border-2 border-white bg-blue-400 overflow-hidden"><i class="fas fa-user-circle text-2xl"></i></div>${escapeHTML(this.user.name)}</div>`;
             itemHover = "hover:bg-blue-100";
         }
 
@@ -434,7 +434,7 @@ export default class BossModeLegacy {
                     <div class="border-t border-gray-400 my-1"></div>
                     <div class="px-2 py-1 ${itemHover} cursor-pointer flex items-center gap-2" onclick="BossMode.instance.legacyOS.logout()">
                         <i class="fas fa-sign-out-alt text-xs text-yellow-600"></i>
-                        <span>Log Off ${this.user.name}...</span>
+                        <span>Log Off ${escapeHTML(this.user.name)}...</span>
                     </div>
                     <div class="px-2 py-1 ${itemHover} cursor-pointer flex items-center gap-2" onclick="BossMode.instance.toggle(false)">
                         <i class="fas fa-power-off text-xs text-red-500"></i>

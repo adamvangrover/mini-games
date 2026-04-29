@@ -14,6 +14,7 @@ export default class ByteBroker {
         this.marketTrend = 0;
         this.tickTimer = 0;
         this.tickRate = 1.0; // Seconds per tick
+        this.globalRisk = 0; // Represents market tension
 
         // Visuals
         this.chartCanvas = null;
@@ -28,14 +29,15 @@ export default class ByteBroker {
         this.cash = 10000;
         this.stocks = [];
         this.portfolio = {};
+        this.globalRisk = 0;
 
         // Load some dummy stocks if empty? No, wait for user input.
         // Or maybe add a "Tutorial.txt" stock by default.
         this.addStock({
-            name: "Tutorial.txt",
+            name: "Operation Absolute Resolve",
             size: 1024,
             type: "text/plain",
-            content: "Welcome to Byte Broker",
+            content: "DEFENSE MAINFRAME ENCRYPTED...",
             seed: 12345
         });
 
@@ -46,19 +48,20 @@ export default class ByteBroker {
 
     render() {
         this.container.innerHTML = `
-            <div class="flex flex-col h-full bg-slate-900 text-white font-mono overflow-hidden relative">
+            <div class="flex flex-col h-full bg-black text-green-500 font-mono overflow-hidden relative border-4 border-green-800 border-double shadow-[0_0_15px_rgba(0,255,0,0.5)]">
                 <!-- Header -->
-                <div class="flex justify-between items-center p-4 bg-slate-800 border-b border-fuchsia-900 z-10">
+                <div class="flex justify-between items-center p-4 bg-black border-b border-green-800 z-10">
                     <div class="flex items-center gap-4">
-                        <i class="fas fa-chart-line text-fuchsia-400 text-2xl"></i>
+                        <i class="fas fa-chart-line text-green-500 text-2xl"></i>
                         <div>
-                            <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-400 to-cyan-400">BYTE BROKER</h1>
-                            <span class="text-xs text-slate-400">MARKET STATUS: OPEN</span>
+                            <h1 class="text-xl font-bold text-green-400 drop-shadow-[0_0_5px_rgba(0,255,0,0.8)]">BYTE BROKER // OPERATION ABSOLUTE RESOLVE</h1>
+                            <span class="text-xs text-green-700">MARKET STATUS: OPEN</span>
                         </div>
                     </div>
                     <div class="text-right">
-                        <div class="text-xs text-slate-400">AVAILABLE CASH</div>
+                        <div class="text-xs text-green-700">AVAILABLE CASH</div>
                         <div class="text-2xl font-bold text-green-400">$<span id="bb-cash">10,000.00</span></div>
+                        <div class="text-xs text-red-500 mt-1">RISK LEVEL: <span id="bb-risk">0</span>%</div>
                     </div>
                 </div>
 
@@ -66,54 +69,54 @@ export default class ByteBroker {
                 <div class="flex flex-1 overflow-hidden relative">
 
                     <!-- Left: Stock List -->
-                    <div class="w-1/3 bg-slate-900/90 border-r border-slate-700 flex flex-col z-10">
-                        <div class="p-2 bg-slate-800 text-xs font-bold text-slate-400 flex justify-between">
+                    <div class="w-1/3 bg-black border-r border-green-800 flex flex-col z-10">
+                        <div class="p-2 bg-black text-xs font-bold text-green-700 flex justify-between border-b border-green-800">
                             <span>TICKER</span>
                             <span>PRICE</span>
                         </div>
                         <div id="bb-stock-list" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
                             <!-- Stock Items Injected Here -->
-                            <div class="text-center text-slate-500 mt-10 text-sm p-4">
+                            <div class="text-center text-green-700 mt-10 text-sm p-4">
                                 Drag & Drop files anywhere to IPO new stocks.
                             </div>
                         </div>
                     </div>
 
                     <!-- Right: Detail View -->
-                    <div class="flex-1 flex flex-col bg-slate-900 relative z-10">
+                    <div class="flex-1 flex flex-col bg-black relative z-10">
                         <!-- Chart Area -->
-                        <div class="flex-1 bg-black relative border-b border-slate-700">
+                        <div class="flex-1 bg-black relative border-b border-green-800">
                              <canvas id="bb-chart" class="w-full h-full"></canvas>
                              <div id="bb-chart-overlay" class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div class="text-slate-600 font-bold text-4xl opacity-20 select-none">SELECT A STOCK</div>
+                                <div class="text-green-900 font-bold text-4xl opacity-50 select-none">SELECT A STOCK</div>
                              </div>
                         </div>
 
                         <!-- Trading Desk -->
-                        <div class="h-48 bg-slate-800 p-4 flex gap-4">
+                        <div class="h-48 bg-black p-4 flex gap-4">
                             <!-- Info -->
-                            <div class="w-1/3 border-r border-slate-700 pr-4">
-                                <h2 id="bb-stock-name" class="text-xl font-bold text-white mb-1">--</h2>
-                                <div class="text-xs text-slate-400 mb-2" id="bb-stock-sector">SECTOR: --</div>
+                            <div class="w-1/3 border-r border-green-800 pr-4">
+                                <h2 id="bb-stock-name" class="text-xl font-bold text-green-400 mb-1">--</h2>
+                                <div class="text-xs text-green-700 mb-2" id="bb-stock-sector">SECTOR: --</div>
                                 <div class="grid grid-cols-2 gap-2 text-sm">
-                                    <div class="text-slate-400">Volatility</div>
-                                    <div class="text-right text-white" id="bb-stock-vol">--</div>
-                                    <div class="text-slate-400">Owned</div>
-                                    <div class="text-right text-white" id="bb-stock-owned">0</div>
+                                    <div class="text-green-700">Volatility</div>
+                                    <div class="text-right text-green-400" id="bb-stock-vol">--</div>
+                                    <div class="text-green-700">Owned</div>
+                                    <div class="text-right text-green-400" id="bb-stock-owned">0</div>
                                 </div>
                             </div>
 
                             <!-- Controls -->
                             <div class="flex-1 flex flex-col justify-center gap-4">
-                                <div class="flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-700">
-                                    <span class="text-slate-400 text-xs">CURRENT PRICE</span>
-                                    <span class="text-2xl font-bold text-white" id="bb-current-price">--</span>
+                                <div class="flex justify-between items-center bg-black p-2 rounded border border-green-800">
+                                    <span class="text-green-700 text-xs">CURRENT PRICE</span>
+                                    <span class="text-2xl font-bold text-green-400" id="bb-current-price">--</span>
                                 </div>
                                 <div class="flex gap-2">
-                                    <button id="bb-btn-buy" class="flex-1 py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded transition-colors">
+                                    <button id="bb-btn-buy" class="flex-1 py-3 bg-green-900 border border-green-500 hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed text-green-400 font-bold rounded transition-colors">
                                         BUY
                                     </button>
-                                    <button id="bb-btn-sell" class="flex-1 py-3 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded transition-colors">
+                                    <button id="bb-btn-sell" class="flex-1 py-3 bg-red-900 border border-red-500 hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed text-red-400 font-bold rounded transition-colors">
                                         SELL
                                     </button>
                                 </div>
@@ -122,10 +125,10 @@ export default class ByteBroker {
                     </div>
 
                     <!-- Drag & Drop Overlay -->
-                    <div id="bb-drop-zone" class="absolute inset-0 bg-fuchsia-900/80 backdrop-blur-sm z-50 hidden flex flex-col items-center justify-center border-4 border-dashed border-white m-4 rounded-xl">
-                        <i class="fas fa-file-import text-6xl text-white mb-4 animate-bounce"></i>
-                        <h2 class="text-3xl font-bold text-white">DROP FILE TO IPO</h2>
-                        <p class="text-fuchsia-200 mt-2">Analyze data & generate stock</p>
+                    <div id="bb-drop-zone" class="absolute inset-0 bg-green-900/80 backdrop-blur-sm z-50 hidden flex flex-col items-center justify-center border-4 border-dashed border-green-400 m-4 rounded-xl">
+                        <i class="fas fa-file-import text-6xl text-green-400 mb-4 animate-bounce"></i>
+                        <h2 class="text-3xl font-bold text-green-400">DROP FILE TO IPO</h2>
+                        <p class="text-green-200 mt-2">Analyze data & generate stock</p>
                     </div>
                 </div>
 
@@ -375,9 +378,14 @@ export default class ByteBroker {
     }
 
     tickMarket() {
-        this.marketTrend = (Math.random() * 0.2) - 0.1; // Slight shift (Global trend still random to keep game alive)
+        this.globalRisk += 0.005;
+        this.marketTrend = (Math.random() * 0.2) - 0.1 - (this.globalRisk * 0.05); // Slight shift, worsening over time
 
         this.stocks.forEach(stock => {
+            if (this.globalRisk > 1.0) {
+                stock.volatility *= 1.1; // Panic mode!
+            }
+
             const vol = stock.volatility;
             const rnd = this.seededRandom(stock);
             // Random walk: -1 to 1 * volatility * price
@@ -418,6 +426,9 @@ export default class ByteBroker {
     updateHeader() {
         const cashEl = document.getElementById('bb-cash');
         if (cashEl) cashEl.textContent = this.cash.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        const riskEl = document.getElementById('bb-risk');
+        if (riskEl) riskEl.textContent = Math.min(100, Math.floor(this.globalRisk * 100));
     }
 
     renderList() {
@@ -430,7 +441,7 @@ export default class ByteBroker {
 
         if (this.stocks.length === 0) {
              list.innerHTML = `
-                <div class="text-center text-slate-500 mt-10 text-sm p-4 cursor-pointer" onclick="document.getElementById('bb-file-input').click()">
+                <div class="text-center text-green-700 mt-10 text-sm p-4 cursor-pointer" onclick="document.getElementById('bb-file-input').click()">
                     Drag & Drop files or Click Here to IPO.
                 </div>
              `;
@@ -441,18 +452,18 @@ export default class ByteBroker {
             const el = document.createElement('div');
             const isSelected = stock.id === this.selectedStockId;
             const isUp = stock.change >= 0;
-            const colorClass = isUp ? 'text-green-400' : 'text-red-400';
-            const bgClass = isSelected ? 'bg-slate-700 border-l-4 border-fuchsia-500' : 'bg-slate-800 hover:bg-slate-700 border-l-4 border-transparent';
+            const colorClass = isUp ? 'text-green-300' : 'text-red-500';
+            const bgClass = isSelected ? 'bg-green-900/30 border-l-4 border-green-500' : 'bg-black hover:bg-green-900/20 border-l-4 border-transparent';
 
             el.className = `p-3 rounded cursor-pointer transition-all ${bgClass} flex justify-between items-center`;
             el.onclick = () => this.selectStock(stock.id);
             el.innerHTML = `
                 <div>
-                    <div class="font-bold text-white">${stock.ticker}</div>
-                    <div class="text-[10px] text-slate-400 truncate w-20">${this.escapeHTML(stock.name)}</div>
+                    <div class="font-bold text-green-400">${stock.ticker}</div>
+                    <div class="text-[10px] text-green-700 truncate w-20">${this.escapeHTML(stock.name)}</div>
                 </div>
                 <div class="text-right">
-                    <div class="font-mono text-white">$${stock.price.toFixed(2)}</div>
+                    <div class="font-mono text-green-400">$${stock.price.toFixed(2)}</div>
                     <div class="text-[10px] ${colorClass}">${isUp ? '▲' : '▼'} ${Math.abs(stock.change).toFixed(2)}%</div>
                 </div>
             `;
@@ -479,7 +490,7 @@ export default class ByteBroker {
 
         const priceEl = document.getElementById('bb-current-price');
         priceEl.textContent = `$${stock.price.toFixed(2)}`;
-        priceEl.className = `text-2xl font-bold ${stock.change >= 0 ? 'text-green-400' : 'text-red-400'}`;
+        priceEl.className = `text-2xl font-bold ${stock.change >= 0 ? 'text-green-400' : 'text-red-500'}`;
 
         // Buttons state
         document.getElementById('bb-btn-buy').disabled = this.cash < stock.price * 10;
@@ -504,7 +515,7 @@ export default class ByteBroker {
         ctx.clearRect(0, 0, w, h);
 
         // Grid
-        ctx.strokeStyle = '#334155';
+        ctx.strokeStyle = '#003300';
         ctx.lineWidth = 1;
         ctx.beginPath();
         for(let i=1; i<4; i++) {
@@ -518,7 +529,7 @@ export default class ByteBroker {
         const max = Math.max(...history) * 1.1;
         const range = max - min;
 
-        ctx.strokeStyle = stock.change >= 0 ? '#4ade80' : '#f87171'; // Green or Red
+        ctx.strokeStyle = '#00ff00'; // Always Green
         ctx.lineWidth = 2;
         ctx.lineJoin = 'round';
         ctx.beginPath();
@@ -534,13 +545,19 @@ export default class ByteBroker {
 
         // Fill Gradient
         const grad = ctx.createLinearGradient(0, 0, 0, h);
-        grad.addColorStop(0, stock.change >= 0 ? 'rgba(74, 222, 128, 0.2)' : 'rgba(248, 113, 113, 0.2)');
+        grad.addColorStop(0, 'rgba(0, 255, 0, 0.2)');
         grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
         ctx.lineTo(w, h);
         ctx.lineTo(0, h);
         ctx.fillStyle = grad;
         ctx.fill();
+
+        // CRT Scanlines
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        for (let i = 0; i < h; i += 4) {
+            ctx.fillRect(0, i, w, 2);
+        }
     }
 
     shutdown() {

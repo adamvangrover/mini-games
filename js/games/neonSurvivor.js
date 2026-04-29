@@ -311,9 +311,12 @@ export default class NeonSurvivor {
                  const e2 = this.enemies[j];
                  const ddx = e.x - e2.x;
                  const ddy = e.y - e2.y;
-                 const ddist = Math.sqrt(ddx*ddx + ddy*ddy);
-                 if (ddist < e.radius + e2.radius) {
-                     const push = (e.radius + e2.radius - ddist) / 2;
+                 // Bolt Optimization: Check squared distance first before computing Math.sqrt in O(N^2) loop
+                 const distSq = ddx*ddx + ddy*ddy;
+                 const minD = e.radius + e2.radius;
+                 if (distSq < minD * minD) {
+                     const ddist = Math.sqrt(distSq);
+                     const push = (minD - ddist) / 2;
                      e.x += (ddx/ddist) * push;
                      e.y += (ddy/ddist) * push;
                      e2.x -= (ddx/ddist) * push;
@@ -327,11 +330,13 @@ export default class NeonSurvivor {
             const d = this.drops[i];
             const dx = this.player.x - d.x;
             const dy = this.player.y - d.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
+            // Bolt Optimization: Replace distanceTo with distanceToSquared equivalent
+            const distSq = dx*dx + dy*dy;
 
             const magnetRange = this.player.upgrades.magnet;
 
-            if (dist < magnetRange) { // Magnet range
+            if (distSq < magnetRange * magnetRange) { // Magnet range
+                const dist = Math.sqrt(distSq);
                 const pullSpeed = 300 * (1 + (magnetRange - dist)/100);
                 d.x += (dx / dist) * pullSpeed * dt;
                 d.y += (dy / dist) * pullSpeed * dt;
@@ -394,9 +399,11 @@ export default class NeonSurvivor {
                 const e = this.enemies[j];
                 const dx = p.x - e.x;
                 const dy = p.y - e.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
+                // Bolt Optimization: Use squared distance to avoid Math.sqrt in nested projectile/enemy loop
+                const distSq = dx*dx + dy*dy;
+                const minD = p.radius + e.radius;
 
-                if (dist < p.radius + e.radius) {
+                if (distSq < minD * minD) {
                     this.damageEnemy(e, p.damage);
                     this.particleSystem.emit(e.x, e.y, e.color, 3);
 
@@ -419,7 +426,9 @@ export default class NeonSurvivor {
                 for (let e of this.enemies) {
                      const dx = sx - e.x;
                      const dy = sy - e.y;
-                     if (Math.sqrt(dx*dx + dy*dy) < 15 + e.radius) {
+                     // Bolt Optimization: Avoid Math.sqrt for proximity checks
+                     const minD = 15 + e.radius;
+                     if ((dx*dx + dy*dy) < minD * minD) {
                          if (!e.immuneTime || e.immuneTime <= 0) {
                              this.damageEnemy(e, 5 * this.player.upgrades.damage);
                              e.immuneTime = 0.2; // Tick rate
@@ -438,9 +447,11 @@ export default class NeonSurvivor {
             const e = this.enemies[i];
             const dx = this.player.x - e.x;
             const dy = this.player.y - e.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
+            // Bolt Optimization: Avoid Math.sqrt for collision checks
+            const distSq = dx*dx + dy*dy;
+            const minD = this.player.radius + e.radius;
 
-            if (dist < this.player.radius + e.radius) {
+            if (distSq < minD * minD) {
                 let dmg = (e.isBoss ? 50 : 10);
                 dmg = Math.max(1, dmg - this.player.upgrades.armor); // Armor reduction
                 this.player.hp -= dmg * 0.016;
