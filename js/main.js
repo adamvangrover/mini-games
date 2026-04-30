@@ -39,6 +39,7 @@ const gameRegistry = {
     // New Games
     'zip-logic': { name: 'Zip Logic', description: 'Hamiltonian Path Puzzle', icon: 'fa-solid fa-route', category: 'New Games', importFn: () => import('./games/zipLogic.js'), wide: true, noDpad: true },
     'whale-scanner': { name: 'WhaleScanner Protocol', description: 'Data Node Simulation', icon: 'fa-solid fa-network-wired', category: 'New Games', importFn: () => import('./games/whaleScanner.js'), wide: true, noDpad: true },
+    'repo-builder': { name: 'Repo Builder', description: 'Meta-game of building the repo', icon: 'fa-solid fa-server', category: 'Simulation', importFn: () => import('./games/repoBuilder.js'), wide: true },
     'neon-blocks': { name: 'Neon Blocks', description: 'Voxel Sandbox Builder', icon: 'fa-solid fa-cubes', category: 'New Games', importFn: () => import('./games/neonBlocks.js'), wide: true, noDpad: true },
     'file-forge-game': { name: 'File Forge', description: 'AI File Generator', icon: 'fa-solid fa-file-code', category: 'New Games', importFn: () => import('./games/fileForge.js') },
     'tower-defense-game': { name: 'Tower Defense', description: 'Defend the Base', icon: 'fa-solid fa-chess-rook', category: 'New Games', importFn: () => import('./games/towerDefense.js') },
@@ -73,6 +74,7 @@ const gameRegistry = {
     'zen-garden-game': { name: 'Zen Garden', description: 'Relax & Create', icon: 'fa-solid fa-spa', category: 'Simulation', importFn: () => import('./games/zenGarden.js'), wide: true, noDpad: true },
 
     // Arcade Classics
+    'neon-bounce': { name: 'Neon Bounce', description: 'Cybernetic Breakout', icon: 'fa-solid fa-table-tennis-paddle-ball', category: 'Arcade Classics', importFn: () => import('./games/neonBounce.js') },
     'matterhorn-arcade': { name: 'Matterhorn Arcade', description: 'Retro Climbing Challenge', icon: 'fa-solid fa-person-hiking', category: 'Arcade Classics', importFn: () => import('./games/matterhornArcade.js'), wide: true },
     'snake-game': { name: 'Snake', description: 'Eat & Grow', icon: 'fa-solid fa-snake', category: 'Arcade Classics', importFn: () => import('./games/snake.js') },
     'pong-game': { name: 'Pong', description: 'Retro Tennis', icon: 'fa-solid fa-table-tennis-paddle-ball', category: 'Arcade Classics', importFn: () => import('./games/pong.js') },
