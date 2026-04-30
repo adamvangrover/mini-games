@@ -32,7 +32,13 @@ const gameRegistry = {
     'rage-quit-game': { name: 'Rage Quit 3D', description: 'Clinical Trial', icon: 'fa-solid fa-person-falling-burst', category: '3D Immersive', importFn: () => import('./games/rageQuit.js'), wide: true, noDpad: true },
     'all-in-hole-game': { name: 'All In Hole', description: 'Swallow the World', icon: 'fa-solid fa-circle-notch', category: '3D Immersive', importFn: () => import('./games/allInHole.js'), wide: true, noDpad: true },
 
+    // Corporate Puzzles
+    'corp-queens': { name: 'Queens Logic', description: 'Region Placement', icon: 'fa-solid fa-chess-queen', category: 'Corporate Puzzles', importFn: () => import('./games/corpQueens.js'), noDpad: true },
+    'corp-crossclimb': { name: 'Crossclimb', description: 'Word Ladder Logic', icon: 'fa-solid fa-stairs', category: 'Corporate Puzzles', importFn: () => import('./games/corpCrossclimb.js'), noDpad: true },
+
     // New Games
+    'zip-logic': { name: 'Zip Logic', description: 'Hamiltonian Path Puzzle', icon: 'fa-solid fa-route', category: 'New Games', importFn: () => import('./games/zipLogic.js'), wide: true, noDpad: true },
+    'whale-scanner': { name: 'WhaleScanner Protocol', description: 'Data Node Simulation', icon: 'fa-solid fa-network-wired', category: 'New Games', importFn: () => import('./games/whaleScanner.js'), wide: true, noDpad: true },
     'repo-builder': { name: 'Repo Builder', description: 'Meta-game of building the repo', icon: 'fa-solid fa-server', category: 'Simulation', importFn: () => import('./games/repoBuilder.js'), wide: true },
     'neon-blocks': { name: 'Neon Blocks', description: 'Voxel Sandbox Builder', icon: 'fa-solid fa-cubes', category: 'New Games', importFn: () => import('./games/neonBlocks.js'), wide: true, noDpad: true },
     'file-forge-game': { name: 'File Forge', description: 'AI File Generator', icon: 'fa-solid fa-file-code', category: 'New Games', importFn: () => import('./games/fileForge.js') },
