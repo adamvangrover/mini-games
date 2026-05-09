@@ -60,11 +60,65 @@ export default class CircuitGame {
         this.visited.clear();
         this.isComplete = false;
 
-        // Simple generation: put 1 at start, 2 in middle, 3 at end
+        let path = null;
+        while (!path) {
+            path = this.tryGenerateHamiltonianPath();
+        }
+
         this.numbers = {};
-        this.numbers[0] = 1;
-        this.numbers[Math.floor((this.gridSize*this.gridSize)/2)] = 2;
-        this.numbers[this.gridSize*this.gridSize - 1] = 3;
+        // Place start, some middle markers, and end
+        let markers = [0, Math.floor(path.length * 0.33), Math.floor(path.length * 0.66), path.length - 1];
+
+        for (let i = 0; i < markers.length; i++) {
+            let pIdx = markers[i];
+            let [r, c] = path[pIdx];
+            this.numbers[r * this.gridSize + c] = i + 1;
+        }
+    }
+
+    tryGenerateHamiltonianPath() {
+        let size = this.gridSize;
+        // Random start point
+        let sr = Math.floor(Math.random() * size);
+        let sc = Math.floor(Math.random() * size);
+
+        let path = [[sr, sc]];
+        let visited = new Set([`${sr},${sc}`]);
+
+        while (visited.size < size * size) {
+            let [r, c] = path[path.length - 1];
+            let neighbors = [];
+            const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
+            for (let i = 0; i < dirs.length; i++) {
+                let dr = dirs[i][0], dc = dirs[i][1];
+                let nr = r + dr, nc = c + dc;
+                if (nr >= 0 && nr < size && nc >= 0 && nc < size && !visited.has(`${nr},${nc}`)) {
+                    let unvisited_neighbors = 0;
+                    for (let j = 0; j < dirs.length; j++) {
+                        let ddr = dirs[j][0], ddc = dirs[j][1];
+                        let nnr = nr + ddr, nnc = nc + ddc;
+                        if (nnr >= 0 && nnr < size && nnc >= 0 && nnc < size && !visited.has(`${nnr},${nnc}`)) {
+                            unvisited_neighbors++;
+                        }
+                    }
+                    neighbors.push({nr, nc, count: unvisited_neighbors});
+                }
+            }
+
+            if (neighbors.length === 0) return null;
+
+            neighbors.sort((a, b) => {
+                if (a.count !== b.count) return a.count - b.count;
+                return Math.random() - 0.5;
+            });
+
+            let nextNode = neighbors[0];
+            path.push([nextNode.nr, nextNode.nc]);
+            visited.add(`${nextNode.nr},${nextNode.nc}`);
+        }
+
+        return path;
     }
 
     onResize() {
