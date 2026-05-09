@@ -65,31 +65,22 @@ export default class QuiltGame {
         this.isComplete = false;
         this.boardMatrix = new Array(this.gridSize * this.gridSize).fill(null);
 
-        // Define pieces (width, height in cells)
-        const pieceDefs = [
-            { w: 2, h: 3 },
-            { w: 3, h: 2 },
-            { w: 1, h: 4 },
-            { w: 2, h: 2 },
-            { w: 4, h: 1 },
-            { w: 1, h: 2 },
-            { w: 2, h: 1 }
-        ];
+        let generatedPieces = null;
+        while (!generatedPieces) {
+            let res = this.tryGenerateQuiltPieces();
+            if (res.length >= 5 && res.length <= 10) {
+                generatedPieces = res;
+            }
+        }
 
-        // We need area to sum to 36.
-        // 6+6+4+4+4+2+2 = 28. Add one more 2x4 = 8. Total 36.
-        const levelPieces = [
-            { w: 2, h: 3, c: 0 }, { w: 3, h: 2, c: 1 },
-            { w: 2, h: 2, c: 2 }, { w: 2, h: 2, c: 3 },
-            { w: 1, h: 4, c: 4 }, { w: 4, h: 1, c: 0 },
-            { w: 2, h: 4, c: 1 }
-        ];
+        // Shuffle colors
+        let levelColors = [...this.colors].sort(() => Math.random() - 0.5);
 
-        this.pieces = levelPieces.map((p, i) => ({
+        this.pieces = generatedPieces.map((p, i) => ({
             id: i,
-            w: p.w,
-            h: p.h,
-            color: this.colors[p.c % this.colors.length],
+            w: p[0],
+            h: p[1],
+            color: levelColors[i % levelColors.length],
             x: 50 + (i % 3) * 120, // initial tray pos
             y: 500 + Math.floor(i / 3) * 120,
             snapped: false,
@@ -98,6 +89,41 @@ export default class QuiltGame {
             targetX: 50 + (i % 3) * 120,
             targetY: 500 + Math.floor(i / 3) * 120
         }));
+    }
+
+    tryGenerateQuiltPieces() {
+        const sliceRect = (w, h) => {
+            if (w * h <= 8 && w <= 4 && h <= 4 && w > 1 && h > 1) {
+                if (Math.random() < 0.6) {
+                    return [[w, h]];
+                }
+            }
+            if (w >= h && w > 1) {
+                let opts = [];
+                for (let i = 1; i < w; i++) opts.push(i);
+                if (opts.length > 2) opts = opts.slice(1, -1); // Try to avoid 1xN slices
+                let split = opts[Math.floor(Math.random() * opts.length)];
+                return [...sliceRect(split, h), ...sliceRect(w - split, h)];
+            } else if (h > w && h > 1) {
+                let opts = [];
+                for (let i = 1; i < h; i++) opts.push(i);
+                if (opts.length > 2) opts = opts.slice(1, -1);
+                let split = opts[Math.floor(Math.random() * opts.length)];
+                return [...sliceRect(w, split), ...sliceRect(w, h - split)];
+            } else if (w > 1 && h > 1) {
+                if (Math.random() < 0.5) {
+                    let split = 1 + Math.floor(Math.random() * (w - 1));
+                    return [...sliceRect(split, h), ...sliceRect(w - split, h)];
+                } else {
+                    let split = 1 + Math.floor(Math.random() * (h - 1));
+                    return [...sliceRect(w, split), ...sliceRect(w, h - split)];
+                }
+            } else {
+                return [[w, h]];
+            }
+        };
+
+        return sliceRect(this.gridSize, this.gridSize);
     }
 
     onResize() {

@@ -80,16 +80,78 @@ export default class EquinoxGame {
         this.isComplete = false;
         this.board = new Array(this.gridSize * this.gridSize).fill(0);
 
-        // Generate edges randomly for now (placeholder for real generation)
+        // Generate valid equinox board
+        let validBoard = null;
+        while (!validBoard) {
+            validBoard = this.tryGenerateEquinoxBoard();
+        }
+
         this.horizontalEdges = new Array(this.gridSize * (this.gridSize - 1)).fill(' ');
         this.verticalEdges = new Array((this.gridSize - 1) * this.gridSize).fill(' ');
 
-        for (let i = 0; i < this.horizontalEdges.length; i++) {
-            if (Math.random() < 0.3) this.horizontalEdges[i] = Math.random() < 0.5 ? '=' : 'x';
+        // Add constraints based on the valid board
+        for (let y = 0; y < this.gridSize; y++) {
+            for (let x = 0; x < this.gridSize - 1; x++) {
+                if (Math.random() < 0.3) {
+                    let v1 = validBoard[y][x];
+                    let v2 = validBoard[y][x + 1];
+                    this.horizontalEdges[y * (this.gridSize - 1) + x] = v1 === v2 ? '=' : 'x';
+                }
+            }
         }
-        for (let i = 0; i < this.verticalEdges.length; i++) {
-            if (Math.random() < 0.3) this.verticalEdges[i] = Math.random() < 0.5 ? '=' : 'x';
+        for (let y = 0; y < this.gridSize - 1; y++) {
+            for (let x = 0; x < this.gridSize; x++) {
+                if (Math.random() < 0.3) {
+                    let v1 = validBoard[y][x];
+                    let v2 = validBoard[y + 1][x];
+                    this.verticalEdges[y * this.gridSize + x] = v1 === v2 ? '=' : 'x';
+                }
+            }
         }
+    }
+
+    tryGenerateEquinoxBoard() {
+        let board = Array(this.gridSize).fill(0).map(() => Array(this.gridSize).fill(0));
+
+        const solve = (r, c) => {
+            if (r === this.gridSize) return true;
+            let [nr, nc] = c < this.gridSize - 1 ? [r, c + 1] : [r + 1, 0];
+
+            let vals = [1, 2];
+            if (Math.random() > 0.5) vals = [2, 1];
+
+            for (let i = 0; i < vals.length; i++) {
+                let val = vals[i];
+                board[r][c] = val;
+
+                if (c >= 2 && board[r][c] === board[r][c-1] && board[r][c-1] === board[r][c-2]) continue;
+                if (r >= 2 && board[r][c] === board[r-1][c] && board[r-1][c] === board[r-2][c]) continue;
+
+                let rowOnes = 0, rowTwos = 0, colOnes = 0, colTwos = 0;
+                for (let j = 0; j <= c; j++) {
+                    if (board[r][j] === 1) rowOnes++;
+                    if (board[r][j] === 2) rowTwos++;
+                }
+                if (rowOnes > 3 || rowTwos > 3) continue;
+
+                for (let j = 0; j <= r; j++) {
+                    if (board[j][c] === 1) colOnes++;
+                    if (board[j][c] === 2) colTwos++;
+                }
+                if (colOnes > 3 || colTwos > 3) continue;
+
+                if (c === this.gridSize - 1 && (rowOnes !== 3 || rowTwos !== 3)) continue;
+                if (r === this.gridSize - 1 && (colOnes !== 3 || colTwos !== 3)) continue;
+
+                if (solve(nr, nc)) return true;
+            }
+
+            board[r][c] = 0;
+            return false;
+        };
+
+        if (solve(0, 0)) return board;
+        return null;
     }
 
     renderGrid() {

@@ -2,8 +2,8 @@ export default class AscensionGame {
     constructor() {
         this.container = null;
         this.board = [];
-        this.words = ["CODE", "CORE", "CARE", "DART", "DATA"]; // simplified level
-        this.targetLength = 5;
+        this.words = ["DATA", "DATE", "LATE", "LAKE", "LIKE", "BIKE"]; // verified word ladder
+        this.targetLength = 6;
         this.isComplete = false;
 
         this.draggedItem = null;

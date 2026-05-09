@@ -119,58 +119,12 @@ export default class MonarchGame {
         this.pieces.forEach(p => p && this.scene.remove(p.mesh));
         this.pieces = new Array(this.gridSize * this.gridSize).fill(null);
 
-        // Simple region generation (Seed: vertical stripes for now, can be improved)
-        for (let i = 0; i < this.gridSize * this.gridSize; i++) {
-            this.regions[i] = Math.floor(i / this.gridSize); // rows as regions for a quick test
+        // Generate a valid monarch board (8 queens + 8 regions)
+        let generatedRegions = null;
+        while (!generatedRegions) {
+            generatedRegions = this.tryGenerateMonarchBoard();
         }
-
-        // Shuffle regions to make it look like contiguous blobs
-        let currentRegion = 0;
-        let unassigned = Array.from({length: 64}, (_, i) => i);
-        this.regions.fill(-1);
-
-        while(unassigned.length > 0 && currentRegion < 8) {
-            let start = unassigned[Math.floor(Math.random() * unassigned.length)];
-            let q = [start];
-            let size = 0;
-            while(q.length > 0 && size < 8) {
-                let curr = q.shift();
-                if (this.regions[curr] !== -1) continue;
-                this.regions[curr] = currentRegion;
-                unassigned = unassigned.filter(x => x !== curr);
-                size++;
-
-                let x = curr % this.gridSize;
-                let y = Math.floor(curr / this.gridSize);
-                let neighbors = [];
-                if (x > 0) neighbors.push(curr - 1);
-                if (x < this.gridSize - 1) neighbors.push(curr + 1);
-                if (y > 0) neighbors.push(curr - this.gridSize);
-                if (y < this.gridSize - 1) neighbors.push(curr + this.gridSize);
-
-                neighbors = neighbors.filter(n => this.regions[n] === -1);
-                q.push(...neighbors.sort(() => Math.random() - 0.5));
-            }
-            currentRegion++;
-        }
-        // Fill remaining with random valid region
-        for(let i=0; i<64; i++) {
-            if (this.regions[i] === -1) {
-                let x = i % this.gridSize;
-                let y = Math.floor(i / this.gridSize);
-                let valid = [];
-                if (x > 0 && this.regions[i-1] !== -1) valid.push(this.regions[i-1]);
-                if (x < this.gridSize - 1 && this.regions[i+1] !== -1) valid.push(this.regions[i+1]);
-                if (y > 0 && this.regions[i-this.gridSize] !== -1) valid.push(this.regions[i-this.gridSize]);
-                if (y < this.gridSize - 1 && this.regions[i+this.gridSize] !== -1) valid.push(this.regions[i+this.gridSize]);
-
-                if (valid.length > 0) {
-                     this.regions[i] = valid[Math.floor(Math.random() * valid.length)];
-                } else {
-                     this.regions[i] = Math.floor(Math.random() * 8); // Fallback
-                }
-            }
-        }
+        this.regions = generatedRegions;
 
         // Create 3D Blocks
         const blockGeo = new THREE.BoxGeometry(0.9, 0.2, 0.9);
@@ -329,6 +283,81 @@ export default class MonarchGame {
             this.isComplete = true;
             this.winOverlay.classList.remove('hidden');
         }
+    }
+
+    tryGenerateMonarchBoard() {
+        let queens = [];
+        const solve = (row) => {
+            if (row === 8) return true;
+            let cols = [0, 1, 2, 3, 4, 5, 6, 7];
+            cols.sort(() => Math.random() - 0.5);
+
+            for (let i = 0; i < cols.length; i++) {
+                let col = cols[i];
+                let valid = true;
+                for (let j = 0; j < queens.length; j++) {
+                    let [r, c] = queens[j];
+                    if (c === col) valid = false;
+                    if (Math.abs(r - row) <= 1 && Math.abs(c - col) <= 1) valid = false;
+                }
+                if (valid) {
+                    queens.push([row, col]);
+                    if (solve(row + 1)) return true;
+                    queens.pop();
+                }
+            }
+            return false;
+        };
+
+        if (!solve(0)) return null;
+
+        let localRegions = new Array(64).fill(-1);
+        queens.forEach((q, i) => localRegions[q[0] * 8 + q[1]] = i);
+
+        let unassigned = 64 - 8;
+        let qLists = queens.map(q => [[q[0], q[1]]]);
+
+        while (unassigned > 0) {
+            let validRegions = [];
+            for (let i = 0; i < 8; i++) {
+                let canGrow = false;
+                for (let j = 0; j < qLists[i].length; j++) {
+                    let [r, c] = qLists[i][j];
+                    const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                    for (let d = 0; d < dirs.length; d++) {
+                        let dr = dirs[d][0], dc = dirs[d][1];
+                        if (r + dr >= 0 && r + dr < 8 && c + dc >= 0 && c + dc < 8 && localRegions[(r + dr) * 8 + c + dc] === -1) {
+                            canGrow = true;
+                            break;
+                        }
+                    }
+                    if (canGrow) break;
+                }
+                if (canGrow) validRegions.push(i);
+            }
+
+            if (validRegions.length === 0) return null; // blocked
+
+            let rId = validRegions[Math.floor(Math.random() * validRegions.length)];
+            let candidates = [];
+            for (let j = 0; j < qLists[rId].length; j++) {
+                let [r, c] = qLists[rId][j];
+                const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                for (let d = 0; d < dirs.length; d++) {
+                    let dr = dirs[d][0], dc = dirs[d][1];
+                    if (r + dr >= 0 && r + dr < 8 && c + dc >= 0 && c + dc < 8 && localRegions[(r + dr) * 8 + c + dc] === -1) {
+                        candidates.push([r + dr, c + dc]);
+                    }
+                }
+            }
+
+            let [nr, nc] = candidates[Math.floor(Math.random() * candidates.length)];
+            localRegions[nr * 8 + nc] = rId;
+            qLists[rId].push([nr, nc]);
+            unassigned--;
+        }
+
+        return localRegions;
     }
 
     onResize() {
