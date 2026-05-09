@@ -40,3 +40,7 @@
 ## 2024-05-18 - [Neon Survivor Distance Calculation Optimization]
 **Learning:** In entity-dense games like Neon Survivor with O(N^2) spatial checks (e.g., enemy separation, bullet collisions), using `Math.sqrt` for distance calculations creates a significant CPU overhead during high-frequency loops. Squared distance checks (`dx*dx + dy*dy < minD * minD`) achieve the same result without the expensive square root operation.
 **Action:** Always prefer squared distance comparisons (`distSq < radiusSq`) over actual distance calculations (`Math.sqrt() < radius`) in game loops, specifically prioritizing loops nested within each other or those iterating over arrays containing many elements like enemies or projectiles.
+
+## 2026-06-21 - [Event Listener Bind Memory Leak]
+**Learning:** Using `.bind(this)` directly inside `window.addEventListener()` or high-frequency loops like `requestAnimationFrame()` creates unique function references on every execution. When used in `removeEventListener()`, the function reference won't match, causing a severe memory leak as listeners accumulate indefinitely.
+**Action:** Always store bound method references in class properties during initialization (e.g., `this.boundAnimate = this.animate.bind(this)`) and pass the property reference to DOM and timing APIs instead.
