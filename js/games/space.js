@@ -303,7 +303,8 @@ export default class SpaceShooterGame {
             e.rotation.x += e.userData.rotVel.x;
             e.rotation.y += e.userData.rotVel.y;
 
-            if (e.position.distanceTo(this.player.position) < 3) {
+            // Bolt Optimization: Replace distanceTo with distanceToSquared to bypass expensive Math.sqrt in high-frequency game loop
+            if (e.position.distanceToSquared(this.player.position) < 9) {
                 this.gameOver();
                 return;
             }

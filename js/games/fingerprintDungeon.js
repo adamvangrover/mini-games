@@ -379,8 +379,9 @@ export default class FingerprintDungeon {
 
         for (let y = startY; y < endY; y++) {
             for (let x = startX; x < endX; x++) {
-                const dist = Math.sqrt((x - this.player.x)**2 + (y - this.player.y)**2);
-                if (dist > range) continue;
+                // Bolt Optimization: Use squared distance to bypass Math.sqrt
+                const distSq = (x - this.player.x)**2 + (y - this.player.y)**2;
+                if (distSq > range * range) continue;
 
                 // Draw Floor/Wall
                 if (this.map[y][x] === 1) {
@@ -397,8 +398,9 @@ export default class FingerprintDungeon {
 
         // Entities
         this.entities.forEach(e => {
-            const dist = Math.sqrt((e.x - this.player.x)**2 + (e.y - this.player.y)**2);
-            if (dist > range) return;
+            // Bolt Optimization: Use squared distance to bypass Math.sqrt
+            const distSq = (e.x - this.player.x)**2 + (e.y - this.player.y)**2;
+            if (distSq > range * range) return;
 
             if (e.type === 'enemy') ctx.fillStyle = this.theme.enemy;
             else if (e.type === 'loot') ctx.fillStyle = '#fbbf24'; // Gold
