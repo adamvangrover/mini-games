@@ -122,7 +122,8 @@ export default class SatelliteShowdown {
             for (let ph of this.portholes) {
                 const dx = p.x - ph.x;
                 const dy = p.y - ph.y;
-                if (Math.sqrt(dx*dx + dy*dy) < ph.radius) {
+                // Bolt Optimization: Use squared distance to bypass Math.sqrt
+                if ((dx*dx + dy*dy) < ph.radius * ph.radius) {
                     if (ph.isCorrect) {
                         this.bossHP -= 15;
                         window.miniGameHub.soundManager.playSound('explosion');
