@@ -40,3 +40,7 @@
 ## 2024-05-18 - [Neon Survivor Distance Calculation Optimization]
 **Learning:** In entity-dense games like Neon Survivor with O(N^2) spatial checks (e.g., enemy separation, bullet collisions), using `Math.sqrt` for distance calculations creates a significant CPU overhead during high-frequency loops. Squared distance checks (`dx*dx + dy*dy < minD * minD`) achieve the same result without the expensive square root operation.
 **Action:** Always prefer squared distance comparisons (`distSq < radiusSq`) over actual distance calculations (`Math.sqrt() < radius`) in game loops, specifically prioritizing loops nested within each other or those iterating over arrays containing many elements like enemies or projectiles.
+
+## 2026-06-21 - [Array Iteration Overhead in Game Loops]
+**Learning:** In high-frequency game loops (60 FPS) involving large dynamic arrays (e.g., hundreds of enemies or projectiles), using `Array.prototype.forEach` creates a noticeable performance bottleneck due to continuous callback allocation, invocation overhead, and preventing the usage of standard loop controls like `break` or `continue`.
+**Action:** Consistently replace `.forEach` with index-based `for` loops in hot code paths, particularly in the `update()` and `draw()` phases of games, to reduce CPU load and minimize garbage collection (GC) pauses.
