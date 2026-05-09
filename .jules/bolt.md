@@ -49,3 +49,6 @@
 ## 2026-06-21 - [Array Iteration Overhead in Game Loops]
 **Learning:** In high-frequency game loops (60 FPS) involving large dynamic arrays (e.g., hundreds of enemies or projectiles), using `Array.prototype.forEach` creates a noticeable performance bottleneck due to continuous callback allocation, invocation overhead, and preventing the usage of standard loop controls like `break` or `continue`.
 **Action:** Consistently replace `.forEach` with index-based `for` loops in hot code paths, particularly in the `update()` and `draw()` phases of games, to reduce CPU load and minimize garbage collection (GC) pauses.
+## 2026-06-25 - [Array Loop Callback Overhead and Splice Bug]
+**Learning:** In high-frequency game loops (`js/games/towerDefense/Game.js`), iterating dynamic arrays like `enemies` and `projectiles` with `Array.prototype.forEach` creates continuous callback allocation overhead. Additionally, using `.splice()` within a forward-iterating `.forEach` loop creates a severe bug where the element immediately following the spliced element is skipped in the iteration.
+**Action:** Consistently replace `.forEach` with backward index-based `for` loops (`for (let i = arr.length - 1; i >= 0; i--)`) in hot code paths where elements might be removed, and standard forward loops for static iteration, to improve performance and prevent element-skipping bugs.

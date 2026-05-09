@@ -85,7 +85,9 @@ export default class Game {
         }
 
         // Entities
-        this.enemies.forEach((e, i) => {
+        // Bolt Optimization: Replaced forEach with backward for loops to fix splice skipping bug and improve performance
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const e = this.enemies[i];
             e.update(dt);
             if (e.reachedEnd) {
                 this.lives--;
@@ -98,14 +100,21 @@ export default class Game {
                 this.soundManager.playSound('coin');
                 this.particleSystem.emit(e.x, e.y, e.color, 8, { speed: 40 });
             }
-        });
+        }
 
-        this.towers.forEach(t => t.update(dt, this.enemies, (p) => this.addProjectile(p)));
+        // Bolt Optimization: Replaced forEach with index-based loop for performance
+        for (let i = 0; i < this.towers.length; i++) {
+            this.towers[i].update(dt, this.enemies, (p) => this.addProjectile(p));
+        }
 
-        this.projectiles.forEach((p, i) => {
+        // Bolt Optimization: Replaced forEach with backward for loop to fix splice skipping bug and improve performance
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+            const p = this.projectiles[i];
             p.update(dt);
-            if (p.hit) this.projectiles.splice(i, 1);
-        });
+            if (p.hit) {
+                this.projectiles.splice(i, 1);
+            }
+        }
 
         // Check Loss
         if (this.lives <= 0) {
@@ -243,9 +252,17 @@ export default class Game {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.map.draw(this.ctx);
-        this.towers.forEach(t => t.draw(this.ctx));
-        this.enemies.forEach(e => e.draw(this.ctx));
-        this.projectiles.forEach(p => p.draw(this.ctx));
+
+        // Bolt Optimization: Replaced forEach with standard loops in drawing phase to avoid callback allocations
+        for (let i = 0; i < this.towers.length; i++) {
+            this.towers[i].draw(this.ctx);
+        }
+        for (let i = 0; i < this.enemies.length; i++) {
+            this.enemies[i].draw(this.ctx);
+        }
+        for (let i = 0; i < this.projectiles.length; i++) {
+            this.projectiles[i].draw(this.ctx);
+        }
 
         // Draw selection highlight
         if (this.selectedTower) {
