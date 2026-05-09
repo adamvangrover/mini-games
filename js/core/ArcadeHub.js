@@ -65,6 +65,17 @@ export default class ArcadeHub {
             id: null 
         };
 
+        // Bind event handlers once to prevent memory leaks and garbage collection overhead
+        this.boundOnResize = this.onResize.bind(this);
+        this.boundOnMouseDown = this.onMouseDown.bind(this);
+        this.boundOnMouseMove = this.onMouseMove.bind(this);
+        this.boundOnMouseUp = this.onMouseUp.bind(this);
+        this.boundOnClick = this.onClick.bind(this);
+        this.boundOnTouchStart = this.onTouchStart.bind(this);
+        this.boundOnTouchMove = this.onTouchMove.bind(this);
+        this.boundOnTouchEnd = this.onTouchEnd.bind(this);
+        this.boundAnimate = this.animate.bind(this);
+
         this.init();
     }
 
@@ -141,18 +152,18 @@ export default class ArcadeHub {
             this.createJobBoard(0, 0, 15); // Center aisle
 
             // --- Event Listeners ---
-            window.addEventListener('resize', this.onResize.bind(this));
+            window.addEventListener('resize', this.boundOnResize);
 
             // Mouse
-            this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this));
-            window.addEventListener('mousemove', this.onMouseMove.bind(this));
-            window.addEventListener('mouseup', this.onMouseUp.bind(this));
-            this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
+            this.renderer.domElement.addEventListener('mousedown', this.boundOnMouseDown);
+            window.addEventListener('mousemove', this.boundOnMouseMove);
+            window.addEventListener('mouseup', this.boundOnMouseUp);
+            this.renderer.domElement.addEventListener('click', this.boundOnClick);
 
             // Touch (Delegated)
-            this.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
-            window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
-            window.addEventListener('touchend', this.onTouchEnd.bind(this));
+            this.renderer.domElement.addEventListener('touchstart', this.boundOnTouchStart, { passive: false });
+            window.addEventListener('touchmove', this.boundOnTouchMove, { passive: false });
+            window.addEventListener('touchend', this.boundOnTouchEnd);
 
             // Start Loop
             this.animate();
@@ -922,7 +933,7 @@ export default class ArcadeHub {
 
     animate() {
         if (!this.isActive) return;
-        requestAnimationFrame(this.animate.bind(this));
+        requestAnimationFrame(this.boundAnimate);
         
         const dt = this.clock.getDelta();
         this.update(dt);

@@ -33,6 +33,7 @@
 ## 2026-04-26 - [Nested Collision Loop Optimization]
 **Learning:** In nested broad-phase collision detection loops (e.g., bullet vs. enemy), using array methods like `forEach` and calculating exact distances via `distanceTo()` introduces significant overhead due to callback execution and `Math.sqrt()` operations. Furthermore, continuing to check collisions after a hit is registered on a bullet is wasteful.
 **Action:** Replace `forEach` with standard backwards or forwards `for` loops, swap `distanceTo()` with `distanceToSquared()` using pre-calculated squared thresholds, and insert an early `break;` statement upon hit resolution to prevent redundant O(N*M) checks.
+
 ## 2026-04-27 - [Nested Collision Loop Early Break]
 **Learning:** In nested broad-phase collision detection loops (e.g., bullet vs. enemy in Neon Galaga), using `forEach` callbacks introduces overhead. More importantly, continuing to check collisions for a bullet *after* it has already hit an enemy is an $O(N \times M)$ waste of CPU cycles and allows a single bullet to potentially register multiple hits in the exact same frame.
 **Action:** Always replace nested `forEach` callbacks with standard `for` loops in hot code paths, and insert an early `break;` statement in the inner loop as soon as the first object registers a collision and is deactivated, avoiding unnecessary iterations.
@@ -44,3 +45,14 @@
 ## 2024-05-18 - [Optimizing Spatial Checks in Loops]
 **Learning:** Found multiple instances where `Math.sqrt()` was used for distance checking inside high-frequency nested loops (O(N^2) checks) and `e.position.distanceTo` was used in `three.js` projects which also internally computes `Math.sqrt()`. This degrades frame rates especially when lots of entities exist.
 **Action:** Always replace `distanceTo` with `distanceToSquared` and `Math.sqrt(dx*dx + dy*dy) < radius` with `(dx*dx + dy*dy) < radius * radius` whenever proximity or hit checking is done without the need for the exact absolute distance value.
+
+## 2026-06-21 - [Event Listener Bind Memory Leak]
+**Learning:** Using `.bind(this)` directly inside `window.addEventListener()` or high-frequency loops like `requestAnimationFrame()` creates unique function references on every execution. When used in `removeEventListener()`, the function reference won't match, causing a severe memory leak as listeners accumulate indefinitely.
+**Action:** Always store bound method references in class properties during initialization (e.g., `this.boundAnimate = this.animate.bind(this)`) and pass the property reference to DOM and timing APIs instead.
+
+## 2026-06-21 - [Array Iteration Overhead in Game Loops]
+**Learning:** In high-frequency game loops (60 FPS) involving large dynamic arrays (e.g., hundreds of enemies or projectiles), using `Array.prototype.forEach` creates a noticeable performance bottleneck due to continuous callback allocation, invocation overhead, and preventing the usage of standard loop controls like `break` or `continue`.
+**Action:** Consistently replace `.forEach` with index-based `for` loops in hot code paths, particularly in the `update()` and `draw()` phases of games, to reduce CPU load and minimize garbage collection (GC) pauses.
+## 2026-06-25 - [Array Loop Callback Overhead and Splice Bug]
+**Learning:** In high-frequency game loops (`js/games/towerDefense/Game.js`), iterating dynamic arrays like `enemies` and `projectiles` with `Array.prototype.forEach` creates continuous callback allocation overhead. Additionally, using `.splice()` within a forward-iterating `.forEach` loop creates a severe bug where the element immediately following the spliced element is skipped in the iteration.
+**Action:** Consistently replace `.forEach` with backward index-based `for` loops (`for (let i = arr.length - 1; i >= 0; i--)`) in hot code paths where elements might be removed, and standard forward loops for static iteration, to improve performance and prevent element-skipping bugs.

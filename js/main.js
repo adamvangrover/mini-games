@@ -37,6 +37,11 @@ const gameRegistry = {
     'corp-crossclimb': { name: 'Crossclimb', description: 'Word Ladder Logic', icon: 'fa-solid fa-stairs', category: 'Corporate Puzzles', importFn: () => import('./games/corpCrossclimb.js'), noDpad: true },
 
     // New Games
+    'monarch-game': { name: 'Monarch', description: 'Spatial Constraint Puzzle', icon: 'fa-solid fa-chess-queen', category: 'New Games', importFn: () => import('./games/monarch.js'), wide: true, noDpad: true },
+    'equinox-game': { name: 'Equinox', description: 'Binary Logic Grid', icon: 'fa-solid fa-circle-half-stroke', category: 'New Games', importFn: () => import('./games/equinox.js'), wide: true, noDpad: true },
+    'circuit-game': { name: 'Circuit', description: 'Continuous Pathfinding', icon: 'fa-solid fa-microchip', category: 'New Games', importFn: () => import('./games/circuit.js'), wide: true, noDpad: true },
+    'quilt-game': { name: 'Quilt', description: 'Spatial Tiling Challenge', icon: 'fa-solid fa-border-all', category: 'New Games', importFn: () => import('./games/quilt.js'), wide: true, noDpad: true },
+    'ascension-game': { name: 'Ascension', description: 'Lexical Word Ladder', icon: 'fa-solid fa-arrow-up-a-z', category: 'New Games', importFn: () => import('./games/ascension.js'), wide: true, noDpad: true },
     'zip-logic': { name: 'Zip Logic', description: 'Hamiltonian Path Puzzle', icon: 'fa-solid fa-route', category: 'New Games', importFn: () => import('./games/zipLogic.js'), wide: true, noDpad: true },
     'whale-scanner': { name: 'WhaleScanner Protocol', description: 'Data Node Simulation', icon: 'fa-solid fa-network-wired', category: 'New Games', importFn: () => import('./games/whaleScanner.js'), wide: true, noDpad: true },
     'repo-builder': { name: 'Repo Builder', description: 'Meta-game of building the repo', icon: 'fa-solid fa-server', category: 'Simulation', importFn: () => import('./games/repoBuilder.js'), wide: true },

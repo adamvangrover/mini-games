@@ -64,6 +64,17 @@ export default class TrophyRoom {
         // Expose for verification
         window.trophyRoomInstance = this;
 
+        // Bind event handlers once to prevent memory leaks and garbage collection overhead
+        this.boundOnResize = this.onResize.bind(this);
+        this.boundOnMouseDown = this.onMouseDown.bind(this);
+        this.boundOnMouseMove = this.onMouseMove.bind(this);
+        this.boundOnMouseUp = this.onMouseUp.bind(this);
+        this.boundOnClick = this.onClick.bind(this);
+        this.boundOnTouchStart = this.onTouchStart.bind(this);
+        this.boundOnTouchMove = this.onTouchMove.bind(this);
+        this.boundOnTouchEnd = this.onTouchEnd.bind(this);
+        this.boundAnimate = this.animate.bind(this);
+
         if (this.container) {
             this.init();
         }
@@ -112,18 +123,18 @@ export default class TrophyRoom {
             this.createNavMarker();
 
             // --- Event Listeners ---
-            window.addEventListener('resize', this.onResize.bind(this));
+            window.addEventListener('resize', this.boundOnResize);
             
             // Input Listeners
-            this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this));
-            window.addEventListener('mousemove', this.onMouseMove.bind(this));
-            window.addEventListener('mouseup', this.onMouseUp.bind(this));
-            this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
+            this.renderer.domElement.addEventListener('mousedown', this.boundOnMouseDown);
+            window.addEventListener('mousemove', this.boundOnMouseMove);
+            window.addEventListener('mouseup', this.boundOnMouseUp);
+            this.renderer.domElement.addEventListener('click', this.boundOnClick);
 
             // Touch
-            this.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
-            window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
-            window.addEventListener('touchend', this.onTouchEnd.bind(this));
+            this.renderer.domElement.addEventListener('touchstart', this.boundOnTouchStart, { passive: false });
+            window.addEventListener('touchmove', this.boundOnTouchMove, { passive: false });
+            window.addEventListener('touchend', this.boundOnTouchEnd);
 
             // Start Loop
             this.animate();
@@ -626,7 +637,7 @@ export default class TrophyRoom {
 
     animate() {
         if (!this.isActive) return;
-        requestAnimationFrame(this.animate.bind(this));
+        requestAnimationFrame(this.boundAnimate);
 
         const dt = this.clock.getDelta();
 
@@ -910,11 +921,11 @@ export default class TrophyRoom {
         if (this.joystickEl) this.joystickEl.remove();
 
         // Clean Listeners
-        window.removeEventListener('resize', this.onResize.bind(this));
-        window.removeEventListener('mousemove', this.onMouseMove.bind(this));
-        window.removeEventListener('mouseup', this.onMouseUp.bind(this));
-        window.removeEventListener('touchmove', this.onTouchMove.bind(this));
-        window.removeEventListener('touchend', this.onTouchEnd.bind(this));
+        window.removeEventListener('resize', this.boundOnResize);
+        window.removeEventListener('mousemove', this.boundOnMouseMove);
+        window.removeEventListener('mouseup', this.boundOnMouseUp);
+        window.removeEventListener('touchmove', this.boundOnTouchMove);
+        window.removeEventListener('touchend', this.boundOnTouchEnd);
         
         if (this.onBack) this.onBack();
     }
