@@ -199,7 +199,9 @@ export default class NeonSurvivor {
 
     updateEntities(dt) {
         // Weapons
-        this.player.weapons.forEach(w => {
+        // Bolt Optimization: Replace forEach with standard for loop to eliminate callback overhead in game loop
+        for (let i = 0; i < this.player.weapons.length; i++) {
+            const w = this.player.weapons[i];
             if (w.type === 'orb') {
                 w.cooldown -= dt;
                 if (w.cooldown <= 0) {
@@ -269,7 +271,7 @@ export default class NeonSurvivor {
                      this.soundManager.playSound('powerup'); // Zap sound
                 }
             }
-        });
+        }
 
         // Projectiles
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
@@ -371,7 +373,9 @@ export default class NeonSurvivor {
                 const lx = Math.cos(p.angle);
                 const ly = Math.sin(p.angle);
 
-                this.enemies.forEach(e => {
+                // Bolt Optimization: Replace forEach with standard for loop to eliminate callback overhead
+                for (let k = 0; k < this.enemies.length; k++) {
+                    const e = this.enemies[k];
                     // Simple distance from line check, assume infinite length for now or long range
                     // Vector from player to enemy
                     const ex = e.x - this.player.x;
@@ -391,7 +395,7 @@ export default class NeonSurvivor {
                              }
                          }
                     }
-                });
+                }
                 continue;
             }
 
@@ -440,7 +444,11 @@ export default class NeonSurvivor {
         }
 
         // Cooldowns on enemy immunity
-        this.enemies.forEach(e => { if(e.immuneTime > 0) e.immuneTime -= 0.016; });
+        // Bolt Optimization: Replace forEach with standard for loop
+        for (let i = 0; i < this.enemies.length; i++) {
+            const e = this.enemies[i];
+            if(e.immuneTime > 0) e.immuneTime -= 0.016;
+        }
 
         // Enemy vs Player
         for (let i = 0; i < this.enemies.length; i++) {
@@ -614,7 +622,9 @@ export default class NeonSurvivor {
         }
 
         // Enemies
-        this.enemies.forEach(e => {
+        // Bolt Optimization: Replace forEach with standard for loop
+        for (let i = 0; i < this.enemies.length; i++) {
+            const e = this.enemies[i];
             this.ctx.fillStyle = e.color;
             this.ctx.shadowColor = e.color;
             if (e.isBoss) {
@@ -629,10 +639,12 @@ export default class NeonSurvivor {
             } else {
                 this.ctx.fillRect(e.x - e.radius, e.y - e.radius, e.radius*2, e.radius*2);
             }
-        });
+        }
 
         // Projectiles
-        this.projectiles.forEach(p => {
+        // Bolt Optimization: Replace forEach with standard for loop
+        for (let i = 0; i < this.projectiles.length; i++) {
+            const p = this.projectiles[i];
             this.ctx.fillStyle = p.type === 'laser' ? '#f0f' : p.color;
             this.ctx.shadowColor = p.color;
 
@@ -648,10 +660,12 @@ export default class NeonSurvivor {
                 this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
                 this.ctx.fill();
             }
-        });
+        }
 
         // Drops
-        this.drops.forEach(d => {
+        // Bolt Optimization: Replace forEach with standard for loop
+        for (let i = 0; i < this.drops.length; i++) {
+            const d = this.drops[i];
             this.ctx.fillStyle = d.color;
             this.ctx.shadowColor = d.color;
             this.ctx.beginPath();
@@ -664,16 +678,18 @@ export default class NeonSurvivor {
                 this.ctx.lineTo(d.x - d.radius, d.y);
             }
             this.ctx.fill();
-        });
+        }
 
         this.particleSystem.draw(this.ctx);
 
         // Damage Numbers
+        // Bolt Optimization: Replace forEach with standard for loop
         this.ctx.font = 'bold 16px Arial';
         this.ctx.fillStyle = '#fff';
-        this.damageNumbers.forEach(dn => {
+        for (let i = 0; i < this.damageNumbers.length; i++) {
+            const dn = this.damageNumbers[i];
             this.ctx.fillText(dn.text, dn.x, dn.y);
-        });
+        }
 
         // HUD
         this.ctx.shadowBlur = 0;
