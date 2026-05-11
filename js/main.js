@@ -43,6 +43,7 @@ const gameRegistry = {
     'quilt-game': { name: 'Quilt', description: 'Spatial Tiling Challenge', icon: 'fa-solid fa-border-all', category: 'New Games', importFn: () => import('./games/quilt.js'), wide: true, noDpad: true },
     'ascension-game': { name: 'Ascension', description: 'Lexical Word Ladder', icon: 'fa-solid fa-arrow-up-a-z', category: 'New Games', importFn: () => import('./games/ascension.js'), wide: true, noDpad: true },
     'zip-logic': { name: 'Zip Logic', description: 'Hamiltonian Path Puzzle', icon: 'fa-solid fa-route', category: 'New Games', importFn: () => import('./games/zipLogic.js'), wide: true, noDpad: true },
+    'orbital-defense': { name: 'Orbital Defense', description: 'Protect the Core', icon: 'fa-solid fa-shield-halved', category: 'New Games', importFn: () => import('./games/orbitalDefense.js'), wide: true, noDpad: true },
     'whale-scanner': { name: 'WhaleScanner Protocol', description: 'Data Node Simulation', icon: 'fa-solid fa-network-wired', category: 'New Games', importFn: () => import('./games/whaleScanner.js'), wide: true, noDpad: true },
     'repo-builder': { name: 'Repo Builder', description: 'Meta-game of building the repo', icon: 'fa-solid fa-server', category: 'Simulation', importFn: () => import('./games/repoBuilder.js'), wide: true },
     'neon-blocks': { name: 'Neon Blocks', description: 'Voxel Sandbox Builder', icon: 'fa-solid fa-cubes', category: 'New Games', importFn: () => import('./games/neonBlocks.js'), wide: true, noDpad: true },
