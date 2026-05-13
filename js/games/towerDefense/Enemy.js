@@ -77,11 +77,12 @@ export default class Enemy {
 
         const dx = tx - this.x;
         const dy = ty - this.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
+        const distSq = dx*dx + dy*dy;
 
-        if (dist < 5) {
+        if (distSq < 25) { // 5^2
             this.wpIndex++;
         } else {
+            const dist = Math.sqrt(distSq);
             this.x += (dx/dist) * currentSpeed * dt;
             this.y += (dy/dist) * currentSpeed * dt;
         }

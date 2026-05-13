@@ -56,3 +56,7 @@
 ## 2026-06-25 - [Array Loop Callback Overhead and Splice Bug]
 **Learning:** In high-frequency game loops (`js/games/towerDefense/Game.js`), iterating dynamic arrays like `enemies` and `projectiles` with `Array.prototype.forEach` creates continuous callback allocation overhead. Additionally, using `.splice()` within a forward-iterating `.forEach` loop creates a severe bug where the element immediately following the spliced element is skipped in the iteration.
 **Action:** Consistently replace `.forEach` with backward index-based `for` loops (`for (let i = arr.length - 1; i >= 0; i--)`) in hot code paths where elements might be removed, and standard forward loops for static iteration, to improve performance and prevent element-skipping bugs.
+
+## 2026-06-25 - [Tower Defense Spatial Check Optimization]
+**Learning:** Found multiple instances where `Math.sqrt()` was used for distance checking inside high-frequency update loops in the Tower Defense game (`Tower.js`, `Enemy.js`, `Projectile.js`). Calculating square roots is computationally expensive, especially inside nested targeting loops (e.g., towers evaluating all enemies).
+**Action:** Replace `Math.sqrt(dx*dx + dy*dy) < threshold` with squared distance comparisons `(dx*dx + dy*dy) < threshold * threshold` to reduce CPU overhead during spatial proximity checks, only falling back to `Math.sqrt()` when the actual distance value is strictly required (like vector normalization for movement).
