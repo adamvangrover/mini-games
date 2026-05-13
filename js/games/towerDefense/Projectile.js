@@ -27,9 +27,9 @@ export default class Projectile {
 
         const dx = this.target.x - this.x;
         const dy = this.target.y - this.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
+        const distSq = dx*dx + dy*dy;
 
-        if (dist < 15) {
+        if (distSq < 225) { // 15^2
             // Hit
             this.hit = true;
             this.target.takeDamage(this.damage, this.type);
@@ -43,6 +43,7 @@ export default class Projectile {
                 // Let's add an `onHit` callback or just return a status.
             }
         } else {
+            const dist = Math.sqrt(distSq);
             this.x += (dx/dist) * this.speed * dt;
             this.y += (dy/dist) * this.speed * dt;
         }

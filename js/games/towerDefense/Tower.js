@@ -68,13 +68,13 @@ export default class Tower {
     }
 
     inRange(enemy) {
-        const dist = Math.sqrt((enemy.x - this.x)**2 + (enemy.y - this.y)**2);
-        return dist <= this.range;
+        const distSq = (enemy.x - this.x)**2 + (enemy.y - this.y)**2;
+        return distSq <= this.range * this.range;
     }
 
     findTarget(enemies) {
         let best = null;
-        let bestDist = Infinity;
+        let bestDistSq = Infinity;
         // Simple strategy: Closest
         // Better strategy: Furthest along path (closest to base)
         // Let's do Closest to Base logic if enemy has 'distanceToEnd' property, else closest to tower
@@ -87,9 +87,9 @@ export default class Tower {
                 // Let's stick to Closest to Tower for now, or First in array (usually spawned earlier)
 
                 // Let's use simple distance to tower for stability
-                const d = Math.sqrt((e.x - this.x)**2 + (e.y - this.y)**2);
-                if (d < bestDist) {
-                    bestDist = d;
+                const dSq = (e.x - this.x)**2 + (e.y - this.y)**2;
+                if (dSq < bestDistSq) {
+                    bestDistSq = dSq;
                     best = e;
                 }
             }
