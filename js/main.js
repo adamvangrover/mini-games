@@ -56,6 +56,7 @@ const gameRegistry = {
     'neon-flow-game': { name: 'Neon Flow', description: 'Relax & Create', icon: 'fa-solid fa-wind', category: 'New Games', importFn: () => import('./games/neonFlow.js'), wide: true, noDpad: true },
     'neon-scavenger': { name: 'Neon Scavenger', description: 'Data Hunt', icon: 'fa-solid fa-search', category: 'New Games', importFn: () => import('./games/neonScavenger.js') },
     'neon-automata': { name: 'Neon Automata', description: 'AI Training Sim', icon: 'fa-solid fa-robot', category: 'New Games', importFn: () => import('./games/neonAutomata.js'), noDpad: true },
+    'neon-genesis': { name: 'Neon Genesis', description: 'Procedural 3D Explorer', icon: 'fa-solid fa-mountain', category: 'New Games', importFn: () => import('./games/neonGenesis.js'), wide: true },
 
     // Sports
     'neon-golf': { name: 'Neon Golf', description: 'Mini Golf Challenge', icon: 'fa-solid fa-golf-ball-tee', category: 'Sports', importFn: () => import('./games/neonGolf.js') },

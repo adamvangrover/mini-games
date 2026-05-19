@@ -1,11 +1,19 @@
-### Phase 1: Architecture Audit Summary
+# Phase 1: Deep Repository Architecture Audit
 
-Based on reviewing `js/main.js`, `js/core/ArcadeHub.js`, `js/core/SaveSystem.js`, and `js/games/PlaceholderGame.js`, here are the strict integration requirements for a new game to plug seamlessly into the main hub without polluting the global namespace:
+## 1. Core Backbone
+The repository is orchestrated through a central entry point (`js/main.js`), which maintains the core game loop (`mainLoop`), manages global state via `AppState` (MENU, IN_GAME, PAUSED, TRANSITIONING), and houses the dynamic import registry (`gameRegistry`). Crucial global systems reside in `js/core/` and are utilized as singletons:
+* **`SaveSystem.js`**: Handles all local state persistence, achievement unlocking, and currency.
+* **`SoundManager.js`**: Centralized Web Audio API context management for background music and sound effects.
+* **`ArcadeHub.js`**: Orchestrates the 3D interactive hub environment using Three.js, managing collision, raycast interactions, and transitions to individual game states.
 
-1.  **Self-Contained Module with Standard Interface**: The game must be exported as a default ES6 class (e.g., `export default class MyGame`). It must implement a specific interface matching the hub's game loop: `async init(container)`, `update(dt)`, `draw()`, and `async shutdown()`. The module should not rely on global variables and should append its UI/Canvas to the provided `container` DOM element.
+## 2. Game Logic & State Patterns
+Individual games are structured as self-contained ES6 modules under `js/games/`. They encapsulate their own rendering methods (often utilizing custom Canvas/WebGL contexts or DOM manipulation).
+* **Lifecycle**: Games are instantiated via the hub and mount themselves to a dedicated DOM container provided through an `init(container)` hook.
+* **Update Loop**: While `main.js` exposes global `update(deltaTime)` and `draw()` hooks that games can plug into, complex games often manage their own internal `requestAnimationFrame` loops.
+* **Cleanup**: Games are responsible for tearing down their logic, ensuring event listeners and timers are cleanly removed when the state transitions away from `IN_GAME`.
 
-2.  **Explicit Registration in main.js and index.html**: The new game must be registered within the `gameRegistry` object in `js/main.js`, defining its ID, metadata, and dynamic import path (e.g., `'my-new-game': { name: '...', ..., importFn: () => import('./games/myNewGame.js') }`). Additionally, a corresponding container `div` must be added to `index.html` (e.g., `<div id='my-new-game' class='hidden game-container'></div>`).
-
-3.  **Strict Use of Core Singleton Systems**: The game must absolutely avoid raw `localStorage` or native `AudioContext` creation. It must retrieve and persist state (like scores or achievements) strictly through `SaveSystem.getInstance()`, handle audio through `SoundManager.getInstance()`, and (optionally) manage input via `InputManager.getInstance()`. It should trigger the end-state natively using `window.miniGameHub.showGameOver(score)`.
-
-Please review this summary. I am pausing execution to await your confirmation before proceeding to Phase 2 (Game Creation/Overhaul).
+## 3. Synthesis & Integration Protocol
+To integrate seamlessly into the main hub without polluting the global namespace, a new or overhauled game must adhere to the following rules:
+1. **Module Export & Registration**: The game must be exported as a default class (e.g., `export default class GameName`) and registered dynamically within the `gameRegistry` in `js/main.js`.
+2. **Resource Encapsulation**: The game must strictly utilize the `js/core/SaveSystem.js` singleton for all state persistence (avoiding raw `localStorage`) and `js/core/SoundManager.js` for audio contexts.
+3. **Lifecycle Management**: The module must implement an `init(container)` hook for mounting, manage its internal update loops efficiently, and ensure exhaustive cleanup of all event listeners, intervals, and rendering contexts when dismantled.
