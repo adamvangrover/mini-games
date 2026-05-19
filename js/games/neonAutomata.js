@@ -248,25 +248,31 @@ export default class NeonAutomata {
         }
 
         // Update Nodes (Animation)
-        this.nodes.forEach(n => {
+        // Bolt Optimization: Replaced forEach with index-based loop to prevent callback allocation overhead
+        for (let i = 0; i < this.nodes.length; i++) {
+            const n = this.nodes[i];
             if(n.radius < n.maxRadius) n.radius += dt * 10;
-        });
+        }
 
         // Update Agents
-        this.agents.forEach(agent => {
+        // Bolt Optimization: Replaced forEach with index-based loop
+        for (let i = 0; i < this.agents.length; i++) {
+            const agent = this.agents[i];
             // Logic: Find nearest node
             let target = null;
-            let minDist = Infinity;
+            let minDistSq = Infinity;
 
-            this.nodes.forEach(node => {
+            // Bolt Optimization: Calculate squared distance to bypass expensive Math.sqrt in nested loop
+            for (let j = 0; j < this.nodes.length; j++) {
+                const node = this.nodes[j];
                 const dx = node.x - agent.x;
                 const dy = node.y - agent.y;
-                const d = Math.sqrt(dx*dx + dy*dy);
-                if(d < minDist) {
-                    minDist = d;
+                const distSq = dx*dx + dy*dy;
+                if(distSq < minDistSq) {
+                    minDistSq = distSq;
                     target = node;
                 }
-            });
+            }
 
             const speed = this.baseSpeed * (1 + (this.upgrades.speed - 1) * 0.2);
 
@@ -280,7 +286,8 @@ export default class NeonAutomata {
                 agent.vy = Math.sin(angle) * speed;
 
                 // Collect
-                if (minDist < target.radius + 5) {
+                const interactDist = target.radius + 5;
+                if (minDistSq < interactDist * interactDist) {
                     this.collectNode(target);
                     // Flash effect
                     agent.radius = 10;
@@ -290,8 +297,11 @@ export default class NeonAutomata {
                 agent.vx += (Math.random() - 0.5) * 10;
                 agent.vy += (Math.random() - 0.5) * 10;
                 // Clamp speed
-                const mag = Math.sqrt(agent.vx*agent.vx + agent.vy*agent.vy);
-                if(mag > speed) {
+                // Bolt Optimization: Check squared magnitude against squared speed before calling Math.sqrt
+                const magSq = agent.vx*agent.vx + agent.vy*agent.vy;
+                const speedSq = speed * speed;
+                if(magSq > speedSq) {
+                    const mag = Math.sqrt(magSq);
                     agent.vx = (agent.vx/mag) * speed;
                     agent.vy = (agent.vy/mag) * speed;
                 }
@@ -308,7 +318,7 @@ export default class NeonAutomata {
 
             if(agent.radius > 3) agent.radius -= dt * 20; // restore size
             else agent.radius = 3;
-        });
+        }
     }
 
     collectNode(node) {
@@ -343,24 +353,28 @@ export default class NeonAutomata {
         */
 
         // Draw Nodes
-        this.nodes.forEach(node => {
+        // Bolt Optimization: Replaced forEach with index-based loop for drawing
+        for (let i = 0; i < this.nodes.length; i++) {
+            const node = this.nodes[i];
             this.ctx.beginPath();
             this.ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
             this.ctx.fillStyle = 'rgba(6, 182, 212, 0.5)';
             this.ctx.fill();
             this.ctx.strokeStyle = 'cyan';
             this.ctx.stroke();
-        });
+        }
 
         // Draw Agents
-        this.agents.forEach(agent => {
+        // Bolt Optimization: Replaced forEach with index-based loop for drawing
+        for (let i = 0; i < this.agents.length; i++) {
+            const agent = this.agents[i];
             this.ctx.beginPath();
             this.ctx.arc(agent.x, agent.y, agent.radius, 0, Math.PI * 2);
             this.ctx.fillStyle = agent.color;
             this.ctx.fill();
             this.ctx.shadowColor = agent.color;
             this.ctx.shadowBlur = 10;
-        });
+        }
         this.ctx.shadowBlur = 0;
     }
 }
