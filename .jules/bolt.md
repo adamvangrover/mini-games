@@ -60,3 +60,7 @@
 ## 2026-06-25 - [Tower Defense Spatial Check Optimization]
 **Learning:** Found multiple instances where `Math.sqrt()` was used for distance checking inside high-frequency update loops in the Tower Defense game (`Tower.js`, `Enemy.js`, `Projectile.js`). Calculating square roots is computationally expensive, especially inside nested targeting loops (e.g., towers evaluating all enemies).
 **Action:** Replace `Math.sqrt(dx*dx + dy*dy) < threshold` with squared distance comparisons `(dx*dx + dy*dy) < threshold * threshold` to reduce CPU overhead during spatial proximity checks, only falling back to `Math.sqrt()` when the actual distance value is strictly required (like vector normalization for movement).
+
+## 2026-05-18 - [Lumina Projectile Collision and Splice Bug Fix]
+**Learning:** In the `lumina.js` nested projectile/enemy collision loop, `forEach` iteration paired with `splice(indexOf(e))` introduced significant overhead and a latent element-skipping bug. Furthermore, the absence of an early `break` when a hit was resolved meant the system kept checking distances between the successfully dead projectile and the remaining enemies, wasting O(N*M) cycles. Finally, the calculation used `distanceTo`, which computes `Math.sqrt`.
+**Action:** Replace `forEach` with standard backwards `for` loops wherever arrays are spliced. Use `distanceToSquared` to avoid `Math.sqrt` calls. Introduce a `break;` statement as soon as a projectile collision is registered.
