@@ -64,3 +64,6 @@
 ## 2026-05-16 - [Neon Automata Loop Optimization]
 **Learning:** Found multiple instances where array `.forEach` and `Math.sqrt` were used in tight, nested hot-paths in the Neon Automata game's `update()` and `draw()` functions.
 **Action:** Replaced `.forEach` with index-based `for` loops, avoiding unnecessary closure allocation. Handled magnitude and distance clamping with squared vectors `dx*dx + dy*dy < radius * radius` to skip expensive `Math.sqrt()` iterations.
+## 2026-05-18 - [Lumina Projectile Collision and Splice Bug Fix]
+**Learning:** In the `lumina.js` nested projectile/enemy collision loop, `forEach` iteration paired with `splice(indexOf(e))` introduced significant overhead and a latent element-skipping bug. Furthermore, the absence of an early `break` when a hit was resolved meant the system kept checking distances between the successfully dead projectile and the remaining enemies, wasting O(N*M) cycles. Finally, the calculation used `distanceTo`, which computes `Math.sqrt`.
+**Action:** Replace `forEach` with standard backwards `for` loops wherever arrays are spliced. Use `distanceToSquared` to avoid `Math.sqrt` calls. Introduce a `break;` statement as soon as a projectile collision is registered.
