@@ -60,3 +60,7 @@
 ## 2026-06-25 - [Tower Defense Spatial Check Optimization]
 **Learning:** Found multiple instances where `Math.sqrt()` was used for distance checking inside high-frequency update loops in the Tower Defense game (`Tower.js`, `Enemy.js`, `Projectile.js`). Calculating square roots is computationally expensive, especially inside nested targeting loops (e.g., towers evaluating all enemies).
 **Action:** Replace `Math.sqrt(dx*dx + dy*dy) < threshold` with squared distance comparisons `(dx*dx + dy*dy) < threshold * threshold` to reduce CPU overhead during spatial proximity checks, only falling back to `Math.sqrt()` when the actual distance value is strictly required (like vector normalization for movement).
+
+## 2026-05-16 - [Neon Automata Loop Optimization]
+**Learning:** Found multiple instances where array `.forEach` and `Math.sqrt` were used in tight, nested hot-paths in the Neon Automata game's `update()` and `draw()` functions.
+**Action:** Replaced `.forEach` with index-based `for` loops, avoiding unnecessary closure allocation. Handled magnitude and distance clamping with squared vectors `dx*dx + dy*dy < radius * radius` to skip expensive `Math.sqrt()` iterations.
