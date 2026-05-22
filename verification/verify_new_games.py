@@ -1,64 +1,64 @@
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
+import time
 
-def verify_games():
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+def verify_new_games(page):
+    # Go to the local server
+    page.goto("http://localhost:8000")
 
-        # 1. Load the Hub
-        print("Loading Main Menu...")
-        page.goto("http://localhost:8000/index.html")
-        page.wait_for_timeout(2000)
+    # Bypass loading screen
+    page.locator("body").click()
+    time.sleep(1)
 
-        # Switch to grid view if needed
-        if "3D View" in page.content():
-            # We are in 2D view already? Or toggle says "3D View"?
-            # If default is 3D, toggle says "Grid View".
-            # The code says default is 3D.
-            # Let's try to click "Grid View" if it exists, or just force the grid visible via JS
-            pass
+    # Wait for the menu
+    expect(page.locator("#menu")).to_be_visible(timeout=10000)
 
-        # Click toggle view button to ensure Grid is visible
-        # Button ID: view-toggle-btn
-        page.click('#view-toggle-btn')
-        page.wait_for_timeout(1000)
+    # Switch to Grid View to see the menu buttons
+    # Since 3D mode is default on desktop, menu-grid is hidden
+    page.evaluate("if(window.miniGameHub && window.miniGameHub.is3DView) window.miniGameHub.toggleView()")
+    time.sleep(1)
 
-        # Screenshot Menu
-        page.screenshot(path="verification/menu.png")
-        print("Menu screenshot taken.")
+    # Wait for menu grid to be visible
+    expect(page.locator("#menu-grid")).to_be_visible()
 
-        # 2. Test Neon Golf
-        print("Testing Neon Golf...")
-        # Find Neon Golf card
-        # Logic: transitionToState(AppState.IN_GAME, { gameId: 'neon-golf' })
-        page.evaluate("window.miniGameHub.transitionToState('IN_GAME', { gameId: 'neon-golf' })")
-        page.wait_for_timeout(1000)
-        page.screenshot(path="verification/neon_golf.png")
-        print("Neon Golf screenshot taken.")
+    # Look for Neon Grid Strike
+    grid_strike_btn = page.locator("button[aria-label*='Neon Grid Strike']")
 
-        # Go Back
-        page.evaluate("window.miniGameHub.goBack()")
-        page.wait_for_timeout(1000)
+    # Scroll it into view since the grid is long
+    grid_strike_btn.scroll_into_view_if_needed()
+    expect(grid_strike_btn).to_be_visible()
 
-        # 3. Test Neon Hoops
-        print("Testing Neon Hoops...")
-        page.evaluate("window.miniGameHub.transitionToState('IN_GAME', { gameId: 'neon-hoops' })")
-        page.wait_for_timeout(1000)
-        page.screenshot(path="verification/neon_hoops.png")
-        print("Neon Hoops screenshot taken.")
+    # Look for Neon Vaults
+    vaults_btn = page.locator("button[aria-label*='Neon Vaults']")
+    expect(vaults_btn).to_be_visible()
 
-        # Go Back
-        page.evaluate("window.miniGameHub.goBack()")
-        page.wait_for_timeout(1000)
+    # --- Verify Grid Strike UI ---
+    grid_strike_btn.click()
+    expect(page.locator("#neon-grid-strike")).not_to_have_class("hidden", timeout=5000)
+    time.sleep(1) # Let UI settle
+    page.screenshot(path="verification/grid_strike_ui.png")
 
-        # 4. Test Neon Shooter
-        print("Testing Neon Shooter...")
-        page.evaluate("window.miniGameHub.transitionToState('IN_GAME', { gameId: 'neon-shooter' })")
-        page.wait_for_timeout(2000) # Give Three.js time to init
-        page.screenshot(path="verification/neon_shooter.png")
-        print("Neon Shooter screenshot taken.")
+    # Execute programmatic exit to menu
+    page.evaluate("window.miniGameHub.transitionToState('MENU')")
+    time.sleep(1)
 
-        browser.close()
+    # Force back to 2D view if it reset
+    page.evaluate("if(window.miniGameHub && window.miniGameHub.is3DView) window.miniGameHub.toggleView()")
+    time.sleep(1)
+
+    # --- Verify Vaults UI ---
+    vaults_btn = page.locator("button[aria-label*='Neon Vaults']")
+    vaults_btn.scroll_into_view_if_needed()
+    vaults_btn.click()
+    expect(page.locator("#neon-vaults")).not_to_have_class("hidden", timeout=5000)
+    time.sleep(1) # Let UI settle
+    page.screenshot(path="verification/vaults_ui.png")
 
 if __name__ == "__main__":
-    verify_games()
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True, args=['--window-size=1280,1024'])
+        page = browser.new_page(viewport={'width': 1280, 'height': 1024})
+        try:
+            verify_new_games(page)
+            print("Verification successful.")
+        finally:
+            browser.close()
