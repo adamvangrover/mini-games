@@ -61,6 +61,7 @@ const gameRegistry = {
     'neon-flow-game': { name: 'Neon Flow', description: 'Relax & Create', icon: 'fa-solid fa-wind', category: 'New Games', importFn: () => import('./games/neonFlow.js'), wide: true, noDpad: true },
     'neon-scavenger': { name: 'Neon Scavenger', description: 'Data Hunt', icon: 'fa-solid fa-search', category: 'New Games', importFn: () => import('./games/neonScavenger.js') },
     'neon-automata': { name: 'Neon Automata', description: 'AI Training Sim', icon: 'fa-solid fa-robot', category: 'New Games', importFn: () => import('./games/neonAutomata.js'), noDpad: true },
+    'neon-genesis': { name: 'Neon Genesis', description: 'Procedural 3D Explorer', icon: 'fa-solid fa-mountain', category: 'New Games', importFn: () => import('./games/neonGenesis.js'), wide: true },
 
     // Sports
     'neon-golf': { name: 'Neon Golf', description: 'Mini Golf Challenge', icon: 'fa-solid fa-golf-ball-tee', category: 'Sports', importFn: () => import('./games/neonGolf.js') },
@@ -94,6 +95,7 @@ const gameRegistry = {
     'tetris-game': { name: 'Tetris', description: 'Stack the Blocks', icon: 'fa-solid fa-shapes', category: 'Arcade Classics', importFn: () => import('./games/tetris.js') },
 
     // Quick Minigames
+    'neon-wheel-game': { name: 'Neon Wheel', description: 'Spin & Guess', icon: 'fa-solid fa-life-ring', category: 'Logic Puzzles', importFn: () => import('./games/neonWheel.js'), wide: true },
     'maze-game': { name: 'Maze', description: 'Find the Path', icon: 'fa-solid fa-dungeon', category: 'Quick Minigames', importFn: () => import('./games/maze.js') },
     'runner-game': { name: 'Endless Runner', description: 'Jump the Obstacles', icon: 'fa-solid fa-person-running', category: 'Quick Minigames', importFn: () => import('./games/runner.js') },
     'typing-game': { name: 'Speed Type', description: 'Test Your WPM', icon: 'fa-solid fa-keyboard', category: 'Quick Minigames', importFn: () => import('./games/typing.js') },
