@@ -700,7 +700,7 @@ export default class Lumina {
             for (let i = 0; i < this.entities.shards.length; i++) {
                 const s = this.entities.shards[i];
                 const dSq = this.player.position.distanceToSquared(s.position);
-                if(dSq < minDistSq) { minDistSq = dSq; nearest = s; }
+                if (dSq < minDistSq) { minDistSq = dSq; nearest = s; }
             }
             if(nearest) {
                 const dir = nearest.position.clone().sub(this.player.position).normalize();
@@ -758,6 +758,7 @@ export default class Lumina {
                            this.player.position.y = box.max.y + 1.5;
                            this.state.velocity.y = 0;
                            this.state.jumps = 0;
+                           break;
                        }
                    }
             }
@@ -772,10 +773,9 @@ export default class Lumina {
             p.lifetime--;
             let hit = false;
 
-            for (let j = this.entities.enemies.length - 1; j >= 0; j--) {
+            for (let j = 0; j < this.entities.enemies.length; j++) {
                 const e = this.entities.enemies[j];
-                // Math.sqrt() optimization + short-circuit
-                if(!hit && p.mesh.position.distanceToSquared(e.mesh.position) < 4) {
+                if(p.mesh.position.distanceToSquared(e.mesh.position) < 4) {
                     hit = true; e.hp--;
                     this.spawnParticles(p.mesh.position, 10, 0x00ffff, 0.4);
                     // Flash
@@ -789,7 +789,7 @@ export default class Lumina {
                         this.state.score += 100;
                         this.notify("THREAT NEUTRALIZED", "+100 SCORE");
                     }
-                    break; // Early break to avoid redundant collision checks for this projectile
+                    break;
                 }
             }
 
@@ -813,7 +813,7 @@ export default class Lumina {
                 e.mesh.position.y += Math.sin(time*5)*0.03; // Bob
             }
 
-            // AI (40*40 = 1600)
+            // AI
             if(distSq < 1600) e.state = 'chase'; else e.state = 'patrol';
 
             const dir = new THREE.Vector3();
@@ -827,7 +827,6 @@ export default class Lumina {
             }
             e.mesh.position.add(dir);
 
-            // (2.5*2.5 = 6.25)
             if(distSq < 6.25 && this.state.hp > 0) {
                 this.takeDamage(this.CONFIG.enemyDamage);
                 e.mesh.position.sub(dir.multiplyScalar(30)); // Bounce
@@ -843,7 +842,6 @@ export default class Lumina {
             const s = this.entities.shards[i];
             s.rotation.y += 0.02;
             s.position.y += Math.sin(time)*0.05;
-            // (3.5*3.5 = 12.25)
             if(this.player.position.distanceToSquared(s.position) < 12.25) {
                 this.scene.remove(s);
                 this.entities.shards.splice(i, 1);
