@@ -696,11 +696,12 @@ export default class Lumina {
 
         // Compass
         if(this.entities.shards.length > 0) {
-            let nearest = null, minDist = Infinity;
-            this.entities.shards.forEach(s => {
-                const d = this.player.position.distanceTo(s.position);
-                if(d < minDist) { minDist = d; nearest = s; }
-            });
+            let nearest = null, minDistSq = Infinity;
+            for (let i = 0; i < this.entities.shards.length; i++) {
+                const s = this.entities.shards[i];
+                const dSq = this.player.position.distanceToSquared(s.position);
+                if (dSq < minDistSq) { minDistSq = dSq; nearest = s; }
+            }
             if(nearest) {
                 const dir = nearest.position.clone().sub(this.player.position).normalize();
                 const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(this.player.quaternion);
@@ -746,7 +747,8 @@ export default class Lumina {
 
             // Ground Check
             let onGround = false;
-            this.entities.platforms.forEach(p => {
+            for (let i = 0; i < this.entities.platforms.length; i++) {
+                const p = this.entities.platforms[i];
                 const box = new THREE.Box3().setFromObject(p);
                 // Simple top collision
                 if(this.player.position.x > box.min.x && this.player.position.x < box.max.x &&
@@ -756,9 +758,10 @@ export default class Lumina {
                            this.player.position.y = box.max.y + 1.5;
                            this.state.velocity.y = 0;
                            this.state.jumps = 0;
+                           break;
                        }
                    }
-            });
+            }
             if(this.player.position.y < -20) this.takeDamage(20);
         }
 
@@ -770,8 +773,9 @@ export default class Lumina {
             p.lifetime--;
             let hit = false;
 
-            this.entities.enemies.forEach(e => {
-                if(!hit && p.mesh.position.distanceTo(e.mesh.position) < 2) {
+            for (let j = 0; j < this.entities.enemies.length; j++) {
+                const e = this.entities.enemies[j];
+                if(p.mesh.position.distanceToSquared(e.mesh.position) < 4) {
                     hit = true; e.hp--;
                     this.spawnParticles(p.mesh.position, 10, 0x00ffff, 0.4);
                     // Flash
@@ -781,12 +785,13 @@ export default class Lumina {
                     if(e.hp <= 0) {
                         this.spawnParticles(e.mesh.position, 30, 0xff0000, 0.8);
                         this.scene.remove(e.mesh);
-                        this.entities.enemies.splice(this.entities.enemies.indexOf(e), 1);
+                        this.entities.enemies.splice(j, 1);
                         this.state.score += 100;
                         this.notify("THREAT NEUTRALIZED", "+100 SCORE");
                     }
+                    break;
                 }
-            });
+            }
 
             if(p.lifetime <= 0 || hit) {
                 this.scene.remove(p.mesh);
@@ -796,8 +801,9 @@ export default class Lumina {
 
         // Enemies
         const frame = Math.floor(time * 60);
-        this.entities.enemies.forEach(e => {
-            const dist = this.player.position.distanceTo(e.mesh.position);
+        for (let i = 0; i < this.entities.enemies.length; i++) {
+            const e = this.entities.enemies[i];
+            const distSq = this.player.position.distanceToSquared(e.mesh.position);
 
             if(e.userData.type === 'drone') {
                 e.userData.rings.rotation.z += 0.2;
@@ -808,7 +814,7 @@ export default class Lumina {
             }
 
             // AI
-            if(dist < 40) e.state = 'chase'; else e.state = 'patrol';
+            if(distSq < 1600) e.state = 'chase'; else e.state = 'patrol';
 
             const dir = new THREE.Vector3();
             if(e.state === 'chase') {
@@ -821,26 +827,27 @@ export default class Lumina {
             }
             e.mesh.position.add(dir);
 
-            if(dist < 2.5 && this.state.hp > 0) {
+            if(distSq < 6.25 && this.state.hp > 0) {
                 this.takeDamage(this.CONFIG.enemyDamage);
                 e.mesh.position.sub(dir.multiplyScalar(30)); // Bounce
             }
-        });
+        }
 
         if(frame % this.CONFIG.enemySpawnRate === 0) {
             this.spawnEnemy(Math.random() > 0.7 ? 'walker' : 'drone');
         }
 
         // Shards
-        this.entities.shards.forEach((s, i) => {
+        for (let i = this.entities.shards.length - 1; i >= 0; i--) {
+            const s = this.entities.shards[i];
             s.rotation.y += 0.02;
             s.position.y += Math.sin(time)*0.05;
-            if(this.player.position.distanceTo(s.position) < 3.5) {
+            if(this.player.position.distanceToSquared(s.position) < 12.25) {
                 this.scene.remove(s);
                 this.entities.shards.splice(i, 1);
                 this.collectShard();
             }
-        });
+        }
 
         // Particles
         for(let i=this.entities.particles.length-1; i>=0; i--) {
