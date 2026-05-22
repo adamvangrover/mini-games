@@ -25,6 +25,11 @@ const gameRegistry = {
     'aetheria-game': { name: 'Aetheria', description: 'Floating Isles Exploration', icon: 'fa-solid fa-cloud', category: '3D Immersive', importFn: () => import('./games/aetheria/aetheria.js'), wide: true },
     'aetheria-classic': { name: 'Aetheria (Classic)', description: 'Standalone Version', icon: 'fa-solid fa-wind', category: '3D Immersive', importFn: () => import('./games/aetheriaClassic.js'), wide: true },
     'matterhorn-game': { name: 'Matterhorn Ascent', description: '3D Alpine Adventure', icon: 'fa-solid fa-mountain', category: '3D Immersive', importFn: () => import('./games/matterhorn.js'), wide: true },
+
+    // Board & TV Games (Injected)
+    'neon-grid-strike': { name: 'Neon Grid Strike', description: 'Naval Combat Sim', icon: 'fa-solid fa-ship', category: 'Logic Puzzles', importFn: () => import('./games/neonGridStrike.js'), wide: true, noDpad: true },
+    'neon-vaults': { name: 'Neon Vaults', description: 'Probability Game', icon: 'fa-solid fa-vault', category: 'Logic Puzzles', importFn: () => import('./games/neonVaults.js'), wide: true, noDpad: true },
+
     'lumina-game': { name: 'Lumina', description: 'Purify the Glitch', icon: 'fa-solid fa-cube', category: '3D Immersive', importFn: () => import('./games/lumina.js'), wide: true, noDpad: true },
     'neon-hunter': { name: 'Neon Hunter 64', description: 'Retro 3D Hunting', icon: 'fa-solid fa-crosshairs', category: '3D Immersive', importFn: () => import('./games/neonHunter.js'), wide: true }, // Removed noDpad (usually needed for shooters)
     'neon-hunter-ex': { name: 'Neon Hunter EX', description: 'Enhanced Edition', icon: 'fa-solid fa-gun', category: '3D Immersive', importFn: () => import('./games/neonHunterEx.js'), wide: true },
@@ -56,6 +61,7 @@ const gameRegistry = {
     'neon-flow-game': { name: 'Neon Flow', description: 'Relax & Create', icon: 'fa-solid fa-wind', category: 'New Games', importFn: () => import('./games/neonFlow.js'), wide: true, noDpad: true },
     'neon-scavenger': { name: 'Neon Scavenger', description: 'Data Hunt', icon: 'fa-solid fa-search', category: 'New Games', importFn: () => import('./games/neonScavenger.js') },
     'neon-automata': { name: 'Neon Automata', description: 'AI Training Sim', icon: 'fa-solid fa-robot', category: 'New Games', importFn: () => import('./games/neonAutomata.js'), noDpad: true },
+    'neon-genesis': { name: 'Neon Genesis', description: 'Procedural 3D Explorer', icon: 'fa-solid fa-mountain', category: 'New Games', importFn: () => import('./games/neonGenesis.js'), wide: true },
 
     // Sports
     'neon-golf': { name: 'Neon Golf', description: 'Mini Golf Challenge', icon: 'fa-solid fa-golf-ball-tee', category: 'Sports', importFn: () => import('./games/neonGolf.js') },
@@ -89,6 +95,7 @@ const gameRegistry = {
     'tetris-game': { name: 'Tetris', description: 'Stack the Blocks', icon: 'fa-solid fa-shapes', category: 'Arcade Classics', importFn: () => import('./games/tetris.js') },
 
     // Quick Minigames
+    'neon-wheel-game': { name: 'Neon Wheel', description: 'Spin & Guess', icon: 'fa-solid fa-life-ring', category: 'Logic Puzzles', importFn: () => import('./games/neonWheel.js'), wide: true },
     'maze-game': { name: 'Maze', description: 'Find the Path', icon: 'fa-solid fa-dungeon', category: 'Quick Minigames', importFn: () => import('./games/maze.js') },
     'runner-game': { name: 'Endless Runner', description: 'Jump the Obstacles', icon: 'fa-solid fa-person-running', category: 'Quick Minigames', importFn: () => import('./games/runner.js') },
     'typing-game': { name: 'Speed Type', description: 'Test Your WPM', icon: 'fa-solid fa-keyboard', category: 'Quick Minigames', importFn: () => import('./games/typing.js') },

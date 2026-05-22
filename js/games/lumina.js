@@ -822,7 +822,7 @@ export default class Lumina {
                 e.mesh.lookAt(this.player.position);
             } else {
                 dir.subVectors(e.patrolPoint, e.mesh.position);
-                if(dir.length() < 1) e.patrolPoint.set(e.mesh.position.x + (Math.random()-0.5)*40, 20, e.mesh.position.z + (Math.random()-0.5)*40);
+                if(dir.lengthSq() < 1) e.patrolPoint.set(e.mesh.position.x + (Math.random()-0.5)*40, 20, e.mesh.position.z + (Math.random()-0.5)*40);
                 dir.normalize().multiplyScalar(e.speed * 0.5);
             }
             e.mesh.position.add(dir);

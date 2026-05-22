@@ -53,6 +53,7 @@
 ## 2026-06-21 - [Array Iteration Overhead in Game Loops]
 **Learning:** In high-frequency game loops (60 FPS) involving large dynamic arrays (e.g., hundreds of enemies or projectiles), using `Array.prototype.forEach` creates a noticeable performance bottleneck due to continuous callback allocation, invocation overhead, and preventing the usage of standard loop controls like `break` or `continue`.
 **Action:** Consistently replace `.forEach` with index-based `for` loops in hot code paths, particularly in the `update()` and `draw()` phases of games, to reduce CPU load and minimize garbage collection (GC) pauses.
+
 ## 2026-06-25 - [Array Loop Callback Overhead and Splice Bug]
 **Learning:** In high-frequency game loops (`js/games/towerDefense/Game.js`), iterating dynamic arrays like `enemies` and `projectiles` with `Array.prototype.forEach` creates continuous callback allocation overhead. Additionally, using `.splice()` within a forward-iterating `.forEach` loop creates a severe bug where the element immediately following the spliced element is skipped in the iteration.
 **Action:** Consistently replace `.forEach` with backward index-based `for` loops (`for (let i = arr.length - 1; i >= 0; i--)`) in hot code paths where elements might be removed, and standard forward loops for static iteration, to improve performance and prevent element-skipping bugs.
@@ -64,3 +65,11 @@
 ## 2026-05-15 - [Lumina Spatial Check Optimization]
 **Learning:** Found instances where `Math.sqrt()` was used for distance checking via `distanceTo()` inside high-frequency update loops in the Lumina game (`js/games/lumina.js`). Calculating square roots is computationally expensive. Additionally, `.forEach` iterations and missing early `break` statements exacerbated CPU load by continuing iterations even after the condition was met.
 **Action:** Replace `distanceTo` with `distanceToSquared` and adjusted distance thresholds (e.g., `< 40` to `< 1600`) to reduce CPU overhead during spatial proximity checks. Replaced `.forEach` with standard `for` loops, incorporating early `break` statements to eliminate callback overhead and prevent redundant iterations.
+
+## 2026-05-16 - [Neon Automata Loop Optimization]
+**Learning:** Found multiple instances where array `.forEach` and `Math.sqrt` were used in tight, nested hot-paths in the Neon Automata game's `update()` and `draw()` functions.
+**Action:** Replaced `.forEach` with index-based `for` loops, avoiding unnecessary closure allocation. Handled magnitude and distance clamping with squared vectors `dx*dx + dy*dy < radius * radius` to skip expensive `Math.sqrt()` iterations.
+
+## 2026-05-18 - [Lumina Projectile Collision and Splice Bug Fix]
+**Learning:** In the `lumina.js` nested projectile/enemy collision loop, `forEach` iteration paired with `splice(indexOf(e))` introduced significant overhead and a latent element-skipping bug. Furthermore, the absence of an early `break` when a hit was resolved meant the system kept checking distances between the successfully dead projectile and the remaining enemies, wasting O(N*M) cycles. Finally, the calculation used `distanceTo`, which computes `Math.sqrt`.
+**Action:** Replace `forEach` with standard backwards `for` loops wherever arrays are spliced. Use `distanceToSquared` to avoid `Math.sqrt` calls. Introduce a `break;` statement as soon as a projectile collision is registered.
