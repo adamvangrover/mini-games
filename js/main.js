@@ -69,6 +69,7 @@ const gameRegistry = {
 
     // Action
     'neon-shooter': { name: 'Neon FPS', description: 'Cyber Defense', icon: 'fa-solid fa-gun', category: 'Action', importFn: () => import('./games/neonShooter.js') },
+    'neon-pulse': { name: 'Neon Pulse', description: 'Core Defense Rhythm', icon: 'fa-solid fa-satellite-dish', category: 'Action Arcade', importFn: () => import('./games/neonPulse.js'), wide: true, noDpad: true },
     'neon-jump': { name: 'Neon Jump', description: 'Jump to the Stars', icon: 'fa-solid fa-arrow-up', category: 'Action', importFn: () => import('./games/neonJump.js'), noDpad: true },
     'neon-slice': { name: 'Neon Slice', description: 'Slice the Shapes', icon: 'fa-solid fa-scissors', category: 'Action', importFn: () => import('./games/neonSlice.js'), noDpad: true },
     'neon-galaga-game': { name: 'Neon Galaga', description: 'Space Warfare', icon: 'fa-solid fa-jet-fighter', category: 'Action', importFn: () => import('./games/neonGalaga.js') },

@@ -17,3 +17,9 @@ To integrate seamlessly into the main hub without polluting the global namespace
 1. **Module Export & Registration**: The game must be exported as a default class (e.g., `export default class GameName`) and registered dynamically within the `gameRegistry` in `js/main.js`.
 2. **Resource Encapsulation**: The game must strictly utilize the `js/core/SaveSystem.js` singleton for all state persistence (avoiding raw `localStorage`) and `js/core/SoundManager.js` for audio contexts.
 3. **Lifecycle Management**: The module must implement an `init(container)` hook for mounting, manage its internal update loops efficiently, and ensure exhaustive cleanup of all event listeners, intervals, and rendering contexts when dismantled.
+
+## Strict Integration Protocol for New/Overhauled Games
+
+1. **Lifecycle & Registration Encapsulation:** Modules must be implemented as self-contained ES6 classes implementing the standard lifecycle hooks (`async init(container)`, `update(dt)`, `draw()`, and `async shutdown()`). They must be dynamically registered in `js/main.js` and their designated DOM container (`<div id='{game-id}' class='hidden game-container'></div>`) explicitly added to `index.html`.
+2. **Resource & Global State Governance:** Games are strictly prohibited from using raw `localStorage` or creating detached AudioContexts. They must exclusively interface with the provided singletons: `js/core/SaveSystem.js` (using `.getHighScore()` and `.setHighScore()`) for persistence, and `js/core/SoundManager.js` for audio, to avoid global namespace pollution and state collisions.
+3. **Rigorous DOM & Event Cleanup:** To protect the main hub from memory leaks, modules must ensure absolute teardown within their `shutdown()` hook. This includes unmounting custom UI overlays (`this.container.innerHTML = '';`), clearing intervals/timeouts, and removing event listeners using explicit bound references (e.g., `this.boundResize`) rather than anonymous arrow functions.
