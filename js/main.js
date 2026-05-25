@@ -68,6 +68,8 @@ const gameRegistry = {
     'neon-hoops': { name: 'Neon Hoops', description: 'Arcade Basketball', icon: 'fa-solid fa-basketball', category: 'Sports', importFn: () => import('./games/neonHoops.js') },
 
     // Action
+    'neon-swarm': { name: 'Neon Swarm', description: 'Geometry Survival', icon: 'fa-solid fa-spider', category: 'Action', importFn: () => import('./games/neonSwarm.js'), noDpad: true, wide: true },
+    'neon-beat': { name: 'Neon Beat', description: 'Rhythm Action', icon: 'fa-solid fa-music', category: 'Action', importFn: () => import('./games/neonBeat.js'), noDpad: true },
     'neon-shooter': { name: 'Neon FPS', description: 'Cyber Defense', icon: 'fa-solid fa-gun', category: 'Action', importFn: () => import('./games/neonShooter.js') },
     'neon-pulse': { name: 'Neon Pulse', description: 'Core Defense Rhythm', icon: 'fa-solid fa-satellite-dish', category: 'Action Arcade', importFn: () => import('./games/neonPulse.js'), wide: true, noDpad: true },
     'neon-jump': { name: 'Neon Jump', description: 'Jump to the Stars', icon: 'fa-solid fa-arrow-up', category: 'Action', importFn: () => import('./games/neonJump.js'), noDpad: true },
