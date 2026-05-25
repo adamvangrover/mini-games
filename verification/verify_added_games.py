@@ -1,63 +1,46 @@
-
-import sys
-import os
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 import time
+import sys
 
 def verify_games():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
+        page.on("console", lambda msg: print(f"LOG: {msg.text}"))
 
-        # Navigate to home
-        print("Loading Main Menu...")
-        page.goto("http://localhost:8000/index.html")
+        try:
+            page.goto("http://localhost:8000")
+            page.click("body", force=True) # dismiss loader
 
-        # Wait for either 3D hub or grid
-        time.sleep(2)
+            # Wait for hub to load
+            expect(page.locator("#app-loader")).to_be_hidden(timeout=10000)
+            print("Hub loaded.")
 
-        # Force Grid View if 3D is active
-        # Check if menu-grid is hidden
-        if page.locator("#menu-grid").get_attribute("class") and "hidden" in page.locator("#menu-grid").get_attribute("class"):
-             print("Switching to Grid View...")
-             page.evaluate("if(window.miniGameHub && typeof toggleView === 'function') { toggleView(); } else { document.getElementById('view-toggle-btn').click(); }")
-             page.wait_for_selector("#menu-grid", state="visible")
+            games_to_test = ['neon-orbit', 'neon-dodge', 'neon-wire', 'neon-pulse']
 
-        games_to_test = [
-            {'id': 'neon-survivor', 'selector': 'canvas'},
-            {'id': 'neon-drop', 'selector': 'canvas'},
-            {'id': 'neon-factory', 'selector': 'canvas'},
-            {'id': 'neon-rogue', 'selector': '#enter-node-btn'},
-            {'id': 'neon-pinball', 'selector': 'canvas'}
-        ]
+            for game_id in games_to_test:
+                print(f"Testing game: {game_id}")
+                page.evaluate(f"window.miniGameHub.transitionToState('IN_GAME', {{ gameId: '{game_id}' }})")
 
-        for game in games_to_test:
-            print(f"Testing {game['id']}...")
+                # Check if game container is visible
+                game_container = page.locator(f"#{game_id}")
+                expect(game_container).to_be_visible(timeout=5000)
 
-            # Start game directly via API to ensure clean state
-            page.evaluate(f"window.miniGameHub.transitionToState('IN_GAME', {{ gameId: '{game['id']}' }})")
+                # Check for canvas inside
+                canvas = game_container.locator("canvas")
+                expect(canvas).to_be_visible(timeout=5000)
+                print(f"{game_id} loaded successfully.")
 
-            # Wait for game container
-            page.wait_for_selector(f"#{game['id']}", state="visible")
+                # Go back to menu
+                page.evaluate("window.miniGameHub.goBack()")
+                time.sleep(1) # wait for transition
 
-            # Check for critical element
-            try:
-                page.wait_for_selector(f"#{game['id']} {game['selector']}", state="visible", timeout=3000)
-                print(f"{game['id']} Loaded OK.")
+        except Exception as e:
+            print(f"Error during verification: {e}")
+            browser.close()
+            sys.exit(1)
 
-                # Take screenshot
-                os.makedirs("verification/screenshots", exist_ok=True)
-                page.screenshot(path=f"verification/screenshots/{game['id']}.png")
-
-            except Exception as e:
-                print(f"FAILED to load {game['id']}: {e}")
-                sys.exit(1)
-
-            # Return to menu
-            page.evaluate("window.miniGameHub.transitionToState('MENU')")
-            time.sleep(1)
-
-        print("All new games verified.")
+        print("All added games verified successfully.")
         browser.close()
 
 if __name__ == "__main__":
