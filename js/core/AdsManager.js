@@ -21,6 +21,7 @@ export default class AdsManager {
                 icon: "fa-star",
                 iconColor: "text-yellow-400",
                 buttonText: "ADS... (Simulated)",
+                link: "ad_neon_arcade_support.html",
                 bgGradient: "from-indigo-900 to-purple-900"
             },
             {
@@ -29,6 +30,7 @@ export default class AdsManager {
                 icon: "fa-wine-bottle",
                 iconColor: "text-fuchsia-400",
                 buttonText: "Drink Up",
+                link: "ad_glitch_cola.html",
                 bgGradient: "from-fuchsia-900 to-pink-900"
             },
             {
@@ -37,6 +39,7 @@ export default class AdsManager {
                 icon: "fa-memory",
                 iconColor: "text-blue-400",
                 buttonText: "Download Now",
+                link: "ad_download_ram.html",
                 bgGradient: "from-blue-900 to-cyan-900"
             },
             {
@@ -45,6 +48,7 @@ export default class AdsManager {
                 icon: "fa-shield-virus",
                 iconColor: "text-green-400",
                 buttonText: "Get Covered",
+                link: "ad_cyber_insurance.html",
                 bgGradient: "from-green-900 to-emerald-900"
             },
             {
@@ -53,6 +57,7 @@ export default class AdsManager {
                 icon: "fa-heart",
                 iconColor: "text-red-400",
                 buttonText: "Match Now",
+                link: "ad_hot_algorithms.html",
                 bgGradient: "from-red-900 to-rose-900"
             },
             {
@@ -61,6 +66,7 @@ export default class AdsManager {
                 icon: "fa-plane-departure",
                 iconColor: "text-purple-400",
                 buttonText: "Book Trip",
+                link: "ad_void_travel.html",
                 bgGradient: "from-purple-900 to-indigo-900"
             },
             {
@@ -69,6 +75,7 @@ export default class AdsManager {
                 icon: "fa-hamburger",
                 iconColor: "text-yellow-400",
                 buttonText: "Eat Now",
+                link: "ad_space_burger.html",
                 bgGradient: "from-yellow-900 to-orange-900"
             },
             {
@@ -77,6 +84,7 @@ export default class AdsManager {
                 icon: "fa-glasses",
                 iconColor: "text-cyan-400",
                 buttonText: "Wear Them",
+                link: "ad_retro_shades.html",
                 bgGradient: "from-cyan-900 to-blue-900"
             },
             {
@@ -85,6 +93,7 @@ export default class AdsManager {
                 icon: "fa-infinity",
                 iconColor: "text-red-400",
                 buttonText: "Join Loop",
+                link: "ad_infinite_loop.html",
                 bgGradient: "from-red-900 to-orange-900"
             },
             {
@@ -93,6 +102,7 @@ export default class AdsManager {
                 icon: "fa-coins",
                 iconColor: "text-yellow-300",
                 buttonText: "HODL",
+                link: "ad_neon_coin.html",
                 bgGradient: "from-yellow-900 to-orange-900"
             },
              {
@@ -101,6 +111,7 @@ export default class AdsManager {
                 icon: "fa-smile-beam",
                 iconColor: "text-yellow-200",
                 buttonText: "Wait for it...",
+                link: "ad_loading_happiness.html",
                 bgGradient: "from-fuchsia-900 to-purple-900"
             },
             {
@@ -109,6 +120,7 @@ export default class AdsManager {
                 icon: "fa-user-tag",
                 iconColor: "text-red-400",
                 buttonText: "Accept Fate",
+                link: "ad_the_product.html",
                 bgGradient: "from-gray-900 to-black"
             },
             {
@@ -117,6 +129,7 @@ export default class AdsManager {
                 icon: "fa-robot",
                 iconColor: "text-cyan-400",
                 buttonText: "Upgrade",
+                link: "ad_synthesize.html",
                 bgGradient: "from-cyan-900 to-blue-900"
             }
         ];
@@ -178,7 +191,7 @@ export default class AdsManager {
                          <div id="ad-icon-container" class="mb-6 animate-bounce"></div>
                          <h2 id="ad-title" class="text-4xl font-bold text-white mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-display tracking-wide">TITLE</h2>
                          <p id="ad-subtitle" class="text-xl text-cyan-300 mb-8 max-w-md drop-shadow font-light">Subtitle text goes here.</p>
-                         <button id="ad-action-btn" class="px-8 py-3 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full text-white font-bold shadow-lg border border-white/20 transition-all hover:scale-105 active:scale-95">ACTION</button>
+                         <button id="ad-action-btn" class="px-8 py-3 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full text-white font-bold shadow-lg border border-white/20 transition-all hover:scale-105 active:scale-95 cursor-pointer">ACTION</button>
                     </div>
 
                     <!-- Mini-Game Area (Hidden by default) -->
@@ -301,6 +314,7 @@ export default class AdsManager {
         this.adTitle.textContent = template.title;
         this.adSubtitle.textContent = template.subtitle;
         this.adActionBtn.textContent = template.buttonText;
+        this.adActionBtn.onclick = () => window.open(template.link || "#", "_blank");
 
         this.onAdComplete = callback;
         this.isActive = true;
