@@ -152,7 +152,8 @@ export default class NeonJump {
 
         // Platform Collision (only when falling)
         if (this.player.vy > 0) {
-            this.platforms.forEach(p => {
+            for (let i = 0; i < this.platforms.length; i++) {
+                const p = this.platforms[i];
                 if (
                     this.player.y + this.player.height/2 > p.y &&
                     this.player.y - this.player.height/2 < p.y + p.height &&
@@ -161,33 +162,38 @@ export default class NeonJump {
                     this.player.x - this.player.width/2 < p.x + p.width
                 ) {
                     this.jump();
+                    break;
                 }
-            });
+            }
         }
 
         // Enemy Collision
-        this.enemies.forEach(e => {
+        for (let i = 0; i < this.enemies.length; i++) {
+            const e = this.enemies[i];
             const dx = this.player.x - e.x;
             const dy = this.player.y - e.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < 30) {
+            const distSq = dx*dx + dy*dy;
+            if (distSq < 900) { // 30 squared
                 this.triggerGameOver();
+                break;
             }
-        });
+        }
 
         // Item Collision
-        this.items.forEach((item, index) => {
-             if (!item.active) return;
+        for (let i = 0; i < this.items.length; i++) {
+             const item = this.items[i];
+             if (!item.active) continue;
              const dx = this.player.x - item.x;
              const dy = this.player.y - item.y;
-             const dist = Math.sqrt(dx*dx + dy*dy);
-             if (dist < 40) {
+             const distSq = dx*dx + dy*dy;
+             if (distSq < 1600) { // 40 squared
                  item.active = false;
                  this.player.vy = this.jumpForce * 1.5; // Super jump
                  this.soundManager.playSound('powerup');
                  this.particleSystem.emit(this.player.x, this.player.y, '#ffff00', 20);
+                 break;
              }
-        });
+        }
 
         // Camera Follow
         const targetY = this.height / 2;
