@@ -61,6 +61,10 @@ const gameRegistry = {
     'neon-flow-game': { name: 'Neon Flow', description: 'Relax & Create', icon: 'fa-solid fa-wind', category: 'New Games', importFn: () => import('./games/neonFlow.js'), wide: true, noDpad: true },
     'neon-scavenger': { name: 'Neon Scavenger', description: 'Data Hunt', icon: 'fa-solid fa-search', category: 'New Games', importFn: () => import('./games/neonScavenger.js') },
     'neon-automata': { name: 'Neon Automata', description: 'AI Training Sim', icon: 'fa-solid fa-robot', category: 'New Games', importFn: () => import('./games/neonAutomata.js'), noDpad: true },
+    'neon-orbit': { name: 'Neon Orbit', description: 'Orbital Dodge', icon: 'fa-solid fa-satellite', category: 'Action', importFn: () => import('./games/neonOrbit.js') },
+    'neon-dodge': { name: 'Neon Dodge', description: 'Bullet Hell Survival', icon: 'fa-solid fa-cube', category: 'Action', importFn: () => import('./games/neonDodge.js') },
+    'neon-wire': { name: 'Neon Wire', description: 'Connect the Nodes', icon: 'fa-solid fa-plug', category: 'Logic Puzzles', importFn: () => import('./games/neonWire.js'), noDpad: true },
+    'neon-pulse': { name: 'Neon Pulse', description: 'Rhythm Action', icon: 'fa-solid fa-music', category: 'Action', importFn: () => import('./games/neonPulse.js'), noDpad: true },
     'neon-genesis': { name: 'Neon Genesis', description: 'Procedural 3D Explorer', icon: 'fa-solid fa-mountain', category: 'New Games', importFn: () => import('./games/neonGenesis.js'), wide: true },
 
     // Sports
