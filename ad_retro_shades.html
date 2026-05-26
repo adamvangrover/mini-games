@@ -6,36 +6,37 @@
     <title>Retro Shades</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            background-color: #0f172a;
-            color: white;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 2rem;
-        }
-        .glitch {
-            animation: glitch 1s linear infinite;
-        }
-        @keyframes glitch {
-            2%, 64% { transform: translate(2px,0) skew(0deg); }
-            4%, 60% { transform: translate(-2px,0) skew(0deg); }
-            62% { transform: translate(0,0) skew(5deg); }
-        }
+        body { background: linear-gradient(to bottom, #2b1055, #7597de); margin: 0; min-height: 100vh; font-family: 'Arial', sans-serif; overflow: hidden; transition: filter 0.5s; }
+        .sun { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 300px; height: 150px; background: linear-gradient(to bottom, #ff512f, #f09819); border-top-left-radius: 150px; border-top-right-radius: 150px; box-shadow: 0 0 50px #ff512f; }
+        .grid { position: absolute; bottom: 0; width: 100%; height: 50vh; background-image: linear-gradient(cyan 2px, transparent 2px), linear-gradient(90deg, cyan 2px, transparent 2px); background-size: 50px 50px; transform: perspective(500px) rotateX(80deg); transform-origin: top; animation: move 2s linear infinite; }
+        @keyframes move { 0% { background-position: 0 0; } 100% { background-position: 0 50px; } }
+        .shades-mode { filter: sepia(1) hue-rotate(250deg) saturate(3) contrast(1.5); }
+        .ui { position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; text-align: center; }
+        h1 { font-size: 5rem; font-style: italic; text-transform: uppercase; text-shadow: 2px 2px 0px #ff00ff, -2px -2px 0px #00ffff; margin-bottom: 1rem; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-cyan-900 to-blue-900">
-    <div class="hero">
-        <h1 class="text-6xl font-bold mb-4 glitch">Retro Shades</h1>
-        <h2 class="text-2xl mb-8 text-gray-300">So you can't see the bugs.</h2>
-        <p class="text-xl max-w-2xl mb-8">Filter out reality and live in a perfect 80s synthwave dream. Block out the haters and the syntax errors.</p>
-        <button onclick="window.close()" class="px-8 py-4 bg-white text-black font-bold rounded hover:bg-gray-200 transition">Return to Reality</button>
+<body>
+    <div class="sun"></div>
+    <div class="grid"></div>
+
+    <div class="ui">
+        <h1>VAPOR SHADES</h1>
+        <p class="text-2xl mb-8 font-light tracking-widest">See the grid clearly.</p>
+
+        <button id="toggle-btn" class="px-8 py-3 bg-transparent border-2 border-cyan-400 text-cyan-400 font-bold rounded-full hover:bg-cyan-400 hover:text-black transition-colors mb-4 text-xl">
+            <span class="mr-2">😎</span> PUT ON SHADES
+        </button>
+        <button onclick="window.close()" class="px-4 py-2 text-gray-400 hover:text-white underline text-sm mt-8">Return to Hub</button>
     </div>
+
+    <script>
+        const btn = document.getElementById('toggle-btn');
+        let on = false;
+        btn.onclick = () => {
+            on = !on;
+            document.body.classList.toggle('shades-mode');
+            btn.innerHTML = on ? '<span class="mr-2">🤓</span> TAKE OFF SHADES' : '<span class="mr-2">😎</span> PUT ON SHADES';
+        };
+    </script>
 </body>
 </html>
