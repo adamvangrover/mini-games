@@ -6,36 +6,28 @@
     <title>Infinite Loop Tours</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            background-color: #0f172a;
-            color: white;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 2rem;
-        }
-        .glitch {
-            animation: glitch 1s linear infinite;
-        }
-        @keyframes glitch {
-            2%, 64% { transform: translate(2px,0) skew(0deg); }
-            4%, 60% { transform: translate(-2px,0) skew(0deg); }
-            62% { transform: translate(0,0) skew(5deg); }
-        }
+        body { background-color: #111; color: #eee; font-family: monospace; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .fractal-container { position: relative; width: 60vmin; height: 60vmin; perspective: 1000px; }
+        .fractal-box { position: absolute; inset: 0; border: 2px solid #f00; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(20,0,0,0.8); animation: dive 4s infinite linear; text-align: center; }
+        .fractal-box h2 { font-size: 2vmin; margin-bottom: 1vmin; }
+        @keyframes dive { 0% { transform: translateZ(0) scale(1); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateZ(500px) scale(5); opacity: 0; } }
+        .b1 { animation-delay: 0s; border-color: red; color: red;}
+        .b2 { animation-delay: -1s; border-color: orange; color: orange;}
+        .b3 { animation-delay: -2s; border-color: yellow; color: yellow;}
+        .b4 { animation-delay: -3s; border-color: white; color: white;}
+        .ui { position: absolute; bottom: 20px; z-index: 100; text-align: center; width: 100%; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-red-900 to-orange-900">
-    <div class="hero">
-        <h1 class="text-6xl font-bold mb-4 glitch">Infinite Loop Tours</h1>
-        <h2 class="text-2xl mb-8 text-gray-300">Experience the same moment forever! Experience the same...</h2>
-        <p class="text-xl max-w-2xl mb-8">Why move on when you can stay here forever? Our patented temporal stasis technology guarantees you'll never have to face tomorrow.</p>
-        <button onclick="window.close()" class="px-8 py-4 bg-white text-black font-bold rounded hover:bg-gray-200 transition">Return to Reality</button>
+<body>
+    <div class="fractal-container">
+        <div class="fractal-box b1"><h2>Infinite Loop Tours</h2><p>Experience the same moment forever...</p></div>
+        <div class="fractal-box b2"><h2>Infinite Loop Tours</h2><p>Experience the same moment forever...</p></div>
+        <div class="fractal-box b3"><h2>Infinite Loop Tours</h2><p>Experience the same moment forever...</p></div>
+        <div class="fractal-box b4"><h2>Infinite Loop Tours</h2><p>Experience the same moment forever...</p></div>
+    </div>
+    <div class="ui">
+        <p class="mb-4">"I've been here before."</p>
+        <button onclick="window.close()" class="px-6 py-2 bg-white text-black font-bold rounded hover:bg-gray-300">BREAK LOOP</button>
     </div>
 </body>
 </html>

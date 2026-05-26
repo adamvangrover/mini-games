@@ -3,39 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hot Single Algorithms</title>
+    <title>AlgoMatch - Hot Algorithms</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            background-color: #0f172a;
-            color: white;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 2rem;
-        }
-        .glitch {
-            animation: glitch 1s linear infinite;
-        }
-        @keyframes glitch {
-            2%, 64% { transform: translate(2px,0) skew(0deg); }
-            4%, 60% { transform: translate(-2px,0) skew(0deg); }
-            62% { transform: translate(0,0) skew(5deg); }
-        }
+        body { background: linear-gradient(135deg, #ff416c, #ff4b2b); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        .card { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.3s, opacity 0.3s; }
+        .swipe-left { transform: translateX(-150%) rotate(-30deg); opacity: 0; }
+        .swipe-right { transform: translateX(150%) rotate(30deg); opacity: 0; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-red-900 to-rose-900">
-    <div class="hero">
-        <h1 class="text-6xl font-bold mb-4 glitch">Hot Single Algorithms</h1>
-        <h2 class="text-2xl mb-8 text-gray-300">Meet local sorting algorithms near you.</h2>
-        <p class="text-xl max-w-2xl mb-8">QuickSort, MergeSort, and BubbleSort are looking for a match. Swipe right on optimal time complexity.</p>
-        <button onclick="window.close()" class="px-8 py-4 bg-white text-black font-bold rounded hover:bg-gray-200 transition">Return to Reality</button>
+<body class="flex flex-col items-center justify-center min-h-screen">
+    <h1 class="text-4xl font-bold text-white mb-8 text-shadow shadow-black drop-shadow-lg">AlgoMatch 💖</h1>
+
+    <div id="card-container" class="relative w-80 h-[28rem]">
+        <!-- Cards will be injected here -->
     </div>
+
+    <div class="flex gap-8 mt-8">
+        <button id="btn-nope" class="w-16 h-16 rounded-full bg-white text-red-500 text-3xl shadow-lg flex items-center justify-center hover:scale-110 transition">✖</button>
+        <button id="btn-like" class="w-16 h-16 rounded-full bg-white text-green-500 text-3xl shadow-lg flex items-center justify-center hover:scale-110 transition">♥</button>
+    </div>
+
+    <script>
+        const algos = [
+            { name: "QuickSort", age: "O(n log n)", bio: "I'm fast and efficient, but I have worst-case scenarios. Looking for someone to pivot with.", color: "bg-blue-500" },
+            { name: "BubbleSort", age: "O(n²)", bio: "I'm a bit slow and old-fashioned, but I'll always bubble up to your expectations. Very simple-minded.", color: "bg-yellow-500" },
+            { name: "MergeSort", age: "O(n log n)", bio: "I require a lot of extra space, but I'm stable and reliable. Let's divide and conquer together.", color: "bg-purple-500" },
+            { name: "BogoSort", age: "O(n!)", bio: "I like to leave things to chance. Spontaneous, chaotic, and extremely lucky (sometimes).", color: "bg-green-500" }
+        ];
+
+        let currentIdx = 0;
+        const container = document.getElementById('card-container');
+
+        function renderCard() {
+            if(currentIdx >= algos.length) {
+                container.innerHTML = `<div class="card absolute inset-0 flex flex-col items-center justify-center p-6 text-center"><h2 class="text-2xl font-bold mb-4">No more algorithms in your area!</h2><button onclick="window.close()" class="px-6 py-2 bg-pink-500 text-white rounded-full">Close App</button></div>`;
+                return;
+            }
+            const algo = algos[currentIdx];
+            const card = document.createElement('div');
+            card.className = `card absolute inset-0 flex flex-col overflow-hidden`;
+            card.id = `card-${currentIdx}`;
+            card.innerHTML = `
+                <div class="h-1/2 ${algo.color} flex items-center justify-center text-6xl text-white font-mono">{ }</div>
+                <div class="p-6 h-1/2 bg-white flex flex-col">
+                    <div class="flex justify-between items-end mb-2">
+                        <h2 class="text-3xl font-bold">${algo.name}</h2>
+                        <span class="text-gray-500 font-mono">${algo.age}</span>
+                    </div>
+                    <p class="text-gray-700 flex-1">${algo.bio}</p>
+                </div>
+            `;
+            container.innerHTML = '';
+            container.appendChild(card);
+        }
+
+        document.getElementById('btn-nope').onclick = () => swipe('left');
+        document.getElementById('btn-like').onclick = () => swipe('right');
+
+        function swipe(dir) {
+            const card = document.getElementById(`card-${currentIdx}`);
+            if(!card) return;
+            card.classList.add(`swipe-${dir}`);
+            if(dir === 'right') {
+                setTimeout(() => { alert("It's a MATCH! Their complexity aligns with your arrays."); currentIdx++; renderCard(); }, 300);
+            } else {
+                setTimeout(() => { currentIdx++; renderCard(); }, 300);
+            }
+        }
+
+        renderCard();
+    </script>
 </body>
 </html>

@@ -3,39 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download RAM</title>
+    <title>DOWNLOAD FREE RAM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            background-color: #0f172a;
-            color: white;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 2rem;
-        }
-        .glitch {
-            animation: glitch 1s linear infinite;
-        }
-        @keyframes glitch {
-            2%, 64% { transform: translate(2px,0) skew(0deg); }
-            4%, 60% { transform: translate(-2px,0) skew(0deg); }
-            62% { transform: translate(0,0) skew(5deg); }
-        }
+        body { background-color: #0000aa; color: white; font-family: 'Comic Sans MS', cursive, sans-serif; }
+        .blink { animation: blinker 0.5s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+        .marquee { overflow: hidden; white-space: nowrap; box-sizing: border-box; background: yellow; color: red; font-weight: bold; font-size: 1.5rem; padding: 5px; }
+        .marquee span { display: inline-block; padding-left: 100%; animation: marquee 10s linear infinite; }
+        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
+        .popup { border: 4px outset #ccc; background: silver; color: black; padding: 1rem; position: absolute; box-shadow: 5px 5px 10px rgba(0,0,0,0.5); font-family: 'Tahoma', sans-serif; }
+        .title-bar { background: #000080; color: white; padding: 2px 5px; font-weight: bold; display: flex; justify-content: space-between; margin-bottom: 10px; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-900 to-cyan-900">
-    <div class="hero">
-        <h1 class="text-6xl font-bold mb-4 glitch">Download RAM</h1>
-        <h2 class="text-2xl mb-8 text-gray-300">Is your PC slow? Download more RAM instantly! (Not a scam)</h2>
-        <p class="text-xl max-w-2xl mb-8">Just click the button and watch your computer speed up to infinity and beyond.</p>
-        <button onclick="window.close()" class="px-8 py-4 bg-white text-black font-bold rounded hover:bg-gray-200 transition">Return to Reality</button>
+<body class="flex flex-col items-center h-screen overflow-hidden relative">
+    <div class="marquee w-full absolute top-0"><span>⚠️ WARNING: YOUR COMPUTER IS RUNNING LOW ON MEMORY! ⚠️</span></div>
+
+    <div class="mt-20 text-center">
+        <h1 class="text-6xl font-bold text-yellow-300 blink mb-8" style="text-shadow: 2px 2px red;">DOWNLOAD MORE RAM!!!</h1>
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%230f0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='4' width='16' height='16' rx='2' ry='2'></rect><rect x='9' y='9' width='6' height='6'></rect><line x1='9' y1='1' x2='9' y2='4'></line><line x1='15' y1='1' x2='15' y2='4'></line><line x1='9' y1='20' x2='9' y2='23'></line><line x1='15' y1='20' x2='15' y2='23'></line><line x1='20' y1='9' x2='23' y2='9'></line><line x1='20' y1='14' x2='23' y2='14'></line><line x1='1' y1='9' x2='4' y2='9'></line><line x1='1' y1='14' x2='4' y2='14'></line></svg>" class="mx-auto w-32 h-32 mb-8 animate-bounce">
+        <p class="text-2xl mb-8">Increase your PC speed by 1000% instantly!</p>
+
+        <button id="dl-btn" class="px-10 py-4 bg-green-500 text-white border-4 border-green-800 text-3xl font-bold rounded cursor-pointer hover:bg-green-400">CLICK TO DOWNLOAD 32GB</button>
     </div>
+
+    <script>
+        document.getElementById('dl-btn').onclick = function() {
+            for(let i=0; i<10; i++) {
+                setTimeout(() => {
+                    const p = document.createElement('div');
+                    p.className = 'popup';
+                    p.style.left = Math.random() * 80 + '%';
+                    p.style.top = Math.random() * 80 + '%';
+                    p.innerHTML = `<div class="title-bar"><span>Download Manager</span><button onclick="this.parentElement.parentElement.remove()">X</button></div><div>Downloading RAM chunk ${i+1}...<br><progress value="${Math.random()*100}" max="100"></progress></div>`;
+                    document.body.appendChild(p);
+                }, i * 200);
+            }
+            setTimeout(() => {
+                alert("Download complete! Restart your simulation to apply.");
+                window.close();
+            }, 3000);
+        }
+    </script>
 </body>
 </html>

@@ -3,39 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buy Crypto!</title>
+    <title>NeonCoin Exchange</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            background-color: #0f172a;
-            color: white;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 2rem;
-        }
-        .glitch {
-            animation: glitch 1s linear infinite;
-        }
-        @keyframes glitch {
-            2%, 64% { transform: translate(2px,0) skew(0deg); }
-            4%, 60% { transform: translate(-2px,0) skew(0deg); }
-            62% { transform: translate(0,0) skew(5deg); }
-        }
+        body { background-color: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+        .chart-container { height: 300px; width: 100%; background: #161b22; border: 1px solid #30363d; border-radius: 6px; position: relative; overflow: hidden; }
+        .line { position: absolute; bottom: 0; width: 2px; background: #3fb950; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-yellow-900 to-orange-900">
-    <div class="hero">
-        <h1 class="text-6xl font-bold mb-4 glitch">Buy Crypto!</h1>
-        <h2 class="text-2xl mb-8 text-gray-300">Invest in 'NeonCoin'. It definitely exists. (Not really)</h2>
-        <p class="text-xl max-w-2xl mb-8">To the moon! Our completely unregulated digital asset is guaranteed to do something. Buy the dip!</p>
-        <button onclick="window.close()" class="px-8 py-4 bg-white text-black font-bold rounded hover:bg-gray-200 transition">Return to Reality</button>
+<body class="p-8 flex flex-col items-center">
+    <div class="max-w-3xl w-full">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold flex items-center"><span class="text-yellow-500 text-4xl mr-2">🪙</span> NeonCoin (NNC)</h1>
+            <div class="text-right">
+                <div class="text-2xl font-bold text-green-400" id="price">$42,069.00</div>
+                <div class="text-sm text-green-500">▲ +420% (1h)</div>
+            </div>
+        </div>
+
+        <div class="chart-container mb-8 flex items-end p-2 gap-1" id="chart">
+            <!-- Bars injected by JS -->
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <button class="bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded text-xl" onclick="pump()">BUY (HODL!)</button>
+            <button class="bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded text-xl" onclick="dump()">SELL (PAPER HANDS)</button>
+        </div>
+
+        <p class="text-xs text-gray-500 text-center">Warning: NeonCoin has no intrinsic value. Not financial advice. To the moon! 🚀</p>
+        <div class="text-center mt-8">
+            <button onclick="window.close()" class="text-gray-400 hover:text-white underline">Exit Exchange</button>
+        </div>
     </div>
+
+    <script>
+        const chart = document.getElementById('chart');
+        let price = 42069;
+        let heights = Array(50).fill().map(() => Math.random() * 50 + 10);
+
+        function drawChart() {
+            chart.innerHTML = '';
+            heights.forEach((h, i) => {
+                const bar = document.createElement('div');
+                bar.style.height = `${h}%`;
+                bar.style.width = '2%';
+                bar.style.backgroundColor = i === heights.length-1 ? '#3fb950' : '#238636';
+                bar.className = 'rounded-t';
+                chart.appendChild(bar);
+            });
+            document.getElementById('price').innerText = '$' + price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        function pump() {
+            price *= 1.1;
+            heights.shift();
+            heights.push(Math.min(100, heights[heights.length-1] + 10));
+            drawChart();
+        }
+
+        function dump() {
+            alert("Error: Selling is temporarily disabled for your protection.");
+        }
+
+        setInterval(() => { pump(); }, 2000);
+        drawChart();
+    </script>
 </body>
 </html>

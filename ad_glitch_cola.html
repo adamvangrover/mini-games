@@ -6,36 +6,48 @@
     <title>Glitch Cola</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            background-color: #0f172a;
-            color: white;
-            font-family: 'Courier New', Courier, monospace;
+        body { background-color: #000; color: #fff; overflow: hidden; margin: 0; padding: 0; }
+        #canvas { position: absolute; inset: 0; z-index: -1; }
+        .content { position: relative; z-index: 10; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-center; padding: 2rem; }
+        .glitch-text { font-family: monospace; font-size: 6rem; font-weight: 900; text-transform: uppercase; position: relative; display: inline-block; }
+        .glitch-text::before, .glitch-text::after { content: "GLITCH COLA"; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; }
+        .glitch-text::before { left: 4px; text-shadow: -2px 0 red; animation: glitch-anim 2s infinite linear alternate-reverse; }
+        .glitch-text::after { left: -4px; text-shadow: -2px 0 blue; animation: glitch-anim 3s infinite linear alternate-reverse; }
+        @keyframes glitch-anim {
+            0% { clip-path: inset(20% 0 80% 0); }
+            20% { clip-path: inset(60% 0 10% 0); }
+            40% { clip-path: inset(40% 0 50% 0); }
+            60% { clip-path: inset(80% 0 5% 0); }
+            80% { clip-path: inset(10% 0 70% 0); }
+            100% { clip-path: inset(30% 0 20% 0); }
         }
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 2rem;
-        }
-        .glitch {
-            animation: glitch 1s linear infinite;
-        }
-        @keyframes glitch {
-            2%, 64% { transform: translate(2px,0) skew(0deg); }
-            4%, 60% { transform: translate(-2px,0) skew(0deg); }
-            62% { transform: translate(0,0) skew(5deg); }
-        }
+        .bottle { font-size: 8rem; animation: shake 0.1s infinite; margin: 2rem 0; }
+        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 50% { transform: translate(-1px, -2px) rotate(-1deg); } 100% { transform: translate(-2px, 1px) rotate(1deg); } }
     </style>
 </head>
-<body class="bg-gradient-to-br from-fuchsia-900 to-pink-900">
-    <div class="hero">
-        <h1 class="text-6xl font-bold mb-4 glitch">Glitch Cola</h1>
-        <h2 class="text-2xl mb-8 text-gray-300">It tastes like static! Now with 50% more pixels.</h2>
-        <p class="text-xl max-w-2xl mb-8">Experience the ultimate refreshment. Warning: May cause spontaneous reality distortion.</p>
-        <button onclick="window.close()" class="px-8 py-4 bg-white text-black font-bold rounded hover:bg-gray-200 transition">Return to Reality</button>
+<body class="flex flex-col items-center justify-center">
+    <canvas id="canvas"></canvas>
+    <div class="content flex flex-col items-center justify-center text-center">
+        <h1 class="glitch-text">GLITCH COLA</h1>
+        <div class="bottle">🍾</div>
+        <h2 class="text-3xl mb-8 bg-black/80 p-2 font-mono text-cyan-400">100% ARTIFICIAL FLAVOR. 50% MORE PIXELS.</h2>
+        <button onclick="window.close()" class="px-8 py-4 bg-red-600 text-white font-bold font-mono border-4 border-white hover:bg-red-500 transition shadow-[0_0_20px_red]">DRINK THE STATIC</button>
     </div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+        function draw() {
+            for(let i=0; i<100; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? '#f0f' : '#0ff';
+                ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, Math.random()*10, Math.random()*10);
+            }
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.fillRect(0,0,canvas.width, canvas.height);
+            requestAnimationFrame(draw);
+        }
+        draw();
+    </script>
 </body>
 </html>
