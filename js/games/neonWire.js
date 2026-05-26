@@ -235,13 +235,14 @@ export default class NeonWire {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         const startX = (this.canvas.width - (this.gridSize * this.cellSize)) / 2;
+        const startY = (this.canvas.height - (this.gridSize * this.cellSize)) / 2;
         const Math_PI = Math.PI;
 
         for (let y = 0; y < this.gridSize; y++) {
             for (let x = 0; x < this.gridSize; x++) {
                 let node = this.grid[y][x];
                 let px = startX + x * this.cellSize;
-                let py = startX + y * this.cellSize; // Using startX to keep square center roughly
+                let py = startY + y * this.cellSize;
                 
                 // Draw Cell BG
                 this.ctx.strokeStyle = '#333';
