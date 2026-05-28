@@ -6,36 +6,49 @@
     <title>Loading Happiness...</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            background-color: #0f172a;
-            color: white;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 2rem;
-        }
-        .glitch {
-            animation: glitch 1s linear infinite;
-        }
-        @keyframes glitch {
-            2%, 64% { transform: translate(2px,0) skew(0deg); }
-            4%, 60% { transform: translate(-2px,0) skew(0deg); }
-            62% { transform: translate(0,0) skew(5deg); }
-        }
+        body { background-color: #fafafa; color: #333; font-family: 'Arial', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .loader-container { width: 80%; max-w: 500px; background: #e0e0e0; border-radius: 20px; height: 30px; overflow: hidden; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 2rem; position: relative; }
+        .loader-bar { height: 100%; background: linear-gradient(90deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); width: 0%; transition: width 0.5s ease; }
+        .emoji { font-size: 4rem; margin-bottom: 1rem; transition: transform 0.3s; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-fuchsia-900 to-purple-900">
-    <div class="hero">
-        <h1 class="text-6xl font-bold mb-4 glitch">Loading Happiness...</h1>
-        <h2 class="text-2xl mb-8 text-gray-300">Please wait while we dispense dopamine.</h2>
-        <p class="text-xl max-w-2xl mb-8">Your emotional state is being optimized. Please do not turn off your brain during the update process.</p>
-        <button onclick="window.close()" class="px-8 py-4 bg-white text-black font-bold rounded hover:bg-gray-200 transition">Return to Reality</button>
+<body>
+    <div class="emoji" id="face">😐</div>
+    <h1 class="text-2xl font-light mb-8" id="status">Dispensing Dopamine...</h1>
+
+    <div class="loader-container">
+        <div class="loader-bar" id="bar"></div>
     </div>
+
+    <p class="text-sm text-gray-400 mb-8" id="pct">0%</p>
+
+    <button onclick="window.close()" class="px-6 py-2 border border-gray-300 rounded hover:bg-gray-100 text-gray-600 transition">Cancel Process</button>
+
+    <script>
+        const bar = document.getElementById('bar');
+        const pct = document.getElementById('pct');
+        const face = document.getElementById('face');
+        const status = document.getElementById('status');
+        let progress = 0;
+
+        const interval = setInterval(() => {
+            progress += Math.random() * 2;
+            if(progress >= 100) {
+                progress = 100;
+                clearInterval(interval);
+                face.innerText = '🤩';
+                face.style.transform = 'scale(1.5)';
+                status.innerText = 'Happiness Fully Loaded!';
+                document.body.style.backgroundColor = '#fff0f5';
+            } else if (progress > 60) {
+                face.innerText = '🙂';
+            } else if (progress > 30) {
+                face.innerText = '微';
+            }
+
+            bar.style.width = progress + '%';
+            pct.innerText = Math.floor(progress) + '%';
+        }, 100);
+    </script>
 </body>
 </html>

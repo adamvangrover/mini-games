@@ -48,20 +48,87 @@ export default class ByteBroker {
 
     render() {
         this.container.innerHTML = `
-            <div class="flex flex-col h-full bg-black text-green-500 font-mono overflow-hidden relative border-4 border-green-800 border-double shadow-[0_0_15px_rgba(0,255,0,0.5)]">
+            <style>
+                @keyframes scanline {
+                    0% { transform: translateY(-100%); }
+                    100% { transform: translateY(100vh); }
+                }
+                .crt-scanlines {
+                    position: absolute;
+                    inset: 0;
+                    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+                    background-size: 100% 4px, 6px 100%;
+                    pointer-events: none;
+                    z-index: 50;
+                }
+                .crt-flicker {
+                    animation: scanline 8s linear infinite;
+                    position: absolute;
+                    inset: 0;
+                    background: rgba(255,255,255,0.02);
+                    height: 10%;
+                    pointer-events: none;
+                    z-index: 51;
+                }
+                .glitch-text-bb {
+                    position: relative;
+                    color: #ef4444; /* red-500 */
+                }
+                .glitch-text-bb::before, .glitch-text-bb::after {
+                    content: attr(data-text);
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    opacity: 0.8;
+                }
+                .glitch-text-bb::before {
+                    left: 2px;
+                    text-shadow: -1px 0 red;
+                    animation: glitch-anim-1 2s infinite linear alternate-reverse;
+                }
+                .glitch-text-bb::after {
+                    left: -2px;
+                    text-shadow: -1px 0 blue;
+                    animation: glitch-anim-2 3s infinite linear alternate-reverse;
+                }
+                @keyframes glitch-anim-1 {
+                    0% { clip-path: inset(20% 0 80% 0); }
+                    20% { clip-path: inset(60% 0 10% 0); }
+                    40% { clip-path: inset(40% 0 50% 0); }
+                    60% { clip-path: inset(80% 0 5% 0); }
+                    80% { clip-path: inset(10% 0 70% 0); }
+                    100% { clip-path: inset(30% 0 20% 0); }
+                }
+                @keyframes glitch-anim-2 {
+                    0% { clip-path: inset(10% 0 60% 0); }
+                    20% { clip-path: inset(30% 0 20% 0); }
+                    40% { clip-path: inset(70% 0 10% 0); }
+                    60% { clip-path: inset(20% 0 50% 0); }
+                    80% { clip-path: inset(90% 0 5% 0); }
+                    100% { clip-path: inset(5% 0 80% 0); }
+                }
+                .cyber-panel {
+                    border: 1px solid #ef4444;
+                    background: rgba(20, 0, 0, 0.8);
+                    box-shadow: 0 0 10px rgba(239, 68, 68, 0.3) inset;
+                }
+            </style>
+            <div class="flex flex-col h-full bg-black text-red-500 font-mono overflow-hidden relative border-4 border-red-900 border-double shadow-[0_0_20px_rgba(255,0,0,0.4)]">
+                <div class="crt-scanlines"></div>
+                <div class="crt-flicker"></div>
                 <!-- Header -->
-                <div class="flex justify-between items-center p-4 bg-black border-b border-green-800 z-10">
+                <div class="flex justify-between items-center p-4 bg-black border-b border-red-900 z-10 cyber-panel">
                     <div class="flex items-center gap-4">
-                        <i class="fas fa-chart-line text-green-500 text-2xl"></i>
+                        <i class="fas fa-terminal text-red-600 text-2xl animate-pulse"></i>
                         <div>
-                            <h1 class="text-xl font-bold text-green-400 drop-shadow-[0_0_5px_rgba(0,255,0,0.8)]">BYTE BROKER // OPERATION ABSOLUTE RESOLVE</h1>
-                            <span class="text-xs text-green-700">MARKET STATUS: OPEN</span>
+                            <h1 class="text-xl font-bold text-red-500 drop-shadow-[0_0_8px_rgba(255,0,0,0.8)] glitch-text-bb" data-text="OPERATION ABSOLUTE RESOLVE // TERMINAL">OPERATION ABSOLUTE RESOLVE // TERMINAL</h1>
+                            <span class="text-xs text-red-800 animate-pulse">CONNECTION SECURE // MARKET: VOLATILE</span>
                         </div>
                     </div>
                     <div class="text-right">
-                        <div class="text-xs text-green-700">AVAILABLE CASH</div>
-                        <div class="text-2xl font-bold text-green-400">$<span id="bb-cash">10,000.00</span></div>
-                        <div class="text-xs text-red-500 mt-1">RISK LEVEL: <span id="bb-risk">0</span>%</div>
+                        <div class="text-xs text-red-800">UNALLOCATED CAPITAL</div>
+                        <div class="text-2xl font-bold text-red-500 font-mono">CREDITS: <span id="bb-cash">10,000.00</span></div>
+                        <div class="text-xs text-red-600 mt-1 font-bold">SYSTEM INSTABILITY: <span id="bb-risk" class="glitch-text-bb" data-text="0">0</span>%</div>
                     </div>
                 </div>
 
@@ -69,15 +136,15 @@ export default class ByteBroker {
                 <div class="flex flex-1 overflow-hidden relative">
 
                     <!-- Left: Stock List -->
-                    <div class="w-1/3 bg-black border-r border-green-800 flex flex-col z-10">
-                        <div class="p-2 bg-black text-xs font-bold text-green-700 flex justify-between border-b border-green-800">
-                            <span>TICKER</span>
-                            <span>PRICE</span>
+                    <div class="w-1/3 cyber-panel border-r border-red-900 flex flex-col z-10">
+                        <div class="p-2 bg-red-950/50 text-xs font-bold text-red-400 flex justify-between border-b border-red-900 shadow-[0_2px_5px_rgba(255,0,0,0.2)]">
+                            <span>ASSET IDENTIFIER</span>
+                            <span>VALUATION</span>
                         </div>
                         <div id="bb-stock-list" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
                             <!-- Stock Items Injected Here -->
-                            <div class="text-center text-green-700 mt-10 text-sm p-4">
-                                Drag & Drop files anywhere to IPO new stocks.
+                            <div class="text-center text-red-800 mt-10 text-xs p-4 border border-dashed border-red-900 mx-4 opacity-70 hover:opacity-100 transition-opacity">
+                                > AWAITING DATA INJECTION...<br>> DROP ENCRYPTED PACKETS (FILES) HERE TO INITIATE TRADING.
                             </div>
                         </div>
                     </div>
@@ -87,8 +154,8 @@ export default class ByteBroker {
                         <!-- Chart Area -->
                         <div class="flex-1 bg-black relative border-b border-green-800">
                              <canvas id="bb-chart" class="w-full h-full"></canvas>
-                             <div id="bb-chart-overlay" class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div class="text-green-900 font-bold text-4xl opacity-50 select-none">SELECT A STOCK</div>
+                             <div id="bb-chart-overlay" class="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/80">
+                                <div class="text-red-900 font-bold text-2xl opacity-70 select-none tracking-widest border border-red-900 p-4 glitch-text-bb" data-text="NO ASSET SELECTED">NO ASSET SELECTED</div>
                              </div>
                         </div>
 
@@ -378,12 +445,17 @@ export default class ByteBroker {
     }
 
     tickMarket() {
-        this.globalRisk += 0.005;
-        this.marketTrend = (Math.random() * 0.2) - 0.1 - (this.globalRisk * 0.05); // Slight shift, worsening over time
+        this.globalRisk += 0.015;
+        this.marketTrend = (Math.random() * 0.4) - 0.2 - (this.globalRisk * 0.15); // Aggressive shift, heavily penalized by risk
 
         this.stocks.forEach(stock => {
             if (this.globalRisk > 1.0) {
-                stock.volatility *= 1.1; // Panic mode!
+                stock.volatility *= 1.25; // Panic mode!
+                // Market Collapse Event: 10% chance to wipe out 20-50% of the asset's value instantly
+                if (Math.random() < 0.10) {
+                    stock.price *= (0.5 + Math.random() * 0.3);
+                    this.soundManager.playSound('error'); // Play warning
+                }
             }
 
             const vol = stock.volatility;
@@ -428,7 +500,13 @@ export default class ByteBroker {
         if (cashEl) cashEl.textContent = this.cash.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         const riskEl = document.getElementById('bb-risk');
-        if (riskEl) riskEl.textContent = Math.min(100, Math.floor(this.globalRisk * 100));
+        if (riskEl) {
+            const riskVal = Math.min(100, Math.floor(this.globalRisk * 100));
+            riskEl.textContent = riskVal;
+            riskEl.setAttribute('data-text', riskVal);
+            if (riskVal > 80) riskEl.classList.add('animate-pulse', 'text-white');
+            else riskEl.classList.remove('animate-pulse', 'text-white');
+        }
     }
 
     renderList() {
@@ -441,8 +519,8 @@ export default class ByteBroker {
 
         if (this.stocks.length === 0) {
              list.innerHTML = `
-                <div class="text-center text-green-700 mt-10 text-sm p-4 cursor-pointer" onclick="document.getElementById('bb-file-input').click()">
-                    Drag & Drop files or Click Here to IPO.
+                <div class="text-center text-red-800 mt-10 text-xs p-4 cursor-pointer border border-dashed border-red-900 mx-4 opacity-70 hover:opacity-100 transition-all uppercase tracking-widest" onclick="document.getElementById('bb-file-input').click()">
+                    > NO ACTIVE THREADS.<br>> CLICK TO INJECT SECURE PAYLOAD (FILES).
                 </div>
              `;
              return;
@@ -452,8 +530,8 @@ export default class ByteBroker {
             const el = document.createElement('div');
             const isSelected = stock.id === this.selectedStockId;
             const isUp = stock.change >= 0;
-            const colorClass = isUp ? 'text-green-300' : 'text-red-500';
-            const bgClass = isSelected ? 'bg-green-900/30 border-l-4 border-green-500' : 'bg-black hover:bg-green-900/20 border-l-4 border-transparent';
+            const colorClass = isUp ? 'text-red-300' : 'text-red-700';
+            const bgClass = isSelected ? 'bg-red-950/80 border-l-4 border-red-500 shadow-[inset_0_0_10px_rgba(255,0,0,0.2)]' : 'bg-black hover:bg-red-950/40 border-l-4 border-transparent';
 
             el.className = `p-3 rounded cursor-pointer transition-all ${bgClass} flex justify-between items-center`;
             el.onclick = () => this.selectStock(stock.id);
@@ -515,7 +593,7 @@ export default class ByteBroker {
         ctx.clearRect(0, 0, w, h);
 
         // Grid
-        ctx.strokeStyle = '#003300';
+        ctx.strokeStyle = '#330000';
         ctx.lineWidth = 1;
         ctx.beginPath();
         for(let i=1; i<4; i++) {
@@ -529,7 +607,7 @@ export default class ByteBroker {
         const max = Math.max(...history) * 1.1;
         const range = max - min;
 
-        ctx.strokeStyle = '#00ff00'; // Always Green
+        ctx.strokeStyle = '#ff0000'; // Always Red
         ctx.lineWidth = 2;
         ctx.lineJoin = 'round';
         ctx.beginPath();
@@ -545,7 +623,7 @@ export default class ByteBroker {
 
         // Fill Gradient
         const grad = ctx.createLinearGradient(0, 0, 0, h);
-        grad.addColorStop(0, 'rgba(0, 255, 0, 0.2)');
+        grad.addColorStop(0, 'rgba(255, 0, 0, 0.3)');
         grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
         ctx.lineTo(w, h);
@@ -554,7 +632,7 @@ export default class ByteBroker {
         ctx.fill();
 
         // CRT Scanlines
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillStyle = 'rgba(20, 0, 0, 0.4)';
         for (let i = 0; i < h; i += 4) {
             ctx.fillRect(0, i, w, 2);
         }
