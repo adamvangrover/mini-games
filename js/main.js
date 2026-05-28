@@ -73,6 +73,7 @@ const gameRegistry = {
 
     // Action
     'neon-swarm': { name: 'Neon Swarm', description: 'Geometry Survival', icon: 'fa-solid fa-spider', category: 'Action', importFn: () => import('./games/neonSwarm.js'), noDpad: true, wide: true },
+    'crypto-dashboard': { name: 'Crypto Wallet', description: 'Manage NFTs & Assets', icon: 'fa-solid fa-wallet', category: 'System', importFn: () => import('./core/CryptoDashboard.js') },
     'neon-beat': { name: 'Neon Beat', description: 'Rhythm Action', icon: 'fa-solid fa-music', category: 'Action', importFn: () => import('./games/neonBeat.js'), noDpad: true },
     'neon-shooter': { name: 'Neon FPS', description: 'Cyber Defense', icon: 'fa-solid fa-gun', category: 'Action', importFn: () => import('./games/neonShooter.js') },
     'neon-pulse': { name: 'Neon Pulse', description: 'Core Defense Rhythm', icon: 'fa-solid fa-satellite-dish', category: 'Action Arcade', importFn: () => import('./games/neonPulse.js'), wide: true, noDpad: true },
@@ -939,6 +940,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Boss Mode Button
+    document.getElementById('wallet-btn-hud')?.addEventListener('click', () => transitionToState(AppState.IN_GAME, { gameId: 'crypto-dashboard' }));
+
     document.getElementById('boss-btn-hud')?.addEventListener('click', () => {
         const bossMode = BossMode.instance;
         if (bossMode) {

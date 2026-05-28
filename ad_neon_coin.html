@@ -3,70 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeonCoin Exchange</title>
+    <title>NeonCoin - The Future of Arcade Finance</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
-        .chart-container { height: 300px; width: 100%; background: #161b22; border: 1px solid #30363d; border-radius: 6px; position: relative; overflow: hidden; }
-        .line { position: absolute; bottom: 0; width: 2px; background: #3fb950; }
+        body { margin: 0; overflow: hidden; background-color: #050510; color: white; font-family: 'Courier New', Courier, monospace; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        .ui-layer { position: relative; z-index: 10; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 2rem; background: radial-gradient(circle at center, transparent 0%, rgba(5,5,16,0.8) 100%); pointer-events: none; }
+        .interactive { pointer-events: auto; }
+        .glitch-text { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; animation: glitch 2s infinite; }
+        @keyframes glitch { 0% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; } 20% { text-shadow: -2px -2px #ff00ff, 2px 2px #00ffff; } 40% { text-shadow: 2px -2px #ff00ff, -2px 2px #00ffff; } 60% { text-shadow: -2px 2px #ff00ff, 2px -2px #00ffff; } 80% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; } 100% { text-shadow: -2px -2px #ff00ff, 2px 2px #00ffff; } }
+        .glass-panel { background: rgba(20, 20, 40, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 2rem; box-shadow: 0 0 20px rgba(0,255,255,0.2); }
+        .btn-glow { transition: all 0.3s ease; }
+        .btn-glow:hover { box-shadow: 0 0 15px currentColor; transform: translateY(-2px); }
     </style>
 </head>
-<body class="p-8 flex flex-col items-center">
-    <div class="max-w-3xl w-full">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold flex items-center"><span class="text-yellow-500 text-4xl mr-2">🪙</span> NeonCoin (NNC)</h1>
-            <div class="text-right">
-                <div class="text-2xl font-bold text-green-400" id="price">$42,069.00</div>
-                <div class="text-sm text-green-500">▲ +420% (1h)</div>
+<body>
+    <div id="canvas-container"></div>
+
+    <div class="ui-layer">
+        <div class="glass-panel max-w-2xl interactive">
+            <div class="text-cyan-400 mb-2"><i class="fas fa-coins text-2xl"></i></div>
+            <h1 class="text-5xl font-bold mb-4 glitch-text uppercase tracking-wider">NeonCoin ICO</h1>
+            <p class="text-xl mb-6 text-gray-300">Fueling the Arcade Crypto Ecosystem.</p>
+
+            <div class="grid grid-cols-3 gap-4 mb-8">
+                <div class="p-4 bg-black/40 rounded border border-white/5">
+                    <div class="text-sm text-gray-400">Current Price</div>
+                    <div class="text-2xl text-green-400 font-bold">$0.00042</div>
+                </div>
+                <div class="p-4 bg-black/40 rounded border border-white/5">
+                    <div class="text-sm text-gray-400">24h Volume</div>
+                    <div class="text-2xl text-cyan-400 font-bold">1.2B NNC</div>
+                </div>
+                <div class="p-4 bg-black/40 rounded border border-white/5">
+                    <div class="text-sm text-gray-400">Market Cap</div>
+                    <div class="text-2xl text-purple-400 font-bold">$420M</div>
+                </div>
             </div>
-        </div>
 
-        <div class="chart-container mb-8 flex items-end p-2 gap-1" id="chart">
-            <!-- Bars injected by JS -->
-        </div>
+            <p class="text-sm text-gray-400 mb-8">* Buying NeonCoin directly funds the Neon Arcade Ecosystem (Simulated Digital Service).</p>
 
-        <div class="grid grid-cols-2 gap-4 mb-8">
-            <button class="bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded text-xl" onclick="pump()">BUY (HODL!)</button>
-            <button class="bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded text-xl" onclick="dump()">SELL (PAPER HANDS)</button>
-        </div>
-
-        <p class="text-xs text-gray-500 text-center">Warning: NeonCoin has no intrinsic value. Not financial advice. To the moon! 🚀</p>
-        <div class="text-center mt-8">
-            <button onclick="window.close()" class="text-gray-400 hover:text-white underline">Exit Exchange</button>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button onclick="supportEcosystem()" class="btn-glow px-8 py-3 bg-cyan-600 text-white font-bold rounded hover:bg-cyan-500 text-cyan-400 hover:text-white flex items-center justify-center gap-2">
+                    <i class="fab fa-ethereum"></i> Buy with ETH
+                </button>
+                <button onclick="supportEcosystem()" class="btn-glow px-8 py-3 bg-purple-600 text-white font-bold rounded hover:bg-purple-500 text-purple-400 hover:text-white flex items-center justify-center gap-2">
+                    <i class="fas fa-wallet"></i> Connect Wallet
+                </button>
+                <button onclick="window.close()" class="px-8 py-3 bg-transparent border border-gray-600 text-gray-400 font-bold rounded hover:bg-gray-800 transition">
+                    Return to Arcade
+                </button>
+            </div>
+            <div id="status-msg" class="mt-4 text-green-400 hidden font-bold">Processing on-chain transaction... Ad revenue generated!</div>
         </div>
     </div>
 
     <script>
-        const chart = document.getElementById('chart');
-        let price = 42069;
-        let heights = Array(50).fill().map(() => Math.random() * 50 + 10);
+        // Three.js 3D Coin Animation
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
 
-        function drawChart() {
-            chart.innerHTML = '';
-            heights.forEach((h, i) => {
-                const bar = document.createElement('div');
-                bar.style.height = `${h}%`;
-                bar.style.width = '2%';
-                bar.style.backgroundColor = i === heights.length-1 ? '#3fb950' : '#238636';
-                bar.className = 'rounded-t';
-                chart.appendChild(bar);
-            });
-            document.getElementById('price').innerText = '$' + price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // Create Coin Geometry
+        const geometry = new THREE.CylinderGeometry(2, 2, 0.2, 32);
+
+        // Materials for the coin
+        const textureLoader = new THREE.TextureLoader();
+
+        // Create a custom canvas texture for the coin face
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Draw N logo
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 20;
+        ctx.beginPath();
+        ctx.arc(256, 256, 220, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.font = '200px Courier New';
+        ctx.fillStyle = '#ff00ff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('N', 256, 256);
+
+        const faceTexture = new THREE.CanvasTexture(canvas);
+
+        const materials = [
+            new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.2 }), // Edge
+            new THREE.MeshStandardMaterial({ map: faceTexture, metalness: 0.6, roughness: 0.4 }), // Top
+            new THREE.MeshStandardMaterial({ map: faceTexture, metalness: 0.6, roughness: 0.4 })  // Bottom
+        ];
+
+        const coin = new THREE.Mesh(geometry, materials);
+        coin.rotation.x = Math.PI / 2;
+        scene.add(coin);
+
+        // Add floating particles
+        const particleGeo = new THREE.BufferGeometry();
+        const particleCount = 500;
+        const posArray = new Float32Array(particleCount * 3);
+
+        for(let i = 0; i < particleCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 20;
         }
 
-        function pump() {
-            price *= 1.1;
-            heights.shift();
-            heights.push(Math.min(100, heights[heights.length-1] + 10));
-            drawChart();
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particleMat = new THREE.PointsMaterial({
+            size: 0.05,
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+
+        const particleMesh = new THREE.Points(particleGeo, particleMat);
+        scene.add(particleMesh);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x00ffff, 2, 50);
+        pointLight1.position.set(5, 5, 5);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xff00ff, 2, 50);
+        pointLight2.position.set(-5, -5, 5);
+        scene.add(pointLight2);
+
+        camera.position.z = 5;
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            coin.rotation.z += 0.01;
+            coin.rotation.x = Math.PI / 2 + Math.sin(Date.now() * 0.001) * 0.2;
+
+            particleMesh.rotation.y += 0.001;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        function dump() {
-            alert("Error: Selling is temporarily disabled for your protection.");
-        }
+        // Simulate Ad Revenue / Digital Service Purchase
+        function supportEcosystem() {
+            const btn = event.currentTarget;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
 
-        setInterval(() => { pump(); }, 2000);
-        drawChart();
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-check"></i> Confirmed';
+                document.getElementById('status-msg').classList.remove('hidden');
+
+                // Add simulated ad revenue to local storage for the wallet to pick up
+                let adRevenue = parseFloat(localStorage.getItem('ad_revenue_usdc') || '0');
+                adRevenue += 10.00; // Simulated $10 digital service sold
+                localStorage.setItem('ad_revenue_usdc', adRevenue.toString());
+
+                setTimeout(() => {
+                    window.close();
+                }, 2000);
+            }, 1500);
+        }
     </script>
 </body>
 </html>
