@@ -73,3 +73,7 @@
 ## 2026-05-18 - [Lumina Projectile Collision and Splice Bug Fix]
 **Learning:** In the `lumina.js` nested projectile/enemy collision loop, `forEach` iteration paired with `splice(indexOf(e))` introduced significant overhead and a latent element-skipping bug. Furthermore, the absence of an early `break` when a hit was resolved meant the system kept checking distances between the successfully dead projectile and the remaining enemies, wasting O(N*M) cycles. Finally, the calculation used `distanceTo`, which computes `Math.sqrt`.
 **Action:** Replace `forEach` with standard backwards `for` loops wherever arrays are spliced. Use `distanceToSquared` to avoid `Math.sqrt` calls. Introduce a `break;` statement as soon as a projectile collision is registered.
+
+## 2024-05-18 - [Cardinal Input Normalization Optimization]
+**Learning:** In games with discrete cardinal movement (e.g., WASD giving inputs of -1, 0, 1), calculating diagonal vector length using `Math.sqrt(x*x + y*y)` and subsequent division is unnecessary overhead on the hot path. Since the diagonal inputs are always `1` and `1` (or negatives), the length is always `Math.sqrt(2)`.
+**Action:** Replace the dynamic `Math.sqrt()` calculation and division with direct multiplication by the pre-calculated constant `Math.SQRT1_2` (`1 / Math.sqrt(2)`) to drastically reduce CPU cycles during diagonal movement processing.

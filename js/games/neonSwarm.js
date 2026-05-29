@@ -245,10 +245,10 @@ export default class NeonSwarm {
             if (this.keys['d'] || this.keys['arrowright']) inputX += 1;
 
             // Normalize
+            // Bolt Optimization: Use Math.SQRT1_2 for discrete cardinal inputs to bypass Math.sqrt division overhead
             if (inputX !== 0 && inputY !== 0) {
-                const len = Math.sqrt(inputX*inputX + inputY*inputY);
-                inputX /= len;
-                inputY /= len;
+                inputX *= Math.SQRT1_2;
+                inputY *= Math.SQRT1_2;
             }
 
             this.player.vx += inputX * this.player.speed * dt * 10;
