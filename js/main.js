@@ -39,6 +39,7 @@ const gameRegistry = {
 
     // Corporate Puzzles
     'corp-queens': { name: 'Queens Logic', description: 'Region Placement', icon: 'fa-solid fa-chess-queen', category: 'Corporate Puzzles', importFn: () => import('./games/corpQueens.js'), noDpad: true },
+    'property-tycoon': { name: 'Property Tycoon', description: 'Board Game', icon: 'fa-solid fa-building', category: 'Corporate Puzzles', importFn: () => import('./games/propertyTycoon.js'), wide: true, noDpad: true },
     'corp-crossclimb': { name: 'Crossclimb', description: 'Word Ladder Logic', icon: 'fa-solid fa-stairs', category: 'Corporate Puzzles', importFn: () => import('./games/corpCrossclimb.js'), noDpad: true },
 
     // New Games
