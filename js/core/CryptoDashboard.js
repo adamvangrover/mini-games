@@ -18,7 +18,12 @@ export default class CryptoDashboard {
                         <h2 class="text-3xl font-bold title-glow text-fuchsia-400">
                             <i class="fas fa-wallet mr-2"></i> Crypto Wallet
                         </h2>
-                        <div class="text-slate-400 text-sm">Mainnet Connected</div>
+                        <div class="flex items-center gap-4">
+                            <button id="btn-connect-web3" class="px-4 py-2 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-400 hover:to-yellow-400 rounded-lg font-bold text-sm shadow-lg transition transform hover:scale-105 hidden sm:block">
+                                Connect Web3
+                            </button>
+                            <div id="web3-status" class="text-slate-400 text-sm">Mainnet Connected (Simulated)</div>
+                        </div>
                     </div>
 
                     <!-- Content -->
@@ -33,15 +38,6 @@ export default class CryptoDashboard {
                                         <span class="font-bold">NeonCoin (Meme)</span>
                                         <span class="text-yellow-400">1,000,000</span>
                                     </div>
-                                    <div class="flex justify-between items-center bg-slate-900/50 p-3 rounded">
-                                        <span class="font-bold">USDC</span>
-                                        <span class="text-green-400">0.00</span>
-                                    </div>
-                                    <div class="flex justify-between items-center bg-slate-900/50 p-3 rounded">
-                                        <span class="font-bold">BTC</span>
-                                        <span class="text-orange-400">0.00000000</span>
-                                    </div>
-                                </div>
                                     <div class="flex justify-between items-center bg-slate-900/50 p-3 rounded">
                                         <span class="font-bold">USDC</span>
                                         <span class="text-green-400">0.00</span>
@@ -146,6 +142,23 @@ export default class CryptoDashboard {
                 term.scrollTop = term.scrollHeight;
             }
         };
+
+        const connectWeb3Btn = this.container.querySelector('#btn-connect-web3');
+        const web3Status = this.container.querySelector('#web3-status');
+        
+        if (connectWeb3Btn) {
+            connectWeb3Btn.addEventListener('click', async () => {
+                log('Initiating Web3 Wallet Connection...');
+                const result = await this.ecosystem.connectWeb3();
+                if (result.success) {
+                    web3Status.innerHTML = `<span class="text-green-400"><i class="fas fa-link mr-1"></i> Connected: ${result.account.substring(0, 6)}...${result.account.substring(result.account.length - 4)}</span>`;
+                    connectWeb3Btn.classList.add('hidden');
+                    log(`Wallet Connected: ${result.account}`);
+                } else {
+                    log(`<span class="text-red-500">Connection Failed: ${result.error}</span>`);
+                }
+            });
+        }
 
         const mintBtn = this.container.querySelector('#btn-mint-nft');
         mintBtn.addEventListener('click', async () => {
