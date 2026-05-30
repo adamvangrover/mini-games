@@ -19,6 +19,22 @@ import PlaceholderGame from './games/PlaceholderGame.js';
 // --- Game Registry ---
 // Uses Dynamic Imports for performance
 const gameRegistry = {
+    'synthwave-rhythm': { name: 'Synthwave Rhythm', description: 'Synthwave Rhythm (Beat Match)', icon: 'fa-solid fa-music', category: 'Action', importFn: () => import('./games/synthwaveRhythm.js') },
+    'fluid-sandbox': { name: 'Fluid Sandbox', description: 'Fluid Dynamics Sandbox', icon: 'fa-solid fa-droplet', category: 'Simulation', importFn: () => import('./games/fluidSandbox.js') },
+    'cyber-hacking': { name: 'Cyber Hacking', description: 'Cyberpunk Node Hacking', icon: 'fa-solid fa-network-wired', category: 'Logic Puzzles', importFn: () => import('./games/cyberHacking.js') },
+    'neon-dungeon': { name: 'Neon Dungeon', description: 'Atmospheric Rogue-lite', icon: 'fa-solid fa-dungeon', category: 'RPG & Logic', importFn: () => import('./games/neonDungeon.js') },
+    'space-trader': { name: 'Space Trader', description: 'Vector Graphics Space Trader', icon: 'fa-solid fa-rocket', category: 'Simulation', importFn: () => import('./games/spaceTrader.js') },
+    'jelly-racer': { name: 'Jelly Racer', description: 'Soft-Body Physics Toy', icon: 'fa-solid fa-car-side', category: 'Simulation', importFn: () => import('./games/jellyRacer.js') },
+    'ecosystem-sim': { name: 'Ecosystem Sim', description: 'God Game Simulator', icon: 'fa-solid fa-tree', category: 'Simulation', importFn: () => import('./games/ecosystemSim.js') },
+    'neon-mud': { name: 'Neon MUD', description: 'ASCII Text Adventure', icon: 'fa-solid fa-terminal', category: 'RPG & Logic', importFn: () => import('./games/neonMUD.js') },
+    'mode7-racer': { name: 'Mode7 Racer', description: 'Retro Mode 7 Racing', icon: 'fa-solid fa-flag-checkered', category: 'Action', importFn: () => import('./games/mode7Racer.js') },
+    'contraption-maker': { name: 'Contraption Maker', description: 'Rube Goldberg Machine Builder', icon: 'fa-solid fa-cogs', category: 'Logic Puzzles', importFn: () => import('./games/contraptionMaker.js') },
+    'fractal-explorer': { name: 'Fractal Explorer', description: 'Fractal Explorer', icon: 'fa-solid fa-magnifying-glass', category: 'Simulation', importFn: () => import('./games/fractalExplorer.js') },
+    'typing-zombies': { name: 'Typing Zombies', description: 'Typing of the Dead', icon: 'fa-solid fa-keyboard', category: 'Action', importFn: () => import('./games/typingZombies.js') },
+    'micro-city': { name: 'Micro City', description: 'City Builder', icon: 'fa-solid fa-city', category: 'Simulation', importFn: () => import('./games/microCity.js') },
+    'gravity-slingshot': { name: 'Gravity Slingshot', description: 'Gravity Slingshot', icon: 'fa-solid fa-meteor', category: 'Logic Puzzles', importFn: () => import('./games/gravitySlingshot.js') },
+    'neon-bullet-hell': { name: 'Neon Bullet Hell', description: 'Survive the Danmaku', icon: 'fa-solid fa-burst', category: 'Action', importFn: () => import('./games/neonBulletHell.js') },
+
     // 3D Immersive
     'alpine-game': { name: 'Alpine Adventure', description: 'Open World Exploration', icon: 'fa-solid fa-mountain-sun', category: '3D Immersive', importFn: () => import('./games/alpine.js'), wide: true },
     'neon-city-game': { name: 'Neon City', description: 'Open World RPG', icon: 'fa-solid fa-city', category: '3D Immersive', importFn: () => import('./games/neonCity.js'), wide: true },
