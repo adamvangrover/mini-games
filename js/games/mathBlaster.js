@@ -58,12 +58,15 @@ export default class MathBlasterGame {
     initBackground() {
         this.stars = [];
         for(let i=0; i<100; i++) {
+            const alpha = Math.random();
             this.stars.push({
                 x: Math.random() * this.canvas.width,
                 y: Math.random() * this.canvas.height,
-                size: Math.random() * 2,
+                size: Math.max(1, Math.random() * 2), // Ensure size is at least 1 for fillRect
                 speed: Math.random() * 0.5 + 0.1,
-                alpha: Math.random()
+                alpha: alpha,
+                // Bolt Optimization: Pre-compute color string to avoid ctx.globalAlpha in render loop
+                color: `rgba(255, 255, 255, ${alpha.toFixed(3)})`
             });
         }
     }
@@ -137,28 +140,33 @@ export default class MathBlasterGame {
     update(dt) {
         // Sync input
         const im = window.miniGameHub.inputManager;
-        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].forEach(k => {
+        const keysToCheck = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '];
+        for (let i = 0; i < keysToCheck.length; i++) {
+             const k = keysToCheck[i];
              this.inputWrapper.keys[k === ' ' ? 'Space' : k] = im.keys[k];
-        });
+        }
 
         // Update Background
         this.gridOffset = (this.gridOffset + dt * 20) % 40;
-        this.stars.forEach(star => {
+
+        // Bolt Optimization: Standard for loop to avoid callback allocation overhead
+        for (let i = 0; i < this.stars.length; i++) {
+            const star = this.stars[i];
             star.y += star.speed;
             if (star.y > this.canvas.height) {
                 star.y = 0;
                 star.x = Math.random() * this.canvas.width;
             }
-        });
+        }
 
         if (this.currentGame) {
             this.currentGame.update(dt);
         }
 
         // Update last keys
-        Object.keys(this.inputWrapper.keys).forEach(k => {
+        for (const k in this.inputWrapper.keys) {
             this.inputWrapper.lastKeys[k] = this.inputWrapper.keys[k];
-        });
+        }
     }
 
     draw() {
@@ -176,14 +184,15 @@ export default class MathBlasterGame {
 
     drawBackground(ctx) {
         // Stars
-        ctx.fillStyle = '#fff';
-        this.stars.forEach(s => {
-            ctx.globalAlpha = s.alpha;
-            ctx.beginPath();
-            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-            ctx.fill();
-        });
-        ctx.globalAlpha = 1.0;
+        // Bolt Optimization: Replace arc/forEach with fillRect/for loop.
+        // Use bitwise OR (| 0) to force integer coordinates, avoiding expensive sub-pixel anti-aliasing.
+        // Also use pre-computed color string to avoid modifying ctx.globalAlpha repeatedly.
+        for (let i = 0; i < this.stars.length; i++) {
+            const s = this.stars[i];
+            ctx.fillStyle = s.color;
+            ctx.fillRect(s.x | 0, s.y | 0, s.size | 0, s.size | 0);
+        }
+        ctx.globalAlpha = 1.0; // Reset just in case, though we no longer touch it
 
         // Retro Grid at bottom
         /*
