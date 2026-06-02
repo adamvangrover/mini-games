@@ -48,7 +48,18 @@ export default class ByteBroker {
 
     render() {
         this.container.innerHTML = `
-            <div class="flex flex-col h-full bg-black text-green-500 font-mono overflow-hidden relative border-4 border-green-800 border-double shadow-[0_0_15px_rgba(0,255,0,0.5)]">
+            <style>
+                .bb-crt {
+                    animation: flicker 0.15s infinite;
+                    text-shadow: 2px 0 1px rgba(255,0,0,0.5), -2px 0 1px rgba(0,0,255,0.5);
+                }
+                @keyframes flicker {
+                    0% { opacity: 0.98; }
+                    50% { opacity: 0.95; }
+                    100% { opacity: 0.99; }
+                }
+            </style>
+            <div class="bb-crt flex flex-col h-full bg-black text-green-500 font-mono overflow-hidden relative border-4 border-green-800 border-double shadow-[0_0_15px_rgba(0,255,0,0.5)]">
                 <!-- Header -->
                 <div class="flex justify-between items-center p-4 bg-black border-b border-green-800 z-10">
                     <div class="flex items-center gap-4">
@@ -378,18 +389,29 @@ export default class ByteBroker {
     }
 
     tickMarket() {
-        this.globalRisk += 0.005;
-        this.marketTrend = (Math.random() * 0.2) - 0.1 - (this.globalRisk * 0.05); // Slight shift, worsening over time
+        // Yield Pressure: Exponential global risk
+        this.globalRisk += 0.005 + (this.globalRisk > 0.8 ? 0.01 : 0);
+        this.marketTrend = (Math.random() * 0.2) - 0.1 - (this.globalRisk * 0.05);
+
+        // Distressed Debt: Accelerate ticking if cash drops very low, simulate panic.
+        if (this.cash < 1000) {
+            this.tickRate = Math.max(0.2, this.tickRate - 0.05);
+        } else {
+            this.tickRate = Math.min(1.0, this.tickRate + 0.01);
+        }
 
         this.stocks.forEach(stock => {
             if (this.globalRisk > 1.0) {
-                stock.volatility *= 1.1; // Panic mode!
+                // Yield Pressure panic mode
+                stock.volatility *= 1.15;
             }
 
             const vol = stock.volatility;
             const rnd = this.seededRandom(stock);
-            // Random walk: -1 to 1 * volatility * price
-            const change = (rnd - 0.5 + (this.marketTrend * 0.5)) * vol * stock.price;
+
+            // Random walk with Distressed Debt erratic shift
+            const debtShift = (this.cash < 500) ? (Math.random() - 0.7) * 0.5 : 0;
+            const change = (rnd - 0.5 + (this.marketTrend * 0.5) + debtShift) * vol * stock.price;
             stock.price += change;
 
             // Ensure positive price
@@ -552,6 +574,15 @@ export default class ByteBroker {
         ctx.lineTo(0, h);
         ctx.fillStyle = grad;
         ctx.fill();
+
+        // Glitching Text Overlays
+        if (Math.random() < 0.1) {
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.7)';
+            ctx.font = '12px monospace';
+            const glitchChars = '!<>-_\\/[]{}—=+*^?#________';
+            const text = Array(10).fill(0).map(() => glitchChars[Math.floor(Math.random() * glitchChars.length)]).join('');
+            ctx.fillText(text, Math.random() * w, Math.random() * h);
+        }
 
         // CRT Scanlines
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';

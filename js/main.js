@@ -95,6 +95,7 @@ const gameRegistry = {
     'tetris-game': { name: 'Tetris', description: 'Stack the Blocks', icon: 'fa-solid fa-shapes', category: 'Arcade Classics', importFn: () => import('./games/tetris.js') },
 
     // Quick Minigames
+    'neon-swarm': { name: 'Neon Swarm', description: 'Twin-Stick Survival', icon: 'fa-solid fa-spider', category: 'Quick Minigames', importFn: () => import('./games/neonSwarm.js'), wide: true, noDpad: true },
     'neon-wheel-game': { name: 'Neon Wheel', description: 'Spin & Guess', icon: 'fa-solid fa-life-ring', category: 'Logic Puzzles', importFn: () => import('./games/neonWheel.js'), wide: true },
     'maze-game': { name: 'Maze', description: 'Find the Path', icon: 'fa-solid fa-dungeon', category: 'Quick Minigames', importFn: () => import('./games/maze.js') },
     'runner-game': { name: 'Endless Runner', description: 'Jump the Obstacles', icon: 'fa-solid fa-person-running', category: 'Quick Minigames', importFn: () => import('./games/runner.js') },
@@ -116,6 +117,13 @@ const gameRegistry = {
     'exiled-game': { name: 'Exiled Spark', description: 'Text RPG Adventure', icon: 'fa-solid fa-terminal', category: 'RPG & Logic', importFn: () => import('./games/exiled.js'), wide: true, noDpad: true },
 
     // Logic Puzzles
+    'vault-breaker-game': { name: 'Vault Breaker', description: 'Crack the Code', icon: 'fa-solid fa-unlock-keyhole', category: 'Logic Puzzles', importFn: () => import('./games/vaultBreaker.js'), wide: true, noDpad: true },
+    'neon-pulse': { name: 'Neon Pulse', description: 'Rhythm Sync', icon: 'fa-solid fa-bullseye', category: 'Logic Puzzles', importFn: () => import('./games/neonPulse.js'), noDpad: true },
+    'cyber-deal': { name: 'Cyber Deal', description: 'Deal or No Deal', icon: 'fa-solid fa-briefcase', category: 'Logic Puzzles', importFn: () => import('./games/cyberDeal.js'), wide: true, noDpad: true },
+    'neon-fleet': { name: 'Neon Fleet', description: 'Grid Warfare', icon: 'fa-solid fa-anchor', category: 'Logic Puzzles', importFn: () => import('./games/neonFleet.js'), wide: true, noDpad: true },
+    'corp-risk': { name: 'Corporate Risk', description: 'Hostile Takeover', icon: 'fa-solid fa-globe', category: 'Logic Puzzles', importFn: () => import('./games/corpRisk.js'), wide: true },
+    'cyber-wheel': { name: 'Cyber Wheel', description: 'Spin for Fortune', icon: 'fa-solid fa-life-ring', category: 'Logic Puzzles', importFn: () => import('./games/cyberWheel.js'), wide: true, noDpad: true },
+    'property-tycoon': { name: 'Property Tycoon', description: 'Cyber Real Estate', icon: 'fa-solid fa-building', category: 'Logic Puzzles', importFn: () => import('./games/propertyTycoon.js'), wide: true, noDpad: true },
     'math-blaster': { name: 'Galactic Rescue', description: 'Math Blaster Episode I', icon: 'fa-solid fa-rocket', category: 'Logic Puzzles', importFn: () => import('./games/mathBlaster.js'), wide: true, noDpad: true },
     'smarter-than-chatbot': { name: 'Smarter Than Chatbot?', description: 'Beat the AI at Trivia', icon: 'fa-solid fa-robot', category: 'Logic Puzzles', importFn: () => import('./games/smarterThanChatbot.js'), wide: true, noDpad: true },
     'queens-game': { name: 'Queens', description: 'Place Queens', icon: 'fa-solid fa-chess-queen', category: 'Logic Puzzles', importFn: () => import('./games/queens.js') },
