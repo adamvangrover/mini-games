@@ -39,7 +39,10 @@ export default class WildlifeManager {
     }
 
     update(delta) {
-        this.animals.forEach(animal => {
+        // Bolt Optimization: Replaced forEach with index-based loop for better performance
+        for (let i = 0; i < this.animals.length; i++) {
+            const animal = this.animals[i];
+
             // Move animal in its direction
             const moveVec = animal.userData.direction.clone().multiplyScalar(animal.userData.speed * delta);
             animal.position.add(moveVec);
@@ -51,15 +54,18 @@ export default class WildlifeManager {
             }
 
             // Simple boundary check (-250 to 250)
-            ['x', 'z'].forEach(axis => {
-                if (animal.position[axis] > 250 || animal.position[axis] < -250) {
-                    animal.userData.direction[axis] *= -1; // bounce back
-                }
-            });
+            // Bolt Optimization: Avoided inline array allocation and closure in hot loop
+            if (animal.position.x > 250 || animal.position.x < -250) {
+                animal.userData.direction.x *= -1; // bounce back
+            }
+            if (animal.position.z > 250 || animal.position.z < -250) {
+                animal.userData.direction.z *= -1; // bounce back
+            }
 
             // Simple player proximity reaction
-            const distance = animal.position.distanceTo(this.player.position);
-            if(distance < 10) {
+            // Bolt Optimization: Replaced expensive distanceTo (Math.sqrt) with distanceToSquared
+            const distanceSq = animal.position.distanceToSquared(this.player.position);
+            if (distanceSq < 100) { // 10^2
                 // Flee from player
                 const fleeDir = animal.position.clone().sub(this.player.position).normalize();
                 fleeDir.y = 0; // Keep on ground plane logic
@@ -69,6 +75,6 @@ export default class WildlifeManager {
             // Optional: rotate to face movement direction
             const lookTarget = animal.position.clone().add(animal.userData.direction);
             animal.lookAt(lookTarget);
-        });
+        }
     }
 }
