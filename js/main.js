@@ -82,6 +82,7 @@ const gameRegistry = {
     'neon-dodge': { name: 'Neon Dodge', description: 'Bullet Hell Survival', icon: 'fa-solid fa-cube', category: 'Action', importFn: () => import('./games/neonDodge.js') },
     'neon-wire': { name: 'Neon Wire', description: 'Connect the Nodes', icon: 'fa-solid fa-plug', category: 'Logic Puzzles', importFn: () => import('./games/neonWire.js'), noDpad: true },
     'neon-pulse': { name: 'Neon Pulse', description: 'Rhythm Action', icon: 'fa-solid fa-music', category: 'Action', importFn: () => import('./games/neonPulse.js'), noDpad: true },
+    'neon-tetrominoes': { name: 'Neon Tetrominoes', description: 'Synthwave Block Puzzle', icon: 'fa-solid fa-shapes', category: 'Arcade Classics', importFn: () => import('./games/neonTetrominoes.js'), noDpad: true },
     'neon-genesis': { name: 'Neon Genesis', description: 'Procedural 3D Explorer', icon: 'fa-solid fa-mountain', category: 'New Games', importFn: () => import('./games/neonGenesis.js'), wide: true },
 
     // Sports
