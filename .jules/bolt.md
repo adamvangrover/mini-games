@@ -80,3 +80,7 @@
 ## 2026-06-25 - [Canvas Stars Render Optimization]
 **Learning:** In the Math Blaster hub, rendering 100 stars per frame using `forEach`, `ctx.arc()`, and modifying `ctx.globalAlpha` inside the loop causes massive overhead via callback allocation, expensive pathing, sub-pixel rendering, and context switching.
 **Action:** Replace `forEach` with a standard `for` loop, replace `ctx.arc()` with `ctx.fillRect()`, use bitwise OR (`| 0`) to enforce integer coordinates, and pre-compute `rgba()` color strings with baked-in alpha during initialization to completely eliminate state changes.
+
+## 2024-06-04 - [Inline Array Iteration Overhead]
+**Learning:** In high-frequency game loops (`js/games/matterhorn/WildlifeManager.js`), allocating inline arrays just to iterate over them with `forEach` (e.g. `['x', 'z'].forEach(axis => ...)` inside an `update` loop) causes continuous array allocation and closure creation, causing garbage collection overhead. Furthermore, performing `distanceTo` calculates expensive square roots.
+**Action:** Eliminate inline array allocations in hot paths by converting them into direct, repeated logic (e.g., separate `if` statements for `x` and `z`). Always use `distanceToSquared` instead of `distanceTo` when possible.
