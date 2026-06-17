@@ -54,3 +54,9 @@ It serves to justify the retention or deletion of verification artifacts (script
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 2024-05-29 | Jules | Implemented Fractal Explorer and Typing Zombies | `js/games/fractalExplorer.js`, `js/games/typingZombies.js` | Success | `verify_all_modules.py` passed for updated files. Hub loads correctly. WebGL Shaders (Fractal Explorer) and string-matching logic (Typing Zombies) integrated successfully. |
 | 2024-05-30 | Jules | Implemented Gravity Slingshot, Ecosystem Sim, Neon MUD, Micro City, Jelly Racer, Contraption Maker, and Mode 7 Racer | `js/games/*.js`, `verification/verify_all_modules.py` | Success | `verify_all_modules.py` passed for all files. Hub loads correctly. Replaced placeholders with fully functional canvas games utilizing complex physics and procedural generation. |
+- Date: 2026-06-16
+- Agent: Jules
+- Action: Implemented complete overhaul of WhaleScanner Protocol game (Path A).
+- Artifacts: `verification/verify_whalescanner_overhaul.py`, `verification/screenshot_whalescanner.py`, `verification/whalescanner_overhaul.png`
+- Outcome: SUCCESS. `js/games/whaleScanner.js` was rewritten to include new Heat mechanics, agents, node types (honeypots), and advanced visual effects (CRT, chromatic aberration, terminal overlays). Pre-existing tests `verification/verify_all_modules.py` passed, confirming no regressions. `shutdown` aliased to `cleanup` to fix lifecycle bug found in previous iteration.
+- Notes: The game now features a fully functional "Operation Absolute Resolve" theme.
