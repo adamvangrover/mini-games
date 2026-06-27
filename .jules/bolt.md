@@ -84,3 +84,7 @@
 ## 2024-06-04 - [Inline Array Iteration Overhead]
 **Learning:** In high-frequency game loops (`js/games/matterhorn/WildlifeManager.js`), allocating inline arrays just to iterate over them with `forEach` (e.g. `['x', 'z'].forEach(axis => ...)` inside an `update` loop) causes continuous array allocation and closure creation, causing garbage collection overhead. Furthermore, performing `distanceTo` calculates expensive square roots.
 **Action:** Eliminate inline array allocations in hot paths by converting them into direct, repeated logic (e.g., separate `if` statements for `x` and `z`). Always use `distanceToSquared` instead of `distanceTo` when possible.
+
+## 2026-06-23 - [Neon City Loop Overhead Optimization]
+**Learning:** In the 'Neon City' game's update loop (`js/games/neonCity/CityGame.js`), combining `.forEach()` for entity arrays (NPCs, cars, interactables) and `.distanceTo()` for spatial checks creates continuous callback allocation and expensive `Math.sqrt()` operations.
+**Action:** Replace `.forEach()` with standard index-based `for` loops to avoid callback overhead, and replace `distanceTo` with `distanceToSquared` (adjusting distance thresholds appropriately, e.g., `8` to `64`) to significantly reduce CPU load in high-frequency update loops.
