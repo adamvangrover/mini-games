@@ -291,11 +291,17 @@ export default class OrbitalDefense {
         // Draw Particles
         for (let i = 0; i < this.particles.length; i++) {
             const p = this.particles[i];
-            this.ctx.beginPath();
-            this.ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+
+            // Bolt Optimization: Replace ctx.arc() with ctx.fillRect() for rendering
+            // small simple shapes (particles) to avoid expensive pathing and anti-aliasing calculations.
+            // Also force integer coordinates and dimensions with bitwise OR (| 0).
+            const size = (p.size * p.life * 2) | 0;
+            const px = p.x | 0;
+            const py = p.y | 0;
+
             this.ctx.fillStyle = p.color;
             this.ctx.globalAlpha = p.life;
-            this.ctx.fill();
+            this.ctx.fillRect(px - (size >> 1), py - (size >> 1), size, size);
             this.ctx.globalAlpha = 1.0;
         }
 

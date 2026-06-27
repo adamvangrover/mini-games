@@ -122,7 +122,9 @@ export default class WhaleScannerGame {
 
         // Terminal overlay
         this.terminalLayer = document.createElement('div');
-        this.terminalLayer.className = "absolute top-20 left-4 w-64 h-48 overflow-hidden font-mono text-[10px] text-green-400 pointer-events-none opacity-80 z-40";
+        this.terminalLayer.className = "absolute top-20 left-4 w-64 h-48 overflow-hidden font-mono text-[10px] text-green-400 pointer-events-none opacity-80 z-40 p-2";
+        this.terminalLayer.style.border = "1px solid #00ff00";
+        this.terminalLayer.style.backgroundColor = "rgba(0, 20, 0, 0.4)";
         this.terminalLayer.id = "ws-terminal";
         this.container.appendChild(this.terminalLayer);
 
@@ -140,7 +142,19 @@ export default class WhaleScannerGame {
             const x = (e.clientX - rect.left) / 1.02;
             const y = (e.clientY - rect.top) / 1.02;
 
-            this.deployAgent(x, y);
+            this.deployAgent(x, y, 'decryptor');
+        });
+
+        // Right-click to deploy firewall
+        this.canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault(); // Prevent default context menu
+            if (this.gameState !== 'PLAYING') return;
+
+            const rect = this.canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / 1.02;
+            const y = (e.clientY - rect.top) / 1.02;
+
+            this.deployAgent(x, y, 'firewall');
         });
     }
 
@@ -169,7 +183,10 @@ export default class WhaleScannerGame {
             } else if (rand > 0.75) {
                 type = 'honeypot';
                 secLevel = 2;
-            } else if (rand > 0.5) {
+            } else if (rand > 0.65) {
+                type = 'corrupted';
+                secLevel = 2;
+            } else if (rand > 0.45) {
                 type = 'secure_data';
                 secLevel = 2;
             }
@@ -188,9 +205,9 @@ export default class WhaleScannerGame {
         }
     }
 
-    deployAgent(x, y) {
+    deployAgent(x, y, type = 'decryptor') {
         // Deploying generates heat
-        const deploymentHeat = 15;
+        const deploymentHeat = type === 'firewall' ? 25 : 15; // Firewalls generate more heat
         if (this.currentHeat + deploymentHeat > this.maxHeat) {
             this.logTerminal("ERR: SYSTEM OVERLOAD IMMINENT.");
             this.soundManager.playSound('error');
@@ -199,17 +216,18 @@ export default class WhaleScannerGame {
         }
 
         this.currentHeat += deploymentHeat;
-        this.logTerminal(`AGENT DEPLOYED AT [${x|0}, ${y|0}]`);
+        this.logTerminal(`${type.toUpperCase()} DEPLOYED AT [${x|0}, ${y|0}]`);
         this.soundManager.playSound('shoot');
 
         this.agents.push({
             x: x,
             y: y,
             radius: 0,
-            maxRadius: 120, // Scan range
-            life: 1.5, // Dies faster
-            maxLife: 1.5,
-            power: 1 // Decryption power per tick
+            maxRadius: type === 'firewall' ? 80 : 120, // Scan range
+            life: type === 'firewall' ? 3.0 : 1.5, // Dies faster
+            maxLife: type === 'firewall' ? 3.0 : 1.5,
+            power: 1, // Decryption power per tick
+            type: type
         });
 
         this.updateHUD();
@@ -318,6 +336,24 @@ export default class WhaleScannerGame {
 
             node.x = Math.max(0, Math.min(this.canvas.width, node.x));
             node.y = Math.max(0, Math.min(this.canvas.height, node.y));
+
+            // Infection logic: Corrupted nodes infect nearby data nodes
+            if (node.type === 'corrupted' && !node.analyzed && Math.random() < 0.1) { // Throttle checks slightly
+                for (let j = 0; j < this.nodes.length; j++) {
+                    let otherNode = this.nodes[j];
+                    if (otherNode.type === 'data' && !otherNode.analyzed) {
+                        let dx = node.x - otherNode.x;
+                        let dy = node.y - otherNode.y;
+                        if (dx * dx + dy * dy < 10000) { // Infection radius
+                            otherNode.type = 'corrupted';
+                            otherNode.securityLevel = 2;
+                            this.logTerminal(`WARNING: DATA NODE ${otherNode.id} CORRUPTED.`);
+                            this.glitchIntensity += 0.1;
+                            break; // Infect one at a time per corrupted node
+                        }
+                    }
+                }
+            }
         }
 
         // Update agents & analyze
@@ -336,34 +372,47 @@ export default class WhaleScannerGame {
                 let distSq = dx * dx + dy * dy;
 
                 if (distSq < agent.radius * agent.radius) {
-                    // Try to break security
-                    node.securityLevel -= agent.power * dt * 10; // Agent power applied over time
+                    if (agent.type === 'firewall') {
+                        if (node.type === 'corrupted' && !node.analyzed) {
+                            node.type = 'data';
+                            node.securityLevel = 1;
+                            this.logTerminal(`FIREWALL CLEANSED NODE ${node.id}.`);
+                            this.currentHeat -= 2; // Firewalls reduce heat on success
+                            if (this.currentHeat < 0) this.currentHeat = 0;
+                            this.soundManager.playSound('click'); // Placeholder for a cleanse sound
+                        }
+                    } else if (agent.type === 'decryptor') {
+                        if (node.type === 'corrupted') continue; // Decryptors skip corrupted nodes
 
-                    if (node.securityLevel <= 0) {
-                        node.analyzed = true;
+                        // Try to break security
+                        node.securityLevel -= agent.power * dt * 10; // Agent power applied over time
 
-                        // Handle result based on type
-                        if (node.type === 'catalyst') {
-                            this.catalystsFound++;
-                            this.logTerminal(`CATALYST NODE ${node.id} DECRYPTED.`);
-                            this.soundManager.playSound('score');
-                            this.glitchIntensity = 0.5; // Brief flash
+                        if (node.securityLevel <= 0) {
+                            node.analyzed = true;
 
-                            if (this.catalystsFound >= this.targetCatalysts) {
-                                 this.endGame(true);
-                                 return;
+                            // Handle result based on type
+                            if (node.type === 'catalyst') {
+                                this.catalystsFound++;
+                                this.logTerminal(`CATALYST NODE ${node.id} DECRYPTED.`);
+                                this.soundManager.playSound('score');
+                                this.glitchIntensity = 0.5; // Brief flash
+
+                                if (this.catalystsFound >= this.targetCatalysts) {
+                                     this.endGame(true);
+                                     return;
+                                }
+                            } else if (node.type === 'honeypot') {
+                                // Massive heat spike
+                                this.currentHeat += 30;
+                                this.logTerminal(`WARNING: HONEYPOT ${node.id} TRIPPED!`);
+                                this.soundManager.playSound('explosion'); // Harsh sound
+                                this.glitchIntensity = 1.0;
+                                node.vx *= 3; node.vy *= 3; // Make it freak out visually
+                            } else {
+                                // Normal data
+                                this.currentHeat -= 5; // Cool down slightly on successful data parse
+                                this.soundManager.playSound('hover');
                             }
-                        } else if (node.type === 'honeypot') {
-                            // Massive heat spike
-                            this.currentHeat += 30;
-                            this.logTerminal(`WARNING: HONEYPOT ${node.id} TRIPPED!`);
-                            this.soundManager.playSound('explosion'); // Harsh sound
-                            this.glitchIntensity = 1.0;
-                            node.vx *= 3; node.vy *= 3; // Make it freak out visually
-                        } else {
-                            // Normal data
-                            this.currentHeat -= 5; // Cool down slightly on successful data parse
-                            this.soundManager.playSound('hover');
                         }
                     }
                 }
@@ -450,18 +499,30 @@ export default class WhaleScannerGame {
             let agent = this.agents[i];
             const alpha = Math.max(0, agent.life / agent.maxLife);
 
-            // Expanding ring
-            this.ctx.strokeStyle = `rgba(0, 255, 150, ${alpha})`;
-            this.ctx.lineWidth = 3;
-            this.ctx.beginPath();
-            this.ctx.arc(agent.x | 0, agent.y | 0, agent.radius | 0, 0, Math.PI * 2);
-            this.ctx.stroke();
+            if (agent.type === 'firewall') {
+                // Expanding square
+                this.ctx.strokeStyle = `rgba(255, 150, 0, ${alpha})`;
+                this.ctx.lineWidth = 3;
+                const r = agent.radius;
+                this.ctx.strokeRect((agent.x - r) | 0, (agent.y - r) | 0, r * 2, r * 2);
 
-            // Core
-            this.ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
-            this.ctx.beginPath();
-            this.ctx.arc(agent.x | 0, agent.y | 0, 4, 0, Math.PI * 2);
-            this.ctx.fill();
+                // Core
+                this.ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
+                this.ctx.fillRect((agent.x - 4) | 0, (agent.y - 4) | 0, 8, 8);
+            } else {
+                // Expanding ring
+                this.ctx.strokeStyle = `rgba(0, 255, 150, ${alpha})`;
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                this.ctx.arc(agent.x | 0, agent.y | 0, agent.radius | 0, 0, Math.PI * 2);
+                this.ctx.stroke();
+
+                // Core
+                this.ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
+                this.ctx.beginPath();
+                this.ctx.arc(agent.x | 0, agent.y | 0, 4, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
         }
         this.ctx.globalCompositeOperation = 'source-over';
 
@@ -524,9 +585,18 @@ export default class WhaleScannerGame {
             this.ctx.fillStyle = fillColor;
             this.ctx.shadowColor = shadowColor;
             this.ctx.shadowBlur = shadowBlur;
-            this.ctx.beginPath();
-            this.ctx.arc(node.x | 0, node.y | 0, node.size, 0, Math.PI * 2);
-            this.ctx.fill();
+            if (node.type === 'corrupted' && !node.analyzed) {
+                this.ctx.save();
+                this.ctx.translate(node.x | 0, node.y | 0);
+                this.ctx.rotate(this.gameTime * 2);
+                this.ctx.fillStyle = '#ff00ff'; // Magenta for corrupted
+                this.ctx.fillRect(-node.size, -node.size, node.size * 2, node.size * 2);
+                this.ctx.restore();
+            } else {
+                this.ctx.beginPath();
+                this.ctx.arc(node.x | 0, node.y | 0, node.size, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
             this.ctx.shadowBlur = 0; // reset
 
             // Draw ID slightly offset

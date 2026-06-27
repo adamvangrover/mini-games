@@ -117,9 +117,12 @@ export default class NeonSurvivor {
         if (this.inputManager.isKeyDown('KeyD') || this.inputManager.isKeyDown('ArrowRight')) dx += 1;
 
         if (dx !== 0 || dy !== 0) {
-            const length = Math.sqrt(dx*dx + dy*dy);
-            dx /= length;
-            dy /= length;
+            // Bolt Optimization: Cardinal inputs are strictly -1, 0, or 1.
+            // If both are non-zero, it's a diagonal. Avoid Math.sqrt() division by using constant Math.SQRT1_2.
+            if (dx !== 0 && dy !== 0) {
+                dx *= Math.SQRT1_2;
+                dy *= Math.SQRT1_2;
+            }
 
             this.player.x += dx * moveSpeed;
             this.player.y += dy * moveSpeed;
