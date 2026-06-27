@@ -121,6 +121,7 @@ const gameRegistry = {
     'tetris-game': { name: 'Tetris', description: 'Stack the Blocks', icon: 'fa-solid fa-shapes', category: 'Arcade Classics', importFn: () => import('./games/tetris.js') },
 
     // Quick Minigames
+    'neon-centipede': { name: 'Neon Centipede', description: 'Classic Bug Blasting', icon: 'fa-solid fa-bug', category: 'Arcade Classics', importFn: () => import('./games/neonCentipede.js') },
     'neon-wheel-game': { name: 'Neon Wheel', description: 'Spin & Guess', icon: 'fa-solid fa-life-ring', category: 'Logic Puzzles', importFn: () => import('./games/neonWheel.js'), wide: true },
     'maze-game': { name: 'Maze', description: 'Find the Path', icon: 'fa-solid fa-dungeon', category: 'Quick Minigames', importFn: () => import('./games/maze.js') },
     'runner-game': { name: 'Endless Runner', description: 'Jump the Obstacles', icon: 'fa-solid fa-person-running', category: 'Quick Minigames', importFn: () => import('./games/runner.js') },
