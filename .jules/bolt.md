@@ -84,3 +84,7 @@
 ## 2024-06-04 - [Inline Array Iteration Overhead]
 **Learning:** In high-frequency game loops (`js/games/matterhorn/WildlifeManager.js`), allocating inline arrays just to iterate over them with `forEach` (e.g. `['x', 'z'].forEach(axis => ...)` inside an `update` loop) causes continuous array allocation and closure creation, causing garbage collection overhead. Furthermore, performing `distanceTo` calculates expensive square roots.
 **Action:** Eliminate inline array allocations in hot paths by converting them into direct, repeated logic (e.g., separate `if` statements for `x` and `z`). Always use `distanceToSquared` instead of `distanceTo` when possible.
+
+## 2026-06-25 - [ArcadeHub High-Frequency Loop Bottlenecks]
+**Learning:** In the core `ArcadeHub.js` `update()` loop, continuous use of `Array.prototype.forEach` creates continuous closure allocation and garbage collection overhead. Additionally, using `Math.sqrt()` and `Vector3.length()` for frequent distance and threshold checks (like joystick deadzones, click-to-move, and ghost player AI) introduces unnecessary mathematical overhead when squared distances (`lengthSq()`) work just as well.
+**Action:** Consistently replace `forEach` loops with standard index-based `for` loops in high-frequency update functions like `updateAudioVisuals` and `updateGhostPlayers`. Replace `dir.length()` with `dir.lengthSq()` and `Math.sqrt()` with squared comparisons (`< threshold * threshold`) for vector magnitude checks.
