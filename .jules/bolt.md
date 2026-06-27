@@ -88,3 +88,7 @@
 ## 2026-06-25 - [Particle Render Optimization Arc to FillRect]
 **Learning:** When replacing `ctx.arc()` with `ctx.fillRect()` for performance, failing to multiply the `radius` by 2 for the `width` and `height` arguments results in the bounding box of the rendered shape effectively being halved. The `radius` value is only half the side of the enclosing square. To maintain the original visual footprint, the sides must be calculated as `radius * 2`, and the top-left offset should be `x - radius, y - radius`.
 **Action:** Always multiply the `radius` property (e.g. `p.size * p.life`) by 2 to calculate the square size when swapping `arc` for `fillRect`, and ensure integer bitwise operations (`| 0`) or shifts (`>> 1`) correctly preserve the bounds.
+
+## 2024-06-26 - [Vector Length Computation Issue]
+**Learning:** Converting visual circles to squares via fillRect to save computation might alter game appearance, making it an unacceptable performance optimisation. Additionally, bitwise integer truncation (|0) applied to coordinates can produce jittery motion at sub-pixel velocities.
+**Action:** Do not use fillRect instead of arc, if the visual difference is noticeable. Do not truncate coordinates to integers if they affect smooth visual movement.
