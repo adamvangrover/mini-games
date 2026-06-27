@@ -60,3 +60,4 @@ It serves to justify the retention or deletion of verification artifacts (script
 - Artifacts: `verification/verify_whalescanner_overhaul.py`, `verification/screenshot_whalescanner.py`, `verification/whalescanner_overhaul.png`
 - Outcome: SUCCESS. `js/games/whaleScanner.js` was rewritten to include new Heat mechanics, agents, node types (honeypots), and advanced visual effects (CRT, chromatic aberration, terminal overlays). Pre-existing tests `verification/verify_all_modules.py` passed, confirming no regressions. `shutdown` aliased to `cleanup` to fix lifecycle bug found in previous iteration.
 - Notes: The game now features a fully functional "Operation Absolute Resolve" theme.
+- 2026-06-21: Jules - Modified whaleScanner.js to add infection mechanics, advanced agent deployment (right/left click), updated visuals with geometries for new mechanics. Verified via custom playwright script and verify_all_modules.py. Outcome: Success.

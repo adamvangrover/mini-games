@@ -88,3 +88,15 @@
 ## 2026-06-23 - [Neon City Loop Overhead Optimization]
 **Learning:** In the 'Neon City' game's update loop (`js/games/neonCity/CityGame.js`), combining `.forEach()` for entity arrays (NPCs, cars, interactables) and `.distanceTo()` for spatial checks creates continuous callback allocation and expensive `Math.sqrt()` operations.
 **Action:** Replace `.forEach()` with standard index-based `for` loops to avoid callback overhead, and replace `distanceTo` with `distanceToSquared` (adjusting distance thresholds appropriately, e.g., `8` to `64`) to significantly reduce CPU load in high-frequency update loops.
+
+## 2026-06-25 - [ArcadeHub High-Frequency Loop Bottlenecks]
+**Learning:** In the core `ArcadeHub.js` `update()` loop, continuous use of `Array.prototype.forEach` creates continuous closure allocation and garbage collection overhead. Additionally, using `Math.sqrt()` and `Vector3.length()` for frequent distance and threshold checks (like joystick deadzones, click-to-move, and ghost player AI) introduces unnecessary mathematical overhead when squared distances (`lengthSq()`) work just as well.
+**Action:** Consistently replace `forEach` loops with standard index-based `for` loops in high-frequency update functions like `updateAudioVisuals` and `updateGhostPlayers`. Replace `dir.length()` with `dir.lengthSq()` and `Math.sqrt()` with squared comparisons (`< threshold * threshold`) for vector magnitude checks.
+
+## 2026-06-25 - [Particle Render Optimization Arc to FillRect]
+**Learning:** When replacing `ctx.arc()` with `ctx.fillRect()` for performance, failing to multiply the `radius` by 2 for the `width` and `height` arguments results in the bounding box of the rendered shape effectively being halved. The `radius` value is only half the side of the enclosing square. To maintain the original visual footprint, the sides must be calculated as `radius * 2`, and the top-left offset should be `x - radius, y - radius`.
+**Action:** Always multiply the `radius` property (e.g. `p.size * p.life`) by 2 to calculate the square size when swapping `arc` for `fillRect`, and ensure integer bitwise operations (`| 0`) or shifts (`>> 1`) correctly preserve the bounds.
+
+## 2024-06-26 - [Vector Length Computation Issue]
+**Learning:** Converting visual circles to squares via fillRect to save computation might alter game appearance, making it an unacceptable performance optimisation. Additionally, bitwise integer truncation (|0) applied to coordinates can produce jittery motion at sub-pixel velocities.
+**Action:** Do not use fillRect instead of arc, if the visual difference is noticeable. Do not truncate coordinates to integers if they affect smooth visual movement.
