@@ -84,3 +84,7 @@
 ## 2024-06-04 - [Inline Array Iteration Overhead]
 **Learning:** In high-frequency game loops (`js/games/matterhorn/WildlifeManager.js`), allocating inline arrays just to iterate over them with `forEach` (e.g. `['x', 'z'].forEach(axis => ...)` inside an `update` loop) causes continuous array allocation and closure creation, causing garbage collection overhead. Furthermore, performing `distanceTo` calculates expensive square roots.
 **Action:** Eliminate inline array allocations in hot paths by converting them into direct, repeated logic (e.g., separate `if` statements for `x` and `z`). Always use `distanceToSquared` instead of `distanceTo` when possible.
+
+## 2026-06-25 - [Particle Render Optimization Arc to FillRect]
+**Learning:** When replacing `ctx.arc()` with `ctx.fillRect()` for performance, failing to multiply the `radius` by 2 for the `width` and `height` arguments results in the bounding box of the rendered shape effectively being halved. The `radius` value is only half the side of the enclosing square. To maintain the original visual footprint, the sides must be calculated as `radius * 2`, and the top-left offset should be `x - radius, y - radius`.
+**Action:** Always multiply the `radius` property (e.g. `p.size * p.life`) by 2 to calculate the square size when swapping `arc` for `fillRect`, and ensure integer bitwise operations (`| 0`) or shifts (`>> 1`) correctly preserve the bounds.
