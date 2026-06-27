@@ -176,12 +176,18 @@ export default class CityGame {
         }
 
         // Entities Update
-        this.npcs.forEach(npc => npc.update(dt));
-        this.cars.forEach((c, i) => {
+        // Bolt Optimization: Replace forEach with standard loops to prevent callback allocation overhead
+        for (let i = 0; i < this.npcs.length; i++) {
+            this.npcs[i].update(dt);
+        }
+        for (let i = 0; i < this.cars.length; i++) {
+             let c = this.cars[i];
              c.update(dt);
-             if(c.mesh.position.length() > 600) c.reset();
-        });
-        this.interactables.forEach(i => i.update(dt));
+             if(c.mesh.position.lengthSq() > 360000) c.reset();
+        }
+        for (let i = 0; i < this.interactables.length; i++) {
+            this.interactables[i].update(dt);
+        }
         this.world.update(dt);
 
         // Camera Follow
@@ -199,11 +205,12 @@ export default class CityGame {
 
         let prompt = null;
         const playerPos = this.player.mesh.position;
-        const interactDist = 8;
+        // Bolt Optimization: Pre-calculate squared distance for faster check
+        const interactDistSq = 64; // 8 * 8
 
         // Check Interactables
         for(let obj of this.interactables) {
-            if(obj.mesh.position.distanceTo(playerPos) < interactDist) {
+            if(obj.mesh.position.distanceToSquared(playerPos) < interactDistSq) {
                 if(obj instanceof DataNode && !obj.hacked) prompt = "Press E to Hack Data Node";
                 if(obj instanceof GlitchPortal) prompt = "Press E to Enter Glitch";
                 if(obj instanceof BuildingMarker) {
@@ -215,7 +222,8 @@ export default class CityGame {
 
         // Check NPCs
         if(!prompt) {
-            const npc = this.npcs.find(n => n.mesh.position.distanceTo(playerPos) < interactDist);
+            // Bolt Optimization: Replace distanceTo with distanceToSquared to bypass Math.sqrt
+            const npc = this.npcs.find(n => n.mesh.position.distanceToSquared(playerPos) < interactDistSq);
             if(npc) prompt = `Press E to Talk to ${npc.role}`;
         }
 
@@ -229,11 +237,12 @@ export default class CityGame {
 
     tryInteract() {
         const playerPos = this.player.mesh.position;
-        const interactDist = 8;
+        // Bolt Optimization: Pre-calculate squared distance for faster check
+        const interactDistSq = 64; // 8 * 8
 
         // 1. Interactables
         for(let obj of this.interactables) {
-            if(obj.mesh.position.distanceTo(playerPos) < interactDist) {
+            if(obj.mesh.position.distanceToSquared(playerPos) < interactDistSq) {
                 if(obj instanceof DataNode && !obj.hacked) {
                     this.activeNode = obj;
                     this.activePuzzle = true;
@@ -269,7 +278,8 @@ export default class CityGame {
         }
 
         // 2. NPCs
-        const npc = this.npcs.find(n => n.mesh.position.distanceTo(playerPos) < interactDist);
+        // Bolt Optimization: Replace distanceTo with distanceToSquared to bypass Math.sqrt
+        const npc = this.npcs.find(n => n.mesh.position.distanceToSquared(playerPos) < interactDistSq);
         if(npc) {
             this.startChat(npc);
         }
