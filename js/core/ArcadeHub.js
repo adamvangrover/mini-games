@@ -842,11 +842,13 @@ export default class ArcadeHub {
     }
 
     updateGhostPlayers(dt) {
-        this.ghostPlayers.forEach(ghost => {
+        // Bolt Optimization: Replace forEach with standard for loop to avoid closure allocation overhead
+        for (let i = 0; i < this.ghostPlayers.length; i++) {
+            const ghost = this.ghostPlayers[i];
             if (ghost.state === 'moving') {
                 const dir = new THREE.Vector3().subVectors(ghost.target, ghost.mesh.position);
-                const dist = dir.length();
-                if (dist < 0.5) {
+                // Bolt Optimization: Replace expensive length() with lengthSq() and square the threshold
+                if (dir.lengthSq() < 0.25) { // 0.5 * 0.5
                     ghost.state = 'idle';
                     ghost.timer = 2 + Math.random() * 3;
                 } else {
@@ -863,7 +865,7 @@ export default class ArcadeHub {
                     ghost.target = this.getRandomGhostTarget();
                 }
             }
-        });
+        }
     }
 
     // --- Audio Visualization ---
@@ -883,14 +885,18 @@ export default class ArcadeHub {
         const intensity = avg / 255;
 
         // Pulse Ceiling Lights
-        this.ceilingLights.forEach(light => {
+        // Bolt Optimization: Replace forEach with standard for loop
+        for (let i = 0; i < this.ceilingLights.length; i++) {
+            const light = this.ceilingLights[i];
             if (light.userData.baseIntensity) {
                 light.intensity = light.userData.baseIntensity * (1 + intensity * 0.5);
             }
-        });
+        }
 
         // Pulse Cabinets
-        this.cabinets.forEach((cab, i) => {
+        // Bolt Optimization: Replace forEach with standard for loop
+        for (let i = 0; i < this.cabinets.length; i++) {
+             const cab = this.cabinets[i];
              // Offset pulse by index for wave effect
              const offset = i * 10;
              const val = data[(offset % data.length)];
@@ -899,7 +905,7 @@ export default class ArcadeHub {
              if (cab.userData.marquee) {
                  cab.userData.marquee.material.emissiveIntensity = 0.6 + localIntensity * 2.0;
              }
-        });
+        }
     }
 
     // --- Update Loop & Movement ---
@@ -957,15 +963,17 @@ export default class ArcadeHub {
         if (this.joystick.active) {
             const dx = this.joystick.current.x - this.joystick.origin.x;
             const dy = this.joystick.current.y - this.joystick.origin.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist > 10) { // Deadzone
+            // Bolt Optimization: Replace Math.sqrt with squared distance check for deadzone
+            const distSq = dx*dx + dy*dy;
+            if (distSq > 100) { // Deadzone (10^2)
                 velocity.x += dx / 50; 
                 velocity.z += dy / 50;
             }
         }
 
-        if (velocity.length() > 0) {
-            if (velocity.length() > 1 && !this.joystick.active) velocity.normalize(); // Normalize keyboard, keep analog for joystick
+        // Bolt Optimization: Replace velocity.length() > 0 with lengthSq() > 0
+        if (velocity.lengthSq() > 0) {
+            if (velocity.lengthSq() > 1 && !this.joystick.active) velocity.normalize(); // Normalize keyboard, keep analog for joystick
             velocity.multiplyScalar(moveSpeed);
             
             // Move relative to Camera Yaw (Y-rotation)
@@ -985,10 +993,12 @@ export default class ArcadeHub {
 
             const dir = new THREE.Vector3().subVectors(this.navTarget, this.player.position);
             dir.y = 0;
-            const dist = dir.length();
-            if (dist < 0.2) {
+            // Bolt Optimization: Replace dir.length() < 0.2 with dir.lengthSq() < 0.04
+            if (dir.lengthSq() < 0.04) {
                 this.navTarget = null;
             } else {
+                // We only need the actual dist here if we haven't reached the target
+                const dist = dir.length();
                 dir.normalize().multiplyScalar(Math.min(moveSpeed, dist));
                 velocity.add(dir);
             }
