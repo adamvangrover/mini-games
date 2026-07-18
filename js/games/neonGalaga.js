@@ -247,17 +247,23 @@ export default class NeonGalagaGame {
             }
         }
 
-        this.bullets.forEach(b => { b.y -= 700 * dt; if (b.y < -10) b.active = false; });
+        // Bolt Optimization: Replace forEach with standard loops to eliminate closure allocation overhead
+        for (let i = 0; i < this.bullets.length; i++) {
+            const b = this.bullets[i];
+            b.y -= 700 * dt;
+            if (b.y < -10) b.active = false;
+        }
         this.bullets = this.bullets.filter(b => b.active);
 
-        this.enemyBullets.forEach(b => {
+        for (let i = 0; i < this.enemyBullets.length; i++) {
+             const b = this.enemyBullets[i];
              b.y += 350 * dt;
              if (this.player.active && Math.abs(b.x - this.player.x) < 15 && Math.abs(b.y - this.player.y) < 15) {
                  this.handlePlayerHit();
                  b.active = false;
              }
              if (b.y > this.canvas.height) b.active = false;
-        });
+        }
         this.enemyBullets = this.enemyBullets.filter(b => b.active);
 
         if (this.isChallengeStage) {
@@ -299,9 +305,9 @@ export default class NeonGalagaGame {
             }
         }
 
-        this.enemies.forEach(e => {
-            this.updateEnemy(e, dt, this.isChallengeStage);
-        });
+        for (let i = 0; i < this.enemies.length; i++) {
+            this.updateEnemy(this.enemies[i], dt, this.isChallengeStage);
+        }
 
         // Bolt Optimization: Replace nested forEach with standard loops and early break
         // to prevent O(N*M) checks and redundant callback execution when checking collisions.
@@ -333,17 +339,19 @@ export default class NeonGalagaGame {
         }
 
         // Floating Texts
-        this.floatingTexts.forEach(t => {
+        for (let i = 0; i < this.floatingTexts.length; i++) {
+            const t = this.floatingTexts[i];
             t.y -= 20 * dt;
             t.life -= dt;
-        });
+        }
         this.floatingTexts = this.floatingTexts.filter(t => t.life > 0);
 
         // Stars
-        this.stars.forEach(s => {
+        for (let i = 0; i < this.stars.length; i++) {
+            const s = this.stars[i];
             s.y += s.v * 60 * dt * (this.isChallengeStage ? 4 : 1); // Warp speed in challenge
             if (s.y > this.canvas.height) s.y = 0;
-        });
+        }
         
         ParticleSystem.getInstance().update(dt);
     }
@@ -431,10 +439,12 @@ export default class NeonGalagaGame {
         else if (e.state === 'RETURN') {
             const dx = (e.homeX + this.formationOffset) - e.x;
             const dy = e.homeY - e.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < 5) {
+            const distSq = dx*dx + dy*dy;
+            // Bolt Optimization: Use squared distance to bypass expensive Math.sqrt when checking return threshold
+            if (distSq < 25) {
                 e.state = 'GRID';
             } else {
+                const dist = Math.sqrt(distSq);
                 e.x += (dx/dist) * 300 * dt;
                 e.y += (dy/dist) * 300 * dt;
                 e.angle = Math.atan2(dy, dx) + Math.PI/2;
@@ -585,11 +595,13 @@ export default class NeonGalagaGame {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.ctx.fillStyle = '#fff';
-        this.stars.forEach(s => {
+        // Bolt Optimization: Replace forEach with standard loops to eliminate closure allocation overhead
+        for (let i = 0; i < this.stars.length; i++) {
+            const s = this.stars[i];
             this.ctx.globalAlpha = Math.random();
             this.ctx.fillStyle = s.color || '#fff';
             this.ctx.fillRect(s.x, s.y, s.s, s.s);
-        });
+        }
         this.ctx.globalAlpha = 1;
 
         if (this.tractorBeam) {
@@ -627,7 +639,8 @@ export default class NeonGalagaGame {
             }
         }
 
-        this.enemies.forEach(e => {
+        for (let i = 0; i < this.enemies.length; i++) {
+            const e = this.enemies[i];
             this.ctx.save();
             this.ctx.translate(e.x, e.y);
             this.ctx.rotate(e.angle);
@@ -674,30 +687,33 @@ export default class NeonGalagaGame {
                 }
             }
             this.ctx.restore();
-        });
+        }
 
         this.ctx.fillStyle = '#fff';
         this.ctx.shadowColor = '#fff';
         this.ctx.shadowBlur = 5;
-        this.bullets.forEach(b => {
+        for (let i = 0; i < this.bullets.length; i++) {
+            const b = this.bullets[i];
             this.ctx.fillRect(b.x - 2, b.y - 8, 4, 16);
-        });
+        }
 
         this.ctx.fillStyle = '#f00';
         this.ctx.shadowColor = '#f00';
-        this.enemyBullets.forEach(b => {
+        for (let i = 0; i < this.enemyBullets.length; i++) {
+            const b = this.enemyBullets[i];
             this.ctx.beginPath();
             this.ctx.arc(b.x, b.y, 4, 0, Math.PI*2);
             this.ctx.fill();
-        });
+        }
         
         // Floating Text
-        this.floatingTexts.forEach(t => {
+        for (let i = 0; i < this.floatingTexts.length; i++) {
+            const t = this.floatingTexts[i];
             this.ctx.fillStyle = t.color;
             this.ctx.font = 'bold 20px monospace';
             this.ctx.globalAlpha = t.life;
             this.ctx.fillText(t.text, t.x, t.y);
-        });
+        }
         this.ctx.globalAlpha = 1;
 
         ParticleSystem.getInstance().draw(this.ctx);
