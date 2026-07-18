@@ -100,3 +100,7 @@
 ## 2024-06-26 - [Vector Length Computation Issue]
 **Learning:** Converting visual circles to squares via fillRect to save computation might alter game appearance, making it an unacceptable performance optimisation. Additionally, bitwise integer truncation (|0) applied to coordinates can produce jittery motion at sub-pixel velocities.
 **Action:** Do not use fillRect instead of arc, if the visual difference is noticeable. Do not truncate coordinates to integers if they affect smooth visual movement.
+
+## 2026-06-25 - [Dynamic Array Allocation and Spread Operator in Hot Loops]
+**Learning:** Using the spread operator (e.g., `[...array1, ...array2].forEach(...)`) in high-frequency methods like `shoot()` or `update()` causes unnecessary array allocation on every call, leading to garbage collection spikes and micro-stutters.
+**Action:** Iterate over each array sequentially with standard `for` loops rather than combining them into temporary arrays for iteration.
