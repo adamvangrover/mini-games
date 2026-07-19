@@ -386,7 +386,9 @@ export default class Game {
         }
 
         // Updates
-        this.targets.forEach(t => t.update(dt, this.timeScale, this.CONFIG, this.camera));
+        for (let i = 0; i < this.targets.length; i++) {
+            this.targets[i].update(dt, this.timeScale, this.CONFIG, this.camera);
+        }
         // Filter out dead
         for(let i = this.targets.length - 1; i >= 0; i--) {
             if (this.targets[i].isDead) {
@@ -395,7 +397,9 @@ export default class Game {
             }
         }
 
-        this.powerups.forEach(p => p.update(dt));
+        for (let i = 0; i < this.powerups.length; i++) {
+            this.powerups[i].update(dt);
+        }
         for(let i = this.powerups.length - 1; i >= 0; i--) {
             if (this.powerups[i].isDead) {
                  this.powerups[i].remove(this.scene);
@@ -403,14 +407,18 @@ export default class Game {
             }
         }
 
-        this.particles.forEach((p, i) => {
+        for (let i = 0; i < this.particles.length; i++) {
+            const p = this.particles[i];
             p.position.add(p.userData.vel.clone().multiplyScalar(dt));
             p.scale.multiplyScalar(0.92);
+        }
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
             if (p.scale.x < 0.01) {
                 this.scene.remove(p);
                 this.particles.splice(i, 1);
             }
-        });
+        }
 
         // Visuals
         if (this.gunGroup) {
@@ -497,14 +505,25 @@ export default class Game {
         const shootables = [];
         const map = new Map();
 
-        [...this.targets, ...this.powerups].forEach(obj => {
+        for (let i = 0; i < this.targets.length; i++) {
+            const obj = this.targets[i];
             obj.mesh.traverse(child => {
                 if(child.isMesh) {
                     shootables.push(child);
                     map.set(child.uuid, obj);
                 }
             });
-        });
+        }
+
+        for (let i = 0; i < this.powerups.length; i++) {
+            const obj = this.powerups[i];
+            obj.mesh.traverse(child => {
+                if(child.isMesh) {
+                    shootables.push(child);
+                    map.set(child.uuid, obj);
+                }
+            });
+        }
 
         const intersects = this.raycaster.intersectObjects(shootables);
         if (intersects.length > 0) {
