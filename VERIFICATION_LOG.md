@@ -67,3 +67,9 @@ It serves to justify the retention or deletion of verification artifacts (script
 **Artifacts:** `js/games/neonCentipede.js`, `verification/verify_neon_centipede.py`
 **Outcome:** Successfully verified game loads correctly within the hub environment without errors.
 **Notes:** Integrated classic arcade gameplay.
+## 2026-07-19 - Agent Action
+**Agent:** Async Agent
+**Action:** Created Neon Fleet (Battleship clone) and Vault Breaker (Mastermind clone), both as JS modules and standalone HTML pages.
+**Artifacts:** `js/games/neonFleet.js`, `js/games/vaultBreaker.js`, `battleship.html`, `vaultbreaker.html`, `verification/verify_added_games_new.py`, playwright screenshots/videos.
+**Outcome:** Verification passed successfully. Verified that all components load, function properly as standalone pages, and are accessible from the main hub.
+**Notes:** Added to gameRegistry in `js/main.js` and created DOM container elements in `index.html`.

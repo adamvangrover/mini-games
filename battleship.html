@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Fleet: Naval Combat Grid</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #050a10; font-family: 'Courier New', Courier, monospace; user-select: none; }
+        #canvas-container { width: 100vw; height: 100vh; display: block; position: absolute; top:0; left:0; z-index: 1;}
+
+        /* Start Screen */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #0a192f, #020c1b);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #64ffda;
+            z-index: 100;
+            transition: opacity 1s;
+        }
+
+        #start-overlay {
+            background: rgba(2, 12, 27, 0.85);
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #64ffda;
+            box-shadow: 0 0 20px rgba(100,255,218,0.3);
+            max-width: 600px;
+            position: relative;
+        }
+
+        /* Glitch Effect */
+        h1 {
+            font-size: 3em;
+            margin: 0 0 10px 0;
+            text-shadow: 2px 2px 0px #f0f, -2px -2px 0px #0ff;
+            letter-spacing: 2px;
+            position: relative;
+        }
+
+        .btn-group { display: flex; gap: 20px; justify-content: center; margin-top: 30px; pointer-events: auto; }
+
+        button {
+            background: transparent;
+            color: #64ffda;
+            border: 1px solid #64ffda;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-family: 'Courier New', monospace;
+            position: relative;
+            overflow: hidden;
+        }
+        button:hover {
+            background: rgba(100,255,218,0.1);
+            box-shadow: 0 0 15px rgba(100,255,218,0.5);
+        }
+
+        /* Scanline Overlay */
+        #scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="scanlines"></div>
+    <div id="canvas-container"></div>
+
+    <div id="start-screen">
+        <div id="start-overlay">
+            <h1>NEON FLEET</h1>
+            <p style="font-size: 1.2em; color: #8892b0; margin-bottom: 20px;">Tactical Grid Protocol</p>
+
+            <p style="text-align: left; font-size: 0.9em; color: #a8b2d1; border-left: 2px solid #64ffda; padding-left: 15px; margin: 20px 0;">
+                > INITIALIZING FLEET COMMAND...<br>
+                > ESTABLISHING UPLINK...<br>
+                > AWAITING DEPLOYMENT ORDERS.
+            </p>
+
+            <div class="btn-group">
+                <button onclick="startGame()">INITIATE LINK</button>
+            </div>
+            <p style="margin-top:20px; font-size: 0.8em; color: #8892b0;">R to rotate ships during placement.</p>
+        </div>
+    </div>
+
+    <!-- We define a mini mock environment to run the class directly without the hub -->
+    <script type="module">
+        import NeonFleet from './js/games/neonFleet.js';
+
+        // Mock dependencies for standalone execution
+        window.miniGameHub = {
+            showGameOver: (score, cb) => {
+                setTimeout(() => {
+                    const start = document.getElementById('start-screen');
+                    start.style.display = 'flex';
+                    start.style.opacity = '1';
+
+                    const overlay = document.getElementById('start-overlay');
+                    overlay.innerHTML = `
+                        <h1>CONNECTION TERMINATED</h1>
+                        <p style="font-size: 1.2em; color: #8892b0;">Final Score: ${score}</p>
+                        <div class="btn-group">
+                            <button onclick="window.location.reload()">REBOOT PROTOCOL</button>
+                        </div>
+                    `;
+                }, 1000);
+            }
+        };
+
+        // Mock SoundManager/InputManager for standalone if not loaded via main
+        // The classes themselves use singletons, so we just let them initialize empty if needed, or we rely on the ones imported.
+        // Actually, importing them might throw errors if they rely on other Hub features not present. Let's see.
+        // The ES6 imports in neonFleet.js: InputManager, SoundManager, ParticleSystem
+        // They should work standalone if they are self-contained.
+
+        let gameInstance = null;
+
+        window.startGame = async function() {
+            document.getElementById('start-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('start-screen').style.display = 'none';
+            }, 1000);
+
+            const container = document.getElementById('canvas-container');
+            container.innerHTML = '';
+            gameInstance = new NeonFleet();
+            await gameInstance.init(container);
+
+            let lastTime = performance.now();
+            function loop(time) {
+                const dt = (time - lastTime) / 1000;
+                lastTime = time;
+                if (gameInstance && gameInstance.isActive) {
+                    if (gameInstance.update) gameInstance.update(dt);
+                    if (gameInstance.draw) gameInstance.draw();
+                }
+                requestAnimationFrame(loop);
+            }
+            requestAnimationFrame(loop);
+        }
+    </script>
+</body>
+</html>
