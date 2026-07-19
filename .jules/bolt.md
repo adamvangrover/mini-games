@@ -104,3 +104,7 @@
 ## 2026-06-25 - [Dynamic Array Allocation and Spread Operator in Hot Loops]
 **Learning:** Using the spread operator (e.g., `[...array1, ...array2].forEach(...)`) in high-frequency methods like `shoot()` or `update()` causes unnecessary array allocation on every call, leading to garbage collection spikes and micro-stutters.
 **Action:** Iterate over each array sequentially with standard `for` loops rather than combining them into temporary arrays for iteration.
+
+## 2026-07-18 - [Galaga Loop Optimisation]
+**Learning:** In the high-frequency game loop (`update` and `draw` methods) of `js/games/neonGalaga.js`, extensive use of array `.forEach()` iteration paired with inline anonymous arrow functions creates substantial closure allocation and garbage collection overhead 60 times a second. Furthermore, computing `Math.sqrt()` to check simple distance thresholds (like an enemy returning to its home grid) introduces unnecessary calculation load.
+**Action:** Replace `forEach` with standard `for` loops in performance-critical sections of the codebase (e.g. iterating `enemies`, `bullets`, `stars`) and utilize squared thresholds (`distSq < radius * radius`) to bypass `Math.sqrt()` calls, while taking care not to alter logic execution order or combine dead-entity filter loops prematurely.
