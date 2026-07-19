@@ -133,6 +133,8 @@ const gameRegistry = {
     'neon-stack': { name: 'Neon Stack', description: 'Stack the Blocks', icon: 'fa-solid fa-layer-group', category: 'Quick Minigames', importFn: () => import('./games/neonStack.js'), noDpad: true },
     'neon-whack-game': { name: 'Neon Whack', description: 'Whack the Moles', icon: 'fa-solid fa-hammer', category: 'Quick Minigames', importFn: () => import('./games/neonWhack.js'), noDpad: true },
     'neon-plinko': { name: 'Neon Plinko', description: 'Drop & Win', icon: 'fa-solid fa-circle-arrow-down', category: 'Quick Minigames', importFn: () => import('./games/neonPlinko.js'), noDpad: true },
+    'neon-fleet': { name: 'Neon Fleet', description: 'Grid Naval Combat', icon: 'fa-solid fa-ship', category: 'Logic Puzzles', importFn: () => import('./games/neonFleet.js'), noDpad: true, wide: true },
+    'vault-breaker': { name: 'Vault Breaker', description: 'Crack the Code', icon: 'fa-solid fa-unlock-keyhole', category: 'Logic Puzzles', importFn: () => import('./games/vaultBreaker.js'), noDpad: true, wide: true },
 
     // Card & Board
     'solitaire-game': { name: 'Cyber Solitaire', description: 'Classic Card Game', icon: 'fa-solid fa-diamond', category: 'Classics', importFn: () => import('./games/solitaire.js'), wide: true, noDpad: true },
