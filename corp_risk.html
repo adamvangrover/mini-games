@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corp Risk</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; color: #0f0; font-family: 'Courier New', Courier, monospace; user-select: none; }
+        #game-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; position: relative; }
+
+        .crt {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #header {
+            border-bottom: 2px solid #0f0;
+            padding: 10px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            background: #001100;
+        }
+
+        #main-area {
+            flex-grow: 1;
+            display: flex;
+            position: relative;
+        }
+
+        #map-area {
+            flex-grow: 1;
+            position: relative;
+            background: #000500;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 2px;
+            padding: 10px;
+        }
+
+        .region {
+            border: 1px solid #050;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .region:hover {
+            background: #002200;
+            border-color: #0f0;
+        }
+
+        .region.owned { background: #004400; border-color: #0f0; }
+        .region.enemy { background: #440000; border-color: #f00; color: #f00; }
+
+        .region .name { font-size: 14px; font-weight: bold; }
+        .region .troops { font-size: 20px; margin-top: 5px; }
+
+        #sidebar {
+            width: 300px;
+            border-left: 2px solid #0f0;
+            padding: 15px;
+            background: #001100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .log-entry { margin-bottom: 5px; font-size: 12px; }
+        .log-entry.player { color: #0f0; }
+        .log-entry.enemy { color: #f00; }
+        .log-entry.system { color: #0ff; }
+
+        #action-log {
+            flex-grow: 1;
+            overflow-y: auto;
+            border: 1px solid #050;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        #controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 10px;
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        button:hover:not(:disabled) { background: #0f0; color: #000; }
+        button:disabled { border-color: #050; color: #050; cursor: not-allowed; }
+
+        /* Start Screen */
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        #start-screen h1 { font-size: 48px; margin-bottom: 10px; text-shadow: 0 0 10px #0f0; }
+        #start-screen p { margin-bottom: 30px; color: #0a0; }
+        #start-screen button { font-size: 20px; padding: 15px 40px; }
+
+        .selected {
+            box-shadow: inset 0 0 15px #0f0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="crt"></div>
+
+    <div id="start-screen">
+        <h1>CORP RISK</h1>
+        <p>GLOBAL ASSET ACQUISITION PROTOCOL</p>
+        <button onclick="startGame()">INITIALIZE</button>
+    </div>
+
+    <div id="game-container" style="display:none;">
+        <div id="header">
+            CORP RISK: <span id="turn-display">TURN 1 | DEPLOY PHASE</span>
+        </div>
+        <div id="main-area">
+            <div id="map-area"></div>
+            <div id="sidebar">
+                <div style="margin-bottom:10px;">
+                    <div>RESERVES: <span id="reserves">0</span></div>
+                    <div>SCORE: <span id="score">0</span></div>
+                </div>
+                <div id="action-log"></div>
+                <div id="controls">
+                    <button id="end-phase-btn" onclick="nextPhase()">END DEPLOYMENT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const regions = [
+            { id: 0, name: 'NA-WEST' }, { id: 1, name: 'NA-EAST' }, { id: 2, name: 'EU-NORTH' }, { id: 3, name: 'EU-SOUTH' }, { id: 4, name: 'AS-NORTH' },
+            { id: 5, name: 'SA-NORTH' }, { id: 6, name: 'AF-NORTH' }, { id: 7, name: 'ME-CORE' }, { id: 8, name: 'AS-SOUTH' }, { id: 9, name: 'AS-EAST' },
+            { id: 10, name: 'SA-SOUTH' }, { id: 11, name: 'AF-SOUTH' }, { id: 12, name: 'IN-CORE' }, { id: 13, name: 'OC-WEST' }, { id: 14, name: 'OC-EAST' },
+            { id: 15, name: 'ANT-BASE' }, { id: 16, name: 'SEA-BASE' }, { id: 17, name: 'SKY-NET' }, { id: 18, name: 'LUNAR-1' }, { id: 19, name: 'MARS-C' }
+        ];
+
+        // Define neighbors (simplified grid adjacency)
+        regions.forEach((r, i) => {
+            r.neighbors = [];
+            if (i % 5 !== 0) r.neighbors.push(i - 1); // left
+            if (i % 5 !== 4) r.neighbors.push(i + 1); // right
+            if (i >= 5) r.neighbors.push(i - 5); // up
+            if (i < 15) r.neighbors.push(i + 5); // down
+            r.owner = 'neutral';
+            r.troops = 1;
+        });
+
+        let gameState = {
+            phase: 'deploy', // deploy, attack, fortify
+            turn: 1,
+            reserves: 0,
+            score: 0,
+            selectedRegion: null,
+            playing: false
+        };
+
+        const mapEl = document.getElementById('map-area');
+        const logEl = document.getElementById('action-log');
+
+        function logMsg(msg, type='system') {
+            const el = document.createElement('div');
+            el.className = `log-entry ${type}`;
+            el.innerText = `> ${msg}`;
+            logEl.appendChild(el);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function initMap() {
+            mapEl.innerHTML = '';
+
+            // Assign initial ownership
+            const shuffled = [...regions].sort(() => 0.5 - Math.random());
+            for(let i=0; i<10; i++) shuffled[i].owner = 'player';
+            for(let i=10; i<20; i++) shuffled[i].owner = 'enemy';
+
+            regions.forEach(r => r.troops = Math.floor(Math.random() * 3) + 1);
+
+            regions.forEach(r => {
+                const div = document.createElement('div');
+                div.className = `region ${r.owner}`;
+                div.id = `region-${r.id}`;
+                div.innerHTML = `<div class="name">${r.name}</div><div class="troops">${r.troops}</div>`;
+                div.onclick = () => handleRegionClick(r.id);
+                mapEl.appendChild(div);
+            });
+        }
+
+        function updateMap() {
+            regions.forEach(r => {
+                const el = document.getElementById(`region-${r.id}`);
+                el.className = `region ${r.owner} ${gameState.selectedRegion === r.id ? 'selected' : ''}`;
+                el.querySelector('.troops').innerText = r.troops;
+            });
+            document.getElementById('reserves').innerText = gameState.reserves;
+            document.getElementById('score').innerText = gameState.score;
+            document.getElementById('turn-display').innerText = `TURN ${gameState.turn} | ${gameState.phase.toUpperCase()}`;
+
+            document.getElementById('end-phase-btn').innerText =
+                gameState.phase === 'deploy' ? 'END DEPLOYMENT' :
+                gameState.phase === 'attack' ? 'END ATTACK' : 'END TURN';
+
+            if(gameState.phase === 'deploy' && gameState.reserves > 0) {
+                document.getElementById('end-phase-btn').disabled = true;
+            } else {
+                document.getElementById('end-phase-btn').disabled = false;
+            }
+        }
+
+        function handleRegionClick(id) {
+            const r = regions[id];
+
+            if (gameState.phase === 'deploy') {
+                if (r.owner === 'player' && gameState.reserves > 0) {
+                    r.troops++;
+                    gameState.reserves--;
+                    logMsg(`Deployed to ${r.name}`, 'player');
+                    updateMap();
+                }
+            } else if (gameState.phase === 'attack') {
+                if (gameState.selectedRegion === null) {
+                    if (r.owner === 'player' && r.troops > 1) {
+                        gameState.selectedRegion = id;
+                        logMsg(`Selected ${r.name} for attack`, 'player');
+                        updateMap();
+                    }
+                } else {
+                    if (r.owner === 'enemy' && regions[gameState.selectedRegion].neighbors.includes(id)) {
+                        resolveAttack(gameState.selectedRegion, id);
+                        gameState.selectedRegion = null;
+                        updateMap();
+                    } else if (r.owner === 'player') {
+                        gameState.selectedRegion = (r.troops > 1) ? id : null;
+                        updateMap();
+                    } else {
+                        gameState.selectedRegion = null;
+                        updateMap();
+                    }
+                }
+            }
+        }
+
+        function resolveAttack(fromId, toId) {
+            const attacker = regions[fromId];
+            const defender = regions[toId];
+
+            logMsg(`Hostile takeover: ${attacker.name} -> ${defender.name}`, 'system');
+
+            while(attacker.troops > 1 && defender.troops > 0) {
+                const aRoll = Math.floor(Math.random()*6)+1;
+                const dRoll = Math.floor(Math.random()*6)+1;
+                if(aRoll > dRoll) defender.troops--;
+                else attacker.troops--;
+            }
+
+            if(defender.troops === 0) {
+                logMsg(`Acquisition successful: ${defender.name}`, 'player');
+                defender.owner = 'player';
+                defender.troops = attacker.troops - 1;
+                attacker.troops = 1;
+                gameState.score += 100;
+                checkWin();
+            } else {
+                logMsg(`Attack repelled at ${defender.name}`, 'enemy');
+            }
+        }
+
+        function nextPhase() {
+            if(gameState.phase === 'deploy') {
+                gameState.phase = 'attack';
+                logMsg('Combat phase initiated.', 'system');
+            } else if (gameState.phase === 'attack') {
+                gameState.phase = 'fortify'; // Skipping fortify for simple arcade
+                gameState.selectedRegion = null;
+                enemyTurn();
+            }
+            updateMap();
+        }
+
+        function enemyTurn() {
+            logMsg('Enemy turn initiated...', 'enemy');
+            setTimeout(() => {
+                const eRegions = regions.filter(r => r.owner === 'enemy');
+
+                // Deploy
+                let reserves = Math.max(3, Math.floor(eRegions.length / 3));
+                while(reserves > 0 && eRegions.length > 0) {
+                    const r = eRegions[Math.floor(Math.random() * eRegions.length)];
+                    r.troops++;
+                    reserves--;
+                }
+
+                // Attack
+                let attacks = 3;
+                while(attacks > 0) {
+                    const validAttackers = regions.filter(r => r.owner === 'enemy' && r.troops > 2);
+                    if(validAttackers.length === 0) break;
+
+                    const attacker = validAttackers[Math.floor(Math.random() * validAttackers.length)];
+                    const validTargets = attacker.neighbors.map(id => regions[id]).filter(r => r.owner === 'player');
+
+                    if(validTargets.length > 0) {
+                        const target = validTargets[Math.floor(Math.random() * validTargets.length)];
+
+                        while(attacker.troops > 1 && target.troops > 0) {
+                            const aRoll = Math.floor(Math.random()*6)+1;
+                            const dRoll = Math.floor(Math.random()*6)+1;
+                            if(aRoll > dRoll) target.troops--;
+                            else attacker.troops--;
+                        }
+
+                        if(target.troops === 0) {
+                            logMsg(`Enemy acquired ${target.name}`, 'enemy');
+                            target.owner = 'enemy';
+                            target.troops = attacker.troops - 1;
+                            attacker.troops = 1;
+                            checkWin();
+                        }
+                    }
+                    attacks--;
+                }
+
+                startTurn();
+            }, 1000);
+        }
+
+        function startTurn() {
+            gameState.turn++;
+            gameState.phase = 'deploy';
+            const pRegions = regions.filter(r => r.owner === 'player').length;
+            gameState.reserves = Math.max(3, Math.floor(pRegions / 3));
+            logMsg(`Turn ${gameState.turn}. Reserves: ${gameState.reserves}`, 'player');
+            updateMap();
+        }
+
+        function checkWin() {
+            const pRegions = regions.filter(r => r.owner === 'player').length;
+            const eRegions = regions.filter(r => r.owner === 'enemy').length;
+
+            if(eRegions === 0) {
+                gameOver(gameState.score + 1000);
+            } else if (pRegions === 0) {
+                gameOver(gameState.score);
+            }
+        }
+
+        function gameOver(finalScore) {
+            gameState.playing = false;
+            if (window.parent && window.parent.corpRiskGameOver) {
+                window.parent.corpRiskGameOver(finalScore);
+            } else {
+                alert('GAME OVER! Score: ' + finalScore);
+                document.getElementById('start-screen').style.display = 'flex';
+                document.getElementById('game-container').style.display = 'none';
+            }
+        }
+
+        window.startGame = function() {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+            gameState.playing = true;
+            gameState.score = 0;
+            gameState.turn = 1;
+            logEl.innerHTML = '';
+            initMap();
+
+            const pRegions = regions.filter(r => r.owner === 'player').length;
+            gameState.reserves = Math.max(3, Math.floor(pRegions / 3));
+            gameState.phase = 'deploy';
+
+            logMsg('System initialized. Begin deployment.', 'system');
+            updateMap();
+        }
+    </script>
+</body>
+</html>

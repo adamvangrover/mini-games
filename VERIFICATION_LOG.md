@@ -73,3 +73,7 @@ It serves to justify the retention or deletion of verification artifacts (script
 **Artifacts:** `js/games/neonFleet.js`, `js/games/vaultBreaker.js`, `battleship.html`, `vaultbreaker.html`, `verification/verify_added_games_new.py`, playwright screenshots/videos.
 **Outcome:** Verification passed successfully. Verified that all components load, function properly as standalone pages, and are accessible from the main hub.
 **Notes:** Added to gameRegistry in `js/main.js` and created DOM container elements in `index.html`.
+## YYYY-MM-DD - Jules (AI)
+**Action:** Created standalone HTML wrapper games `cyber_wheel.html` and `corp_risk.html`. Created ES6 adapters `cyberWheel.js` and `corpRisk.js`. Registered games in `js/main.js`. Documented gameplay in `GAMES.md`.
+**Result:** Code written and integrated into the Hub successfully.
+**Notes:** To be verified by Playwright tests.
