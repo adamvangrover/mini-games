@@ -269,3 +269,32 @@ This file provides detailed instructions and walkthroughs for each game in the M
 3.  **Mine:** Left-click to break blocks and clear space.
 4.  **Create:** Use the infinite resources to build whatever you can imagine!
 5.  **Save:** Your world is automatically saved locally, so you can return to your creation later.
+
+---
+
+## 🚗 Cyber Wheel
+
+**Objective:** Dodge obstacles and outrun the grid in a synthwave pursuit.
+
+**Controls:**
+*   **W / Up Arrow:** Accelerate
+*   **S / Down Arrow:** Brake
+*   **A / Left Arrow:** Steer Left
+*   **D / Right Arrow:** Steer Right
+
+**How to Play:**
+1.  Control your car to dodge incoming red obstacles.
+2.  Increase your speed to rack up points faster.
+3.  The game ends if you collide with an obstacle.
+
+---
+
+## 🌐 Corp Risk
+
+**Objective:** A global asset acquisition protocol where you deploy troops and acquire regions to achieve global domination.
+
+**How to Play:**
+1.  **Deploy Phase:** Click on your owned regions (green) to deploy your reserves. Click "END DEPLOYMENT" when finished.
+2.  **Attack Phase:** Select one of your regions with more than 1 troop, then select an adjacent enemy region (red) to initiate a hostile takeover.
+3.  **Enemy Turn:** The AI will deploy its reserves and attack your regions.
+4.  Win by acquiring all regions on the map!

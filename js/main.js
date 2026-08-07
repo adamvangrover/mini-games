@@ -60,6 +60,7 @@ const gameRegistry = {
     'corp-queens': { name: 'Queens Logic', description: 'Region Placement', icon: 'fa-solid fa-chess-queen', category: 'Corporate Puzzles', importFn: () => import('./games/corpQueens.js'), noDpad: true },
     'property-tycoon': { name: 'Property Tycoon', description: 'Board Game', icon: 'fa-solid fa-building', category: 'Corporate Puzzles', importFn: () => import('./games/propertyTycoon.js'), wide: true, noDpad: true },
     'corp-crossclimb': { name: 'Crossclimb', description: 'Word Ladder Logic', icon: 'fa-solid fa-stairs', category: 'Corporate Puzzles', importFn: () => import('./games/corpCrossclimb.js'), noDpad: true },
+    'corp-risk-game': { name: 'Corp Risk', description: 'Global Asset Acquisition', icon: 'fa-solid fa-globe', category: 'Corporate Puzzles', importFn: () => import('./games/corpRisk.js'), wide: true, noDpad: true },
 
     // New Games
     'monarch-game': { name: 'Monarch', description: 'Spatial Constraint Puzzle', icon: 'fa-solid fa-chess-queen', category: 'New Games', importFn: () => import('./games/monarch.js'), wide: true, noDpad: true },
@@ -93,6 +94,7 @@ const gameRegistry = {
     'neon-hoops': { name: 'Neon Hoops', description: 'Arcade Basketball', icon: 'fa-solid fa-basketball', category: 'Sports', importFn: () => import('./games/neonHoops.js') },
 
     // Action
+    'cyber-wheel-game': { name: 'Cyber Wheel', description: 'Synthwave Pursuit', icon: 'fa-solid fa-car', category: 'Action', importFn: () => import('./games/cyberWheel.js'), wide: true, noDpad: true },
     'neon-swarm': { name: 'Neon Swarm', description: 'Geometry Survival', icon: 'fa-solid fa-spider', category: 'Action', importFn: () => import('./games/neonSwarm.js'), noDpad: true, wide: true },
     'crypto-dashboard': { name: 'Crypto Wallet', description: 'Manage NFTs & Assets', icon: 'fa-solid fa-wallet', category: 'System', importFn: () => import('./core/CryptoDashboard.js') },
     'neon-beat': { name: 'Neon Beat', description: 'Rhythm Action', icon: 'fa-solid fa-music', category: 'Action', importFn: () => import('./games/neonBeat.js'), noDpad: true },
