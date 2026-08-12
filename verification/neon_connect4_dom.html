@@ -1,0 +1,1833 @@
+
+    <!-- Skip Link (A11y) -->
+    <a href="#menu-grid" id="skip-to-games" class="fixed top-4 left-4 z-[100] -translate-y-[200%] focus:translate-y-0 transition-transform duration-300 bg-fuchsia-600 text-white px-6 py-3 font-bold rounded shadow-[0_0_15px_rgba(192,38,211,0.5)] border-2 border-white outline-none focus:ring-4 focus:ring-fuchsia-400 focus:shadow-[0_0_25px_rgba(192,38,211,0.8)]">Skip to Games</a>
+
+    <!-- 3D Arcade Hub Container -->
+    <div id="arcade-hub-container" style="position: fixed; top: 0px; left: 0px; width: 100%; height: 100%; z-index: 0; display: none;"><canvas width="1280" height="720" style="display: block; width: 1280px; height: 720px;"></canvas><div id="hub-joystick" style="position: absolute; bottom: 50px; left: 50px; width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%; display: none; z-index: 20; touch-action: none;"><div style="position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; background: rgba(0, 255, 255, 0.5); border-radius: 50%; transform: translate(-50%, -50%); box-shadow: rgba(0, 255, 255, 0.5) 0px 0px 10px; pointer-events: none;"></div></div></div>
+
+    <!-- Background Canvas (Legacy/Fallback) -->
+    <canvas id="bg-canvas" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-2; display:none;"></canvas>
+
+    <!-- Global UI Overlay -->
+    <div id="global-overlay" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
+        <div class="overlay-panel w-full max-w-md relative glass-panel rounded-lg p-6">
+            <h2 id="overlay-title" class="text-3xl font-bold text-center mb-4 text-white title-glow font-[Poppins]">PAUSED</h2>
+            <div id="overlay-content" class="text-center text-slate-300 font-[Poppins]">
+                <p>Game is paused. Press ESC to resume.</p>
+            </div>
+            <div class="flex justify-center mt-6 gap-4">
+                 <button id="overlay-main-menu-btn" class="px-6 py-2 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-bold rounded transition-all transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-home mr-2"></i>Main Menu
+                 </button>
+            </div>
+            <button id="overlay-close-btn" class="absolute top-4 right-4 text-white text-2xl hover:text-fuchsia-500 transition-colors" aria-label="Close">×</button>
+        </div>
+    </div>
+
+    <!-- Store Overlay -->
+    <div id="store-overlay" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-4xl relative glass-panel rounded-lg p-6 h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-4xl font-bold text-white title-glow font-[Poppins]"><i class="fas fa-store text-fuchsia-500"></i> NEON SHOP</h2>
+                <div class="flex items-center gap-4">
+                     <div class="bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700">
+                        <span class="text-xl text-yellow-400 font-bold"><i class="fas fa-coins mr-2"></i> <span id="store-currency">0</span></span>
+                    </div>
+                    <button id="store-close-btn" class="text-white text-3xl hover:text-fuchsia-500 transition-colors" aria-label="Close">×</button>
+                </div>
+            </div>
+
+            <div id="store-items" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                <!-- Store items injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Menu (Hidden by default, replaced by 3D Hub) -->
+    <div id="menu" class="relative z-10 max-w-7xl mx-auto pt-10 px-4 pb-20 h-full overflow-y-auto custom-scrollbar">
+        <header class="text-center mb-16">
+            <h1 class="text-5xl md:text-7xl font-black text-center mb-4 title-glow tracking-tighter text-white font-[Poppins]">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 to-cyan-500">NEON</span> ARCADE
+            </h1>
+            <p class="text-slate-400 text-lg max-w-2xl mx-auto">Explore a universe of retro-futuristic mini-games.</p>
+        </header>
+
+        <div id="hub-stats" class="text-center mb-12 flex justify-center gap-4 relative pointer-events-auto flex-wrap">
+            <div class="bg-slate-800/50 backdrop-blur px-6 py-3 rounded-full border border-slate-700">
+                <span class="text-xl text-yellow-400 font-bold"><i class="fas fa-coins mr-2"></i> <span id="total-currency">60</span></span>
+            </div>
+            <button id="shop-btn-menu" class="bg-slate-800/50 backdrop-blur px-4 py-3 rounded-full border border-slate-700 text-slate-300 hover:text-white hover:border-fuchsia-500 transition-colors">
+                <i class="fas fa-store"></i> Shop
+            </button>
+             <button id="settings-btn" class="bg-slate-800/50 backdrop-blur px-4 py-3 rounded-full border border-slate-700 text-slate-300 hover:text-white hover:border-fuchsia-500 transition-colors">
+                <i class="fas fa-cog"></i> Data
+            </button>
+            <button id="trophy-btn-menu" class="bg-slate-800/50 backdrop-blur px-4 py-3 rounded-full border border-slate-700 text-slate-300 hover:text-white hover:border-fuchsia-500 transition-colors">
+                <i class="fas fa-trophy"></i> Trophies
+            </button>
+            <button id="view-toggle-btn" class="bg-slate-800/50 backdrop-blur px-4 py-3 rounded-full border border-slate-700 text-slate-300 hover:text-white hover:border-fuchsia-500 transition-colors">
+                <i class="fas fa-cube"></i> <span id="view-toggle-text">3D View</span>
+            </button>
+        </div>
+
+        <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4 pointer-events-auto transition-opacity duration-500 pb-24"><div class="col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2"><i class="fas fa-layer-group mr-2 text-slate-400"></i> 3D IMMERSIVE</div><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Alpine Adventure: Open World Exploration">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-mountain-sun"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Alpine Adventure</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Open World Exploration</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon City: Open World RPG">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-city"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon City</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Open World RPG</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Aetheria: Floating Isles Exploration">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-cloud"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Aetheria</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Floating Isles Exploration</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Aetheria (Classic): Standalone Version">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-wind"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Aetheria (Classic)</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Standalone Version</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Matterhorn Ascent: 3D Alpine Adventure">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-mountain"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Matterhorn Ascent</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">3D Alpine Adventure</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Lumina: Purify the Glitch">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-cube"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Lumina</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Purify the Glitch</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Hunter 64: Retro 3D Hunting">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-crosshairs"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Hunter 64</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Retro 3D Hunting</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Hunter EX: Enhanced Edition">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-gun"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Hunter EX</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Enhanced Edition</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Prism Realms: Shadowfall FPS">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-ghost"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Prism Realms</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Shadowfall FPS</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Rage Quit 3D: Clinical Trial">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-person-falling-burst"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Rage Quit 3D</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Clinical Trial</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play All In Hole: Swallow the World">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-circle-notch"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">All In Hole</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Swallow the World</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><div class="col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2"><i class="fas fa-layer-group mr-2 text-slate-400"></i> ACTION</div><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Synthwave Rhythm: Synthwave Rhythm (Beat Match)">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-music"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Synthwave Rhythm</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Synthwave Rhythm (Beat Match)</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)] transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Mode7 Racer: Retro Mode 7 Racing">
+                <div class="absolute top-0 left-0 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 z-10">DAILY CHALLENGE</div>
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-flag-checkered"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Mode7 Racer</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Retro Mode 7 Racing</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Typing Zombies: Typing of the Dead">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-keyboard"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Typing Zombies</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Typing of the Dead</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Bullet Hell: Survive the Danmaku">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-burst"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Bullet Hell</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Survive the Danmaku</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Asteroids: Classic Space Shooter">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-meteor"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Asteroids</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Classic Space Shooter</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Defender: Base Defense">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Defender</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Base Defense</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Orbit: Orbital Dodge">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-satellite"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Orbit</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Orbital Dodge</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Dodge: Bullet Hell Survival">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-cube"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Dodge</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Bullet Hell Survival</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Swarm: Geometry Survival">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-spider"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Swarm</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Geometry Survival</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Beat: Rhythm Action">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-music"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Beat</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Rhythm Action</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon FPS: Cyber Defense">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-gun"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon FPS</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Cyber Defense</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Jump: Jump to the Stars">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-arrow-up"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Jump</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Jump to the Stars</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Slice: Slice the Shapes">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-scissors"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Slice</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Slice the Shapes</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Galaga: Space Warfare">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-jet-fighter"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Galaga</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Space Warfare</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Survivor: Survive the Swarm">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-skull"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Survivor</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Survive the Swarm</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Combat: Cyber Fight">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-hand-fist"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Combat</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Cyber Fight</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Racer: Synthwave Racing">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-car-side"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Racer</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Synthwave Racing</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Snacks: Devour Everything">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-cookie-bite"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Snacks</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Devour Everything</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><div class="col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2"><i class="fas fa-layer-group mr-2 text-slate-400"></i> ACTION ARCADE</div><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Pulse: Core Defense Rhythm">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-satellite-dish"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Pulse</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Core Defense Rhythm</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><div class="col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2"><i class="fas fa-layer-group mr-2 text-slate-400"></i> ARCADE CLASSICS</div><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Tetrominoes: Synthwave Block Puzzle">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-shapes"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Tetrominoes</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Synthwave Block Puzzle</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Bounce: Cybernetic Breakout">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-table-tennis-paddle-ball"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Bounce</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Cybernetic Breakout</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Matterhorn Arcade: Retro Climbing Challenge">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-person-hiking"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Matterhorn Arcade</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Retro Climbing Challenge</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Snake: Eat &amp; Grow">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-snake"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Snake</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Eat &amp; Grow</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Pong: Retro Tennis">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-table-tennis-paddle-ball"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Pong</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Retro Tennis</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Space Shooter: Defend the Galaxy">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-rocket"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Space Shooter</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Defend the Galaxy</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Breakout: Smash the Bricks">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-kaaba"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Breakout</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Smash the Bricks</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Tetris: Stack the Blocks">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-shapes"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Tetris</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Stack the Blocks</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Centipede: Classic Bug Blasting">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-bug"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Centipede</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Classic Bug Blasting</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><div class="col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2"><i class="fas fa-layer-group mr-2 text-slate-400"></i> CLASSICS</div><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Cyber Solitaire: Classic Card Game">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-diamond"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Cyber Solitaire</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Classic Card Game</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Mahjong: Classic Tile Matching">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Mahjong</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Classic Tile Matching</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Games of Chance: Coin Flip &amp; Dice">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-dice"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Games of Chance</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Coin Flip &amp; Dice</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon RPS+LS: Big Bang Mode">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-hand-spock"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon RPS+LS</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Big Bang Mode</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Trivia: Test Your Knowledge">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-question"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Trivia</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Test Your Knowledge</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Trail: Survive the Journey">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-wagon-covered"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Trail</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Survive the Journey</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><div class="col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2"><i class="fas fa-layer-group mr-2 text-slate-400"></i> CORPORATE PUZZLES</div><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Queens Logic: Region Placement">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-chess-queen"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Queens Logic</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Region Placement</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Property Tycoon: Board Game">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-building"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Property Tycoon</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Board Game</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Crossclimb: Word Ladder Logic">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-stairs"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Crossclimb</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Word Ladder Logic</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><div class="col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2"><i class="fas fa-layer-group mr-2 text-slate-400"></i> LOGIC PUZZLES</div><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Cyber Hacking: Cyberpunk Node Hacking">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-network-wired"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Cyber Hacking</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Cyberpunk Node Hacking</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Contraption Maker: Rube Goldberg Machine Builder">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-cogs"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Contraption Maker</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Rube Goldberg Machine Builder</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Gravity Slingshot: Gravity Slingshot">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-meteor"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Gravity Slingshot</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Gravity Slingshot</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Sort: Color Logic Puzzle">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-flask"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Sort</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Color Logic Puzzle</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Grid Strike: Naval Combat Sim">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-ship"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Grid Strike</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Naval Combat Sim</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Vaults: Probability Game">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-vault"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Vaults</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Probability Game</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Wire: Connect the Nodes">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-plug"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Wire</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Connect the Nodes</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Wheel: Spin &amp; Guess">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-life-ring"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Wheel</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Spin &amp; Guess</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Fleet: Grid Naval Combat">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-ship"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Fleet</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Grid Naval Combat</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Vault Breaker: Crack the Code">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-unlock-keyhole"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Vault Breaker</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Crack the Code</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Galactic Rescue: Math Blaster Episode I">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-rocket"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Galactic Rescue</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Math Blaster Episode I</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Smarter Than Chatbot?: Beat the AI at Trivia">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Smarter Than Chatbot?</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Beat the AI at Trivia</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Queens: Place Queens">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-chess-queen"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Queens</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Place Queens</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Match: Find Pairs">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-clone"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Match</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Find Pairs</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Connect 4: Four in a Row">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-grip-vertical"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Connect 4</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Four in a Row</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Tic Tac Toe: 3 in a Row">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-hashtag"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Tic Tac Toe</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">3 in a Row</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Mines: Avoid Mines">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-bomb"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Mines</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Avoid Mines</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Picross: Picture Cross">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-pencil-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Picross</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Picture Cross</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Sudoku: Classic Number Puzzle">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-border-none"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Sudoku</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Classic Number Puzzle</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Zip: Connect the Dots">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Zip</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Connect the Dots</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Word: Word Guessing">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-font"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Word</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Word Guessing</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Drop: Merge Shapes">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-circle-arrow-down"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Drop</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Merge Shapes</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Rogue: Card Battler">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-cards"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Rogue</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Card Battler</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Suicide Chess: Lose All Pieces">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-chess-knight"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Suicide Chess</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Lose All Pieces</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Classic Chess: Expert Edition">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-chess-king"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Classic Chess</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Expert Edition</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><div class="col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2"><i class="fas fa-layer-group mr-2 text-slate-400"></i> NEW GAMES</div><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Monarch: Spatial Constraint Puzzle">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-chess-queen"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Monarch</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Spatial Constraint Puzzle</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Equinox: Binary Logic Grid">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-circle-half-stroke"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Equinox</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Binary Logic Grid</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Circuit: Continuous Pathfinding">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Circuit</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Continuous Pathfinding</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Quilt: Spatial Tiling Challenge">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-border-all"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Quilt</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Spatial Tiling Challenge</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Ascension: Lexical Word Ladder">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-arrow-up-a-z"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Ascension</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Lexical Word Ladder</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Zip Logic: Hamiltonian Path Puzzle">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-route"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Zip Logic</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Hamiltonian Path Puzzle</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Orbital Defense: Protect the Core">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Orbital Defense</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Protect the Core</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play WhaleScanner Protocol: Data Node Simulation">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-network-wired"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">WhaleScanner Protocol</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Data Node Simulation</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Blocks: Voxel Sandbox Builder">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-cubes"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Blocks</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Voxel Sandbox Builder</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play File Forge: AI File Generator">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-file-code"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">File Forge</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">AI File Generator</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Tower Defense: Defend the Base">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-chess-rook"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Tower Defense</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Defend the Base</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Physics Stacker: Balance Blocks">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-cubes-stacked"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Physics Stacker</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Balance Blocks</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon 2048: Merge the Grid">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-border-all"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon 2048</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Merge the Grid</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Flap: Flappy Clone">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-dove"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Flap</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Flappy Clone</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Memory: Simon Says">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Memory</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Simon Says</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Flow: Relax &amp; Create">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-wind"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Flow</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Relax &amp; Create</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Scavenger: Data Hunt">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-search"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Scavenger</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Data Hunt</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Automata: AI Training Sim">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Automata</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">AI Training Sim</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Genesis: Procedural 3D Explorer">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-mountain"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Genesis</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Procedural 3D Explorer</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><div class="col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2"><i class="fas fa-layer-group mr-2 text-slate-400"></i> QUICK MINIGAMES</div><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Maze: Find the Path">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-dungeon"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Maze</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Find the Path</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Endless Runner: Jump the Obstacles">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-person-running"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Endless Runner</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Jump the Obstacles</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Speed Type: Test Your WPM">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-keyboard"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Speed Type</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Test Your WPM</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Clicker: Exponential Growth">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-hand-pointer"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Clicker</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Exponential Growth</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Stack: Stack the Blocks">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Stack</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Stack the Blocks</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Whack: Whack the Moles">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-hammer"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Whack</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Whack the Moles</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Plinko: Drop &amp; Win">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-circle-arrow-down"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Plinko</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Drop &amp; Win</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Pinball: Cyber Flipper">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-circle-dot"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Pinball</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Cyber Flipper</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><div class="col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2"><i class="fas fa-layer-group mr-2 text-slate-400"></i> RPG &amp; LOGIC</div><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Dungeon: Atmospheric Rogue-lite">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-dungeon"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Dungeon</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Atmospheric Rogue-lite</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon MUD: ASCII Text Adventure">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-terminal"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon MUD</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">ASCII Text Adventure</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play The Fingerprint Dungeon: Identity Roguelike">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-fingerprint"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">The Fingerprint Dungeon</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Identity Roguelike</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play RPG Battle: Turn-Based Combat">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-khanda"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">RPG Battle</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Turn-Based Combat</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Eclipse: Strategy Board">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-sun"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Eclipse</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Strategy Board</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Eclipse Puzzle: Pattern Matching">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-puzzle-piece"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Eclipse Puzzle</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Pattern Matching</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Logic Puzzle: Deduction Grid">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-lightbulb"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Logic Puzzle</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Deduction Grid</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Exiled Spark: Text RPG Adventure">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-terminal"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Exiled Spark</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Text RPG Adventure</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><div class="col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2"><i class="fas fa-layer-group mr-2 text-slate-400"></i> SIMULATION</div><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Fluid Sandbox: Fluid Dynamics Sandbox">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-droplet"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Fluid Sandbox</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Fluid Dynamics Sandbox</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Space Trader: Vector Graphics Space Trader">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-rocket"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Space Trader</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Vector Graphics Space Trader</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Jelly Racer: Soft-Body Physics Toy">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-car-side"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Jelly Racer</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Soft-Body Physics Toy</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Ecosystem Sim: God Game Simulator">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-tree"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Ecosystem Sim</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">God Game Simulator</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Fractal Explorer: Fractal Explorer">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Fractal Explorer</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Fractal Explorer</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Micro City: City Builder">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-city"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Micro City</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">City Builder</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Repo Builder: Meta-game of building the repo">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-server"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Repo Builder</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Meta-game of building the repo</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Byte Broker: Trade Your Data">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Byte Broker</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Trade Your Data</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play The Grind 98: Life Simulator">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-briefcase"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">The Grind 98</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Life Simulator</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Factory: Build &amp; Automate">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-industry"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Factory</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Build &amp; Automate</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Life: Live Your Best Life">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-user-astronaut"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Life</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Live Your Best Life</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Zen Garden: Relax &amp; Create">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-spa"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Zen Garden</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Relax &amp; Create</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><div class="col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2"><i class="fas fa-layer-group mr-2 text-slate-400"></i> SPORTS</div><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Golf: Mini Golf Challenge">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-golf-ball-tee"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Golf</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Mini Golf Challenge</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Neon Hoops: Arcade Basketball">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-basketball"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Neon Hoops</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Arcade Basketball</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><div class="col-span-full text-white font-bold text-xl mt-6 mb-2 border-b border-slate-700 pb-2"><i class="fas fa-layer-group mr-2 text-slate-400"></i> SYSTEM</div><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Crypto Wallet: Manage NFTs &amp; Assets">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Crypto Wallet</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Manage NFTs &amp; Assets</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Trophy Room: Achievement Gallery">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Trophy Room</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Achievement Gallery</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Clubhouse: Your Personal Hangout">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-couch"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Clubhouse</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Your Personal Hangout</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Hall of Fame: Global Stats &amp; Records">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-list-ol"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Hall of Fame</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Global Stats &amp; Records</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Avatar Station: Customize Identity">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-user-gear"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Avatar Station</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">Customize Identity</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button><button type="button" class="w-full h-full text-left bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 hover:border-fuchsia-500 transition-all hover:scale-105 cursor-pointer group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-fuchsia-500" aria-label="Play Tech Tree: System Upgrades">
+
+                <div class="flex flex-col items-center text-center gap-3 pt-2">
+                    <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-3xl text-fuchsia-400 group-hover:text-white transition-colors shadow-lg shadow-fuchsia-500/20">
+                        <i class="fa-solid fa-network-wired"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Tech Tree</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">System Upgrades</p>
+                </div>
+                <div class="mt-4 w-full h-1 bg-slate-700 rounded overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                </div>
+            </button></div>
+    </div>
+
+    <!-- Hub HUD (Floating Buttons over 3D) -->
+    <div id="hub-hud" class="fixed top-4 right-4 z-20 flex gap-4 pointer-events-auto"><div class="sync-status-indicator glass-panel px-3 py-2 rounded-full ml-2 flex items-center justify-center" title="Online &amp; Synced"><i class="fas fa-check-circle text-green-500"></i></div><button id="voice-control-btn" class="glass-panel px-4 py-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition ml-2" title="Voice Command"><i class="fas fa-microphone"></i></button><button id="guide-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Game Guide"><i class="fas fa-question-circle"></i></button>
+        <div class="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-white">
+            <i class="fas fa-coins text-yellow-400"></i> <span id="total-currency-hud">60</span>
+        </div>
+        <button id="shop-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Store" aria-label="Store">
+            <i class="fas fa-store"></i>
+        </button>
+        <button id="wallet-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Crypto Wallet" aria-label="Wallet">
+            <i class="fas fa-wallet"></i>
+        </button>
+        <button id="mute-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Mute/Unmute" aria-label="Mute Audio">
+            <i class="fas fa-volume-up"></i>
+        </button>
+        <button id="boss-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Work Mode (Alt+B)" aria-label="Toggle Boss Mode">
+            <i class="fas fa-briefcase"></i>
+        </button>
+        <button id="settings-btn-hud" class="glass-panel px-4 py-2 rounded-full text-white hover:bg-white/10 transition" title="Data/Settings" aria-label="Settings">
+            <i class="fas fa-cog"></i>
+        </button>
+    </div>
+
+    <!-- App Loader -->
+    <div id="app-loader" class="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center transition-opacity duration-1000">
+        <div class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 to-cyan-500 mb-8 title-glow animate-pulse text-center">
+            NEON ARCADE
+        </div>
+        <div role="progressbar" aria-label="Loading Application" class="w-64 h-2 bg-slate-800 rounded-full overflow-hidden relative">
+            <div class="h-full bg-cyan-400 animate-[loading_2s_ease-in-out_infinite] absolute top-0 left-0 w-full"></div>
+        </div>
+        <p class="mt-4 text-slate-500 text-sm font-mono">Click Anywhere to Start</p>
+    </div>
+
+    <style>
+        @keyframes loading {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .custom-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .custom-scrollbar {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+
+    <div id="controls-hint" role="status" class="fixed bottom-4 left-0 w-full text-center z-20 pointer-events-none transition-opacity duration-500 opacity-0">
+        <p class="text-white/50 text-sm font-[Poppins] glass-panel inline-block px-4 py-1 rounded-full">
+            CLICK A CABINET TO PLAY • DRAG TO LOOK AROUND
+        </p>
+    </div>
+
+    <!-- Game Containers -->
+    <div id="neon-wheel-game" class="hidden game-container"></div>
+    <div id="crypto-dashboard" class="hidden game-container"></div>
+    <div id="neon-pulse" class="hidden game-container"></div>
+    <div id="clicker-game" class="hidden game-container"></div>
+    <div id="maze-game" class="hidden game-container"></div>
+    <div id="runner-game" class="hidden game-container"></div>
+    <div id="typing-game" class="hidden game-container"></div>
+    <div id="snake-game" class="hidden game-container"></div>
+    <div id="pong-game" class="hidden game-container"></div>
+    <div id="space-game" class="hidden game-container"></div>
+    <div id="tetris-game" class="hidden game-container"></div>
+    <div id="breakout-game" class="hidden game-container"></div>
+    <div id="rpg-game" class="hidden game-container"></div>
+    <div id="eclipse-game" class="hidden game-container"></div>
+    <div id="eclipse-puzzle-game" class="hidden game-container"></div>
+    <div id="eclipse-logic-puzzle-game" class="hidden game-container"></div>
+    <div id="matterhorn-game" class="hidden game-container"></div>
+    <div id="monarch-game" class="hidden game-container"></div>
+    <div id="equinox-game" class="hidden game-container"></div>
+    <div id="circuit-game" class="hidden game-container"></div>
+    <div id="quilt-game" class="hidden game-container"></div>
+    <div id="ascension-game" class="hidden game-container"></div>
+    <div id="neon-grid-strike" class="hidden game-container"></div>
+    <div id="neon-vaults" class="hidden game-container"></div>
+    <div id="neon-orbit" class="hidden game-container"></div>
+    <div id="neon-dodge" class="hidden game-container"></div>
+    <div id="neon-wire" class="hidden game-container"></div>
+    <div id="neon-pulse" class="hidden game-container"></div>
+    <div id="neon-genesis" class="hidden game-container"></div>
+    <div id="neon-beat" class="hidden game-container"></div>
+    <div id="neon-swarm" class="hidden game-container"></div>
+    <div id="neon-tetrominoes" class="hidden game-container"></div>
+    <div id="whale-scanner" class="hidden game-container"></div>
+    <div id="neon-centipede" class="hidden game-container"></div>
+    <div id="neon-asteroids" class="hidden game-container"></div>
+    <div id="neon-defender" class="hidden game-container"></div>
+    <div id="neon-sort" class="hidden game-container"></div>
+    <div id="neon-fleet" class="hidden game-container"></div>
+    <div id="vault-breaker" class="hidden game-container"></div>
+
+    <!-- Boss Mode Overlay (Dynamic content handled by JS, this is fallback/initial structure) -->
+    <!-- Ideally, we remove the static one so JS can fully control it, but keeping it for now in case of JS failure -->
+    <!-- The BossMode.js script will clear this anyway -->
+
+
+    <!-- Main Module Entry -->
+    <script type="module" src="js/main.js"></script>
+
+
+<div id="ad-overlay" class="fixed inset-0 z-[100] bg-black hidden flex flex-col items-center justify-center">
+            <div id="ad-content-box" class="relative w-full max-w-4xl h-full max-h-[80vh] bg-slate-900 border-2 border-fuchsia-500 rounded-lg overflow-hidden flex flex-col transition-colors duration-500 shadow-[0_0_50px_rgba(255,0,255,0.2)]">
+                <!-- Close/Timer -->
+                <div class="absolute top-2 right-2 z-20">
+                    <div id="ad-timer" class="w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center font-bold border border-white backdrop-blur">5</div>
+                    <button id="ad-close-btn" class="hidden px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-700 border border-slate-600 transition-colors">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+
+                <!-- Main Content Area -->
+                <div id="ad-inner-body" class="flex-1 flex flex-col items-center justify-center relative overflow-hidden w-full h-full">
+                    <!-- Standard Ad Elements -->
+                    <div id="ad-standard-wrapper" class="flex flex-col items-center text-center p-8 relative z-10">
+                         <div id="ad-icon-container" class="mb-6 animate-bounce"></div>
+                         <h2 id="ad-title" class="text-4xl font-bold text-white mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-display tracking-wide">TITLE</h2>
+                         <p id="ad-subtitle" class="text-xl text-cyan-300 mb-8 max-w-md drop-shadow font-light">Subtitle text goes here.</p>
+                         <button id="ad-action-btn" class="px-8 py-3 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full text-white font-bold shadow-lg border border-white/20 transition-all hover:scale-105 active:scale-95 cursor-pointer">ACTION</button>
+                    </div>
+
+                    <!-- Mini-Game Area (Hidden by default) -->
+                    <div id="ad-minigame-wrapper" class="absolute inset-0 z-10 hidden bg-slate-900">
+                        <!-- Canvas or DOM elements for minigame go here -->
+                    </div>
+                </div>
+
+                <div class="h-1 bg-slate-800 w-full absolute bottom-0 left-0 z-20">
+                    <div id="ad-progress" class="h-full bg-cyan-400 w-0 transition-all duration-100 ease-linear shadow-[0_0_10px_cyan]"></div>
+                </div>
+            </div>
+            <div class="mt-4 text-slate-500 text-xs tracking-widest uppercase">Sponsored Content • Neon Ad Network</div>
+        </div><div id="news-ticker" class="fixed bottom-0 left-0 w-full bg-slate-900/90 border-t border-fuchsia-500/30 text-cyan-400 py-1 px-4 z-[40] font-mono text-xs overflow-hidden pointer-events-none select-none">
+            <div class="flex items-center gap-4">
+                <span class="font-bold text-fuchsia-500 whitespace-nowrap">LIVE FEED:</span>
+                <div class="relative overflow-hidden w-full h-5">
+                     <div id="ticker-content" class="absolute whitespace-nowrap animate-marquee">Don't forget to blink. It keeps the eyes moist.</div>
+                </div>
+            </div>
+        </div><div id="hub-tooltip" class="fixed pointer-events-none bg-black/80 text-white px-3 py-1 rounded text-sm z-50 transition-opacity duration-200 border border-white/20" style="top: 0px; left: 0px; opacity: 1; transform: translate3d(15px, 15px, 0px);">Daily Quests</div><div style="display: none;">
+            <template id="tpl-mission">
+                <div class="p-4 h-full flex flex-col gap-4 text-gray-300 bg-[#020408] font-mono">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="glass-panel p-4 rounded bg-blue-900/10 border-blue-500/30">
+                            <h3 class="text-blue-400 font-bold mb-2 flex items-center gap-2">SYSTEM STATUS</h3>
+                            <div class="space-y-1 text-[10px]">
+                                <div class="flex justify-between"><span>CORE_KERNEL</span><span class="text-green-400">ONLINE</span></div>
+                                <div class="flex justify-between"><span>DCF_ENGINE</span><span class="text-green-400">READY</span></div>
+                            </div>
+                        </div>
+                        <div class="glass-panel p-4 rounded bg-purple-900/10 border-purple-500/30">
+                            <h3 class="text-purple-400 font-bold mb-2">ACTIVE AGENTS</h3>
+                            <div class="space-y-1 text-[10px]">
+                                <div class="flex justify-between"><span>RISK_BOT</span><span class="text-green-400">MONITORING</span></div>
+                                <div class="flex justify-between"><span>MARKET_SCAN</span><span class="text-blue-400">ACTIVE</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-panel flex-grow p-2 rounded relative font-mono text-[10px] text-green-500 overflow-y-auto" id="system-log">
+                        <div>&gt;&gt; SYSTEM INITIALIZED...</div>
+                    </div>
+                </div>
+            </template>
+
+            <template id="tpl-dcf">
+                <div class="h-full flex flex-col p-4 bg-[#0f172a] text-gray-300 font-mono text-xs overflow-hidden">
+                      <div class="flex justify-between mb-4 border-b border-gray-700 pb-2">
+                        <div class="text-cyan-400 font-bold">DCF VALUATION MODULE v2.0</div>
+                        <div class="flex gap-2">
+                            <button class="btn-calc bg-cyan-700 hover:bg-cyan-600 px-2 py-1 rounded text-white text-[10px]">RECALC</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-12 gap-4 flex-grow overflow-hidden">
+                        <div class="col-span-4 space-y-2 border-r border-gray-700 pr-2 overflow-y-auto custom-scroll">
+                            <div class="text-gray-500 font-bold">ASSUMPTIONS</div>
+                            <div class="flex justify-between items-center"><label>Growth %</label><input type="number" class="inp-growth bg-gray-900 border border-gray-600 w-12 text-right text-green-400" value="5.0"></div>
+                            <div class="flex justify-between items-center"><label>WACC %</label><input type="number" class="inp-wacc bg-gray-900 border border-gray-600 w-12 text-right text-yellow-400" value="8.5"></div>
+                            <div class="flex justify-between items-center"><label>Tax %</label><input type="number" class="inp-tax bg-gray-900 border border-gray-600 w-12 text-right" value="21.0"></div>
+                        </div>
+                        <div class="col-span-8 flex flex-col gap-4">
+                            <div class="flex-1 bg-black/40 rounded p-2 overflow-auto font-mono text-[10px]">
+                                <table class="w-full text-right dcf-table"></table>
+                            </div>
+                            <div class="p-3 bg-gray-800 rounded flex justify-between items-center">
+                                <span>IMPLIED EQUITY VALUE</span>
+                                <span class="text-xl font-bold text-green-400 val-equity">$0M</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div><div id="boss-mode-overlay" class="hidden fixed inset-0 z-[10000] bg-black font-sans text-xs text-black flex flex-col cursor-default select-none overflow-hidden">
+            <div id="os-boot-layer" class="absolute inset-0 z-[10020] bg-black hidden text-gray-300 font-mono p-10"></div>
+            <div id="os-login-layer" class="absolute inset-0 z-[10010] hidden bg-cover bg-center"></div>
+
+            <div id="os-desktop-layer" class="absolute inset-0 flex flex-col hidden">
+                <div id="boss-wallpaper" class="absolute inset-0 bg-cover bg-center transition-[background-image] duration-500 z-0"></div>
+
+                <!-- Desktop Icons Container -->
+                <div id="boss-desktop-icons" class="absolute inset-0 z-0 w-full h-full pointer-events-none"></div>
+
+                <div id="boss-windows-container" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
+
+                <div id="boss-os-ui" class="absolute inset-0 pointer-events-none z-[9999]"></div>
+            </div>
+
+            <div id="os-legacy-container" class="absolute inset-0 z-[10005] hidden bg-teal-800"></div>
+
+            <div id="os-hacker-container" class="absolute inset-0 z-[10006] hidden bg-black font-mono text-green-500 p-4 overflow-hidden"></div>
+
+            <div id="boss-bsod-container" class="absolute inset-0 z-[10050] hidden bg-[#0078d7] cursor-none flex flex-col items-start justify-center p-20 text-white font-mono"></div>
+        </div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div class="trail-dot"></div><div id="dev-console" class="fixed top-0 left-0 w-full h-1/3 bg-black/90 text-green-400 font-mono text-sm z-[10000] hidden flex flex-col border-b-2 border-green-500 shadow-2xl">
+            <div id="dev-log" class="flex-1 overflow-y-auto p-4 space-y-1"><div>[3:27:00 AM] NeonOS Developer Console v1.0.0 initialized.</div></div>
+            <div class="flex border-t border-green-800">
+                <span class="px-2 py-2 select-none">&gt;</span>
+                <input id="dev-input" type="text" class="flex-1 bg-transparent border-none outline-none text-green-400 p-2" placeholder="Enter command (type 'help')..." autocomplete="off" style="">
+            </div>
+        </div><div id="crt-overlay" class="crt-effect"></div><div id="toast-container" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col gap-2 pointer-events-none z-[100]"></div>
