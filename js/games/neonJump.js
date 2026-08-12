@@ -201,21 +201,29 @@ export default class NeonJump {
             const diff = targetY - this.player.y;
             this.player.y = targetY;
 
-            const moveObj = (obj) => { obj.y += diff; };
-            this.platforms.forEach(moveObj);
-            this.enemies.forEach(moveObj);
-            this.items.forEach(moveObj);
+            // Bolt Optimization: Replace forEach with standard for loops
+            for (let i = 0; i < this.platforms.length; i++) {
+                this.platforms[i].y += diff;
+            }
+            for (let i = 0; i < this.enemies.length; i++) {
+                this.enemies[i].y += diff;
+            }
+            for (let i = 0; i < this.items.length; i++) {
+                this.items[i].y += diff;
+            }
 
             this.score += Math.floor(diff);
         }
 
         // Logic Updates
-        this.platforms.forEach(p => {
+        // Bolt Optimization: Replace forEach with standard for loop
+        for (let i = 0; i < this.platforms.length; i++) {
+            const p = this.platforms[i];
             if (p.type === 'moving') {
                 p.x += p.speed * dt;
                 if (p.x < 0 || p.x + p.width > this.width) p.speed *= -1;
             }
-        });
+        }
 
         // Cleanup & Spawning
         this.platforms = this.platforms.filter(p => p.y < this.height);
@@ -300,7 +308,9 @@ export default class NeonJump {
         this.ctx.stroke();
 
         // Draw Platforms
-        this.platforms.forEach(p => {
+        // Bolt Optimization: Replace forEach with standard for loop
+        for (let i = 0; i < this.platforms.length; i++) {
+            const p = this.platforms[i];
             this.ctx.shadowBlur = 10;
             this.ctx.shadowColor = p.type === 'moving' ? '#d946ef' : '#22c55e'; // Fuschia vs Green
 
@@ -316,31 +326,35 @@ export default class NeonJump {
             this.ctx.fillStyle = '#00000055';
             this.ctx.fillRect(p.x + 10, p.y + 5, 5, 10);
             this.ctx.fillRect(p.x + p.width - 15, p.y + 5, 5, 10);
-        });
+        }
 
         // Draw Items (Jetpack)
         this.ctx.font = '900 30px "Font Awesome 6 Free"';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
 
-        this.items.forEach(item => {
+        // Bolt Optimization: Replace forEach with standard for loop
+        for (let i = 0; i < this.items.length; i++) {
+            const item = this.items[i];
             if (item.active) {
                 this.ctx.shadowColor = '#fbbf24';
                 this.ctx.shadowBlur = 15;
                 this.ctx.fillStyle = '#fbbf24';
                 this.ctx.fillText('\uf135', item.x, item.y); // Rocket Icon
             }
-        });
+        }
 
         // Draw Enemies
-        this.enemies.forEach(e => {
+        // Bolt Optimization: Replace forEach with standard for loop
+        for (let i = 0; i < this.enemies.length; i++) {
+            const e = this.enemies[i];
             this.ctx.shadowColor = '#ef4444';
             this.ctx.shadowBlur = 15;
             this.ctx.fillStyle = '#ef4444';
             // Animation bob
             const bob = Math.sin(Date.now() / 200) * 5;
             this.ctx.fillText('\uf188', e.x, e.y + bob); // Bug Icon
-        });
+        }
 
         // Draw Player (Robot)
         this.ctx.save();
