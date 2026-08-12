@@ -73,3 +73,8 @@ It serves to justify the retention or deletion of verification artifacts (script
 **Artifacts:** `js/games/neonFleet.js`, `js/games/vaultBreaker.js`, `battleship.html`, `vaultbreaker.html`, `verification/verify_added_games_new.py`, playwright screenshots/videos.
 **Outcome:** Verification passed successfully. Verified that all components load, function properly as standalone pages, and are accessible from the main hub.
 **Notes:** Added to gameRegistry in `js/main.js` and created DOM container elements in `index.html`.
+
+## 2026-07-28 - Feature Expansion: Cyber Deck Builder
+**Agent:** Jules
+**Action:** Implemented a new game module `Cyber Deck Builder` from scratch and registered it in `js/main.js`.
+**Outcome:** Added new Canvas-based game with card mechanics. Fixed block logic and input event propagation. Added verification script `verify_cyber_deck_builder.py`. Verified successfully.
