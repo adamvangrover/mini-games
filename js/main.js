@@ -37,6 +37,7 @@ const gameRegistry = {
     'neon-asteroids': { name: 'Neon Asteroids', description: 'Classic Space Shooter', icon: 'fa-solid fa-meteor', category: 'Action', importFn: () => import('./games/neonAsteroids.js') },
     'neon-defender': { name: 'Neon Defender', description: 'Base Defense', icon: 'fa-solid fa-shield-halved', category: 'Action', importFn: () => import('./games/neonDefender.js') },
     'neon-sort': { name: 'Neon Sort', description: 'Color Logic Puzzle', icon: 'fa-solid fa-flask', category: 'Logic Puzzles', importFn: () => import('./games/neonSort.js'), noDpad: true },
+    'neon-lander': { name: 'Neon Lander', description: 'Physics-based lunar lander', icon: 'fa-solid fa-rocket', category: 'Action', importFn: () => import('./games/neonLander.js') },
 
     // 3D Immersive
     'alpine-game': { name: 'Alpine Adventure', description: 'Open World Exploration', icon: 'fa-solid fa-mountain-sun', category: '3D Immersive', importFn: () => import('./games/alpine.js'), wide: true },

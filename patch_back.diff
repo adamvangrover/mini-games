@@ -1,0 +1,52 @@
+--- js/games/neonLander.js
++++ js/games/neonLander.js
+@@ -52,14 +52,28 @@
+         this.canvas = this.container.querySelector('#landerCanvas');
+         this.ctx = this.canvas.getContext('2d');
+
+-        this.boundClick = this.handleClick.bind(this);
+-        this.canvas.addEventListener('click', this.boundClick);
++        // Mouse handling for back button and thrusting via touch/mouse
++        this.isMouseDown = false;
++
++        this.boundDown = this.handleDown.bind(this);
++        this.boundUp = this.handleUp.bind(this);
++
++        this.canvas.addEventListener('mousedown', this.boundDown);
++        this.canvas.addEventListener('mouseup', this.boundUp);
++        this.canvas.addEventListener('touchstart', this.boundDown, {passive: false});
++        this.canvas.addEventListener('touchend', this.boundUp, {passive: false});
+
+         this.generateTerrain();
+         this.isActive = true;
+         this.lastTime = performance.now();
+     }
+
+-    handleClick(e) {
++    handleDown(e) {
++        if (e.type === 'touchstart') e.preventDefault();
+         const rect = this.canvas.getBoundingClientRect();
+-        const mouseX = e.clientX - rect.left;
+-        const mouseY = e.clientY - rect.top;
++        const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
++        const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
++
++        // Calculate logical coordinates relative to internal canvas resolution
++        const scaleX = this.canvas.width / rect.width;
++        const scaleY = this.canvas.height / rect.height;
++
++        const mouseX = (clientX - rect.left) * scaleX;
++        const mouseY = (clientY - rect.top) * scaleY;
+
+         // Check if "BACK" button region (top left) is clicked
+         if (mouseX >= 20 && mouseX <= 100 && mouseY >= 20 && mouseY <= 60) {
+             if (window.miniGameHub) window.miniGameHub.transitionToState('MENU');
+         }
++        this.isMouseDown = true;
+     }
++
++    handleUp(e) {
++        this.isMouseDown = false;
++    }
+
+     generateTerrain() {
