@@ -39,7 +39,7 @@ The repository includes a diverse collection of games:
 
 *   **Action**: Neon Shooter (FPS), Neon Jump, Neon Slice, Neon Galaga.
 *   **Puzzle**: Neon Mines (Minesweeper), Sudoku, Neon Zip, Eclipse (Strategy).
-*   **Classics**: Snake, Pong, Tetris, Breakout, Space Shooter - all with a Neon twist.
+*   **Strategy**: Cyber Deck Builder.*   **Classics**: Snake, Pong, Tetris, Breakout, Space Shooter - all with a Neon twist.
 *   **Simulation**: The Grind 98 (Life Sim), Neon Life, Zen Garden.
 *   **Physics**: Physics Stacker, Neon Golf, Neon Hoops.
 *   **3D Worlds**: Alpine Adventure, Neon City (Open World), Aetheria (Floating Islands).

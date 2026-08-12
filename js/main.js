@@ -19,6 +19,7 @@ import PlaceholderGame from './games/PlaceholderGame.js';
 // --- Game Registry ---
 // Uses Dynamic Imports for performance
 const gameRegistry = {
+    'cyber-deck-builder': { name: 'Cyber Deck Builder', description: 'Card Based Battles', icon: 'fa-solid fa-layer-group', category: 'Strategy', importFn: () => import('./games/cyberDeckBuilder.js'), wide: true },
     'synthwave-rhythm': { name: 'Synthwave Rhythm', description: 'Synthwave Rhythm (Beat Match)', icon: 'fa-solid fa-music', category: 'Action', importFn: () => import('./games/synthwaveRhythm.js') },
     'fluid-sandbox': { name: 'Fluid Sandbox', description: 'Fluid Dynamics Sandbox', icon: 'fa-solid fa-droplet', category: 'Simulation', importFn: () => import('./games/fluidSandbox.js') },
     'cyber-hacking': { name: 'Cyber Hacking', description: 'Cyberpunk Node Hacking', icon: 'fa-solid fa-network-wired', category: 'Logic Puzzles', importFn: () => import('./games/cyberHacking.js') },
